@@ -57,6 +57,9 @@ CONF_MIN_BRIGHTNESS = f"min_{READING_BRIGHTNESS}"
 CONF_MAX_BRIGHTNESS = f"max_{READING_BRIGHTNESS}"
 CONF_CHECK_DAYS = "check_days"
 CONF_SPECIES = "species"
+CONF_PLANTBOOK_CLIENT = "plantbook_client"
+CONF_PLANTBOOK_SECRET = "plantbook_secret"
+
 
 
 CONF_SENSOR_BATTERY_LEVEL = READING_BATTERY
@@ -103,7 +106,8 @@ PLANT_SCHEMA = vol.Schema(
         vol.Optional(CONF_CHECK_DAYS, default=DEFAULT_CHECK_DAYS): cv.positive_int,
         vol.Optional(CONF_NAME): cv.string,
         vol.Optional(CONF_SPECIES): cv.string,
-
+        vol.Optional(CONF_PLANTBOOK_CLIENT): cv.string,
+        vol.Optional(CONF_PLANTBOOK_SECRET): cv.string,
     }
 )
 
