@@ -120,19 +120,54 @@ CONFIG_SCHEMA = vol.Schema({DOMAIN: {cv.string: PLANT_SCHEMA}}, extra=vol.ALLOW_
 # This feature is turned off right now as its tests are not 100% stable.
 ENABLE_LOAD_HISTORY = False
 
+PLANTBOOK_TOKEN = None
 
 async def async_setup(hass, config):
     """Set up the Plant component."""
     component = EntityComponent(_LOGGER, DOMAIN, hass)
+    global PLANTBOOK_TOKEN
 
     entities = []
     for plant_name, plant_config in config[DOMAIN].items():
+        if plant_config.get(CONF_PLANTBOOK_CLIENT) and plant_config.get(CONF_PLANTBOOK_SECRET) and PLANTBOOK_TOKEN = None:
+            PLANTBOOK_TOKEN = _get_plantbook_token(client_id=plant_config.get(CONF_PLANTBOOK_CLIENT), secret=plant_config.get(CONF_PLANTBOOK_SECRET))
         _LOGGER.info("Added plant %s", plant_name)
         entity = Plant(plant_name, plant_config)
         entities.append(entity)
 
     await component.async_add_entities(entities)
     return True
+
+def _get_plantbook_token(client_id, secret):
+    """ Gets the token from the openplantbook API """
+    url =  'https://open.plantbook.io/api/v1/token/'
+    data = {
+        'grant_type': 'client_credentials',
+        'client_id': client_id,
+        'client_secret': secret
+    }
+    try:
+        result = requests.post(url, data = data)
+        result.raise_for_status()
+    except requests.exceptions.Timeout:
+        # Maybe set up for a retry, or continue in a retry loop
+        _LOGGER.error("Timeout connecting to {}".format(url))
+        return
+    except requests.exceptions.TooManyRedirects:
+        # Tell the user their URL was bad and try a different one
+        _LOGGER.error("Too many redirects connecting to {}".format(url))
+        return
+    except requests.exceptions.HTTPError as err:
+        _LOGGER.error(err)
+        return
+    except requests.exceptions.RequestException as err:
+        # catastrophic error. bail.
+        _LOGGER.error(err)
+        return
+    token = result.json().get('access_token')
+    _LOGGER.debug("Got token {} from {}".format(token, url))
+    return token
+
 
 
 class Plant(Entity):
@@ -186,7 +221,6 @@ class Plant(Entity):
         self._temperature = None
         self._brightness = None
         self._problems = PROBLEM_NONE
-        self._plantbook_token = None
 
         self._conf_check_days = 3  # default check interval: 3 days
         if CONF_CHECK_DAYS in self._config:
@@ -342,18 +376,15 @@ class Plant(Entity):
         _LOGGER.debug("Initializing from database completed")
         self.async_write_ha_state()
 
-    async def _get_plantbook_token(self):
-        """ Gets the token from the openplantbook API """
-        url =  'https://open.plantbook.io/api/v1/token/'
-        data = {
-            'grant_type': 'client_credentials',
-            'client_id': self._config['plantbook_client_id'],
-            'client_secret': self._config['plantbook_client_secret']
-        }
+    async def _get_plantbook_data(self):
+        """ Gets information about the plant from the openplantbook API """
+        if not PLANTBOOK_TOKEN:
+            return
+        url = "https://open.plantbook.io/api/v1/plant/detail/{}".format(self._species)
+        headers = {"Authorization": "Bearer {}".format(PLANTBOOK_TOKEN)}
         try:
-            async with async_timeout.timeout(10):
-                return await result = requests.post(url, data = data)
-                result.raise_for_status()
+            result = requests.get(url, headers=headers)
+            result.raise_for_status()
         except requests.exceptions.Timeout:
             # Maybe set up for a retry, or continue in a retry loop
             _LOGGER.error("Timeout connecting to {}".format(url))
@@ -369,9 +400,23 @@ class Plant(Entity):
             # catastrophic error. bail.
             _LOGGER.error(err)
             return
-        self._plantbook_token = result.json().get('access_token')
-        _LOGGER.debug("Got token {} from {}".format(self._plantbook_token, url))
+        res = result.json()
+        _LOGGER.debug("Fetched data from {}:".format(url))
+        _LOGGER.debug(res)
+        self._set_conf_value('name', res['display_pid'])
+        self._set_conf_value('min_temperature', res['min_temp'])
+        self._set_conf_value('max_temperature', res['max_temp'])
+        self._set_conf_value('min_moisture', res['min_soil_moist'])
+        self._set_conf_value('max_moisture', res['max_soil_moist'])
+        self._set_conf_value('min_conductivity', res['min_soil_ec'])
+        self._set_conf_value('max_conductivity', res['max_soil_ec'])
+        self._set_conf_value('min_brightness', res['min_light_lux'])
+        self._set_conf_value('max_brightness', res['max_light_lux'])
 
+    def _set_conf_value(self, var, val):
+        """ Ensures that values explicitly set in the config is not overwritten """
+        if var not in self._config or self._config[var] is None:
+            self._config[var] = val
 
     @property
     def should_poll(self):
