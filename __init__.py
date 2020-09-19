@@ -186,6 +186,7 @@ class Plant(Entity):
         self._temperature = None
         self._brightness = None
         self._problems = PROBLEM_NONE
+        self._plantbook_token = None
 
         self._conf_check_days = 3  # default check interval: 3 days
         if CONF_CHECK_DAYS in self._config:
@@ -340,6 +341,37 @@ class Plant(Entity):
                     pass
         _LOGGER.debug("Initializing from database completed")
         self.async_write_ha_state()
+
+    async def _get_plantbook_token(self):
+        """ Gets the token from the openplantbook API """
+        url =  'https://open.plantbook.io/api/v1/token/'
+        data = {
+            'grant_type': 'client_credentials',
+            'client_id': self._config['plantbook_client_id'],
+            'client_secret': self._config['plantbook_client_secret']
+        }
+        try:
+            async with async_timeout.timeout(10):
+                return await result = requests.post(url, data = data)
+                result.raise_for_status()
+        except requests.exceptions.Timeout:
+            # Maybe set up for a retry, or continue in a retry loop
+            _LOGGER.error("Timeout connecting to {}".format(url))
+            return
+        except requests.exceptions.TooManyRedirects:
+            # Tell the user their URL was bad and try a different one
+            _LOGGER.error("Too many redirects connecting to {}".format(url))
+            return
+        except requests.exceptions.HTTPError as err:
+            _LOGGER.error(err)
+            return
+        except requests.exceptions.RequestException as err:
+            # catastrophic error. bail.
+            _LOGGER.error(err)
+            return
+        self._plantbook_token = result.json().get('access_token')
+        _LOGGER.debug("Got token {} from {}".format(self._plantbook_token, url))
+
 
     @property
     def should_poll(self):
