@@ -106,8 +106,6 @@ PLANT_SCHEMA = vol.Schema(
         vol.Optional(CONF_CHECK_DAYS, default=DEFAULT_CHECK_DAYS): cv.positive_int,
         vol.Optional(CONF_NAME): cv.string,
         vol.Optional(CONF_SPECIES): cv.string,
-        vol.Optional(CONF_PLANTBOOK_CLIENT): cv.string,
-        vol.Optional(CONF_PLANTBOOK_SECRET): cv.string,
     }
 )
 
@@ -126,14 +124,16 @@ async def async_setup(hass, config):
     """Set up the Plant component."""
     component = EntityComponent(_LOGGER, DOMAIN, hass)
     global PLANTBOOK_TOKEN
+    if config[DOMAIN][CONF_PLANTBOOK_CLIENT] and config[DOMAIN][CONF_PLANTBOOK_SECRET] and PLANTBOOK_TOKEN is None:
+        PLANTBOOK_TOKEN = _get_plantbook_token(client_id=plant_config.get(CONF_PLANTBOOK_CLIENT), secret=plant_config.get(CONF_PLANTBOOK_SECRET))
+
 
     entities = []
     for plant_name, plant_config in config[DOMAIN].items():
-        if plant_config.get(CONF_PLANTBOOK_CLIENT) and plant_config.get(CONF_PLANTBOOK_SECRET) and PLANTBOOK_TOKEN is None:
-            PLANTBOOK_TOKEN = _get_plantbook_token(client_id=plant_config.get(CONF_PLANTBOOK_CLIENT), secret=plant_config.get(CONF_PLANTBOOK_SECRET))
-        _LOGGER.info("Added plant %s", plant_name)
-        entity = Plant(plant_name, plant_config)
-        entities.append(entity)
+        if plant_name != CONF_PLANTBOOK_CLIENT and plant_name != CONF_PLANTBOOK_SECRET:
+            _LOGGER.info("Added plant %s", plant_name)
+            entity = Plant(plant_name, plant_config)
+            entities.append(entity)
 
     await component.async_add_entities(entities)
     return True
