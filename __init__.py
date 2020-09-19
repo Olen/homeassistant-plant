@@ -129,7 +129,7 @@ async def async_setup(hass, config):
 
     entities = []
     for plant_name, plant_config in config[DOMAIN].items():
-        if plant_config.get(CONF_PLANTBOOK_CLIENT) and plant_config.get(CONF_PLANTBOOK_SECRET) and PLANTBOOK_TOKEN = None:
+        if plant_config.get(CONF_PLANTBOOK_CLIENT) and plant_config.get(CONF_PLANTBOOK_SECRET) and PLANTBOOK_TOKEN is None:
             PLANTBOOK_TOKEN = _get_plantbook_token(client_id=plant_config.get(CONF_PLANTBOOK_CLIENT), secret=plant_config.get(CONF_PLANTBOOK_SECRET))
         _LOGGER.info("Added plant %s", plant_name)
         entity = Plant(plant_name, plant_config)
