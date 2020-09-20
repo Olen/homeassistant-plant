@@ -102,8 +102,8 @@ PLANT_SCHEMA = vol.Schema(
         vol.Optional(
             CONF_MIN_BATTERY_LEVEL, default=DEFAULT_MIN_BATTERY_LEVEL
         ): cv.positive_int,
-        vol.Optional(CONF_MIN_TEMPERATURE): vol.Coerce(float),
-        vol.Optional(CONF_MAX_TEMPERATURE): vol.Coerce(float),
+        vol.Optional(CONF_MIN_TEMPERATURE, default=DEFAULT_MIN_TEMPERATURE): vol.Coerce(float),
+        vol.Optional(CONF_MAX_TEMPERATURE, default=DEFAULT_MAX_TEMPERATURE): vol.Coerce(float),
         vol.Optional(CONF_MIN_MOISTURE, default=DEFAULT_MIN_MOISTURE): cv.positive_int,
         vol.Optional(CONF_MAX_MOISTURE, default=DEFAULT_MAX_MOISTURE): cv.positive_int,
         vol.Optional(
@@ -112,8 +112,8 @@ PLANT_SCHEMA = vol.Schema(
         vol.Optional(
             CONF_MAX_CONDUCTIVITY, default=DEFAULT_MAX_CONDUCTIVITY
         ): cv.positive_int,
-        vol.Optional(CONF_MIN_BRIGHTNESS): cv.positive_int,
-        vol.Optional(CONF_MAX_BRIGHTNESS): cv.positive_int,
+        vol.Optional(CONF_MIN_BRIGHTNESS, default=DEFAULT_MIN_BRIGHTNESS): cv.positive_int,
+        vol.Optional(CONF_MAX_BRIGHTNESS, default=DEFAULT_MAX_BRIGHTNESS): cv.positive_int,
         vol.Optional(CONF_CHECK_DAYS, default=DEFAULT_CHECK_DAYS): cv.positive_int,
         vol.Optional(CONF_NAME): cv.string,
         vol.Optional(CONF_SPECIES): cv.string,
@@ -178,7 +178,7 @@ async def _get_plantbook_token(client_id=None, secret=None):
                 token = await result.json()
                 _LOGGER.debug("Got token {} from {}".format(token['access_token'], url))
                 PLANTBOOK_TOKEN = token['access_token']
-    except Exception as e
+    except Exception as e:
         _LOGGER.error("Unable to get token from plantbook API: {}".format(e))
 
 
@@ -418,8 +418,8 @@ class Plant(Entity):
                     self._set_conf_value(CONF_MIN_CONDUCTIVITY, res['min_soil_ec'])
                     self._set_conf_value(CONF_MAX_CONDUCTIVITY, res['max_soil_ec'])
                     self._set_conf_value(CONF_MIN_BRIGHTNESS, res['min_light_lux'])
-                    self._set_conf_value(CONF_MIN_BRIGHTNESS, res['max_light_lux'])
-        except Exception as e
+                    self._set_conf_value(CONF_MAX_BRIGHTNESS, res['max_light_lux'])
+        except Exception as e:
             _LOGGER.error("Unable to get plant data from plantbook API: {}".format(e))
 
     def _set_conf_value(self, var, val):
@@ -457,7 +457,7 @@ class Plant(Entity):
         attrib = {
             ATTR_PROBLEM: self._problems,
             ATTR_SENSORS: self._readingmap,
-            ATTR_LIMITS: {}
+            ATTR_LIMITS: {},
             ATTR_DICT_OF_UNITS_OF_MEASUREMENT: self._unit_of_measurement,
             ATTR_SPECIES: self._config.get(CONF_SPECIES),
             ATTR_NAME: self._plant_name,
@@ -477,7 +477,7 @@ class Plant(Entity):
                 CONF_MIN_CONDUCTIVITY,
                 CONF_MAX_CONDUCTIVITY,
                 CONF_MIN_BRIGHTNESS,
-                CONF_MIN_BRIGHTNESS,
+                CONF_MAX_BRIGHTNESS,
             ]:
             attrib[ATTR_LIMITS][var] = self._config[var]
 
