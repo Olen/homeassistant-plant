@@ -1,5 +1,7 @@
 # Implementation of OpenPlantBook in the plants component
 
+OpenPlantBook: https://open.plantbook.io/docs.html
+
 ## Done
 * Added some new attributes to the Plant entity (name, species and a "limits"-dict)
 * Added new entry for "openplantbook" in the plant-config
