@@ -57,3 +57,13 @@ The `species` must be written exactly as i appears in the "pid" in Openplantbook
     species: coleus 'marble'
 ```
 If the species is not found, or no `species` is defined in the config, default values will be provided by the component
+
+## Attributes
+The component sets some attributes to each plant that is accessible in the "limits"-dictionary:
+```
+{{ state_attr('plant.my_plant', 'limits') }}
+
+{% set limits = state_attr('plant.my_plant', 'limits') %}
+{{ limits['min_moisture'] }}
+```
+
