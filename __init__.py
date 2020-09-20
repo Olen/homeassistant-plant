@@ -2,6 +2,7 @@
 from collections import deque
 from datetime import datetime, timedelta
 import logging
+import requests
 
 import voluptuous as vol
 
@@ -14,7 +15,7 @@ from homeassistant.const import (
     CONDUCTIVITY,
     CONF_SENSORS,
     CONF_NAME,
-    PERCENTAGE,
+    UNIT_PERCENTAGE,
     STATE_OK,
     STATE_PROBLEM,
     STATE_UNAVAILABLE,
@@ -28,6 +29,7 @@ from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.entity_component import EntityComponent
 from homeassistant.helpers.event import async_track_state_change_event
 
+PERCENTAGE = UNIT_PERCENTAGE
 _LOGGER = logging.getLogger(__name__)
 
 DEFAULT_NAME = "plant"
@@ -74,6 +76,8 @@ CONF_SENSOR_TEMPERATURE = READING_TEMPERATURE
 CONF_SENSOR_BRIGHTNESS = READING_BRIGHTNESS
 
 DEFAULT_MIN_BATTERY_LEVEL = 20
+DEFAULT_MIN_TEMPERATURE = 10
+DEFAULT_MAX_TEMPERATURE = 40
 DEFAULT_MIN_MOISTURE = 20
 DEFAULT_MAX_MOISTURE = 60
 DEFAULT_MIN_CONDUCTIVITY = 500
@@ -109,8 +113,8 @@ PLANT_SCHEMA = vol.Schema(
         vol.Optional(CONF_MIN_BRIGHTNESS): cv.positive_int,
         vol.Optional(CONF_MAX_BRIGHTNESS): cv.positive_int,
         vol.Optional(CONF_CHECK_DAYS, default=DEFAULT_CHECK_DAYS): cv.positive_int,
-        vol.Optional(CONF_NAME): cv.str,
-        vol.Optional(CONF_SPECIES): cv.str,
+        vol.Optional(CONF_NAME): cv.string,
+        vol.Optional(CONF_SPECIES): cv.string,
     }
 )
 PLANTBOOK_SCHEMA = vol.Schema(
@@ -142,9 +146,8 @@ async def async_setup(hass, config):
     """Set up the Plant component."""
     component = EntityComponent(_LOGGER, DOMAIN, hass)
     if CONF_PLANTBOOK in config[DOMAIN]:
-        global PLANTBOOK_TOKEN
         plantbook_config = config[DOMAIN][CONF_PLANTBOOK] 
-        PLANTBOOK_TOKEN = _get_plantbook_token(client_id=plantbook_config.get(CONF_PLANTBOOK_CLIENT), secret=plantbook_config.get(CONF_PLANTBOOK_SECRET))
+        await _get_plantbook_token(client_id=plantbook_config.get(CONF_PLANTBOOK_CLIENT), secret=plantbook_config.get(CONF_PLANTBOOK_SECRET))
 
     entities = []
     for plant_name, plant_config in config[DOMAIN].items():
@@ -156,9 +159,10 @@ async def async_setup(hass, config):
     await component.async_add_entities(entities)
     return True
 
-def _get_plantbook_token(client_id=None, secret=None):
+async def _get_plantbook_token(client_id=None, secret=None):
     if not client_id or not secret:
         return None
+    global PLANTBOOK_TOKEN
     """ Gets the token from the openplantbook API """
     url =  'https://open.plantbook.io/api/v1/token/'
     data = {
@@ -167,6 +171,7 @@ def _get_plantbook_token(client_id=None, secret=None):
         'client_secret': secret
     }
     try:
+        # result = await requests.post(url, data = data)
         result = requests.post(url, data = data)
         result.raise_for_status()
     except requests.exceptions.Timeout:
@@ -186,7 +191,7 @@ def _get_plantbook_token(client_id=None, secret=None):
         return
     token = result.json().get('access_token')
     _LOGGER.debug("Got token {} from {}".format(token, url))
-    return token
+    PLANTBOOK_TOKEN = token
 
 
 
@@ -229,7 +234,7 @@ class Plant(Entity):
         self._config = config
         self._sensormap = {}
         self._readingmap = {}
-        self._limitmap = READINGS
+        self._limitmap = {}
         self._unit_of_measurement = {}
         for reading, entity_id in config["sensors"].items():
             self._sensormap[entity_id] = reading
@@ -243,10 +248,8 @@ class Plant(Entity):
         self._temperature = None
         self._brightness = None
         self._problems = PROBLEM_NONE
-        self._species = self._config.get(CONF_SPEICES)
-        if PLANTBOOK_TOKEN and self._species:
-            self._get_plantbook_data()
-
+        self._species = self._config.get(CONF_SPECIES)
+        _LOGGER.debug("Adding plant {} Token {}".format(name, PLANTBOOK_TOKEN))
 
         self._conf_check_days = 3  # default check interval: 3 days
         if CONF_CHECK_DAYS in self._config:
@@ -350,6 +353,9 @@ class Plant(Entity):
 
     async def async_added_to_hass(self):
         """After being added to hass, load from history."""
+        if PLANTBOOK_TOKEN and self._species:
+            _LOGGER.debug("Getting plantbook-data for {} {}".format(self.name, self._species))
+            self.hass.async_add_job(self._get_plantbook_data)
         if ENABLE_LOAD_HISTORY and "recorder" in self.hass.config.components:
             # only use the database if it's configured
             self.hass.async_add_job(self._load_history_from_db)
@@ -405,9 +411,11 @@ class Plant(Entity):
     async def _get_plantbook_data(self):
         """ Gets information about the plant from the openplantbook API """
         if not PLANTBOOK_TOKEN:
+            _LOGGER.debug("No plantbook token for {}".format(self.name))
             return
         url = "https://open.plantbook.io/api/v1/plant/detail/{}".format(self._species)
         headers = {"Authorization": "Bearer {}".format(PLANTBOOK_TOKEN)}
+        _LOGGER.debug("Getting URL {}".format(url))
         try:
             result = requests.get(url, headers=headers)
             result.raise_for_status()
@@ -426,26 +434,28 @@ class Plant(Entity):
             # catastrophic error. bail.
             _LOGGER.error(err)
             return
-        res = result.json()
         _LOGGER.debug("Fetched data from {}:".format(url))
+        res = result.json()
         _LOGGER.debug(res)
-        self._set_conf_value('name', res['display_pid'])
-        self._set_conf_value('min_temperature', res['min_temp'])
-        self._set_conf_value('max_temperature', res['max_temp'])
-        self._set_conf_value('min_moisture', res['min_soil_moist'])
-        self._set_conf_value('max_moisture', res['max_soil_moist'])
-        self._set_conf_value('min_conductivity', res['min_soil_ec'])
-        self._set_conf_value('max_conductivity', res['max_soil_ec'])
-        self._set_conf_value('min_brightness', res['min_light_lux'])
-        self._set_conf_value('max_brightness', res['max_light_lux'])
+
+        self._set_conf_value(CONF_NAME, res['display_pid'])
+        self._set_conf_value(CONF_MIN_TEMPERATURE, res['min_temp'])
+        self._set_conf_value(CONF_MAX_TEMPERATURE, res['max_temp'])
+        self._set_conf_value(CONF_MIN_MOISTURE, res['min_soil_moist'])
+        self._set_conf_value(CONF_MAX_MOISTURE, res['max_soil_moist'])
+        self._set_conf_value(CONF_MIN_CONDUCTIVITY, res['min_soil_ec'])
+        self._set_conf_value(CONF_MAX_CONDUCTIVITY, res['max_soil_ec'])
+        self._set_conf_value(CONF_MIN_BRIGHTNESS, res['min_light_lux'])
+        self._set_conf_value(CONF_MIN_BRIGHTNESS, res['max_light_lux'])
 
     def _set_conf_value(self, var, val):
         """ Ensures that values explicitly set in the config is not overwritten """
-        if var not in self._config or self._config[var] is None:
-            self._config[var] = val
-            if var.startswith("min_") or var.startswitch("max_"):
-                minmax, reading = var.split("_")
-                self._limitmap[reading][minmax] = val
+        _LOGGER.debug("Plant: {} Var: {} Config: {} Value: {}".format(self.name, var, self._config.get(var), val))
+        if var.startswith("min_") or var.startswith("max_"):
+            default = globals()[f"DEFAULT_{var.upper()}"]
+            if var not in self._config or self._config[var] == default:
+                self._config[var] = val
+            self._limitmap[var] = self._config[var]
         if var == 'name' and self._plant_name is None:
             self._plant_name = val
 
@@ -475,7 +485,7 @@ class Plant(Entity):
         attrib = {
             ATTR_PROBLEM: self._problems,
             ATTR_SENSORS: self._readingmap,
-            ATTR_LIMITSS: self._limitmap,
+            ATTR_LIMITS: self._limitmap,
             ATTR_DICT_OF_UNITS_OF_MEASUREMENT: self._unit_of_measurement,
             ATTR_SPECIES: self._config.get(CONF_SPECIES),
             ATTR_NAME: self._plant_name,
