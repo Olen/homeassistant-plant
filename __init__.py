@@ -10,6 +10,7 @@ from homeassistant.components.recorder.util import execute, session_scope
 from homeassistant.const import (
     ATTR_TEMPERATURE,
     ATTR_UNIT_OF_MEASUREMENT,
+    ATTR_NAME,
     CONDUCTIVITY,
     CONF_SENSORS,
     CONF_NAME,
@@ -41,6 +42,8 @@ ATTR_PROBLEM = "problem"
 ATTR_SENSORS = "sensors"
 PROBLEM_NONE = "none"
 ATTR_MAX_BRIGHTNESS_HISTORY = "max_brightness"
+ATTR_SPECIES = "species"
+ATTR_LIMITS = "limits"
 
 # we're not returning only one value, we're returning a dict here. So we need
 # to have a separate literal for it to avoid confusion.
@@ -57,8 +60,10 @@ CONF_MIN_BRIGHTNESS = f"min_{READING_BRIGHTNESS}"
 CONF_MAX_BRIGHTNESS = f"max_{READING_BRIGHTNESS}"
 CONF_CHECK_DAYS = "check_days"
 CONF_SPECIES = "species"
-CONF_PLANTBOOK_CLIENT = "plantbook_client"
-CONF_PLANTBOOK_SECRET = "plantbook_secret"
+
+CONF_PLANTBOOK = "openplantbook"
+CONF_PLANTBOOK_CLIENT = "client_id"
+CONF_PLANTBOOK_SECRET = "secret"
 
 
 
@@ -104,14 +109,27 @@ PLANT_SCHEMA = vol.Schema(
         vol.Optional(CONF_MIN_BRIGHTNESS): cv.positive_int,
         vol.Optional(CONF_MAX_BRIGHTNESS): cv.positive_int,
         vol.Optional(CONF_CHECK_DAYS, default=DEFAULT_CHECK_DAYS): cv.positive_int,
-        vol.Optional(CONF_NAME): cv.string,
-        vol.Optional(CONF_SPECIES): cv.string,
+        vol.Optional(CONF_NAME): cv.str,
+        vol.Optional(CONF_SPECIES): cv.str,
+    }
+)
+PLANTBOOK_SCHEMA = vol.Schema(
+    {
+        vol.Required(CONF_PLANTBOOK_CLIENT): cv.string,
+        vol.Required(CONF_PLANTBOOK_SECRET): cv.string,
     }
 )
 
 DOMAIN = "plant"
 
-CONFIG_SCHEMA = vol.Schema({DOMAIN: {cv.string: PLANT_SCHEMA}}, extra=vol.ALLOW_EXTRA)
+CONFIG_SCHEMA = vol.Schema(
+    {
+        DOMAIN: {cv.string:(
+            vol.Any(PLANT_SCHEMA, PLANTBOOK_SCHEMA)
+        )}
+    },
+    extra=vol.ALLOW_EXTRA,
+)
 
 
 # Flag for enabling/disabling the loading of the history from the database.
@@ -123,14 +141,14 @@ PLANTBOOK_TOKEN = None
 async def async_setup(hass, config):
     """Set up the Plant component."""
     component = EntityComponent(_LOGGER, DOMAIN, hass)
-    global PLANTBOOK_TOKEN
-    if config[DOMAIN][CONF_PLANTBOOK_CLIENT] and config[DOMAIN][CONF_PLANTBOOK_SECRET] and PLANTBOOK_TOKEN is None:
-        PLANTBOOK_TOKEN = _get_plantbook_token(client_id=plant_config.get(CONF_PLANTBOOK_CLIENT), secret=plant_config.get(CONF_PLANTBOOK_SECRET))
-
+    if CONF_PLANTBOOK in config[DOMAIN]:
+        global PLANTBOOK_TOKEN
+        plantbook_config = config[DOMAIN][CONF_PLANTBOOK] 
+        PLANTBOOK_TOKEN = _get_plantbook_token(client_id=plantbook_config.get(CONF_PLANTBOOK_CLIENT), secret=plantbook_config.get(CONF_PLANTBOOK_SECRET))
 
     entities = []
     for plant_name, plant_config in config[DOMAIN].items():
-        if plant_name != CONF_PLANTBOOK_CLIENT and plant_name != CONF_PLANTBOOK_SECRET:
+        if plant_name != CONF_PLANTBOOK:
             _LOGGER.info("Added plant %s", plant_name)
             entity = Plant(plant_name, plant_config)
             entities.append(entity)
@@ -138,7 +156,9 @@ async def async_setup(hass, config):
     await component.async_add_entities(entities)
     return True
 
-def _get_plantbook_token(client_id, secret):
+def _get_plantbook_token(client_id=None, secret=None):
+    if not client_id or not secret:
+        return None
     """ Gets the token from the openplantbook API """
     url =  'https://open.plantbook.io/api/v1/token/'
     data = {
@@ -209,18 +229,24 @@ class Plant(Entity):
         self._config = config
         self._sensormap = {}
         self._readingmap = {}
+        self._limitmap = READINGS
         self._unit_of_measurement = {}
         for reading, entity_id in config["sensors"].items():
             self._sensormap[entity_id] = reading
             self._readingmap[reading] = entity_id
         self._state = None
         self._name = name
+        self._plant_name = self._config.get(CONF_NAME) 
         self._battery = None
         self._moisture = None
         self._conductivity = None
         self._temperature = None
         self._brightness = None
         self._problems = PROBLEM_NONE
+        self._species = self._config.get(CONF_SPEICES)
+        if PLANTBOOK_TOKEN and self._species:
+            self._get_plantbook_data()
+
 
         self._conf_check_days = 3  # default check interval: 3 days
         if CONF_CHECK_DAYS in self._config:
@@ -417,6 +443,12 @@ class Plant(Entity):
         """ Ensures that values explicitly set in the config is not overwritten """
         if var not in self._config or self._config[var] is None:
             self._config[var] = val
+            if var.startswith("min_") or var.startswitch("max_"):
+                minmax, reading = var.split("_")
+                self._limitmap[reading][minmax] = val
+        if var == 'name' and self._plant_name is None:
+            self._plant_name = val
+
 
     @property
     def should_poll(self):
@@ -443,7 +475,10 @@ class Plant(Entity):
         attrib = {
             ATTR_PROBLEM: self._problems,
             ATTR_SENSORS: self._readingmap,
+            ATTR_LIMITSS: self._limitmap,
             ATTR_DICT_OF_UNITS_OF_MEASUREMENT: self._unit_of_measurement,
+            ATTR_SPECIES: self._config.get(CONF_SPECIES),
+            ATTR_NAME: self._plant_name,
         }
 
         for reading in self._sensormap.values():
