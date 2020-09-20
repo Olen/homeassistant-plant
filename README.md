@@ -12,6 +12,7 @@ OpenPlantBook: https://open.plantbook.io/docs.html
 
 ## Long term
 * Update various plant-related frontends to pull data from the plant entity
+* Use config-flow and allow searching the API for plants when adding a new plant
 
 The plant-component can now be configured as follows:
 
