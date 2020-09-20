@@ -14,6 +14,11 @@ OpenPlantBook: https://open.plantbook.io/docs.html
 * Update various plant-related frontends to pull data from the plant entity
 * Use config-flow and allow searching the API for plants when adding a new plant
 
+
+## Usage
+* Copy the files to <config>/custom_components/plant/
+* Restart HA
+
 The plant-component can now be configured as follows:
 
 ```
