@@ -222,7 +222,6 @@ class Plant(Entity):
         self._config = config
         self._sensormap = {}
         self._readingmap = {}
-        self._limitmap = {}
         self._unit_of_measurement = {}
         for reading, entity_id in config["sensors"].items():
             self._sensormap[entity_id] = reading
@@ -430,10 +429,8 @@ class Plant(Entity):
             default = globals()[f"DEFAULT_{var.upper()}"]
             if var not in self._config or self._config[var] == default:
                 self._config[var] = val
-            self._limitmap[var] = self._config[var]
         if var == 'name' and self._plant_name is None:
             self._plant_name = val
-
 
     @property
     def should_poll(self):
@@ -460,7 +457,7 @@ class Plant(Entity):
         attrib = {
             ATTR_PROBLEM: self._problems,
             ATTR_SENSORS: self._readingmap,
-            ATTR_LIMITS: self._limitmap,
+            ATTR_LIMITS: {}
             ATTR_DICT_OF_UNITS_OF_MEASUREMENT: self._unit_of_measurement,
             ATTR_SPECIES: self._config.get(CONF_SPECIES),
             ATTR_NAME: self._plant_name,
@@ -471,6 +468,18 @@ class Plant(Entity):
 
         if self._brightness_history.max is not None:
             attrib[ATTR_MAX_BRIGHTNESS_HISTORY] = self._brightness_history.max
+
+        for var in [
+                CONF_MIN_TEMPERATURE,
+                CONF_MAX_TEMPERATURE,
+                CONF_MIN_MOISTURE,
+                CONF_MAX_MOISTURE,
+                CONF_MIN_CONDUCTIVITY,
+                CONF_MAX_CONDUCTIVITY,
+                CONF_MIN_BRIGHTNESS,
+                CONF_MIN_BRIGHTNESS,
+            ]:
+            attrib[ATTR_LIMITS][var] = self._config[var]
 
         return attrib
 
