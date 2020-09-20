@@ -19,33 +19,33 @@ plant:
     client_id: !secret plantbook_client_id
     secret: !secret plantbook_secret
 
-plant_1:
-  species: champagne mini rose
-  sensors:
-    moisture: sensor.mi_m_80eaca88xxxx
-    conductivity: sensor.mi_c_80eaca88xxxx
-    temperature: sensor.mi_t_80eaca88xxxx
-    brightness: sensor.mi_l_80eaca88xxxx
+  plant_1:
+    species: champagne mini rose
+    sensors:
+      moisture: sensor.mi_m_80eaca88xxxx
+      conductivity: sensor.mi_c_80eaca88xxxx
+      temperature: sensor.mi_t_80eaca88xxxx
+      brightness: sensor.mi_l_80eaca88xxxx
 ```
 
 You can also add parameters that will override the ones you receive from the API
 
 ```
-plant_2:
-  species: champagne mini rose
-  name: Little Rose
-  sensors:
-    moisture: sensor.mi_m_80eaca88xxxx
-    conductivity: sensor.mi_c_80eaca88xxxx
-    temperature: sensor.mi_t_80eaca88xxxx
-    brightness: sensor.mi_l_80eaca88xxxx
-  min_temperature: 25
-  max_moisture: 100
+  plant_2:
+    species: champagne mini rose
+    name: Little Rose
+    sensors:
+      moisture: sensor.mi_m_80eaca88xxxx
+      conductivity: sensor.mi_c_80eaca88xxxx
+      temperature: sensor.mi_t_80eaca88xxxx
+      brightness: sensor.mi_l_80eaca88xxxx
+    min_temperature: 25
+    max_moisture: 100
 ```
 
 The `species` must be written exactly as i appears in the "pid" in Openplantbook
 ```
-my_plant:
-  species: coleus 'marble'
+  my_plant:
+    species: coleus 'marble'
 ```
 If the species is not found, or no `species` is defined in the config, default values will be provided by the component
