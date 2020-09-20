@@ -6,9 +6,10 @@ OpenPlantBook: https://open.plantbook.io/docs.html
 * Added some new attributes to the Plant entity (name, species and a "limits"-dict)
 * Added new entry for "openplantbook" in the plant-config
 * Added functionality for fetching data from the OpenPlantBook API
+* Fix async handling of API-requests (moved to aiohttp)
 
 ## TODO
-* Fix async handling of API-requests
+* Better exception-handling
 
 ## Long term
 * Update various plant-related frontends to pull data from the plant entity

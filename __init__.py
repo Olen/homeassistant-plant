@@ -2,7 +2,7 @@
 from collections import deque
 from datetime import datetime, timedelta
 import logging
-import requests
+import aiohttp
 
 import voluptuous as vol
 
@@ -82,6 +82,8 @@ DEFAULT_MIN_MOISTURE = 20
 DEFAULT_MAX_MOISTURE = 60
 DEFAULT_MIN_CONDUCTIVITY = 500
 DEFAULT_MAX_CONDUCTIVITY = 3000
+DEFAULT_MIN_BRIGHTNESS = 0
+DEFAULT_MAX_BRIGHTNESS = 100000
 DEFAULT_CHECK_DAYS = 3
 
 SCHEMA_SENSORS = vol.Schema(
@@ -171,27 +173,13 @@ async def _get_plantbook_token(client_id=None, secret=None):
         'client_secret': secret
     }
     try:
-        # result = await requests.post(url, data = data)
-        result = requests.post(url, data = data)
-        result.raise_for_status()
-    except requests.exceptions.Timeout:
-        # Maybe set up for a retry, or continue in a retry loop
-        _LOGGER.error("Timeout connecting to {}".format(url))
-        return
-    except requests.exceptions.TooManyRedirects:
-        # Tell the user their URL was bad and try a different one
-        _LOGGER.error("Too many redirects connecting to {}".format(url))
-        return
-    except requests.exceptions.HTTPError as err:
-        _LOGGER.error(err)
-        return
-    except requests.exceptions.RequestException as err:
-        # catastrophic error. bail.
-        _LOGGER.error(err)
-        return
-    token = result.json().get('access_token')
-    _LOGGER.debug("Got token {} from {}".format(token, url))
-    PLANTBOOK_TOKEN = token
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, data=data) as result:
+                token = await result.json()
+                _LOGGER.debug("Got token {} from {}".format(token['access_token'], url))
+                PLANTBOOK_TOKEN = token['access_token']
+    except Exception as e
+        _LOGGER.error("Unable to get token from plantbook API: {}".format(e))
 
 
 
@@ -417,36 +405,23 @@ class Plant(Entity):
         headers = {"Authorization": "Bearer {}".format(PLANTBOOK_TOKEN)}
         _LOGGER.debug("Getting URL {}".format(url))
         try:
-            result = requests.get(url, headers=headers)
-            result.raise_for_status()
-        except requests.exceptions.Timeout:
-            # Maybe set up for a retry, or continue in a retry loop
-            _LOGGER.error("Timeout connecting to {}".format(url))
-            return
-        except requests.exceptions.TooManyRedirects:
-            # Tell the user their URL was bad and try a different one
-            _LOGGER.error("Too many redirects connecting to {}".format(url))
-            return
-        except requests.exceptions.HTTPError as err:
-            _LOGGER.error(err)
-            return
-        except requests.exceptions.RequestException as err:
-            # catastrophic error. bail.
-            _LOGGER.error(err)
-            return
-        _LOGGER.debug("Fetched data from {}:".format(url))
-        res = result.json()
-        _LOGGER.debug(res)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, headers=headers) as result:
+                    _LOGGER.debug("Fetched data from {}:".format(url))
+                    res = await result.json()
+                    _LOGGER.debug(res)
 
-        self._set_conf_value(CONF_NAME, res['display_pid'])
-        self._set_conf_value(CONF_MIN_TEMPERATURE, res['min_temp'])
-        self._set_conf_value(CONF_MAX_TEMPERATURE, res['max_temp'])
-        self._set_conf_value(CONF_MIN_MOISTURE, res['min_soil_moist'])
-        self._set_conf_value(CONF_MAX_MOISTURE, res['max_soil_moist'])
-        self._set_conf_value(CONF_MIN_CONDUCTIVITY, res['min_soil_ec'])
-        self._set_conf_value(CONF_MAX_CONDUCTIVITY, res['max_soil_ec'])
-        self._set_conf_value(CONF_MIN_BRIGHTNESS, res['min_light_lux'])
-        self._set_conf_value(CONF_MIN_BRIGHTNESS, res['max_light_lux'])
+                    self._set_conf_value(CONF_NAME, res['display_pid'])
+                    self._set_conf_value(CONF_MIN_TEMPERATURE, res['min_temp'])
+                    self._set_conf_value(CONF_MAX_TEMPERATURE, res['max_temp'])
+                    self._set_conf_value(CONF_MIN_MOISTURE, res['min_soil_moist'])
+                    self._set_conf_value(CONF_MAX_MOISTURE, res['max_soil_moist'])
+                    self._set_conf_value(CONF_MIN_CONDUCTIVITY, res['min_soil_ec'])
+                    self._set_conf_value(CONF_MAX_CONDUCTIVITY, res['max_soil_ec'])
+                    self._set_conf_value(CONF_MIN_BRIGHTNESS, res['min_light_lux'])
+                    self._set_conf_value(CONF_MIN_BRIGHTNESS, res['max_light_lux'])
+        except Exception as e
+            _LOGGER.error("Unable to get plant data from plantbook API: {}".format(e))
 
     def _set_conf_value(self, var, val):
         """ Ensures that values explicitly set in the config is not overwritten """
