@@ -2,7 +2,6 @@
 from collections import deque
 from datetime import datetime, timedelta
 import logging
-import aiohttp
 
 import voluptuous as vol
 
