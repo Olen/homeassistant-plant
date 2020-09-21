@@ -52,7 +52,7 @@ You can also add parameters that will override the ones you receive from the API
     max_moisture: 100
 ```
 
-The `species` must be written exactly as i appears in the "pid" in Openplantbook
+The `species` must be written exactly as i appears in the "pid" in Openplantbook - including quotation marks etc.:
 ```
   my_plant:
     species: coleus 'marble'
