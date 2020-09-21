@@ -15,7 +15,7 @@ from homeassistant.const import (
     CONDUCTIVITY,
     CONF_SENSORS,
     CONF_NAME,
-    UNIT_PERCENTAGE,
+    PERCENTAGE,
     STATE_OK,
     STATE_PROBLEM,
     STATE_UNAVAILABLE,
@@ -28,8 +28,9 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.entity_component import EntityComponent
 from homeassistant.helpers.event import async_track_state_change_event
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-PERCENTAGE = UNIT_PERCENTAGE
+
 _LOGGER = logging.getLogger(__name__)
 
 DEFAULT_NAME = "plant"
@@ -149,7 +150,7 @@ async def async_setup(hass, config):
     component = EntityComponent(_LOGGER, DOMAIN, hass)
     if CONF_PLANTBOOK in config[DOMAIN]:
         plantbook_config = config[DOMAIN][CONF_PLANTBOOK] 
-        await _get_plantbook_token(client_id=plantbook_config.get(CONF_PLANTBOOK_CLIENT), secret=plantbook_config.get(CONF_PLANTBOOK_SECRET))
+        await _get_plantbook_token(hass=hass, client_id=plantbook_config.get(CONF_PLANTBOOK_CLIENT), secret=plantbook_config.get(CONF_PLANTBOOK_SECRET))
 
     entities = []
     for plant_name, plant_config in config[DOMAIN].items():
@@ -161,7 +162,7 @@ async def async_setup(hass, config):
     await component.async_add_entities(entities)
     return True
 
-async def _get_plantbook_token(client_id=None, secret=None):
+async def _get_plantbook_token(hass, client_id=None, secret=None):
     if not client_id or not secret:
         return None
     global PLANTBOOK_TOKEN
@@ -173,11 +174,11 @@ async def _get_plantbook_token(client_id=None, secret=None):
         'client_secret': secret
     }
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.post(url, data=data) as result:
-                token = await result.json()
-                _LOGGER.debug("Got token {} from {}".format(token['access_token'], url))
-                PLANTBOOK_TOKEN = token['access_token']
+        session = async_get_clientsession(hass)
+        async with session.post(url, data=data) as result:
+            token = await result.json()
+            _LOGGER.debug("Got token {} from {}".format(token['access_token'], url))
+            PLANTBOOK_TOKEN = token['access_token']
     except Exception as e:
         _LOGGER.error("Unable to get token from plantbook API: {}".format(e))
 
@@ -404,21 +405,21 @@ class Plant(Entity):
         headers = {"Authorization": "Bearer {}".format(PLANTBOOK_TOKEN)}
         _LOGGER.debug("Getting URL {}".format(url))
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url, headers=headers) as result:
-                    _LOGGER.debug("Fetched data from {}:".format(url))
-                    res = await result.json()
-                    _LOGGER.debug(res)
+            session = async_get_clientsession(self.hass)
+            async with session.get(url, headers=headers) as result:
+                _LOGGER.debug("Fetched data from {}:".format(url))
+                res = await result.json()
+                _LOGGER.debug(res)
 
-                    self._set_conf_value(CONF_NAME, res['display_pid'])
-                    self._set_conf_value(CONF_MIN_TEMPERATURE, res['min_temp'])
-                    self._set_conf_value(CONF_MAX_TEMPERATURE, res['max_temp'])
-                    self._set_conf_value(CONF_MIN_MOISTURE, res['min_soil_moist'])
-                    self._set_conf_value(CONF_MAX_MOISTURE, res['max_soil_moist'])
-                    self._set_conf_value(CONF_MIN_CONDUCTIVITY, res['min_soil_ec'])
-                    self._set_conf_value(CONF_MAX_CONDUCTIVITY, res['max_soil_ec'])
-                    self._set_conf_value(CONF_MIN_BRIGHTNESS, res['min_light_lux'])
-                    self._set_conf_value(CONF_MAX_BRIGHTNESS, res['max_light_lux'])
+                self._set_conf_value(CONF_NAME, res['display_pid'])
+                self._set_conf_value(CONF_MIN_TEMPERATURE, res['min_temp'])
+                self._set_conf_value(CONF_MAX_TEMPERATURE, res['max_temp'])
+                self._set_conf_value(CONF_MIN_MOISTURE, res['min_soil_moist'])
+                self._set_conf_value(CONF_MAX_MOISTURE, res['max_soil_moist'])
+                self._set_conf_value(CONF_MIN_CONDUCTIVITY, res['min_soil_ec'])
+                self._set_conf_value(CONF_MAX_CONDUCTIVITY, res['max_soil_ec'])
+                self._set_conf_value(CONF_MIN_BRIGHTNESS, res['min_light_lux'])
+                self._set_conf_value(CONF_MAX_BRIGHTNESS, res['max_light_lux'])
         except Exception as e:
             _LOGGER.error("Unable to get plant data from plantbook API: {}".format(e))
 
