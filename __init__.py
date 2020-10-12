@@ -75,6 +75,8 @@ CONF_SENSOR_CONDUCTIVITY = READING_CONDUCTIVITY
 CONF_SENSOR_TEMPERATURE = READING_TEMPERATURE
 CONF_SENSOR_BRIGHTNESS = READING_BRIGHTNESS
 
+CONF_WARN_BRIGHTNESS = "warn_low_brightness"
+
 DEFAULT_MIN_BATTERY_LEVEL = 20
 DEFAULT_MIN_TEMPERATURE = 10
 DEFAULT_MAX_TEMPERATURE = 40
@@ -117,6 +119,7 @@ PLANT_SCHEMA = vol.Schema(
         vol.Optional(CONF_CHECK_DAYS, default=DEFAULT_CHECK_DAYS): cv.positive_int,
         vol.Optional(CONF_NAME): cv.string,
         vol.Optional(CONF_SPECIES): cv.string,
+        vol.Optional(CONF_WARN_BRIGHTNESS): cv.boolean,
     }
 )
 PLANTBOOK_SCHEMA = vol.Schema(
@@ -303,11 +306,12 @@ class Plant(Entity):
                     result.append(f"{sensor_name} unavailable")
                 else:
                     if sensor_name == READING_BRIGHTNESS:
-                        result.append(
-                            self._check_min(
-                                sensor_name, self._brightness_history.max, params
+                        if self._config.get(CONF_WARN_BRIGHTNESS):
+                            result.append(
+                                self._check_min(
+                                    sensor_name, self._brightness_history.max, params
+                                )
                             )
-                        )
                     else:
                         result.append(self._check_min(sensor_name, value, params))
                     result.append(self._check_max(sensor_name, value, params))
