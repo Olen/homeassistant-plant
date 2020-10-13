@@ -235,7 +235,6 @@ class Plant(Entity):
         self._state = None
         self._name = name
         self._plant_name = self._config.get(CONF_NAME) 
-        self._image = self._config.get(CONF_IMAGE 
         self._battery = None
         self._moisture = None
         self._conductivity = None
@@ -243,6 +242,9 @@ class Plant(Entity):
         self._brightness = None
         self._problems = PROBLEM_NONE
         self._species = self._config.get(CONF_SPECIES).lower().replace("_", " ")
+        self._image = self._config.get(CONF_IMAGE)
+        if not self._image and self._species:
+            self._image = '/local/images/plants/' . self._species . '.jpg'
         _LOGGER.debug("Adding plant {} Token {}".format(name, PLANTBOOK_TOKEN))
 
         self._conf_check_days = 3  # default check interval: 3 days
