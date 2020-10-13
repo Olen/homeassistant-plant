@@ -59,7 +59,7 @@ The `species` must be written exactly as i appears in the "pid" in Openplantbook
   my_plant:
     species: coleus 'marble'
 ```
-If the species is not found, or no `species` is defined in the config, default values will be provided by the component
+If the species is not found, or no `species` is defined in the config, default values for max/min will be provided by the component
 
 If image is not set, but species is set, the "image" attribute defaults to `/local/images/plants/<species>.jpg`
 
