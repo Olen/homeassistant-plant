@@ -46,6 +46,7 @@ PROBLEM_NONE = "none"
 ATTR_MAX_BRIGHTNESS_HISTORY = "max_brightness"
 ATTR_SPECIES = "species"
 ATTR_LIMITS = "limits"
+ATTR_IMAGE = "image"
 
 # we're not returning only one value, we're returning a dict here. So we need
 # to have a separate literal for it to avoid confusion.
@@ -62,6 +63,7 @@ CONF_MIN_BRIGHTNESS = f"min_{READING_BRIGHTNESS}"
 CONF_MAX_BRIGHTNESS = f"max_{READING_BRIGHTNESS}"
 CONF_CHECK_DAYS = "check_days"
 CONF_SPECIES = "species"
+CONF_IMAGE = "image"
 
 CONF_PLANTBOOK = "openplantbook"
 CONF_PLANTBOOK_CLIENT = "client_id"
@@ -119,7 +121,8 @@ PLANT_SCHEMA = vol.Schema(
         vol.Optional(CONF_CHECK_DAYS, default=DEFAULT_CHECK_DAYS): cv.positive_int,
         vol.Optional(CONF_NAME): cv.string,
         vol.Optional(CONF_SPECIES): cv.string,
-        vol.Optional(CONF_WARN_BRIGHTNESS): cv.boolean,
+        vol.Optional(CONF_IMAGE): cv.string,
+        vol.Optional(CONF_WARN_BRIGHTNESS, default=True): cv.boolean,
     }
 )
 PLANTBOOK_SCHEMA = vol.Schema(
@@ -232,6 +235,7 @@ class Plant(Entity):
         self._state = None
         self._name = name
         self._plant_name = self._config.get(CONF_NAME) 
+        self._image = self._config.get(CONF_IMAGE 
         self._battery = None
         self._moisture = None
         self._conductivity = None
@@ -465,6 +469,7 @@ class Plant(Entity):
             ATTR_DICT_OF_UNITS_OF_MEASUREMENT: self._unit_of_measurement,
             ATTR_SPECIES: self._config.get(CONF_SPECIES),
             ATTR_NAME: self._plant_name,
+            ATTR_IMAGE: self._image,
         }
 
         for reading in self._sensormap.values():
