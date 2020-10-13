@@ -4,6 +4,7 @@ OpenPlantBook: https://open.plantbook.io/docs.html
 
 ## Done
 * Added some new attributes to the Plant entity (name, species and a "limits"-dict)
+* Added "image" and an option not to warn about brightness issues (default is to warn)
 * Added new entry for "openplantbook" in the plant-config
 * Added functionality for fetching data from the OpenPlantBook API
 
