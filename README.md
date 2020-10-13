@@ -51,6 +51,7 @@ You can also add parameters that will override the ones you receive from the API
       brightness: sensor.mi_l_80eaca88xxxx
     min_temperature: 25
     max_moisture: 100
+    image: https://path.to/image.jpg
 ```
 
 The `species` must be written exactly as i appears in the "pid" in Openplantbook - including quotation marks etc.:
@@ -60,6 +61,9 @@ The `species` must be written exactly as i appears in the "pid" in Openplantbook
 ```
 If the species is not found, or no `species` is defined in the config, default values will be provided by the component
 
+If image is not set, but species is set, the "image" attribute defaults to `/local/images/plants/<species>.jpg`
+
+
 ## Attributes
 The component sets some attributes to each plant that is accessible in the "limits"-dictionary:
 ```
@@ -68,4 +72,6 @@ The component sets some attributes to each plant that is accessible in the "limi
 {% set limits = state_attr('plant.my_plant', 'limits') %}
 {{ limits['min_moisture'] }}
 ```
+
+These attributes can be used in e.g. automations, plant cards in lovelace etc.
 
