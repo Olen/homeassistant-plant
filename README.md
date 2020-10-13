@@ -63,6 +63,15 @@ If the species is not found, or no `species` is defined in the config, default v
 
 If image is not set, but species is set, the "image" attribute defaults to `/local/images/plants/<species>.jpg`
 
+## Problem reports
+By default, all problems (e.g. every time a sensor reports a value that is above or below the threshold set in "limits"), the plant state will be set to "problem".
+Because not all problems are easily solvable, there is an option to disable warnings for the brightness sensor.
+
+```
+  plant_2:
+    warn_low_brightness: false
+```
+With this setting, brightness below the set threshold will not result in a "problem" state.  Especially in some environments, there is not really much you can do about the brightness level, so there is no reason to be notified about it.
 
 ## Attributes
 The component sets some attributes to each plant that is accessible in the "limits"-dictionary:
