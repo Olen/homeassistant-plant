@@ -244,7 +244,7 @@ class Plant(Entity):
         self._species = self._config.get(CONF_SPECIES).lower().replace("_", " ")
         self._image = self._config.get(CONF_IMAGE)
         if not self._image and self._species:
-            self._image = '/local/images/plants/' . self._species . '.jpg'
+            self._image = '/local/images/plants/{}.jpg'.format(self._species)
         _LOGGER.debug("Adding plant {} Token {}".format(name, PLANTBOOK_TOKEN))
 
         self._conf_check_days = 3  # default check interval: 3 days
