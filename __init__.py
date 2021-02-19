@@ -241,7 +241,9 @@ class Plant(Entity):
         self._temperature = None
         self._brightness = None
         self._problems = PROBLEM_NONE
-        self._species = self._config.get(CONF_SPECIES).lower().replace("_", " ")
+        self._species = None
+        if self._config.get(CONF_SPECIES):
+            self._species = self._config.get(CONF_SPECIES).lower().replace("_", " ")
         self._image = self._config.get(CONF_IMAGE)
         if not self._image and self._species:
             self._image = '/local/images/plants/{}.jpg'.format(self._species)
