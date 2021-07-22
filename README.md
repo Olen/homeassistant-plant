@@ -61,7 +61,19 @@ The `species` must be written exactly as i appears in the "pid" in Openplantbook
 ```
 If the species is not found, or no `species` is defined in the config, default values for max/min will be provided by the component
 
-If image is not set, but species is set, the "image" attribute defaults to `/local/images/plants/<species>.jpg`
+If `image` is not set, but species is set, the "image" attribute defaults to `/local/images/plants/<species>.jpg`
+If `image` attribute set to "openplantbook" then an image is dynamically being assigned image_url from API.
+```
+plant:
+  Hydrangea:
+    species: hydrangea chinensis
+    image: openplantbook
+    sensors:
+      moisture: sensor.miflora_moi
+      temperature: sensor.miflora_tem
+      conductivity: sensor.miflora_fer
+      brightness: sensor.miflora_lux
+```
 
 ## Problem reports
 By default, all problems (e.g. every time a sensor reports a value that is above or below the threshold set in "limits"), the plant state will be set to "problem".
