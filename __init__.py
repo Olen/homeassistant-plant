@@ -154,7 +154,7 @@ async def async_setup(hass, config):
     """Set up the Plant component."""
     component = EntityComponent(_LOGGER, DOMAIN, hass)
     if CONF_PLANTBOOK in config[DOMAIN]:
-        plantbook_config = config[DOMAIN][CONF_PLANTBOOK] 
+        plantbook_config = config[DOMAIN][CONF_PLANTBOOK]
         await _get_plantbook_token(hass=hass, client_id=plantbook_config.get(CONF_PLANTBOOK_CLIENT), secret=plantbook_config.get(CONF_PLANTBOOK_SECRET))
 
     entities = []
@@ -234,7 +234,7 @@ class Plant(Entity):
             self._readingmap[reading] = entity_id
         self._state = None
         self._name = name
-        self._plant_name = self._config.get(CONF_NAME) 
+        self._plant_name = self._config.get(CONF_NAME)
         self._battery = None
         self._moisture = None
         self._conductivity = None
@@ -431,6 +431,7 @@ class Plant(Entity):
                 self._set_conf_value(CONF_MAX_CONDUCTIVITY, res['max_soil_ec'])
                 self._set_conf_value(CONF_MIN_BRIGHTNESS, res['min_light_lux'])
                 self._set_conf_value(CONF_MAX_BRIGHTNESS, res['max_light_lux'])
+                self._set_conf_value(CONF_IMAGE, res['image_url'])
         except Exception as e:
             _LOGGER.error("Unable to get plant data from plantbook API: {}".format(e))
 
@@ -443,6 +444,8 @@ class Plant(Entity):
                 self._config[var] = val
         if var == 'name' and self._plant_name is None:
             self._plant_name = val
+        if var == 'image' and self._image == 'openplantbook':
+            self._image = val
 
     @property
     def should_poll(self):
