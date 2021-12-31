@@ -18,9 +18,18 @@ OpenPlantBook: https://open.plantbook.io/docs.html
 
 
 ## Usage
-* Copy the files to <config>/custom_components/plant/
-* Restart HA
 
+### Installation
+This can be installed manually or through HACS
+#### Via HACS
+* Add this repo as a "Custom repository" with type "Integration"
+* Click "Install" in the new "Home Assistant Plant" card in HACS
+* Restart Home Assistant
+#### Manual Installation
+* Copy the `plant` directory to your server's `<config>/custom_components` directory
+* Restart Home Assistant
+
+### Configuration
 The plant-component can now be configured as follows:
 
 ```
