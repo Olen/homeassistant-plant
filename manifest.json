@@ -4,5 +4,6 @@
   "documentation": "https://www.home-assistant.io/integrations/plant",
   "after_dependencies": ["recorder"],
   "codeowners": ["@ChristianKuehnel"],
-  "quality_scale": "internal"
+  "quality_scale": "internal",
+  "version": "20210607"
 }
