@@ -12,9 +12,11 @@ OpenPlantBook: https://open.plantbook.io/docs.html
 * Better exception-handling
 
 ## Long term
-* Modify the plant integration to create plants as "Devices" and the various sensors, config etc. as device attributes
+* Modify the plant integration to create plants as "Devices" and the various sensors, config etc. as device attributes.
+
   https://community.home-assistant.io/t/re-re-cloud-plant-db-with-api-for-plantcard/326105/5
-* Update various plant-related frontends to pull data from the plant entity
+* Update various plant-related frontends to pull data from the relevant entities of plant device
+
   An updated example of the custom flower-card is here: https://github.com/Olen/lovelace-flower-card
 * Use config-flow and allow searching the API for plants when adding a new plant
 
