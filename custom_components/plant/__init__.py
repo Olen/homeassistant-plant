@@ -46,7 +46,7 @@ PROBLEM_NONE = "none"
 ATTR_MAX_BRIGHTNESS_HISTORY = "max_brightness"
 ATTR_SPECIES = "species"
 ATTR_LIMITS = "limits"
-ATTR_IMAGE = "image"
+ATTR_IMAGE = "entity_picture"
 
 # we're not returning only one value, we're returning a dict here. So we need
 # to have a separate literal for it to avoid confusion.
@@ -63,7 +63,7 @@ CONF_MIN_BRIGHTNESS = f"min_{READING_BRIGHTNESS}"
 CONF_MAX_BRIGHTNESS = f"max_{READING_BRIGHTNESS}"
 CONF_CHECK_DAYS = "check_days"
 CONF_SPECIES = "species"
-CONF_IMAGE = "image"
+CONF_IMAGE = "entity_picture"
 
 CONF_PLANTBOOK = "openplantbook"
 CONF_PLANTBOOK_CLIENT = "client_id"
@@ -244,9 +244,9 @@ class Plant(Entity):
         self._species = None
         if self._config.get(CONF_SPECIES):
             self._species = self._config.get(CONF_SPECIES).lower().replace("_", " ")
-        self._image = self._config.get(CONF_IMAGE)
-        if not self._image and self._species:
-            self._image = '/local/images/plants/{}.jpg'.format(self._species)
+        self._entity_picture = self._config.get(CONF_IMAGE)
+        if not self._entity_picture and self._species:
+            self._entity_picture = '/local/images/plants/{}.jpg'.format(self._species)
         _LOGGER.debug("Adding plant {} Token {}".format(name, PLANTBOOK_TOKEN))
 
         self._conf_check_days = 3  # default check interval: 3 days
@@ -444,8 +444,8 @@ class Plant(Entity):
                 self._config[var] = val
         if var == 'name' and self._plant_name is None:
             self._plant_name = val
-        if var == 'image' and self._image == 'openplantbook':
-            self._image = val
+        if var == 'entity_picture' and self._entity_picture == 'openplantbook':
+            self._entity_picture = val
 
     @property
     def should_poll(self):
@@ -476,7 +476,7 @@ class Plant(Entity):
             ATTR_DICT_OF_UNITS_OF_MEASUREMENT: self._unit_of_measurement,
             ATTR_SPECIES: self._config.get(CONF_SPECIES),
             ATTR_NAME: self._plant_name,
-            ATTR_IMAGE: self._image,
+            ATTR_IMAGE: self._entity_picture,
         }
 
         for reading in self._sensormap.values():

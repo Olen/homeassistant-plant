@@ -4,7 +4,7 @@ OpenPlantBook: https://open.plantbook.io/docs.html
 
 ## Done
 * Added some new attributes to the Plant entity (name, species and a "limits"-dict)
-* Added "image" and an option not to warn about brightness issues (default is to warn)
+* Added "entity_picture" and an option not to warn about brightness issues (default is to warn)
 * Added new entry for "openplantbook" in the plant-config
 * Added functionality for fetching data from the OpenPlantBook API
 
@@ -64,7 +64,7 @@ You can also add parameters that will override the ones you receive from the API
       brightness: sensor.mi_l_80eaca88xxxx
     min_temperature: 25
     max_moisture: 100
-    image: https://path.to/image.jpg
+    entity_picture: https://path.to/image.jpg
 ```
 
 The `species` must be written exactly as i appears in the "pid" in Openplantbook - including quotation marks etc.:
@@ -74,13 +74,13 @@ The `species` must be written exactly as i appears in the "pid" in Openplantbook
 ```
 If the species is not found, or no `species` is defined in the config, default values for max/min will be provided by the component
 
-If `image` is not set, but species is set, the "image" attribute defaults to `/local/images/plants/<species>.jpg`
-If `image` attribute set to "openplantbook" then an image is dynamically being assigned image_url from API.
+If `entity_picture` is not set, but species is set, the "entity_picture" attribute defaults to `/local/images/plants/<species>.jpg`
+If `entity_picture` attribute set to "openplantbook" then an image is dynamically being assigned image_url from API.
 ```
 plant:
   Hydrangea:
     species: hydrangea chinensis
-    image: openplantbook
+    entity_picture: openplantbook
     sensors:
       moisture: sensor.miflora_moi
       temperature: sensor.miflora_tem
