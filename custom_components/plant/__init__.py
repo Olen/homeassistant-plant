@@ -46,7 +46,8 @@ PROBLEM_NONE = "none"
 ATTR_MAX_BRIGHTNESS_HISTORY = "max_brightness"
 ATTR_SPECIES = "species"
 ATTR_LIMITS = "limits"
-ATTR_IMAGE = "entity_picture"
+ATTR_IMAGE = "image"
+ATTR_ENTITY_PICTURE = "entity_picture"
 
 # we're not returning only one value, we're returning a dict here. So we need
 # to have a separate literal for it to avoid confusion.
@@ -63,7 +64,8 @@ CONF_MIN_BRIGHTNESS = f"min_{READING_BRIGHTNESS}"
 CONF_MAX_BRIGHTNESS = f"max_{READING_BRIGHTNESS}"
 CONF_CHECK_DAYS = "check_days"
 CONF_SPECIES = "species"
-CONF_IMAGE = "entity_picture"
+CONF_IMAGE = "image"
+CONF_ENTITY_PICTURE = "entity_picture"
 
 CONF_PLANTBOOK = "openplantbook"
 CONF_PLANTBOOK_CLIENT = "client_id"
@@ -122,6 +124,7 @@ PLANT_SCHEMA = vol.Schema(
         vol.Optional(CONF_NAME): cv.string,
         vol.Optional(CONF_SPECIES): cv.string,
         vol.Optional(CONF_IMAGE): cv.string,
+        vol.Optional(CONF_ENTITY_PICTURE): cv.string,
         vol.Optional(CONF_WARN_BRIGHTNESS, default=True): cv.boolean,
     }
 )
@@ -244,9 +247,9 @@ class Plant(Entity):
         self._species = None
         if self._config.get(CONF_SPECIES):
             self._species = self._config.get(CONF_SPECIES).lower().replace("_", " ")
-        self._entity_picture = self._config.get(CONF_IMAGE)
-        if not self._entity_picture and self._species:
-            self._entity_picture = '/local/images/plants/{}.jpg'.format(self._species)
+        self._image = self._config.get(CONF_IMAGE) or self._config.get(CONF_ENTITY_PICTURE)
+        if not self._image and self._species:
+            self._image = '/local/images/plants/{}.jpg'.format(self._species)
         _LOGGER.debug("Adding plant {} Token {}".format(name, PLANTBOOK_TOKEN))
 
         self._conf_check_days = 3  # default check interval: 3 days
@@ -432,6 +435,7 @@ class Plant(Entity):
                 self._set_conf_value(CONF_MIN_BRIGHTNESS, res['min_light_lux'])
                 self._set_conf_value(CONF_MAX_BRIGHTNESS, res['max_light_lux'])
                 self._set_conf_value(CONF_IMAGE, res['image_url'])
+                self._set_conf_value(CONF_ENTITY_PICTURE, res['image_url'])
         except Exception as e:
             _LOGGER.error("Unable to get plant data from plantbook API: {}".format(e))
 
@@ -444,8 +448,8 @@ class Plant(Entity):
                 self._config[var] = val
         if var == 'name' and self._plant_name is None:
             self._plant_name = val
-        if var == 'entity_picture' and self._entity_picture == 'openplantbook':
-            self._entity_picture = val
+        if (var == 'image' or var == "entity_picture") and self._image == 'openplantbook':
+            self._image = val
 
     @property
     def should_poll(self):
@@ -476,7 +480,8 @@ class Plant(Entity):
             ATTR_DICT_OF_UNITS_OF_MEASUREMENT: self._unit_of_measurement,
             ATTR_SPECIES: self._config.get(CONF_SPECIES),
             ATTR_NAME: self._plant_name,
-            ATTR_IMAGE: self._entity_picture,
+            ATTR_IMAGE: self._image,
+            ATTR_ENTITY_PICTURE: self._image,
         }
 
         for reading in self._sensormap.values():
