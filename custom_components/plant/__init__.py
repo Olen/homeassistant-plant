@@ -181,11 +181,14 @@ async def _get_plantbook_token(hass, client_id=None, secret=None):
         session = async_get_clientsession(hass)
         async with session.post(url, data=data) as result:
             token = await result.json()
-            _LOGGER.debug("Got token {} from {}".format(token['access_token'], url))
-            PLANTBOOK_TOKEN = token['access_token']
+            _LOGGER.debug(
+                "Got token {}...{} from {}".format(
+                    token["access_token"][:4], token["access_token"][-4:], url
+                )
+            )
+            PLANTBOOK_TOKEN = token["access_token"]
     except Exception as e:
         _LOGGER.error("Unable to get token from plantbook API: {}".format(e))
-
 
 
 class Plant(Entity):
@@ -245,8 +248,12 @@ class Plant(Entity):
             self._species = self._config.get(CONF_SPECIES).lower().replace("_", " ")
         self._image = self._config.get(CONF_IMAGE)
         if not self._image and self._species:
-            self._image = '/local/images/plants/{}.jpg'.format(self._species)
-        _LOGGER.debug("Adding plant {} Token {}".format(name, PLANTBOOK_TOKEN))
+            self._image = "/local/images/plants/{}.jpg".format(self._species)
+        _LOGGER.debug(
+            "Adding plant {} Token {}...{}".format(
+                name, PLANTBOOK_TOKEN[:4], PLANTBOOK_TOKEN[-4:]
+            )
+        )
 
         self._conf_check_days = 3  # default check interval: 3 days
         if CONF_CHECK_DAYS in self._config:
@@ -407,7 +414,7 @@ class Plant(Entity):
         if not PLANTBOOK_TOKEN:
             _LOGGER.debug("No plantbook token for {}".format(self.name))
             return
-        url = "https://open.plantbook.io/api/v1/plant/detail/{}".format(self._species)
+        url = "https://open.plantbook.io/api/v1/plant/detail/{}/".format(self._species)
         headers = {"Authorization": "Bearer {}".format(PLANTBOOK_TOKEN)}
         _LOGGER.debug("Getting URL {}".format(url))
         try:
