@@ -5,8 +5,7 @@ import logging
 
 import voluptuous as vol
 
-from homeassistant.components.recorder.models import States
-from homeassistant.components.recorder.util import execute, session_scope
+from homeassistant.components.recorder import history
 from homeassistant.const import (
     ATTR_TEMPERATURE,
     ATTR_UNIT_OF_MEASUREMENT,
@@ -28,7 +27,7 @@ from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.entity_component import EntityComponent
 from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-
+from homeassistant.util import dt as dt_util
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -182,11 +181,14 @@ async def _get_plantbook_token(hass, client_id=None, secret=None):
         session = async_get_clientsession(hass)
         async with session.post(url, data=data) as result:
             token = await result.json()
-            _LOGGER.debug("Got token {} from {}".format(token['access_token'], url))
-            PLANTBOOK_TOKEN = token['access_token']
+            _LOGGER.debug(
+                "Got token {}...{} from {}".format(
+                    token["access_token"][:4], token["access_token"][-4:], url
+                )
+            )
+            PLANTBOOK_TOKEN = token["access_token"]
     except Exception as e:
         _LOGGER.error("Unable to get token from plantbook API: {}".format(e))
-
 
 
 class Plant(Entity):
@@ -246,8 +248,12 @@ class Plant(Entity):
             self._species = self._config.get(CONF_SPECIES).lower().replace("_", " ")
         self._image = self._config.get(CONF_IMAGE)
         if not self._image and self._species:
-            self._image = '/local/images/plants/{}.jpg'.format(self._species)
-        _LOGGER.debug("Adding plant {} Token {}".format(name, PLANTBOOK_TOKEN))
+            self._image = "/local/images/plants/{}.jpg".format(self._species)
+        _LOGGER.debug(
+            "Adding plant {} Token {}...{}".format(
+                name, PLANTBOOK_TOKEN[:4], PLANTBOOK_TOKEN[-4:]
+            )
+        )
 
         self._conf_check_days = 3  # default check interval: 3 days
         if CONF_CHECK_DAYS in self._config:
@@ -374,7 +380,7 @@ class Plant(Entity):
         This only needs to be done once during startup.
         """
 
-        start_date = datetime.now() - timedelta(days=self._conf_check_days)
+        start_date = dt_util.utcnow() - timedelta(days=self._conf_check_days)
         entity_id = self._readingmap.get(READING_BRIGHTNESS)
         if entity_id is None:
             _LOGGER.debug(
@@ -384,26 +390,22 @@ class Plant(Entity):
             return
 
         _LOGGER.debug("Initializing values for %s from the database", self._name)
-        with session_scope(hass=self.hass) as session:
-            query = (
-                session.query(States)
-                .filter(
-                    (States.entity_id == entity_id.lower())
-                    and (States.last_updated > start_date)
-                )
-                .order_by(States.last_updated.asc())
-            )
-            states = execute(query, to_native=True, validate_entity_ids=False)
+        lower_entity_id = entity_id.lower()
 
-            for state in states:
-                # filter out all None, NaN and "unknown" states
-                # only keep real values
-                try:
-                    self._brightness_history.add_measurement(
-                        int(state.state), state.last_updated
-                    )
-                except ValueError:
-                    pass
+        history_list = history.state_changes_during_period(
+            self.hass,
+            start_date,
+            entity_id = lower_entity_id,
+            no_attributes = True,
+        )
+        for state in history_list.get(lower_entity_id, []):
+            # filter out all None, NaN and "unknown" states
+            # only keep real values
+
+            with suppress(ValueError):
+                self._brightness_history.add_measurement(
+                    int(state.state), state.last_updated
+                )
         _LOGGER.debug("Initializing from database completed")
         self.async_write_ha_state()
 
@@ -412,7 +414,7 @@ class Plant(Entity):
         if not PLANTBOOK_TOKEN:
             _LOGGER.debug("No plantbook token for {}".format(self.name))
             return
-        url = "https://open.plantbook.io/api/v1/plant/detail/{}".format(self._species)
+        url = "https://open.plantbook.io/api/v1/plant/detail/{}/".format(self._species)
         headers = {"Authorization": "Bearer {}".format(PLANTBOOK_TOKEN)}
         _LOGGER.debug("Getting URL {}".format(url))
         try:
