@@ -249,11 +249,12 @@ class Plant(Entity):
         self._image = self._config.get(CONF_IMAGE)
         if not self._image and self._species:
             self._image = "/local/images/plants/{}.jpg".format(self._species)
-        _LOGGER.debug(
-            "Adding plant {} Token {}...{}".format(
-                name, PLANTBOOK_TOKEN[:4], PLANTBOOK_TOKEN[-4:]
+        if PLANTBOOK_TOKEN is not None:
+            _LOGGER.debug(
+                "Adding plant {} Token {}...{}".format(
+                    name, PLANTBOOK_TOKEN[:4], PLANTBOOK_TOKEN[-4:]
+                )
             )
-        )
 
         self._conf_check_days = 3  # default check interval: 3 days
         if CONF_CHECK_DAYS in self._config:
