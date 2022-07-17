@@ -434,6 +434,8 @@ class Plant(Entity):
                 self._set_conf_value(CONF_MIN_BRIGHTNESS, res['min_light_lux'])
                 self._set_conf_value(CONF_MAX_BRIGHTNESS, res['max_light_lux'])
                 self._set_conf_value(CONF_IMAGE, res['image_url'])
+                # update state with values from Plantbook
+                self._update_state()
         except Exception as e:
             _LOGGER.error("Unable to get plant data from plantbook API: {}".format(e))
 
