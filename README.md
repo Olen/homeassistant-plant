@@ -23,7 +23,12 @@ The new integration is fully configureable from the UI.
 * You can use a service call to replace the different sensors used to monitor the plant
 * I have upgraded the Lovelace flower card to make use of the new integration, and made it more flexible.
 
-## Usage
+## Dependencies
+
+Add the OpenPlantbook integration: https://github.com/Olen/home-assistant-openplantbook
+
+Add the updated Lovelace Flower Card: https://github.com/Olen/lovelace-flower-card/tree/new_plant
+
 
 ### Installation
 This can be installed manually or through HACS
