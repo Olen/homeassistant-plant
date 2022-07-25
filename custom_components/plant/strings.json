@@ -1,9 +1,53 @@
 {
   "title": "Plant Monitor",
-  "state": {
-    "_": {
-      "ok": "[%key:component::binary_sensor::state::problem::off%]",
-      "problem": "[%key:component::binary_sensor::state::problem::on%]"
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configure a plant",
+        "data": {
+          "plant_name": "Plant name",
+          "plant_species": "Species",
+          "temperature_sensor": "Temperature sensor",
+          "moisture_sensor": "Moisture sensor",
+          "conductivity_sensor": "Conductivity sensor",
+          "brightness_sensor": "Light sensor",
+          "humidity_sensor": "Humidity (environment) sensor"
+        },
+        "data_description": {
+          "plant_species": "Will be used for searching OpenPlantbook"
+        }
+      },
+      "select_species": {
+        "title": "Select speices from OpenPlantbook",
+        "description": "{desc}",
+        "data": {
+          "plant_species": "Species"
+        },
+        "menu_options": {
+          "user": "Go back"
+        }
+      },
+      "limits": {
+        "title": "Set limits",
+        "description": "# {plant_name}<br/>![Plant]({entity_picture})",
+        "data": {
+          "wrong_plant": "Wrong plant, go back and select another one...",
+          "display_pid": "Plant species to display",
+          "max_moisture": "Maximum moisture level",
+          "min_moisture": "Minimum moisture level",
+          "max_brightness": "Maximum light level",
+          "min_brightness": "Minimum light level",
+          "max_temperature": "Maximum temperature",
+          "min_temperature": "Minimum temperature",
+          "max_conductivity": "Maximum conductivity",
+          "min_conductivity": "Minimum conductivity",
+          "max_humidity": "Maximum humidity (environment)",
+          "min_humidity": "Minimum humidity (environment)"
+        }
+      }
+    },
+    "error": {
+      "opb_notfound": "Did not find this species in OpenPlantbook"
     }
   }
 }

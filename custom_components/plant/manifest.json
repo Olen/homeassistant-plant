@@ -6,5 +6,6 @@
   "after_dependencies": ["recorder"],
   "codeowners": ["@ChristianKuehnel"],
   "quality_scale": "internal",
-  "version": "0.2"
+  "version": "0.2",
+  "config_flow": true
 }
