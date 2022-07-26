@@ -1,9 +1,22 @@
 replace_sensor:
   description: Replaces an external sensor
+  # target:
+  #   entity:
+  #     domain: plant
   fields:
     meter_entity:
+      name: Meter entity
       description: The meter entity to replace the sensor for
       example: plant.my_plant_current_temperature
+      required: true
+      selector:
+        entity:
+          domain: plant
     new_sensor:
+      name: Sensor entity
       description: Entity id of the new sensor
       example: sensor.new_temperature_outdoor
+      required: true
+      selector:
+        entity:
+          domain: sensor

@@ -1,12 +1,8 @@
 """Config flow for Custom Plant integration."""
 
-from ctypes.wintypes import BOOLEAN
-from doctest import OPTIONFLAGS_BY_NAME
 import logging
 
-from async_timeout import timeout
 import voluptuous as vol
-from zeroconf import instance_name_from_service_info
 
 from homeassistant import config_entries, data_entry_flow
 from homeassistant.components.sensor import (

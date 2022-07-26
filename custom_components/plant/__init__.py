@@ -1,21 +1,10 @@
 """Support for monitoring plants."""
 from __future__ import annotations
 
-from collections import deque
-import copy
-from datetime import datetime, timedelta
-from email.policy import default
 import logging
-from modulefinder import LOAD_CONST
-import random
-from tkinter.messagebox import NO
-from unittest.mock import NonCallableMagicMock
-
-from pydantic import NoneBytes
-import voluptuous as vol
 
 from homeassistant.components.recorder import history
-from homeassistant.components.sensor import ENTITY_ID_FORMAT, PLATFORM_SCHEMA
+from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     ATTR_ENTITY_PICTURE,
@@ -33,17 +22,16 @@ from homeassistant.const import (
     TEMP_CELSIUS,
 )
 from homeassistant.core import HomeAssistant, ServiceCall, callback
-from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import device_registry as dr, entity_registry as er
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
-from homeassistant.helpers.entity import Entity, EntityCategory
+from homeassistant.helpers.entity import (
+    Entity,
+    EntityCategory,
+    async_generate_entity_id,
+)
 from homeassistant.helpers.entity_component import EntityComponent
-from homeassistant.helpers.entity_platform import EntityPlatform
-from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.helpers.restore_state import RestoreEntity
-from homeassistant.util import dt as dt_util, slugify
 
 from .const import (
     CONF_CHECK_DAYS,
@@ -81,10 +69,6 @@ from .const import (
     READING_MOISTURE,
     READING_TEMPERATURE,
 )
-
-# STATE_OK = "OK"
-# STATE_PROBLEM = "Problem"
-
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -131,63 +115,6 @@ DEFAULT_CHECK_DAYS = 3
 STATE_LOW = "Low"
 STATE_HIGH = "High"
 
-"""
-SCHEMA_SENSORS = vol.Schema(
-    {
-        vol.Optional(CONF_SENSOR_BATTERY_LEVEL): cv.entity_id,
-        vol.Optional(CONF_SENSOR_MOISTURE): cv.entity_id,
-        vol.Optional(CONF_SENSOR_CONDUCTIVITY): cv.entity_id,
-        vol.Optional(CONF_SENSOR_TEMPERATURE): cv.entity_id,
-        vol.Optional(CONF_SENSOR_BRIGHTNESS): cv.entity_id,
-    }
-)
-
-PLANT_SCHEMA = vol.Schema(
-    {
-        vol.Required(CONF_SENSORS): vol.Schema(SCHEMA_SENSORS),
-        vol.Optional(
-            CONF_MIN_BATTERY_LEVEL, default=DEFAULT_MIN_BATTERY_LEVEL
-        ): cv.positive_int,
-        vol.Optional(CONF_MIN_TEMPERATURE, default=DEFAULT_MIN_TEMPERATURE): vol.Coerce(
-            float
-        ),
-        vol.Optional(CONF_MAX_TEMPERATURE, default=DEFAULT_MAX_TEMPERATURE): vol.Coerce(
-            float
-        ),
-        vol.Optional(CONF_MIN_MOISTURE, default=DEFAULT_MIN_MOISTURE): cv.positive_int,
-        vol.Optional(CONF_MAX_MOISTURE, default=DEFAULT_MAX_MOISTURE): cv.positive_int,
-        vol.Optional(
-            CONF_MIN_CONDUCTIVITY, default=DEFAULT_MIN_CONDUCTIVITY
-        ): cv.positive_int,
-        vol.Optional(
-            CONF_MAX_CONDUCTIVITY, default=DEFAULT_MAX_CONDUCTIVITY
-        ): cv.positive_int,
-        vol.Optional(
-            CONF_MIN_BRIGHTNESS, default=DEFAULT_MIN_BRIGHTNESS
-        ): cv.positive_int,
-        vol.Optional(
-            CONF_MAX_BRIGHTNESS, default=DEFAULT_MAX_BRIGHTNESS
-        ): cv.positive_int,
-        vol.Optional(CONF_CHECK_DAYS, default=DEFAULT_CHECK_DAYS): cv.positive_int,
-        vol.Optional(CONF_NAME): cv.string,
-        vol.Optional(CONF_SPECIES): cv.string,
-        vol.Optional(CONF_IMAGE): cv.string,
-        vol.Optional(CONF_WARN_BRIGHTNESS, default=True): cv.boolean,
-    }
-)
-PLANTBOOK_SCHEMA = vol.Schema(
-    {
-        vol.Required(CONF_PLANTBOOK_CLIENT): cv.string,
-        vol.Required(CONF_PLANTBOOK_SECRET): cv.string,
-    }
-)
-
-
-CONFIG_SCHEMA = vol.Schema(
-    {DOMAIN: {cv.string: (vol.Any(PLANT_SCHEMA, PLANTBOOK_SCHEMA))}},
-    extra=vol.ALLOW_EXTRA,
-)
-"""
 
 # Flag for enabling/disabling the loading of the history from the database.
 # This feature is turned off right now as its tests are not 100% stable.
@@ -205,8 +132,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Set up OpenPlantBook from a config entry."""
     hass.data.setdefault(DOMAIN, {})
 
-    # If you need to create some dummy sensors to play with
-    # await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
+    # We are creating some dummy sensors to play with
+    await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
 
     plant = PlantDevice(hass, entry)
     pspieces = PlantSpecies(hass, entry, plant)
@@ -251,9 +178,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
         pcurh,
     ]
     await component.async_add_entities(plant_entities)
-    _LOGGER.info("Baz")
 
-    # hass.data[DOMAIN]["12345"] = PlantSpecies(hass, entry)
     device_id = plant.device_id
     await _plant_add_to_device_registry(hass, plant_entities, device_id)
 
@@ -274,13 +199,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
         moisture=pcurm,
         conductivity=pcurc,
         brightness=pcurb,
+        humidity=pcurh,
     )
     plant.add_species(species=pspieces)
-
-    # _LOGGER.info("GOC id: %s", goc)
-    # _LOGGER.info("Entry id: %s", entry.entry_id)
-    # all_entities = er.async_entries_for_config_entry(erreg, entry.entry_id)
-    # _LOGGER.info("New entities: %s", all_entities)
 
     async def replace_sensor(call: ServiceCall) -> None:
         meter_entity = call.data.get("meter_entity")
@@ -355,7 +276,7 @@ class PlantDevice(Entity):
     def __init__(self, hass: HomeAssistant, config: ConfigEntry) -> None:
         """Initialize the Plant component."""
         self._config = config
-        # _LOGGER.info("Init plantdevice %s", config.data)
+        self._hass = hass
         self._attr_name = config.data[FLOW_PLANT_INFO][FLOW_PLANT_NAME]
         self._config_entries = []
         self._attr_entity_picture = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
@@ -363,7 +284,12 @@ class PlantDevice(Entity):
         )
         self._attr_unique_id = self._config.entry_id
 
-        self.entity_id = ENTITY_ID_FORMAT.format(slugify(self.name.replace(" ", "_")))
+        self.entity_id = async_generate_entity_id(
+            f"{DOMAIN}.{{}}", self.name, current_ids={}
+        )
+
+        self._device_id = None
+
         self.species = None
 
         self.max_moisture = None
@@ -389,20 +315,6 @@ class PlantDevice(Entity):
         self.temperature_status = None
         self.humidity_status = None
 
-        # Is there a better way to add an entity to the device registry?
-        device_registry = dr.async_get(hass)
-        device_registry.async_get_or_create(
-            config_entry_id=config.entry_id,
-            identifiers={(DOMAIN, self.entity_id)},
-            name=self.name,
-            model=config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS][OPB_DISPLAY_PID],
-        )
-        _LOGGER.info("Getting device for %s entity id %s", DOMAIN, self.unique_id)
-        device = device_registry.async_get_device(
-            identifiers={(DOMAIN, self.entity_id)}
-        )
-        self._device_id = device.id
-
     @property
     def entity_category(self):
         return None
@@ -419,6 +331,14 @@ class PlantDevice(Entity):
             "name": self.name,
             "config_entries": self._config_entries,
         }
+
+    @property
+    def display_species(self) -> str:
+        if self.species is None:
+            return STATE_UNKNOWN
+        if not "display_species" in self.species.extra_state_attributes:
+            return STATE_UNKNOWN
+        return self.species.extra_state_attributes["display_species"]
 
     @property
     def extra_state_attributes(self) -> dict:
@@ -479,7 +399,7 @@ class PlantDevice(Entity):
         """Set new entity_picture"""
         self._attr_entity_picture = image_url
 
-    def add_species(self, species: str | None) -> None:
+    def add_species(self, species: Entity | None) -> None:
         """Set new species"""
         self.species = species
 
@@ -514,12 +434,14 @@ class PlantDevice(Entity):
         temperature: Entity | None,
         conductivity: Entity | None,
         brightness: Entity | None,
+        humidity: Entity | None,
     ) -> None:
         """Add the sensor entities"""
         self.sensor_moisture = moisture
         self.sensor_temperature = temperature
         self.sensor_conductivity = conductivity
         self.sensor_brightness = brightness
+        self.sensor_humidity = humidity
 
     def update(self) -> None:
         """Run on every update of the entities"""
@@ -572,7 +494,7 @@ class PlantDevice(Entity):
             if int(self.sensor_humidity.state) < int(self.min_humidity.state):
                 self.humidity_status = STATE_LOW
                 state = STATE_PROBLEM
-            elif int(self.sensor_humidity.state) > int(self.humidity.state):
+            elif int(self.sensor_humidity.state) > int(self.max_humidity.state):
                 self.humidity_status = STATE_HIGH
                 state = STATE_PROBLEM
             else:
@@ -582,6 +504,29 @@ class PlantDevice(Entity):
         # How to handle brightness?
 
         self._attr_state = state
+        self.update_registry()
+
+    def update_registry(self) -> None:
+        """Update registry with correct data"""
+        # Is there a better way to add an entity to the device registry?
+
+        device_registry = dr.async_get(self._hass)
+        device_registry.async_get_or_create(
+            config_entry_id=self._config.entry_id,
+            identifiers={(DOMAIN, self.unique_id)},
+            name=self.name,
+            model=self.display_species,
+        )
+        if self._device_id is None:
+            _LOGGER.info("Getting device for %s entity id %s", DOMAIN, self.unique_id)
+            device = device_registry.async_get_device(
+                identifiers={(DOMAIN, self.unique_id)}
+            )
+            self._device_id = device.id
+
+    async def async_added_to_hass(self) -> None:
+        _LOGGER.info("Plant added to hass, updating registry")
+        self.update_registry()
 
 
 class PlantSpecies(RestoreEntity):
@@ -594,9 +539,14 @@ class PlantSpecies(RestoreEntity):
         self._config = config
         self._attr_name = f"{config.data[FLOW_PLANT_INFO][FLOW_PLANT_NAME]} Species"
         self._attr_state = config.data[FLOW_PLANT_INFO][FLOW_PLANT_SPECIES]
+        self._display_species = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS][
+            OPB_DISPLAY_PID
+        ]
         self._plant = plantdevice
         self._attr_unique_id = f"{self._config.entry_id}-species"
-        self.entity_id = ENTITY_ID_FORMAT.format(slugify(self.name.replace(" ", "_")))
+        self.entity_id = async_generate_entity_id(
+            f"{DOMAIN}.{{}}", self.name, current_ids={}
+        )
 
     @property
     def entity_category(self):
@@ -611,6 +561,10 @@ class PlantSpecies(RestoreEntity):
             "name": self.name,
         }
 
+    @property
+    def extra_state_attributes(self) -> Mapping[str, Any] | None:
+        return {"display_species": self._display_species}
+
     async def async_update(self):
         """Run on every update"""
 
@@ -619,10 +573,10 @@ class PlantSpecies(RestoreEntity):
         new_species = self.hass.states.get(self.entity_id).state
         if new_species != self._attr_state and self._attr_state != STATE_UNKNOWN:
             opb_plant = None
+            opb_ok = False
             _LOGGER.info(
                 "Species changed from '%s' to '%s'", self._attr_state, new_species
             )
-            display_species = new_species
 
             if "openplantbook" in self.hass.services.async_services():
                 _LOGGER.info("We have OpenPlantbook configured")
@@ -640,7 +594,7 @@ class PlantSpecies(RestoreEntity):
                     )
 
                     _LOGGER.info("Result: %s", opb_plant)
-                    _LOGGER.info("Result A: %s", opb_plant.attributes)
+                    opb_ok = True
                 except AttributeError:
                     _LOGGER.warning("Did not find '%s' in OpenPlantbook", new_species)
                     await self.hass.services.async_call(
@@ -667,19 +621,43 @@ class PlantSpecies(RestoreEntity):
                         opb_attribute
                     ]
                 self._attr_state = opb_plant.attributes[OPB_PID]
+                _LOGGER.info(
+                    "Setting display_species to %s",
+                    opb_plant.attributes[OPB_DISPLAY_PID],
+                )
+
+                self._display_species = opb_plant.attributes[OPB_DISPLAY_PID]
                 self.async_write_ha_state()
-                display_species = opb_plant.attributes[OPB_DISPLAY_PID]
 
             else:
-                # We just accept whatever species the user sets.
-                # They can always change it later
-                _LOGGER.info("OpenPlantbook is not configured")
+                if opb_ok:
+                    _LOGGER.warning("Did not find '%s' in OpenPlantbook", new_species)
+                    await self.hass.services.async_call(
+                        domain="persistent_notification",
+                        service="create",
+                        service_data={
+                            "title": "Species not found",
+                            "message": f"Could not find '{new_species}' in OpenPlantbook. See the state of openplantbook.search_result for suggestions",
+                        },
+                    )
+                    # Just do a plantbook search to allow the user to find a better result
+                    await self.hass.services.async_call(
+                        domain="openplantbook",
+                        service="search",
+                        service_data={"alias": new_species},
+                        blocking=False,
+                        limit=30,
+                    )
+                else:
+                    # We just accept whatever species the user sets.
+                    # They can always change it later
 
-            device_registry = dr.async_get(self.hass)
-            device_registry.async_update_device(
-                device_id=self._plant.device_id,
-                model=display_species,
-            )
+                    self._display_species = new_species
+                    self.async_write_ha_state()
+
+                return True
+
+            self._plant.update_registry()
 
     async def async_added_to_hass(self) -> None:
         """Restore state of species on startup."""
@@ -688,6 +666,12 @@ class PlantSpecies(RestoreEntity):
         if not state:
             return
         self._attr_state = state.state
+        _LOGGER.info("Restoring for %s: %s", self.entity_id, state.attributes)
+        if "display_species" in state.attributes:
+            self._display_species = state.attributes["display_species"]
+        _LOGGER.info(
+            "Species added to hass - updating registry: %s", self.state_attributes
+        )
 
         async_dispatcher_connect(
             self.hass, DATA_UPDATED, self._schedule_immediate_update
@@ -707,7 +691,9 @@ class PlantMinMax(RestoreEntity):
         """Initialize the Plant component."""
         self._config = config
         self._plant = plantdevice
-        self.entity_id = ENTITY_ID_FORMAT.format(slugify(self.name.replace(" ", "_")))
+        self.entity_id = async_generate_entity_id(
+            f"{DOMAIN}.{{}}", self.name, current_ids={}
+        )
         if not self._attr_state or self._attr_state == STATE_UNKNOWN:
             self._attr_state = self._default_state
 
@@ -915,6 +901,10 @@ class PlantMaxHumidity(PlantMinMax):
         self._attr_unique_id = f"{config.entry_id}-max-humidity"
         super().__init__(hass, config, plantdevice)
 
+    @property
+    def device_class(self):
+        return "humidity"
+
 
 class PlantMinHumidity(PlantMinMax):
     """Entity class for min conductivity threshold"""
@@ -932,6 +922,10 @@ class PlantMinHumidity(PlantMinMax):
         self._attr_unique_id = f"{config.entry_id}-min-humidity"
         super().__init__(hass, config, plantdevice)
 
+    @property
+    def device_class(self):
+        return "humidity"
+
 
 class PlantCurrentStatus(RestoreEntity):
     """Parent class for the meter classes below"""
@@ -944,11 +938,9 @@ class PlantCurrentStatus(RestoreEntity):
         self._config = config
         self._default_state = 0
         self._plant = plantdevice
-        self.entity_id = ENTITY_ID_FORMAT.format(slugify(self.name.replace(" ", "_")))
-        # self.entity_slug = self.name
-        # self.entity_id = ENTITY_ID_FORMAT.format(
-        #     slugify(self.entity_slug.replace(" ", "_"))
-        # )
+        self.entity_id = async_generate_entity_id(
+            f"{DOMAIN}.{{}}", self.name, current_ids={}
+        )
         if not self._attr_state or self._attr_state == STATE_UNKNOWN:
             self._attr_state = self._default_state
 
@@ -983,7 +975,10 @@ class PlantCurrentStatus(RestoreEntity):
         state = await self.async_get_last_state()
         if not state:
             return
-        self._attr_state = state.state
+        # We do not restore the state for these they are red from the external sensor anyway
+        # self._attr_state = state.state
+        self._attr_state = STATE_UNKNOWN
+
         if "external_sensor" in state.attributes:
             _LOGGER.info(
                 "External sensor for %s in state-attributes: %s",
@@ -1017,6 +1012,10 @@ class PlantCurrentBrightness(PlantCurrentStatus):
         )
         super().__init__(hass, config, plantdevice)
 
+    @property
+    def device_class(self):
+        return SensorDeviceClass.ILLUMINANCE
+
 
 class PlantCurrentConductivity(PlantCurrentStatus):
     """Entity class for the current condictivity meter"""
@@ -1035,6 +1034,10 @@ class PlantCurrentConductivity(PlantCurrentStatus):
 
         super().__init__(hass, config, plantdevice)
 
+    @property
+    def device_class(self):
+        return None
+
 
 class PlantCurrentMoisture(PlantCurrentStatus):
     """Entity class for the current moisture meter"""
@@ -1050,6 +1053,10 @@ class PlantCurrentMoisture(PlantCurrentStatus):
         self._attr_icon = "mdi:water"
 
         super().__init__(hass, config, plantdevice)
+
+    @property
+    def device_class(self):
+        return SensorDeviceClass.HUMIDITY
 
 
 class PlantCurrentTempertature(PlantCurrentStatus):
@@ -1070,7 +1077,7 @@ class PlantCurrentTempertature(PlantCurrentStatus):
 
     @property
     def device_class(self):
-        return "temperature"
+        return SensorDeviceClass.TEMPERATURE
 
 
 class PlantCurrentHumidity(PlantCurrentStatus):
@@ -1089,4 +1096,4 @@ class PlantCurrentHumidity(PlantCurrentStatus):
 
     @property
     def device_class(self):
-        return "humidity"
+        return SensorDeviceClass.HUMIDITY

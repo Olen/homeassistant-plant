@@ -1,10 +1,4 @@
 """Dummy sensors for monitoring plants."""
-
-#
-# This file is only used to add some dummy sensors if installed in
-# a development instance of home assistant without real sensors
-#
-
 from datetime import datetime, timedelta
 import logging
 import random
