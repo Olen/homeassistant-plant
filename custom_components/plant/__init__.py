@@ -6,8 +6,14 @@ from contextlib import suppress
 from datetime import datetime, timedelta
 import logging
 
+from homeassistant.components.integration.const import METHOD_TRAPEZOIDAL
+from homeassistant.components.integration.sensor import IntegrationSensor
 from homeassistant.components.recorder import get_instance, history
-from homeassistant.components.sensor import SensorDeviceClass
+from homeassistant.components.sensor import (
+    STATE_CLASS_MEASUREMENT,
+    RestoreSensor,
+    SensorDeviceClass,
+)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     ATTR_ENTITY_PICTURE,
@@ -44,12 +50,14 @@ from .const import (
     CONF_MAX_BRIGHTNESS,
     CONF_MAX_CONDUCTIVITY,
     CONF_MAX_HUMIDITY,
+    CONF_MAX_MMOL,
     CONF_MAX_MOISTURE,
     CONF_MAX_TEMPERATURE,
     CONF_MIN_BATTERY_LEVEL,
     CONF_MIN_BRIGHTNESS,
     CONF_MIN_CONDUCTIVITY,
     CONF_MIN_HUMIDITY,
+    CONF_MIN_MMOL,
     CONF_MIN_MOISTURE,
     CONF_MIN_TEMPERATURE,
     CONF_PLANTBOOK,
@@ -152,11 +160,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     pminc = PlantMinConductivity(hass, entry, plant)
     pmaxh = PlantMaxHumidity(hass, entry, plant)
     pminh = PlantMinHumidity(hass, entry, plant)
+    pmaxmm = PlantMaxMmol(hass, entry, plant)
+    pminmm = PlantMinMmol(hass, entry, plant)
 
     pcurb = PlantCurrentBrightness(hass, entry, plant)
     pcurc = PlantCurrentConductivity(hass, entry, plant)
     pcurm = PlantCurrentMoisture(hass, entry, plant)
-    pcurt = PlantCurrentTempertature(hass, entry, plant)
+    pcurt = PlantCurrentTemperature(hass, entry, plant)
     pcurh = PlantCurrentHumidity(hass, entry, plant)
 
     hass.data[DOMAIN][entry.entry_id] = plant
@@ -176,6 +186,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
         pminc,
         pmaxh,
         pminh,
+        pmaxmm,
+        pminmm,
         pcurb,
         pcurc,
         pcurm,
@@ -184,6 +196,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     ]
     await component.async_add_entities(plant_entities)
 
+    brightness_integral = IntegrationSensor(
+        integration_method=METHOD_TRAPEZOIDAL,
+        name=pcurb.name + " Integral",
+        round_digits=2,
+        source_entity=pcurb.entity_id,
+        unit_time="d",
+        unique_id=None,
+        unit_prefix=None,
+    )
+
+    await component.async_add_entities([brightness_integral])
     device_id = plant.device_id
     await _plant_add_to_device_registry(hass, plant_entities, device_id)
 
@@ -198,6 +221,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
         min_conductivity=pminc,
         max_humidity=pmaxh,
         min_humidity=pminh,
+        max_mmol=pmaxmm,
+        min_mmol=pminmm,
     )
     plant.add_sensors(
         temperature=pcurt,
@@ -307,6 +332,8 @@ class PlantDevice(Entity):
         self.min_brightness = None
         self.max_humidity = None
         self.min_humidity = None
+        self.max_mmol = None
+        self.min_mmol = None
 
         self.sensor_moisture = None
         self.sensor_temperature = None
@@ -385,6 +412,10 @@ class PlantDevice(Entity):
                     "max": self.max_humidity.entity_id,
                     "min": self.min_humidity.entity_id,
                 },
+                "mmol": {
+                    "max": self.max_mmol.entity_id,
+                    "min": self.min_mmol.entity_id,
+                },
             },
         }
         if self.sensor_moisture is not None:
@@ -420,6 +451,8 @@ class PlantDevice(Entity):
         min_brightness: Entity | None,
         max_humidity: Entity | None,
         min_humidity: Entity | None,
+        max_mmol: Entity | None,
+        min_mmol: Entity | None,
     ) -> None:
         """Add the threshold entities"""
         self.max_moisture = max_moisture
@@ -432,6 +465,8 @@ class PlantDevice(Entity):
         self.min_brightness = min_brightness
         self.max_humidity = max_humidity
         self.min_humidity = min_humidity
+        self.max_mmol = max_mmol
+        self.min_mmol = min_mmol
 
     def add_sensors(
         self,
@@ -456,6 +491,7 @@ class PlantDevice(Entity):
         if (
             self.sensor_moisture is not None
             and self.sensor_moisture.state != STATE_UNKNOWN
+            and self.sensor_moisture.state is not None
         ):
             if int(self.sensor_moisture.state) < int(self.min_moisture.state):
                 self.moisture_status = STATE_LOW
@@ -469,6 +505,7 @@ class PlantDevice(Entity):
         if (
             self.sensor_conductivity is not None
             and self.sensor_conductivity.state != STATE_UNKNOWN
+            and self.sensor_conductivity.state is not None
         ):
             if int(self.sensor_conductivity.state) < int(self.min_conductivity.state):
                 self.conductivity_status = STATE_LOW
@@ -482,6 +519,7 @@ class PlantDevice(Entity):
         if (
             self.sensor_temperature is not None
             and self.sensor_temperature.state != STATE_UNKNOWN
+            and self.sensor_temperature.state is not None
         ):
             if int(self.sensor_temperature.state) < int(self.min_temperature.state):
                 self.temperature_status = STATE_LOW
@@ -495,6 +533,7 @@ class PlantDevice(Entity):
         if (
             self.sensor_humidity is not None
             and self.sensor_humidity.state != STATE_UNKNOWN
+            and self.sensor_humidity.state is not None
         ):
             if int(self.sensor_humidity.state) < int(self.min_humidity.state):
                 self.humidity_status = STATE_LOW
@@ -508,6 +547,7 @@ class PlantDevice(Entity):
         if (
             self.sensor_brightness is not None
             and self.sensor_brightness.state != STATE_UNKNOWN
+            and self.sensor_brightness.state is not None
         ):
             _LOGGER.info(
                 "Brightness-test: Hist Min: %s Hist Max: %s",
@@ -878,6 +918,44 @@ class PlantMinBrightness(PlantMinMax):
         return SensorDeviceClass.ILLUMINANCE
 
 
+class PlantMaxMmol(PlantMinMax):
+    """Entity class for max brightness threshold"""
+
+    def __init__(
+        self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
+    ) -> None:
+        """Initialize the Plant component."""
+        self._attr_name = f"{config.data[FLOW_PLANT_INFO][FLOW_PLANT_NAME]} Max Mmol"
+        self._default_state = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
+            CONF_MAX_MMOL, STATE_UNKNOWN
+        )
+        self._attr_unique_id = f"{config.entry_id}-max-mmol"
+        super().__init__(hass, config, plantdevice)
+
+    @property
+    def device_class(self):
+        return SensorDeviceClass.ILLUMINANCE
+
+
+class PlantMinMmol(PlantMinMax):
+    """Entity class for min brightness threshold"""
+
+    def __init__(
+        self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
+    ) -> None:
+        """Initialize the Plant component."""
+        self._attr_name = f"{config.data[FLOW_PLANT_INFO][FLOW_PLANT_NAME]} Min Mmol"
+        self._default_state = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
+            CONF_MIN_MMOL, STATE_UNKNOWN
+        )
+        self._attr_unique_id = f"{config.entry_id}-min-mmol"
+        super().__init__(hass, config, plantdevice)
+
+    @property
+    def device_class(self):
+        return SensorDeviceClass.ILLUMINANCE
+
+
 class PlantMaxConductivity(PlantMinMax):
     """Entity class for max conductivity threshold"""
 
@@ -954,7 +1032,7 @@ class PlantMinHumidity(PlantMinMax):
         return SensorDeviceClass.HUMIDITY
 
 
-class PlantCurrentStatus(RestoreEntity):
+class PlantCurrentStatus(RestoreSensor):
     """Parent class for the meter classes below"""
 
     def __init__(
@@ -969,9 +1047,13 @@ class PlantCurrentStatus(RestoreEntity):
         self.entity_id = async_generate_entity_id(
             f"{DOMAIN}.{{}}", self.name, current_ids={}
         )
-        if not self._attr_state or self._attr_state == STATE_UNKNOWN:
-            self._attr_state = self._default_state
+        if not self._attr_native_value or self._attr_native_value == STATE_UNKNOWN:
+            self._attr_native_value = self._default_state
         self._history = DailyHistory(self._conf_check_days)
+
+    @property
+    def state_class(self):
+        return STATE_CLASS_MEASUREMENT
 
     @property
     def extra_state_attributes(self) -> dict:
@@ -988,19 +1070,8 @@ class PlantCurrentStatus(RestoreEntity):
         _LOGGER.info("Setting %s external sensor to %s", self.entity_id, new_sensor)
         self._external_sensor = new_sensor
 
-    async def async_update(self):
-        """Run on every update to allow for changes from the GUI and service call"""
-        current_attrs = self.hass.states.get(self.entity_id).attributes
-        if current_attrs.get("external_sensor") != self._external_sensor:
-            self.replace_external_sensor(current_attrs.get("external_sensor"))
-        if self._external_sensor:
-            external_sensor = self.hass.states.get(self._external_sensor)
-            if external_sensor:
-                self._attr_state = external_sensor.state
-            else:
-                self._attr_state = STATE_UNKNOWN
-        else:
-            self._attr_state = STATE_UNKNOWN
+    def self_update(self):
+        return
 
     async def async_added_to_hass(self) -> None:
         """Handle entity which will be added."""
@@ -1010,7 +1081,7 @@ class PlantCurrentStatus(RestoreEntity):
             return
         # We do not restore the state for these they are red from the external sensor anyway
         # self._attr_state = state.state
-        self._attr_state = STATE_UNKNOWN
+        self._attr_native_value = STATE_UNKNOWN
 
         if "external_sensor" in state.attributes:
             _LOGGER.info(
@@ -1025,7 +1096,9 @@ class PlantCurrentStatus(RestoreEntity):
                     self._load_history_from_db
                 )
                 async_track_state_change_event(
-                    self._hass, self.entity_id, self._state_changed_event
+                    self._hass,
+                    list([self.entity_id, self._external_sensor]),
+                    self._state_changed_event,
                 )
         async_dispatcher_connect(
             self._hass, DATA_UPDATED, self._schedule_immediate_update
@@ -1043,6 +1116,25 @@ class PlantCurrentStatus(RestoreEntity):
 
     @callback
     def state_changed(self, entity_id, new_state):
+        """Run on every update to allow for changes from the GUI and service call"""
+        current_attrs = self.hass.states.get(self.entity_id).attributes
+        if current_attrs.get("external_sensor") != self._external_sensor:
+            self.replace_external_sensor(current_attrs.get("external_sensor"))
+        if self._external_sensor:
+            external_sensor = self.hass.states.get(self._external_sensor)
+            if external_sensor:
+                self._attr_native_value = external_sensor.state
+            else:
+                self._attr_native_value = STATE_UNKNOWN
+        else:
+            self._attr_native_value = STATE_UNKNOWN
+
+        if self.state == STATE_UNKNOWN or self.state is None:
+            return
+        _LOGGER.info("Adding measurement to the db for %s: %s", entity_id, self.state)
+        self._history.add_measurement(self.state, new_state.last_updated)
+
+        return
         """Update the sensor status."""
         if new_state is None:
             return
@@ -1106,6 +1198,31 @@ class PlantCurrentBrightness(PlantCurrentStatus):
     def device_class(self):
         return SensorDeviceClass.ILLUMINANCE
 
+    @property
+    def native_unit_of_measurement(self):
+        return "lx"
+
+    @property
+    def ppfd(self):
+        if (
+            self.state
+            and self.state != STATE_UNAVAILABLE
+            and self.state != STATE_UNKNOWN
+        ):
+            return (float(self.state) * 0.0185) / 1000000
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        if self._external_sensor:
+            attributes = {
+                "external_sensor": self._external_sensor,
+                "history_max": self._history.max,
+                "history_min": self._history.min,
+            }
+            if self.ppfd:
+                attributes["ppfd"] = self.ppfd
+            return attributes
+
 
 class PlantCurrentConductivity(PlantCurrentStatus):
     """Entity class for the current condictivity meter"""
@@ -1123,6 +1240,10 @@ class PlantCurrentConductivity(PlantCurrentStatus):
         )
 
         super().__init__(hass, config, plantdevice)
+
+    @property
+    def native_unit_of_measurement(self):
+        return "uS/cm"
 
     @property
     def device_class(self):
@@ -1148,8 +1269,12 @@ class PlantCurrentMoisture(PlantCurrentStatus):
     def device_class(self):
         return SensorDeviceClass.HUMIDITY
 
+    @property
+    def native_unit_of_measurement(self):
+        return PERCENTAGE
 
-class PlantCurrentTempertature(PlantCurrentStatus):
+
+class PlantCurrentTemperature(PlantCurrentStatus):
     """Entity class for the current temperature meter"""
 
     def __init__(
@@ -1169,6 +1294,10 @@ class PlantCurrentTempertature(PlantCurrentStatus):
     def device_class(self):
         return SensorDeviceClass.TEMPERATURE
 
+    @property
+    def native_unit_of_measurement(self):
+        return TEMP_CELSIUS
+
 
 class PlantCurrentHumidity(PlantCurrentStatus):
     """Entity class for the current humidity meter"""
@@ -1187,6 +1316,10 @@ class PlantCurrentHumidity(PlantCurrentStatus):
     @property
     def device_class(self):
         return SensorDeviceClass.HUMIDITY
+
+    @property
+    def native_unit_of_measurement(self):
+        return PERCENTAGE
 
 
 class DailyHistory:

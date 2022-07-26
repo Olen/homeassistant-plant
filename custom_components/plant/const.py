@@ -18,6 +18,7 @@ READING_MOISTURE = "moisture"
 READING_CONDUCTIVITY = "conductivity"
 READING_BRIGHTNESS = "brightness"
 READING_HUMIDITY = "humidity"
+READING_MMOL = "mmol"
 
 FLOW_PLANT_INFO = "plant_info"
 FLOW_PLANT_SPECIES = "plant_species"
@@ -47,6 +48,9 @@ CONF_MIN_BRIGHTNESS = f"min_{READING_BRIGHTNESS}"
 CONF_MAX_BRIGHTNESS = f"max_{READING_BRIGHTNESS}"
 CONF_MIN_HUMIDITY = f"min_{READING_HUMIDITY}"
 CONF_MAX_HUMIDITY = f"max_{READING_HUMIDITY}"
+CONF_MIN_MMOL = f"min_{READING_MMOL}"
+CONF_MAX_MMOL = f"max_{READING_MMOL}"
+
 
 CONF_CHECK_DAYS = "check_days"
 CONF_SPECIES = "species"
@@ -64,4 +68,6 @@ CONF_PLANTBOOK_MAPPING = {
     CONF_MAX_CONDUCTIVITY: "max_soil_ec",
     CONF_MIN_HUMIDITY: "min_env_humid",
     CONF_MAX_HUMIDITY: "max_env_humid",
+    CONF_MIN_MMOL: "min_light_mmol",
+    CONF_MAX_MMOL: "max_light_mmol",
 }

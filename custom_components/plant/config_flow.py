@@ -20,12 +20,14 @@ from .const import (
     CONF_MAX_BRIGHTNESS,
     CONF_MAX_CONDUCTIVITY,
     CONF_MAX_HUMIDITY,
+    CONF_MAX_MMOL,
     CONF_MAX_MOISTURE,
     CONF_MAX_TEMPERATURE,
     CONF_MIN_BATTERY_LEVEL,
     CONF_MIN_BRIGHTNESS,
     CONF_MIN_CONDUCTIVITY,
     CONF_MIN_HUMIDITY,
+    CONF_MIN_MMOL,
     CONF_MIN_MOISTURE,
     CONF_MIN_TEMPERATURE,
     CONF_PLANTBOOK,
@@ -242,6 +244,9 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         min_temp = 0
         max_conductivity = 0
         min_condictivity = 0
+        max_mmol = 0
+        min_mmol = 0
+
         opb_image = None
         # opb_species = None
         opb_name = self.plant_info[FLOW_PLANT_NAME]
@@ -285,6 +290,13 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 min_temp = opb_plant.attributes.get(
                     CONF_PLANTBOOK_MAPPING[CONF_MIN_TEMPERATURE]
                 )
+                max_mmol = opb_plant.attributes.get(
+                    CONF_PLANTBOOK_MAPPING[CONF_MAX_MMOL]
+                )
+                min_mmol = opb_plant.attributes.get(
+                    CONF_PLANTBOOK_MAPPING[CONF_MIN_MMOL]
+                )
+
                 max_conductivity = opb_plant.attributes.get(
                     CONF_PLANTBOOK_MAPPING[CONF_MAX_CONDUCTIVITY]
                 )
@@ -307,6 +319,8 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         data_schema[vol.Required(CONF_MIN_MOISTURE, default=min_moisture)] = int
         data_schema[vol.Required(CONF_MAX_BRIGHTNESS, default=max_light_lx)] = int
         data_schema[vol.Required(CONF_MIN_BRIGHTNESS, default=min_light_lx)] = int
+        data_schema[vol.Required(CONF_MAX_MMOL, default=max_mmol)] = int
+        data_schema[vol.Required(CONF_MIN_MMOL, default=min_mmol)] = int
         data_schema[vol.Required(CONF_MAX_TEMPERATURE, default=max_temp)] = int
         data_schema[vol.Required(CONF_MIN_TEMPERATURE, default=min_temp)] = int
         data_schema[vol.Required(CONF_MAX_CONDUCTIVITY, default=max_conductivity)] = int
