@@ -8,7 +8,7 @@ This integration is about to be completely rewritten.  The next version will *no
 
 This is just a heads up for now, but I want to give everyone fair warning. We are looking into different options to make the transition to the new version as smooth as possible.
 
-![image](https://user-images.githubusercontent.com/203184/180848877-79a91691-5c8a-4eab-ae0e-864780501a0c.png)
+![image](https://user-images.githubusercontent.com/203184/180956019-2733ad82-3be2-47cb-bdbf-3f5db2127a96.png)
 
 
 ## Highlights 
