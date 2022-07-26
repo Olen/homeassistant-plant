@@ -1,9 +1,12 @@
 """Support for monitoring plants."""
 from __future__ import annotations
 
+from collections import deque
+from contextlib import suppress
+from datetime import datetime, timedelta
 import logging
 
-from homeassistant.components.recorder import history
+from homeassistant.components.recorder import get_instance, history
 from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
@@ -31,7 +34,9 @@ from homeassistant.helpers.entity import (
     async_generate_entity_id,
 )
 from homeassistant.helpers.entity_component import EntityComponent
+from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.helpers.restore_state import RestoreEntity
+from homeassistant.util import dt as dt_util
 
 from .const import (
     CONF_CHECK_DAYS,
@@ -500,6 +505,28 @@ class PlantDevice(Entity):
             else:
                 self.humidity_status = STATE_OK
 
+        if (
+            self.sensor_brightness is not None
+            and self.sensor_brightness.state != STATE_UNKNOWN
+        ):
+            _LOGGER.info(
+                "Brightness-test: Hist Min: %s Hist Max: %s",
+                self.sensor_brightness.extra_state_attributes["history_min"],
+                self.sensor_brightness.extra_state_attributes["history_max"],
+            )
+            if int(self.sensor_brightness.extra_state_attributes["history_min"]) < int(
+                self.min_brightness.state
+            ):
+                self.brightness_status = STATE_LOW
+                state = STATE_PROBLEM
+            elif int(
+                self.sensor_brightness.extra_state_attributes["history_max"]
+            ) > int(self.max_brightness.state):
+                self.brightness_status = STATE_HIGH
+                state = STATE_PROBLEM
+            else:
+                self.brightness_status = STATE_OK
+
         # TODO
         # How to handle brightness?
 
@@ -742,7 +769,7 @@ class PlantMaxMoisture(PlantMinMax):
 
     @property
     def device_class(self):
-        return "humidity"
+        return SensorDeviceClass.HUMIDITY
 
 
 class PlantMinMoisture(PlantMinMax):
@@ -764,7 +791,7 @@ class PlantMinMoisture(PlantMinMax):
 
     @property
     def device_class(self):
-        return "humidity"
+        return SensorDeviceClass.HUMIDITY
 
 
 class PlantMaxTemperature(PlantMinMax):
@@ -785,7 +812,7 @@ class PlantMaxTemperature(PlantMinMax):
 
     @property
     def device_class(self):
-        return "temperature"
+        return SensorDeviceClass.TEMPERATURE
 
 
 class PlantMinTemperature(PlantMinMax):
@@ -806,7 +833,7 @@ class PlantMinTemperature(PlantMinMax):
 
     @property
     def device_class(self):
-        return "temperature"
+        return SensorDeviceClass.TEMPERATURE
 
 
 class PlantMaxBrightness(PlantMinMax):
@@ -827,7 +854,7 @@ class PlantMaxBrightness(PlantMinMax):
 
     @property
     def device_class(self):
-        return "illuminance"
+        return SensorDeviceClass.ILLUMINANCE
 
 
 class PlantMinBrightness(PlantMinMax):
@@ -848,7 +875,7 @@ class PlantMinBrightness(PlantMinMax):
 
     @property
     def device_class(self):
-        return "illuminance"
+        return SensorDeviceClass.ILLUMINANCE
 
 
 class PlantMaxConductivity(PlantMinMax):
@@ -903,7 +930,7 @@ class PlantMaxHumidity(PlantMinMax):
 
     @property
     def device_class(self):
-        return "humidity"
+        return SensorDeviceClass.HUMIDITY
 
 
 class PlantMinHumidity(PlantMinMax):
@@ -924,7 +951,7 @@ class PlantMinHumidity(PlantMinMax):
 
     @property
     def device_class(self):
-        return "humidity"
+        return SensorDeviceClass.HUMIDITY
 
 
 class PlantCurrentStatus(RestoreEntity):
@@ -938,16 +965,22 @@ class PlantCurrentStatus(RestoreEntity):
         self._config = config
         self._default_state = 0
         self._plant = plantdevice
+        self._conf_check_days = DEFAULT_CHECK_DAYS
         self.entity_id = async_generate_entity_id(
             f"{DOMAIN}.{{}}", self.name, current_ids={}
         )
         if not self._attr_state or self._attr_state == STATE_UNKNOWN:
             self._attr_state = self._default_state
+        self._history = DailyHistory(self._conf_check_days)
 
     @property
     def extra_state_attributes(self) -> dict:
         if self._external_sensor:
-            attributes = {"external_sensor": self._external_sensor}
+            attributes = {
+                "external_sensor": self._external_sensor,
+                "history_max": self._history.max,
+                "history_min": self._history.min,
+            }
             return attributes
 
     def replace_external_sensor(self, new_sensor: str | None) -> None:
@@ -986,6 +1019,14 @@ class PlantCurrentStatus(RestoreEntity):
                 state.attributes["external_sensor"],
             )
             self.replace_external_sensor(state.attributes["external_sensor"])
+            if "recorder" in self.hass.config.components:
+                # only use the database if it's configured
+                await get_instance(self.hass).async_add_executor_job(
+                    self._load_history_from_db
+                )
+                async_track_state_change_event(
+                    self._hass, self.entity_id, self._state_changed_event
+                )
         async_dispatcher_connect(
             self._hass, DATA_UPDATED, self._schedule_immediate_update
         )
@@ -993,6 +1034,55 @@ class PlantCurrentStatus(RestoreEntity):
     @callback
     def _schedule_immediate_update(self):
         self.async_schedule_update_ha_state(True)
+
+    @callback
+    def _state_changed_event(self, event):
+        """Sensor state change event."""
+        _LOGGER.info(event)
+        self.state_changed(event.data.get("entity_id"), event.data.get("new_state"))
+
+    @callback
+    def state_changed(self, entity_id, new_state):
+        """Update the sensor status."""
+        if new_state is None:
+            return
+        value = new_state.state
+        _LOGGER.info("Received callback from %s with value %s", entity_id, value)
+        if value == STATE_UNKNOWN:
+            return
+        _LOGGER.info("Adding measurement to the db for %s: %s", entity_id, value)
+
+        self._history.add_measurement(value, new_state.last_updated)
+
+    def _load_history_from_db(self):
+        """Load the history of the brightness values from the database.
+        This only needs to be done once during startup.
+        """
+
+        if self._external_sensor is None:
+            _LOGGER.debug(
+                "Not reading the history from the database as "
+                "there is no external sensor configured"
+            )
+            return
+        start_date = dt_util.utcnow() - timedelta(days=self._conf_check_days)
+        entity_id = self.entity_id
+
+        _LOGGER.debug("Initializing values for %s from the database", self.name)
+        lower_entity_id = entity_id.lower()
+        history_list = history.state_changes_during_period(
+            self.hass,
+            start_date,
+            entity_id=lower_entity_id,
+            no_attributes=True,
+        )
+        for state in history_list.get(lower_entity_id, []):
+            # filter out all None, NaN and "unknown" states
+            # only keep real values
+            with suppress(ValueError):
+                self._history.add_measurement(int(state.state), state.last_updated)
+
+        _LOGGER.debug("Initializing from database completed")
 
 
 class PlantCurrentBrightness(PlantCurrentStatus):
@@ -1097,3 +1187,55 @@ class PlantCurrentHumidity(PlantCurrentStatus):
     @property
     def device_class(self):
         return SensorDeviceClass.HUMIDITY
+
+
+class DailyHistory:
+    """Stores one measurement per day for a maximum number of days.
+    At the moment only the maximum value per day is kept.
+    """
+
+    def __init__(self, max_length):
+        """Create new DailyHistory with a maximum length of the history."""
+        _LOGGER.info("Creating DailyHistory database")
+        self.max_length = max_length
+        self._days = None
+        self._max_dict = {}
+        self._min_dict = {}
+        self.max = None
+        self.min = None
+
+    def add_measurement(self, value, timestamp=None):
+        """Add a new measurement for a certain day."""
+        # _LOGGER.info("Updating DailyHistory database with %s", value)
+        day = (timestamp or datetime.now()).date()
+        if not isinstance(value, (int, float)):
+            return
+        if self._days is None:
+            self._days = deque()
+            self._add_day(day, value)
+        else:
+            current_day = self._days[-1]
+            if day == current_day:
+                self._max_dict[day] = max(value, self._max_dict[day])
+                self._min_dict[day] = min(value, self._min_dict[day])
+            elif day > current_day:
+                self._add_day(day, value)
+            else:
+                _LOGGER.warning("Received old measurement, not storing it")
+
+        self.max = max(self._max_dict.values())
+        self.min = min(self._min_dict.values())
+
+    def _add_day(self, day, value):
+        """Add a new day to the history.
+        Deletes the oldest day, if the queue becomes too long.
+        """
+        if len(self._days) == self.max_length:
+            oldest = self._days.popleft()
+            del self._max_dict[oldest]
+            del self._min_dict[oldest]
+        self._days.append(day)
+        if not isinstance(value, (int, float)):
+            return
+        self._max_dict[day] = value
+        self._min_dict[day] = value
