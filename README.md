@@ -29,12 +29,15 @@ This is just a heads up for now, but I want to give everyone fair warning. We ar
 
 * If you change the species of a plant in the UI, new data are fetched from OpenPlantbook
 
+![Image](change_plant.gif)
+
 ### Easier to replace sensors
 
 * You can use a service call to replace the different sensors used to monitor the plant
 
 ![image](https://user-images.githubusercontent.com/203184/180942138-d77cbad4-8e06-448c-bd1a-4e2b8f12a951.png)
 
+### More flexible lovelace card
 
 * I have upgraded the Lovelace flower card to make use of the new integration, and made it more flexible.
 
