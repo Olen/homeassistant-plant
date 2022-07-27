@@ -83,6 +83,7 @@ from .const import (
     READING_TEMPERATURE,
 )
 
+CONF_SCALE_TEMPERATURE = "temp_scale"
 _LOGGER = logging.getLogger(__name__)
 
 DATA_UPDATED = "plant_data_updated"
@@ -176,6 +177,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     plant_entities = [
         plant,
         pspieces,
+    ]
+    plant_maxmin = [
         pmaxm,
         pminm,
         pmaxt,
@@ -188,12 +191,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
         pminh,
         pmaxmm,
         pminmm,
+    ]
+    plant_sensors = [
         pcurb,
         pcurc,
         pcurm,
         pcurt,
         pcurh,
     ]
+    plant_entities.extend(plant_maxmin)
+    plant_entities.extend(plant_sensors)
     await component.async_add_entities(plant_entities)
 
     brightness_integral = IntegrationSensor(
@@ -272,16 +279,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
             meter_entity,
             new_sensor,
         )
-
-        attr = {}
-        for key in meter.attributes:
-            attr[key] = meter.attributes[key]
-        attr[ATTR_EXTERNAL_SENSOR] = new_sensor
-        _LOGGER.info(meter.attributes)
-        _LOGGER.info(attr)
-        hass.states.async_set(
-            entity_id=meter_entity, new_state=meter.state, attributes=attr
-        )
+        for entity in plant_sensors:
+            if entity.entity_id == meter_entity:
+                _LOGGER.info("Sensor: %s", entity)
+                entity.replace_external_sensor(new_sensor)
+        return
 
     if not DOMAIN in hass.services.async_services():
         hass.services.async_register(DOMAIN, SERVICE_REPLACE_SENSOR, replace_sensor)
@@ -491,6 +493,7 @@ class PlantDevice(Entity):
         if (
             self.sensor_moisture is not None
             and self.sensor_moisture.state != STATE_UNKNOWN
+            and self.sensor_moisture.state != STATE_UNAVAILABLE
             and self.sensor_moisture.state is not None
         ):
             if int(self.sensor_moisture.state) < int(self.min_moisture.state):
@@ -505,6 +508,7 @@ class PlantDevice(Entity):
         if (
             self.sensor_conductivity is not None
             and self.sensor_conductivity.state != STATE_UNKNOWN
+            and self.sensor_conductivity.state != STATE_UNAVAILABLE
             and self.sensor_conductivity.state is not None
         ):
             if int(self.sensor_conductivity.state) < int(self.min_conductivity.state):
@@ -519,6 +523,7 @@ class PlantDevice(Entity):
         if (
             self.sensor_temperature is not None
             and self.sensor_temperature.state != STATE_UNKNOWN
+            and self.sensor_temperature.state != STATE_UNAVAILABLE
             and self.sensor_temperature.state is not None
         ):
             if int(self.sensor_temperature.state) < int(self.min_temperature.state):
@@ -533,6 +538,7 @@ class PlantDevice(Entity):
         if (
             self.sensor_humidity is not None
             and self.sensor_humidity.state != STATE_UNKNOWN
+            and self.sensor_humidity.state != STATE_UNAVAILABLE
             and self.sensor_humidity.state is not None
         ):
             if int(self.sensor_humidity.state) < int(self.min_humidity.state):
@@ -547,6 +553,7 @@ class PlantDevice(Entity):
         if (
             self.sensor_brightness is not None
             and self.sensor_brightness.state != STATE_UNKNOWN
+            and self.sensor_brightness.state != STATE_UNAVAILABLE
             and self.sensor_brightness.state is not None
         ):
             _LOGGER.info(
@@ -757,21 +764,63 @@ class PlantMinMax(RestoreEntity):
     ) -> None:
         """Initialize the Plant component."""
         self._config = config
+        self._hass = hass
         self._plant = plantdevice
         self.entity_id = async_generate_entity_id(
             f"{DOMAIN}.{{}}", self.name, current_ids={}
         )
         if not self._attr_state or self._attr_state == STATE_UNKNOWN:
             self._attr_state = self._default_state
+        async_track_state_change_event(
+            self._hass,
+            list([self.entity_id]),
+            self._state_changed_event,
+        )
 
     @property
     def entity_category(self):
         return EntityCategory.CONFIG
 
-    def update(self) -> None:
+    def _state_changed_event(self, event):
+        if event.data.get("old_state") is None or event.data.get("new_state") is None:
+            return
+        if event.data.get("old_state").state == event.data.get("new_state").state:
+            _LOGGER.info("Only attributes changed for %s", event.data.get("entity_id"))
+            self.state_attributes_changed(
+                old_attributes=event.data.get("old_state").attributes,
+                new_attributes=event.data.get("new_state").attributes,
+            )
+            return
+        self.state_changed(
+            old_state=event.data.get("old_state").state,
+            new_state=event.data.get("new_state").state,
+        )
+
+    def state_changed(self, old_state, new_state):
+        _LOGGER.info(
+            "State of %s changed from %s to %s, attr_state = %s",
+            self.entity_id,
+            old_state,
+            new_state,
+            self._attr_state,
+        )
+        self._attr_state = new_state
+
+    def state_attributes_changed(self, old_attributes, new_attributes):
+        _LOGGER.debug("Parent changed is running")
+        pass
+
+    def self_updated(self) -> None:
         """Allow the state to be changed from the UI and saved in restore_state."""
-        self._attr_state = self.hass.states.get(self.entity_id).state
-        self.async_write_ha_state()
+        if self._attr_state != self.hass.states.get(self.entity_id).state:
+            _LOGGER.info(
+                "Updating state of %s from %s to %s",
+                self.entity_id,
+                self._attr_state,
+                self.hass.states.get(self.entity_id).state,
+            )
+            self._attr_state = self.hass.states.get(self.entity_id).state
+            self.async_write_ha_state()
 
     async def async_added_to_hass(self) -> None:
         """Restore state of thresholds on startup."""
@@ -780,6 +829,8 @@ class PlantMinMax(RestoreEntity):
         if not state:
             return
         self._attr_state = state.state
+        _LOGGER.info("Restoring unit for %s: %s", self.entity_id, state.attributes)
+        self._attr_unit_of_measurement = state.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
 
         async_dispatcher_connect(
             self.hass, DATA_UPDATED, self._schedule_immediate_update
@@ -844,15 +895,82 @@ class PlantMaxTemperature(PlantMinMax):
         self._attr_name = (
             f"{config.data[FLOW_PLANT_INFO][FLOW_PLANT_NAME]} Max Temperature"
         )
-        self._default_state = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
-            CONF_MAX_TEMPERATURE, STATE_UNKNOWN
-        )
         self._attr_unique_id = f"{config.entry_id}-max-temperature"
+
+        self._default_state = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
+            CONF_MAX_TEMPERATURE, DEFAULT_MAX_TEMPERATURE
+        )
+        self._default_unit_of_measurement = config.data[FLOW_PLANT_INFO][
+            FLOW_PLANT_LIMITS
+        ].get(CONF_SCALE_TEMPERATURE, TEMP_CELSIUS)
         super().__init__(hass, config, plantdevice)
 
     @property
     def device_class(self):
         return SensorDeviceClass.TEMPERATURE
+
+    @property
+    def unit_of_measurement(self) -> str | None:
+        """Get unit of measurement from the temperature meter"""
+        if not hasattr(self, "_attr_unit_of_measurement"):
+            _LOGGER.info("UoM is Unset")
+            return None
+        if self._attr_unit_of_measurement is None:
+            _LOGGER.info("UoM is set but None")
+            self._attr_unit_of_measurement = self._default_unit_of_measurement
+
+        if (
+            "meters" in self._plant.extra_state_attributes
+            and "temperature" in self._plant.extra_state_attributes["meters"]
+        ):
+            meter = self._hass.states.get(
+                self._plant.extra_state_attributes["meters"]["temperature"]
+            )
+            _LOGGER.debug(
+                "Default: %s, Mine: %s, Parent: %s",
+                self._default_unit_of_measurement,
+                self._attr_unit_of_measurement,
+                meter.attributes[ATTR_UNIT_OF_MEASUREMENT],
+            )
+            if (
+                self._attr_unit_of_measurement
+                != meter.attributes[ATTR_UNIT_OF_MEASUREMENT]
+            ):
+                self._attr_unit_of_measurement = meter.attributes[
+                    ATTR_UNIT_OF_MEASUREMENT
+                ]
+
+            return self._attr_unit_of_measurement
+
+    def state_attributes_changed(self, old_attributes, new_attributes):
+        """Calculate C or F"""
+        _LOGGER.debug("Old attributes: %s", old_attributes)
+        _LOGGER.debug("New attributes: %s", new_attributes)
+        if new_attributes.get(ATTR_UNIT_OF_MEASUREMENT) is None:
+            return
+        if old_attributes.get(ATTR_UNIT_OF_MEASUREMENT) is None:
+            return
+        if new_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == old_attributes.get(
+            ATTR_UNIT_OF_MEASUREMENT
+        ):
+            return
+        new_state = self._attr_state
+        if (
+            old_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == "°F"
+            and new_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == "°C"
+        ):
+            _LOGGER.debug("Changing from F to C measurement is %s", self.state)
+            new_state = int(round((int(self.state) - 32) * 0.5556, 0))
+
+        if (
+            old_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == "°C"
+            and new_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == "°F"
+        ):
+            _LOGGER.debug("Changing from C to F measurement is %s", self.state)
+            new_state = int(round((int(self.state) * 1.8) + 32, 0))
+
+        _LOGGER.debug("New state = %s", new_state)
+        self._hass.states.set(self.entity_id, new_state, new_attributes)
 
 
 class PlantMinTemperature(PlantMinMax):
@@ -866,14 +984,78 @@ class PlantMinTemperature(PlantMinMax):
             f"{config.data[FLOW_PLANT_INFO][FLOW_PLANT_NAME]} Min Temperature"
         )
         self._default_state = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
-            CONF_MIN_TEMPERATURE, STATE_UNKNOWN
+            CONF_MIN_TEMPERATURE, DEFAULT_MIN_TEMPERATURE
         )
+        self._default_unit_of_measurement = config.data[FLOW_PLANT_INFO][
+            FLOW_PLANT_LIMITS
+        ].get(CONF_SCALE_TEMPERATURE, TEMP_CELSIUS)
+
         self._attr_unique_id = f"{config.entry_id}-min-temperature"
         super().__init__(hass, config, plantdevice)
 
     @property
     def device_class(self):
         return SensorDeviceClass.TEMPERATURE
+
+    @property
+    def unit_of_measurement(self) -> str | None:
+        if not hasattr(self, "_attr_unit_of_measurement"):
+            self._attr_unit_of_measurement = self._default_unit_of_measurement
+        if self._attr_unit_of_measurement is None:
+            self._attr_unit_of_measurement = self._default_unit_of_measurement
+
+        if (
+            "meters" in self._plant.extra_state_attributes
+            and "temperature" in self._plant.extra_state_attributes["meters"]
+        ):
+            meter = self._hass.states.get(
+                self._plant.extra_state_attributes["meters"]["temperature"]
+            )
+            _LOGGER.info(
+                "Default: %s, Mine: %s, Parent: %s",
+                self._default_unit_of_measurement,
+                self._attr_unit_of_measurement,
+                meter.attributes[ATTR_UNIT_OF_MEASUREMENT],
+            )
+            if (
+                self._attr_unit_of_measurement
+                != meter.attributes[ATTR_UNIT_OF_MEASUREMENT]
+            ):
+                self._attr_unit_of_measurement = meter.attributes[
+                    ATTR_UNIT_OF_MEASUREMENT
+                ]
+
+            return self._attr_unit_of_measurement
+
+    def state_attributes_changed(self, old_attributes, new_attributes):
+        """Calculate C or F"""
+        _LOGGER.debug("Old attributes: %s", old_attributes)
+        _LOGGER.debug("New attributes: %s", new_attributes)
+        if new_attributes.get(ATTR_UNIT_OF_MEASUREMENT) is None:
+            return
+        if old_attributes.get(ATTR_UNIT_OF_MEASUREMENT) is None:
+            return
+        if new_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == old_attributes.get(
+            ATTR_UNIT_OF_MEASUREMENT
+        ):
+            return
+        new_state = self._attr_state
+        if (
+            old_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == "°F"
+            and new_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == "°C"
+        ):
+            _LOGGER.debug("Changing from F to C measurement is %s", self.state)
+            new_state = int(round((int(self.state) - 32) * 0.5556, 0))
+
+        if (
+            old_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == "°C"
+            and new_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == "°F"
+        ):
+            _LOGGER.debug("Changing from C to F measurement is %s", self.state)
+            new_state = int(round((int(self.state) * 1.8) + 32, 0))
+
+        _LOGGER.debug("New state = %s", new_state)
+        self._hass.states.set(self.entity_id, new_state, new_attributes)
 
 
 class PlantMaxBrightness(PlantMinMax):
@@ -1069,9 +1251,13 @@ class PlantCurrentStatus(RestoreSensor):
         """Modify the external sensor"""
         _LOGGER.info("Setting %s external sensor to %s", self.entity_id, new_sensor)
         self._external_sensor = new_sensor
+        async_track_state_change_event(
+            self._hass,
+            list([self.entity_id, self._external_sensor]),
+            self._state_changed_event,
+        )
 
-    def self_update(self):
-        return
+        self.async_write_ha_state()
 
     async def async_added_to_hass(self) -> None:
         """Handle entity which will be added."""
@@ -1111,7 +1297,7 @@ class PlantCurrentStatus(RestoreSensor):
     @callback
     def _state_changed_event(self, event):
         """Sensor state change event."""
-        _LOGGER.info(event)
+        # _LOGGER.info(event)
         self.state_changed(event.data.get("entity_id"), event.data.get("new_state"))
 
     @callback
@@ -1124,6 +1310,9 @@ class PlantCurrentStatus(RestoreSensor):
             external_sensor = self.hass.states.get(self._external_sensor)
             if external_sensor:
                 self._attr_native_value = external_sensor.state
+                self._attr_native_unit_of_measurement = external_sensor.attributes[
+                    ATTR_UNIT_OF_MEASUREMENT
+                ]
             else:
                 self._attr_native_value = STATE_UNKNOWN
         else:
@@ -1131,7 +1320,7 @@ class PlantCurrentStatus(RestoreSensor):
 
         if self.state == STATE_UNKNOWN or self.state is None:
             return
-        _LOGGER.info("Adding measurement to the db for %s: %s", entity_id, self.state)
+        # _LOGGER.info("Adding measurement to the db for %s: %s", entity_id, self.state)
         self._history.add_measurement(self.state, new_state.last_updated)
 
         return
@@ -1198,9 +1387,9 @@ class PlantCurrentBrightness(PlantCurrentStatus):
     def device_class(self):
         return SensorDeviceClass.ILLUMINANCE
 
-    @property
-    def native_unit_of_measurement(self):
-        return "lx"
+    # @property
+    # def native_unit_of_measurement(self):
+    #     return "lx"
 
     @property
     def ppfd(self):
@@ -1241,9 +1430,9 @@ class PlantCurrentConductivity(PlantCurrentStatus):
 
         super().__init__(hass, config, plantdevice)
 
-    @property
-    def native_unit_of_measurement(self):
-        return "uS/cm"
+    # @property
+    # def native_unit_of_measurement(self):
+    #     return "uS/cm"
 
     @property
     def device_class(self):
@@ -1269,9 +1458,9 @@ class PlantCurrentMoisture(PlantCurrentStatus):
     def device_class(self):
         return SensorDeviceClass.HUMIDITY
 
-    @property
-    def native_unit_of_measurement(self):
-        return PERCENTAGE
+    # @property
+    # def native_unit_of_measurement(self):
+    #     return PERCENTAGE
 
 
 class PlantCurrentTemperature(PlantCurrentStatus):
@@ -1294,9 +1483,9 @@ class PlantCurrentTemperature(PlantCurrentStatus):
     def device_class(self):
         return SensorDeviceClass.TEMPERATURE
 
-    @property
-    def native_unit_of_measurement(self):
-        return TEMP_CELSIUS
+    # @property
+    # def native_unit_of_measurement(self):
+    #     return TEMP_CELSIUS
 
 
 class PlantCurrentHumidity(PlantCurrentStatus):
@@ -1317,9 +1506,9 @@ class PlantCurrentHumidity(PlantCurrentStatus):
     def device_class(self):
         return SensorDeviceClass.HUMIDITY
 
-    @property
-    def native_unit_of_measurement(self):
-        return PERCENTAGE
+    # @property
+    # def native_unit_of_measurement(self):
+    #     return PERCENTAGE
 
 
 class DailyHistory:

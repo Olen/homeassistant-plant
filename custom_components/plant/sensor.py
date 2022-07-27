@@ -6,7 +6,11 @@ import random
 import voluptuous as vol
 
 from homeassistant.components.recorder import history
-from homeassistant.components.sensor import ENTITY_ID_FORMAT, PLATFORM_SCHEMA
+from homeassistant.components.sensor import (
+    ENTITY_ID_FORMAT,
+    PLATFORM_SCHEMA,
+    SensorEntity,
+)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     ATTR_NAME,
@@ -15,19 +19,28 @@ from homeassistant.const import (
     CONDUCTIVITY,
     CONF_NAME,
     CONF_SENSORS,
+    DEVICE_CLASS_HUMIDITY,
+    DEVICE_CLASS_ILLUMINANCE,
+    DEVICE_CLASS_TEMPERATURE,
+    LIGHT_LUX,
     PERCENTAGE,
     STATE_OK,
     STATE_PROBLEM,
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
     TEMP_CELSIUS,
+    TEMP_FAHRENHEIT,
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 import homeassistant.helpers.config_validation as cv
-from homeassistant.helpers.entity import Entity, EntityCategory
+from homeassistant.helpers.entity import (
+    Entity,
+    EntityCategory,
+    async_generate_entity_id,
+)
 from homeassistant.helpers.entity_component import EntityComponent
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_state_change_event
@@ -94,62 +107,6 @@ DEFAULT_MIN_BRIGHTNESS = 0
 DEFAULT_MAX_BRIGHTNESS = 100000
 DEFAULT_CHECK_DAYS = 3
 
-SCHEMA_SENSORS = vol.Schema(
-    {
-        vol.Optional(CONF_SENSOR_BATTERY_LEVEL): cv.entity_id,
-        vol.Optional(CONF_SENSOR_MOISTURE): cv.entity_id,
-        vol.Optional(CONF_SENSOR_CONDUCTIVITY): cv.entity_id,
-        vol.Optional(CONF_SENSOR_TEMPERATURE): cv.entity_id,
-        vol.Optional(CONF_SENSOR_BRIGHTNESS): cv.entity_id,
-    }
-)
-
-PLANT_SCHEMA = vol.Schema(
-    {
-        vol.Required(CONF_SENSORS): vol.Schema(SCHEMA_SENSORS),
-        vol.Optional(
-            CONF_MIN_BATTERY_LEVEL, default=DEFAULT_MIN_BATTERY_LEVEL
-        ): cv.positive_int,
-        vol.Optional(CONF_MIN_TEMPERATURE, default=DEFAULT_MIN_TEMPERATURE): vol.Coerce(
-            float
-        ),
-        vol.Optional(CONF_MAX_TEMPERATURE, default=DEFAULT_MAX_TEMPERATURE): vol.Coerce(
-            float
-        ),
-        vol.Optional(CONF_MIN_MOISTURE, default=DEFAULT_MIN_MOISTURE): cv.positive_int,
-        vol.Optional(CONF_MAX_MOISTURE, default=DEFAULT_MAX_MOISTURE): cv.positive_int,
-        vol.Optional(
-            CONF_MIN_CONDUCTIVITY, default=DEFAULT_MIN_CONDUCTIVITY
-        ): cv.positive_int,
-        vol.Optional(
-            CONF_MAX_CONDUCTIVITY, default=DEFAULT_MAX_CONDUCTIVITY
-        ): cv.positive_int,
-        vol.Optional(
-            CONF_MIN_BRIGHTNESS, default=DEFAULT_MIN_BRIGHTNESS
-        ): cv.positive_int,
-        vol.Optional(
-            CONF_MAX_BRIGHTNESS, default=DEFAULT_MAX_BRIGHTNESS
-        ): cv.positive_int,
-        vol.Optional(CONF_CHECK_DAYS, default=DEFAULT_CHECK_DAYS): cv.positive_int,
-        vol.Optional(CONF_NAME): cv.string,
-        vol.Optional(CONF_SPECIES): cv.string,
-        vol.Optional(CONF_IMAGE): cv.string,
-        vol.Optional(CONF_WARN_BRIGHTNESS, default=True): cv.boolean,
-    }
-)
-PLANTBOOK_SCHEMA = vol.Schema(
-    {
-        vol.Required(CONF_PLANTBOOK_CLIENT): cv.string,
-        vol.Required(CONF_PLANTBOOK_SECRET): cv.string,
-    }
-)
-
-
-CONFIG_SCHEMA = vol.Schema(
-    {DOMAIN: {cv.string: (vol.Any(PLANT_SCHEMA, PLANTBOOK_SCHEMA))}},
-    extra=vol.ALLOW_EXTRA,
-)
-
 
 # Flag for enabling/disabling the loading of the history from the database.
 # This feature is turned off right now as its tests are not 100% stable.
@@ -173,95 +130,100 @@ async def async_setup_entry(
     return True
 
 
-class PlantDummyStatus(Entity):
+class PlantDummyStatus(SensorEntity):
     def __init__(self, hass, config):
         """Initialize the Plant component."""
         self._config = config
         self._default_state = STATE_UNKNOWN
         # self._plant = plantdevice
-        self.entity_slug = self._name
-        self.entity_id = ENTITY_ID_FORMAT.format(
-            slugify(self.entity_slug.replace(" ", "_"))
+        self.entity_id = async_generate_entity_id(
+            f"{DOMAIN}.{{}}", self.name, current_ids={}
         )
-        if not self._attr_state or self._attr_state == STATE_UNKNOWN:
-            self._attr_state = self._default_state
-
-    @property
-    def name(self):
-        return self._name
+        if not self._attr_native_value or self._attr_native_value == STATE_UNKNOWN:
+            self._attr_native_value = self._default_state
 
 
 class PlantDummyBrightness(PlantDummyStatus):
     def __init__(self, hass, config):
-        self._name = f"{config.data['plant_info']['plant_name']} Dummy Brightness"
+        self._attr_name = f"{config.data['plant_info']['plant_name']} Dummy Brightness"
         self._attr_unique_id = f"{config.entry_id}-dummy-brightness"
         self._attr_icon = "mdi:brightness-6"
+        self._attr_native_unit_of_measurement = LIGHT_LUX
         super().__init__(hass, config)
 
     async def async_update(self):
-        self._attr_state = random.randint(0, 100) * 1000
+        self._attr_native_value = random.randint(0, 100) * 1000
 
     @property
     def device_class(self):
-        return "illuminance"
+        return DEVICE_CLASS_ILLUMINANCE
 
 
 class PlantDummyConductivity(PlantDummyStatus):
     def __init__(self, hass, config):
-        self._name = f"{config.data['plant_info']['plant_name']} Dummy Conductivity"
+        self._attr_name = (
+            f"{config.data['plant_info']['plant_name']} Dummy Conductivity"
+        )
         self._attr_unique_id = f"{config.entry_id}-dummy-conductivity"
         self._attr_icon = "mdi:spa-outline"
+        self._attr_native_unit_of_measurement = "uS/cm"
         super().__init__(hass, config)
 
     async def async_update(self):
-        self._attr_state = random.randint(40, 200) * 10
+        self._attr_native_value = random.randint(40, 200) * 10
 
 
 class PlantDummyMoisture(PlantDummyStatus):
     def __init__(self, hass, config):
-        self._name = f"{config.data['plant_info']['plant_name']} Dummy Moisture Level"
+        self._attr_name = (
+            f"{config.data['plant_info']['plant_name']} Dummy Moisture Level"
+        )
         self._attr_unique_id = f"{config.entry_id}-dummy-moisture"
         self._attr_icon = "mdi:water"
+        self._attr_native_unit_of_measurement = PERCENTAGE
 
         super().__init__(hass, config)
 
     async def async_update(self):
-        self._attr_state = random.randint(0, 80)
+        self._attr_native_value = random.randint(0, 80)
 
     @property
     def device_class(self):
-        return "humidity"
+        return DEVICE_CLASS_HUMIDITY
 
 
 class PlantDummyTemperature(PlantDummyStatus):
     def __init__(self, hass, config):
-        self._name = f"{config.data['plant_info']['plant_name']} Dummy Temperature"
+        self._attr_name = f"{config.data['plant_info']['plant_name']} Dummy Temperature"
         self._attr_unique_id = f"{config.entry_id}-dummy-temperature"
         self._attr_icon = "mdi:thermometer"
+        self._attr_native_unit_of_measurement = TEMP_CELSIUS
+
         super().__init__(hass, config)
 
     async def async_update(self):
-        r = random.randint(0, 40)
+        r = random.randint(15, 20)
         # _LOGGER.info("Getting curret temperature: %s", r)
-        self._attr_state = r
+        self._attr_native_value = r
 
     @property
     def device_class(self):
-        return "temperature"
+        return DEVICE_CLASS_TEMPERATURE
 
 
 class PlantDummyHumidity(PlantDummyStatus):
     def __init__(self, hass, config):
-        self._name = f"{config.data['plant_info']['plant_name']} Dummy Humidity"
+        self._attr_name = f"{config.data['plant_info']['plant_name']} Dummy Humidity"
         self._attr_unique_id = f"{config.entry_id}-dummy-humidity"
         self._attr_icon = "mdi:water-percent"
+        self._attr_native_unit_of_measurement = PERCENTAGE
         super().__init__(hass, config)
 
     async def async_update(self):
         r = random.randint(20, 90)
         # _LOGGER.info("Getting curret temperature: %s", r)
-        self._attr_state = r
+        self._attr_native_value = r
 
     @property
     def device_class(self):
-        return "humidity"
+        return DEVICE_CLASS_HUMIDITY
