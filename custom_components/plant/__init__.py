@@ -5,6 +5,9 @@ from collections import deque
 from contextlib import suppress
 from datetime import datetime, timedelta
 import logging
+from types import MethodDescriptorType
+
+import voluptuous as vol
 
 from homeassistant.components.integration.const import METHOD_TRAPEZOIDAL
 from homeassistant.components.integration.sensor import IntegrationSensor
@@ -16,6 +19,7 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
+    ATTR_ENTITY_ID,
     ATTR_ENTITY_PICTURE,
     ATTR_NAME,
     ATTR_TEMPERATURE,
@@ -31,15 +35,18 @@ from homeassistant.const import (
     STATE_UNKNOWN,
     TEMP_CELSIUS,
     TEMP_FAHRENHEIT,
+    URL_API_TEMPLATE,
 )
 from homeassistant.core import HomeAssistant, ServiceCall, callback
 from homeassistant.helpers import device_registry as dr, entity_registry as er
 import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers.config_validation import path as valid_path, url as valid_url
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import (
     Entity,
     EntityCategory,
     async_generate_entity_id,
+    entity_sources,
 )
 from homeassistant.helpers.entity_component import EntityComponent
 from homeassistant.helpers.event import async_track_state_change_event
@@ -105,6 +112,7 @@ ATTR_IMAGE = "image"
 ATTR_EXTERNAL_SENSOR = "external_sensor"
 
 SERVICE_REPLACE_SENSOR = "replace_sensor"
+SERVICE_REPLACE_IMAGE = "replace_image"
 
 # we're not returning only one value, we're returning a dict here. So we need
 # to have a separate literal for it to avoid confusion.
@@ -154,7 +162,7 @@ async def async_setup(hass: HomeAssistant, config: dict):
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Set up OpenPlantBook from a config entry."""
     hass.data.setdefault(DOMAIN, {})
-
+    hass.data[DOMAIN].setdefault(entry.entry_id, {})
     # We are creating some dummy sensors to play with
     await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
 
@@ -179,7 +187,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     pcurt = PlantCurrentTemperature(hass, entry, plant)
     pcurh = PlantCurrentHumidity(hass, entry, plant)
 
-    hass.data[DOMAIN][entry.entry_id] = plant
+    hass.data[DOMAIN][entry.entry_id]["plant"] = plant
 
     component = EntityComponent(_LOGGER, DOMAIN, hass)
 
@@ -211,6 +219,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     plant_entities.extend(plant_maxmin)
     plant_entities.extend(plant_sensors)
     await component.async_add_entities(plant_entities)
+    hass.data[DOMAIN][entry.entry_id]["meters"] = plant_maxmin
+    hass.data[DOMAIN][entry.entry_id]["sensors"] = plant_sensors
+    hass.data[DOMAIN][entry.entry_id]["species"] = pspieces
 
     brightness_integral = IntegrationSensor(
         integration_method=METHOD_TRAPEZOIDAL,
@@ -288,14 +299,54 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
             meter_entity,
             new_sensor,
         )
-        for entity in plant_sensors:
-            if entity.entity_id == meter_entity:
-                _LOGGER.info("Sensor: %s", entity)
-                entity.replace_external_sensor(new_sensor)
+        for key in hass.data[DOMAIN]:
+            meters = hass.data[DOMAIN][key]["sensors"]
+            _LOGGER.info(
+                "Entry: %s",
+                entry,
+            )
+            for meter in meters:
+                if meter.entity_id == meter_entity:
+                    _LOGGER.info("Sensor: %s", meter)
+                    meter.replace_external_sensor(new_sensor)
         return
 
-    if not DOMAIN in hass.services.async_services():
-        hass.services.async_register(DOMAIN, SERVICE_REPLACE_SENSOR, replace_sensor)
+    async def replace_image(call: ServiceCall) -> None:
+        _LOGGER.info(call.data)
+
+        entity_picture = call.data.get(ATTR_ENTITY_PICTURE)
+        entity_id = call.data.get(ATTR_ENTITY_ID)
+        try:
+            url = valid_url(entity_picture)
+            _LOGGER.info("Url 1 %s", url)
+        except vol.Invalid:
+            _LOGGER.warning("Not a valid url: %s", entity_picture)
+            if entity_picture.startswith("/local/"):
+                try:
+                    url = valid_path(entity_picture)
+                    _LOGGER.info("Url 2 %s", url)
+                except vol.Invalid:
+                    _LOGGER.warning("Not a valid path: %s", entity_picture)
+                    raise vol.Invalid(f"Invalid URL: {entity_picture}")
+            else:
+                raise vol.Invalid(f"Invalid URL: {entity_picture}")
+
+        _LOGGER.info("Entity: %s URL: %s -> %s", entity_id, entity_picture, url)
+        for key in hass.data[DOMAIN]:
+            entry = hass.data[DOMAIN][key]["plant"]
+            _LOGGER.info(
+                "Entry: %s",
+                entry,
+            )
+            if entity_id == entry.entity_id:
+                _LOGGER.info("Replace image")
+            else:
+                _LOGGER.info("Wrong plant")
+
+    # if not DOMAIN in hass.services.async_services():
+    hass.services.async_register(DOMAIN, SERVICE_REPLACE_SENSOR, replace_sensor)
+    hass.services.async_register(DOMAIN, SERVICE_REPLACE_IMAGE, replace_image)
+
     return True
 
 
@@ -564,19 +615,20 @@ class PlantDevice(Entity):
             and self.sensor_brightness.state != STATE_UNKNOWN
             and self.sensor_brightness.state != STATE_UNAVAILABLE
             and self.sensor_brightness.state is not None
+            and self.sensor_brightness.extra_state_attributes is not None
         ):
             _LOGGER.info(
                 "Brightness-test: Hist Min: %s Hist Max: %s",
-                self.sensor_brightness.extra_state_attributes["history_min"],
-                self.sensor_brightness.extra_state_attributes["history_max"],
+                self.sensor_brightness.extra_state_attributes.get("history_min"),
+                self.sensor_brightness.extra_state_attributes.get("history_max"),
             )
-            if int(self.sensor_brightness.extra_state_attributes["history_min"]) < int(
-                self.min_brightness.state
-            ):
+            if int(
+                self.sensor_brightness.extra_state_attributes.get("history_min", 999999)
+            ) < int(self.min_brightness.state):
                 self.brightness_status = STATE_LOW
                 state = STATE_PROBLEM
             elif int(
-                self.sensor_brightness.extra_state_attributes["history_max"]
+                self.sensor_brightness.extra_state_attributes.get("history_max", 0)
             ) > int(self.max_brightness.state):
                 self.brightness_status = STATE_HIGH
                 state = STATE_PROBLEM
