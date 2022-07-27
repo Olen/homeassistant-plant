@@ -1,9 +1,24 @@
 """Config flow for Custom Plant integration."""
+from __future__ import annotations
 
 import logging
 
 import voluptuous as vol
 
+from config.custom_components.plant import (
+    DEFAULT_MAX_BRIGHTNESS,
+    DEFAULT_MAX_CONDUCTIVITY,
+    DEFAULT_MAX_HUMIDITY,
+    DEFAULT_MAX_MMOL,
+    DEFAULT_MAX_MOISTURE,
+    DEFAULT_MAX_TEMPERATURE,
+    DEFAULT_MIN_BRIGHTNESS,
+    DEFAULT_MIN_CONDUCTIVITY,
+    DEFAULT_MIN_HUMIDITY,
+    DEFAULT_MIN_MMOL,
+    DEFAULT_MIN_MOISTURE,
+    DEFAULT_MIN_TEMPERATURE,
+)
 from homeassistant import config_entries, data_entry_flow
 from homeassistant.components.sensor import (
     DEVICE_CLASSES,
@@ -11,8 +26,14 @@ from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
 )
-from homeassistant.const import ATTR_DEVICE_CLASS, ATTR_DOMAIN, ATTR_ENTITY_PICTURE
+from homeassistant.const import (
+    ATTR_DEVICE_CLASS,
+    ATTR_DOMAIN,
+    ATTR_ENTITY_PICTURE,
+    TEMP_CELSIUS,
+)
 from homeassistant.helpers.selector import selector
+from homeassistant.helpers.temperature import display_temp
 
 from .const import (
     CONF_CHECK_DAYS,
@@ -236,20 +257,32 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 return await self.async_step_limits_done()
 
         data_schema = {}
-        max_moisture = 0
-        min_moisture = 0
-        max_light_lx = 0
-        min_light_lx = 0
-        max_temp = 0
-        min_temp = 0
-        max_conductivity = 0
-        min_condictivity = 0
-        max_mmol = 0
-        min_mmol = 0
+        max_moisture = DEFAULT_MAX_MOISTURE
+        min_moisture = DEFAULT_MIN_MOISTURE
+        max_light_lx = DEFAULT_MAX_BRIGHTNESS
+        min_light_lx = DEFAULT_MIN_BRIGHTNESS
+        max_temp = display_temp(
+            self.hass,
+            DEFAULT_MAX_TEMPERATURE,
+            TEMP_CELSIUS,
+            0,
+        )
+        min_temp = display_temp(
+            self.hass,
+            DEFAULT_MIN_TEMPERATURE,
+            TEMP_CELSIUS,
+            0,
+        )
+        max_conductivity = DEFAULT_MAX_CONDUCTIVITY
+        min_condictivity = DEFAULT_MIN_CONDUCTIVITY
+        max_mmol = DEFAULT_MAX_MMOL
+        min_mmol = DEFAULT_MIN_MMOL
+        max_humidity = DEFAULT_MAX_HUMIDITY
+        min_humidity = DEFAULT_MIN_HUMIDITY
 
-        opb_image = None
+        opb_image = ""
         # opb_species = None
-        opb_name = self.plant_info[FLOW_PLANT_NAME]
+        opb_name = self.plant_info[FLOW_PLANT_SPECIES]
         _LOGGER.info("User input: %s", user_input)
 
         if DOMAIN_PLANTBOOK in self.hass.services.async_services():
@@ -273,41 +306,55 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 _LOGGER.info("Result A: %s", opb_plant.attributes)
 
                 max_moisture = opb_plant.attributes.get(
-                    CONF_PLANTBOOK_MAPPING[CONF_MAX_MOISTURE]
+                    CONF_PLANTBOOK_MAPPING[CONF_MAX_MOISTURE], DEFAULT_MAX_MOISTURE
                 )
                 min_moisture = opb_plant.attributes.get(
-                    CONF_PLANTBOOK_MAPPING[CONF_MIN_MOISTURE]
+                    CONF_PLANTBOOK_MAPPING[CONF_MIN_MOISTURE], DEFAULT_MIN_MOISTURE
                 )
                 max_light_lx = opb_plant.attributes.get(
-                    CONF_PLANTBOOK_MAPPING[CONF_MAX_BRIGHTNESS]
+                    CONF_PLANTBOOK_MAPPING[CONF_MAX_BRIGHTNESS], DEFAULT_MAX_BRIGHTNESS
                 )
                 min_light_lx = opb_plant.attributes.get(
-                    CONF_PLANTBOOK_MAPPING[CONF_MIN_BRIGHTNESS]
+                    CONF_PLANTBOOK_MAPPING[CONF_MIN_BRIGHTNESS], DEFAULT_MIN_BRIGHTNESS
                 )
-                max_temp = opb_plant.attributes.get(
-                    CONF_PLANTBOOK_MAPPING[CONF_MAX_TEMPERATURE]
+                max_temp = display_temp(
+                    self.hass,
+                    opb_plant.attributes.get(
+                        CONF_PLANTBOOK_MAPPING[CONF_MAX_TEMPERATURE],
+                        DEFAULT_MAX_TEMPERATURE,
+                    ),
+                    TEMP_CELSIUS,
+                    0,
                 )
-                min_temp = opb_plant.attributes.get(
-                    CONF_PLANTBOOK_MAPPING[CONF_MIN_TEMPERATURE]
+                min_temp = display_temp(
+                    self.hass,
+                    opb_plant.attributes.get(
+                        CONF_PLANTBOOK_MAPPING[CONF_MIN_TEMPERATURE],
+                        DEFAULT_MIN_TEMPERATURE,
+                    ),
+                    TEMP_CELSIUS,
+                    0,
                 )
                 max_mmol = opb_plant.attributes.get(
-                    CONF_PLANTBOOK_MAPPING[CONF_MAX_MMOL]
+                    CONF_PLANTBOOK_MAPPING[CONF_MAX_MMOL], DEFAULT_MAX_MMOL
                 )
                 min_mmol = opb_plant.attributes.get(
-                    CONF_PLANTBOOK_MAPPING[CONF_MIN_MMOL]
+                    CONF_PLANTBOOK_MAPPING[CONF_MIN_MMOL], DEFAULT_MIN_MMOL
                 )
 
                 max_conductivity = opb_plant.attributes.get(
-                    CONF_PLANTBOOK_MAPPING[CONF_MAX_CONDUCTIVITY]
+                    CONF_PLANTBOOK_MAPPING[CONF_MAX_CONDUCTIVITY],
+                    DEFAULT_MAX_CONDUCTIVITY,
                 )
                 min_condictivity = opb_plant.attributes.get(
-                    CONF_PLANTBOOK_MAPPING[CONF_MIN_CONDUCTIVITY]
+                    CONF_PLANTBOOK_MAPPING[CONF_MIN_CONDUCTIVITY],
+                    DEFAULT_MIN_CONDUCTIVITY,
                 )
                 max_humidity = opb_plant.attributes.get(
-                    CONF_PLANTBOOK_MAPPING[CONF_MAX_HUMIDITY]
+                    CONF_PLANTBOOK_MAPPING[CONF_MAX_HUMIDITY], DEFAULT_MAX_HUMIDITY
                 )
                 min_humidity = opb_plant.attributes.get(
-                    CONF_PLANTBOOK_MAPPING[CONF_MIN_HUMIDITY]
+                    CONF_PLANTBOOK_MAPPING[CONF_MIN_HUMIDITY], DEFAULT_MIN_HUMIDITY
                 )
 
                 opb_image = opb_plant.attributes.get(FLOW_PLANT_IMAGE)
@@ -321,8 +368,18 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         data_schema[vol.Required(CONF_MIN_BRIGHTNESS, default=min_light_lx)] = int
         data_schema[vol.Required(CONF_MAX_MMOL, default=max_mmol)] = int
         data_schema[vol.Required(CONF_MIN_MMOL, default=min_mmol)] = int
-        data_schema[vol.Required(CONF_MAX_TEMPERATURE, default=max_temp)] = int
-        data_schema[vol.Required(CONF_MIN_TEMPERATURE, default=min_temp)] = int
+        data_schema[
+            vol.Required(
+                CONF_MAX_TEMPERATURE,
+                default=max_temp,
+            )
+        ] = int
+        data_schema[
+            vol.Required(
+                CONF_MIN_TEMPERATURE,
+                default=min_temp,
+            )
+        ] = int
         data_schema[vol.Required(CONF_MAX_CONDUCTIVITY, default=max_conductivity)] = int
         data_schema[vol.Required(CONF_MIN_CONDUCTIVITY, default=min_condictivity)] = int
         data_schema[vol.Required(CONF_MAX_HUMIDITY, default=max_humidity)] = int
@@ -336,6 +393,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             description_placeholders={
                 ATTR_ENTITY_PICTURE: opb_image,
                 FLOW_PLANT_NAME: opb_name,
+                "temp_unit": self.hass.config.units.temperature_unit,
             },
         )
 

@@ -23,12 +23,14 @@ from homeassistant.const import (
     CONDUCTIVITY,
     CONF_NAME,
     CONF_SENSORS,
+    LIGHT_LUX,
     PERCENTAGE,
     STATE_OK,
     STATE_PROBLEM,
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
     TEMP_CELSIUS,
+    TEMP_FAHRENHEIT,
 )
 from homeassistant.core import HomeAssistant, ServiceCall, callback
 from homeassistant.helpers import device_registry as dr, entity_registry as er
@@ -42,7 +44,9 @@ from homeassistant.helpers.entity import (
 from homeassistant.helpers.entity_component import EntityComponent
 from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.helpers.restore_state import RestoreEntity
+from homeassistant.helpers.temperature import display_temp
 from homeassistant.util import dt as dt_util
+from homeassistant.util.temperature import convert as convert_temperature
 
 from .const import (
     CONF_CHECK_DAYS,
@@ -124,6 +128,11 @@ DEFAULT_MIN_CONDUCTIVITY = 500
 DEFAULT_MAX_CONDUCTIVITY = 3000
 DEFAULT_MIN_BRIGHTNESS = 0
 DEFAULT_MAX_BRIGHTNESS = 100000
+DEFAULT_MIN_HUMIDITY = 20
+DEFAULT_MAX_HUMIDITY = 60
+DEFAULT_MIN_MMOL = 0
+DEFAULT_MAX_MMOL = 100000
+
 DEFAULT_CHECK_DAYS = 3
 
 STATE_LOW = "Low"
@@ -781,6 +790,10 @@ class PlantMinMax(RestoreEntity):
     def entity_category(self):
         return EntityCategory.CONFIG
 
+    @property
+    def unit_of_measurement(self) -> str | None:
+        return self._attr_unit_of_measurement
+
     def _state_changed_event(self, event):
         if event.data.get("old_state") is None or event.data.get("new_state") is None:
             return
@@ -855,6 +868,7 @@ class PlantMaxMoisture(PlantMinMax):
             CONF_MAX_MOISTURE, STATE_UNKNOWN
         )
         self._attr_unique_id = f"{config.entry_id}-max-moisture"
+        self._attr_unit_of_measurement = PERCENTAGE
 
         super().__init__(hass, config, plantdevice)
 
@@ -877,6 +891,7 @@ class PlantMinMoisture(PlantMinMax):
             CONF_MIN_MOISTURE, STATE_UNKNOWN
         )
         self._attr_unique_id = f"{config.entry_id}-min-moisture"
+        self._attr_unit_of_measurement = PERCENTAGE
 
         super().__init__(hass, config, plantdevice)
 
@@ -900,10 +915,10 @@ class PlantMaxTemperature(PlantMinMax):
         self._default_state = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
             CONF_MAX_TEMPERATURE, DEFAULT_MAX_TEMPERATURE
         )
+        super().__init__(hass, config, plantdevice)
         self._default_unit_of_measurement = config.data[FLOW_PLANT_INFO][
             FLOW_PLANT_LIMITS
-        ].get(CONF_SCALE_TEMPERATURE, TEMP_CELSIUS)
-        super().__init__(hass, config, plantdevice)
+        ].get(CONF_SCALE_TEMPERATURE, self._hass.config.units.temperature_unit)
 
     @property
     def device_class(self):
@@ -926,6 +941,9 @@ class PlantMaxTemperature(PlantMinMax):
             meter = self._hass.states.get(
                 self._plant.extra_state_attributes["meters"]["temperature"]
             )
+            if not ATTR_UNIT_OF_MEASUREMENT in meter.attributes:
+                return self._attr_unit_of_measurement
+
             _LOGGER.debug(
                 "Default: %s, Mine: %s, Parent: %s",
                 self._default_unit_of_measurement,
@@ -960,14 +978,27 @@ class PlantMaxTemperature(PlantMinMax):
             and new_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == "°C"
         ):
             _LOGGER.debug("Changing from F to C measurement is %s", self.state)
-            new_state = int(round((int(self.state) - 32) * 0.5556, 0))
+            # new_state = int(round((int(self.state) - 32) * 0.5556, 0))
+            new_state = round(
+                convert_temperature(
+                    temperature=float(self.state),
+                    from_unit=TEMP_FAHRENHEIT,
+                    to_unit=TEMP_CELSIUS,
+                )
+            )
 
         if (
             old_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == "°C"
             and new_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == "°F"
         ):
             _LOGGER.debug("Changing from C to F measurement is %s", self.state)
-            new_state = int(round((int(self.state) * 1.8) + 32, 0))
+            new_state = round(
+                convert_temperature(
+                    temperature=float(self.state),
+                    from_unit=TEMP_CELSIUS,
+                    to_unit=TEMP_FAHRENHEIT,
+                )
+            )
 
         _LOGGER.debug("New state = %s", new_state)
         self._hass.states.set(self.entity_id, new_state, new_attributes)
@@ -986,12 +1017,12 @@ class PlantMinTemperature(PlantMinMax):
         self._default_state = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
             CONF_MIN_TEMPERATURE, DEFAULT_MIN_TEMPERATURE
         )
-        self._default_unit_of_measurement = config.data[FLOW_PLANT_INFO][
-            FLOW_PLANT_LIMITS
-        ].get(CONF_SCALE_TEMPERATURE, TEMP_CELSIUS)
 
         self._attr_unique_id = f"{config.entry_id}-min-temperature"
         super().__init__(hass, config, plantdevice)
+        self._default_unit_of_measurement = config.data[FLOW_PLANT_INFO][
+            FLOW_PLANT_LIMITS
+        ].get(CONF_SCALE_TEMPERATURE, self._hass.config.units.temperature_unit)
 
     @property
     def device_class(self):
@@ -1011,6 +1042,8 @@ class PlantMinTemperature(PlantMinMax):
             meter = self._hass.states.get(
                 self._plant.extra_state_attributes["meters"]["temperature"]
             )
+            if not ATTR_UNIT_OF_MEASUREMENT in meter.attributes:
+                return self._attr_unit_of_measurement
             _LOGGER.info(
                 "Default: %s, Mine: %s, Parent: %s",
                 self._default_unit_of_measurement,
@@ -1045,14 +1078,28 @@ class PlantMinTemperature(PlantMinMax):
             and new_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == "°C"
         ):
             _LOGGER.debug("Changing from F to C measurement is %s", self.state)
-            new_state = int(round((int(self.state) - 32) * 0.5556, 0))
+            new_state = round(
+                convert_temperature(
+                    temperature=float(self.state),
+                    from_unit=TEMP_FAHRENHEIT,
+                    to_unit=TEMP_CELSIUS,
+                )
+            )
+
+            # new_state = int(round((int(self.state) - 32) * 0.5556, 0))
 
         if (
             old_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == "°C"
             and new_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == "°F"
         ):
             _LOGGER.debug("Changing from C to F measurement is %s", self.state)
-            new_state = int(round((int(self.state) * 1.8) + 32, 0))
+            new_state = round(
+                convert_temperature(
+                    temperature=float(self.state),
+                    from_unit=TEMP_CELSIUS,
+                    to_unit=TEMP_FAHRENHEIT,
+                )
+            )
 
         _LOGGER.debug("New state = %s", new_state)
         self._hass.states.set(self.entity_id, new_state, new_attributes)
@@ -1072,6 +1119,7 @@ class PlantMaxBrightness(PlantMinMax):
             CONF_MAX_BRIGHTNESS, STATE_UNKNOWN
         )
         self._attr_unique_id = f"{config.entry_id}-max-brightness"
+        self._attr_unit_of_measurement = LIGHT_LUX
         super().__init__(hass, config, plantdevice)
 
     @property
@@ -1093,6 +1141,7 @@ class PlantMinBrightness(PlantMinMax):
             CONF_MIN_BRIGHTNESS, STATE_UNKNOWN
         )
         self._attr_unique_id = f"{config.entry_id}-min-brightness"
+        self._attr_unit_of_measurement = LIGHT_LUX
         super().__init__(hass, config, plantdevice)
 
     @property
@@ -1112,6 +1161,7 @@ class PlantMaxMmol(PlantMinMax):
             CONF_MAX_MMOL, STATE_UNKNOWN
         )
         self._attr_unique_id = f"{config.entry_id}-max-mmol"
+        self._attr_unit_of_measurement = "mmol"
         super().__init__(hass, config, plantdevice)
 
     @property
@@ -1131,6 +1181,8 @@ class PlantMinMmol(PlantMinMax):
             CONF_MIN_MMOL, STATE_UNKNOWN
         )
         self._attr_unique_id = f"{config.entry_id}-min-mmol"
+        self._attr_unit_of_measurement = "mmol"
+
         super().__init__(hass, config, plantdevice)
 
     @property
@@ -1152,6 +1204,7 @@ class PlantMaxConductivity(PlantMinMax):
             CONF_MAX_CONDUCTIVITY, STATE_UNKNOWN
         )
         self._attr_unique_id = f"{config.entry_id}-max-conductivity"
+        self._attr_unit_of_measurement = "ucs"
         super().__init__(hass, config, plantdevice)
 
 
@@ -1169,6 +1222,8 @@ class PlantMinConductivity(PlantMinMax):
             CONF_MIN_CONDUCTIVITY, STATE_UNKNOWN
         )
         self._attr_unique_id = f"{config.entry_id}-min-conductivity"
+        self._attr_unit_of_measurement = "ucs"
+
         super().__init__(hass, config, plantdevice)
 
 
@@ -1186,6 +1241,8 @@ class PlantMaxHumidity(PlantMinMax):
             CONF_MAX_HUMIDITY, STATE_UNKNOWN
         )
         self._attr_unique_id = f"{config.entry_id}-max-humidity"
+        self._attr_unit_of_measurement = PERCENTAGE
+
         super().__init__(hass, config, plantdevice)
 
     @property
@@ -1207,6 +1264,7 @@ class PlantMinHumidity(PlantMinMax):
             CONF_MIN_HUMIDITY, STATE_UNKNOWN
         )
         self._attr_unique_id = f"{config.entry_id}-min-humidity"
+        self._attr_unit_of_measurement = PERCENTAGE
         super().__init__(hass, config, plantdevice)
 
     @property
@@ -1303,6 +1361,8 @@ class PlantCurrentStatus(RestoreSensor):
     @callback
     def state_changed(self, entity_id, new_state):
         """Run on every update to allow for changes from the GUI and service call"""
+        if not self.hass.states.get(self.entity_id):
+            return
         current_attrs = self.hass.states.get(self.entity_id).attributes
         if current_attrs.get("external_sensor") != self._external_sensor:
             self.replace_external_sensor(current_attrs.get("external_sensor"))

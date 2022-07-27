@@ -29,20 +29,23 @@
       },
       "limits": {
         "title": "Set limits",
-        "description": "# {plant_name}<br/>![Plant]({entity_picture})",
+        "description": "# {plant_name}\n![Plant]({entity_picture})<br />\nTemperature unit is {temp_unit}",
         "data": {
-          "wrong_plant": "Wrong plant, go back and select another one...",
+          "wrong_plant": "Wrong plant? (Go back and select another one)",
           "display_pid": "Plant species to display",
-          "max_moisture": "Maximum moisture level",
-          "min_moisture": "Minimum moisture level",
-          "max_brightness": "Maximum light level",
-          "min_brightness": "Minimum light level",
-          "max_temperature": "Maximum temperature",
-          "min_temperature": "Minimum temperature",
-          "max_conductivity": "Maximum conductivity",
-          "min_conductivity": "Minimum conductivity",
-          "max_humidity": "Maximum humidity (environment)",
-          "min_humidity": "Minimum humidity (environment)"
+          "max_moisture": "Maximum moisture level (%)",
+          "min_moisture": "Minimum moisture level (%)",
+          "max_brightness": "Maximum light level (lx)",
+          "min_brightness": "Minimum light level (lx)",
+          "max_mmol": "Maximum MMOL",
+          "min_mmol": "Minimum MMOL",
+          "max_temperature": "Maximum temperature (see above)",
+          "min_temperature": "Minimum temperature (see above)",
+          "max_conductivity": "Maximum conductivity (uS/cm)",
+          "min_conductivity": "Minimum conductivity (uS/cm)",
+          "max_humidity": "Maximum air humidity (%)",
+          "min_humidity": "Minimum air humidity (%)",
+          "entity_picture": "Image URL"
         }
       }
     },
