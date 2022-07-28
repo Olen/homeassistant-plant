@@ -30,25 +30,18 @@ This is just a heads up for now, but I want to give everyone fair warning. We ar
 * Max and min temperature is now dependent on the unit of measurement - currently °C and °F is supported.
   * The values will be updated if you change your units in the Home Assistant settings
 
-### Better handling of species
+### Better handling of species and image
 
 * If you change the species of a plant in the UI, new data are fetched from OpenPlantbook
+* Image can also be updated from the UI
 
-![Image](change_plant.gif)
+![image](https://user-images.githubusercontent.com/203184/181514309-4863cb98-e2af-4426-8a82-8682e319cfb6.png)
 
 ### Easier to replace sensors
 
 * You can use a service call to replace the different sensors used to monitor the plant
 
 ![image](https://user-images.githubusercontent.com/203184/180942138-d77cbad4-8e06-448c-bd1a-4e2b8f12a951.png)
-
-
-### Service to replace image
-
-* You can use a service call to replace the plant image
-
-![image](https://user-images.githubusercontent.com/203184/181352702-260774a0-4f5b-4387-a1cb-7dd7c3aa4698.png)
-
 
 
 ### More flexible lovelace card
