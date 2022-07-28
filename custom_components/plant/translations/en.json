@@ -47,10 +47,29 @@
           "min_humidity": "Minimum air humidity (%)",
           "entity_picture": "Image URL"
         }
+      },
+      "error": {
+        "opb_notfound": "Did not find this species in OpenPlantbook"
       }
-    },
-    "error": {
-      "opb_notfound": "Did not find this species in OpenPlantbook"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options",
+        "description": "Only update the options you want to modify. Empty fields are ignored.",
+        "data": {
+          "check_days": "Brightness check days",
+          "plant_species": "Species",
+          "display_pid": "Plant species to display",
+          "temperature_sensor": "Temperature sensor",
+          "moisture_sensor": "Moisture sensor",
+          "conductivity_sensor": "Conductivity sensor",
+          "brightness_sensor": "Light sensor",
+          "humidity_sensor": "Humidity (environment) sensor",
+          "entity_picture": "Image URL. Will be automatically updated if species is found in OpnePlantbook."
+        }
+      }
     }
   }
 }

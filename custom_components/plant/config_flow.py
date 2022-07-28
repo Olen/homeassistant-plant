@@ -1,11 +1,15 @@
 """Config flow for Custom Plant integration."""
 from __future__ import annotations
 
+from collections.abc import Mapping
 import logging
+from typing import Any
 
 import voluptuous as vol
 
+from config.custom_components import plant
 from config.custom_components.plant import (
+    DEFAULT_CHECK_DAYS,
     DEFAULT_MAX_BRIGHTNESS,
     DEFAULT_MAX_CONDUCTIVITY,
     DEFAULT_MAX_HUMIDITY,
@@ -31,6 +35,12 @@ from homeassistant.const import (
     ATTR_DOMAIN,
     ATTR_ENTITY_PICTURE,
     TEMP_CELSIUS,
+)
+from homeassistant.core import HomeAssistant, ServiceCall, callback
+from homeassistant.helpers.config_validation import (
+    DEVICE_ACTION_BASE_SCHEMA,
+    path as valid_path,
+    url as valid_url,
 )
 from homeassistant.helpers.selector import selector
 from homeassistant.helpers.temperature import display_temp
@@ -99,6 +109,14 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     def __init__(self):
         self.plant_info = {}
         self.error = None
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(
+        config_entry: config_entries.ConfigEntry,
+    ) -> config_entries.OptionsFlow:
+        """Create the options flow."""
+        return OptionsFlowHandler(config_entry)
 
     async def async_step_user(self, user_input=None):
         """Handle the initial step."""
@@ -225,7 +243,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 {ATTR_SELECT: {ATTR_OPTIONS: dropdown}}
             )
         else:
-            _LOGGER.info("Found nothing...")
+            _LOGGER.info("Found nothing")
             self.error = FLOW_ERROR_NOTFOUND
             # self.error = f"Could not find '{self.plant_info['plant_species']}' in OpenPlantbook"
             return await self.async_step_user()
@@ -419,3 +437,179 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def validate_step_4(self, user_input):
         """Validate step four"""
         return True
+
+
+class OptionsFlowHandler(config_entries.OptionsFlow):
+    """Handling opetions for plant"""
+
+    def __init__(
+        self,
+        entry: config_entries.ConfigEntry,
+    ) -> None:
+        """Initialize options flow."""
+
+        entry.async_on_unload(entry.add_update_listener(self.update_plant_options))
+
+        self.plant = None
+        self.entry = entry
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> data_entry_flow.FlowResult:
+        """Manage the options."""
+        if user_input is not None:
+            _LOGGER.info("User Input: %s", user_input)
+            return self.async_create_entry(title="", data=user_input)
+
+        _LOGGER.info(self.entry.data)
+        self.plant = self.hass.data[DOMAIN][self.entry.entry_id]["plant"]
+
+        data_schema = {}
+        data_schema[
+            vol.Required(
+                FLOW_PLANT_SPECIES,
+                default=self.plant.species,
+            )
+        ] = str
+        data_schema[
+            vol.Optional(
+                OPB_DISPLAY_PID,
+                default=self.plant.display_species,
+            )
+        ] = str
+        data_schema[
+            vol.Optional(ATTR_ENTITY_PICTURE, default=self.plant._attr_entity_picture)
+        ] = str
+        data_schema[vol.Optional(CONF_CHECK_DAYS, default=self.plant.check_days)] = int
+
+        return self.async_show_form(step_id="init", data_schema=vol.Schema(data_schema))
+
+    async def update_plant_options(
+        self, hass: HomeAssistant, entry: config_entries.ConfigEntry
+    ):
+        """Handle options update."""
+        _LOGGER.info("Entry Data %s", entry.options)
+        entity_picture = entry.options.get(ATTR_ENTITY_PICTURE)
+        # species = entry.get(CONF_SPECIES)
+        _LOGGER.info("Picture: %s", entity_picture)
+
+        if entity_picture is not None:
+            if entity_picture == "":
+                _LOGGER.info("Remove image to %s", entity_picture)
+                self.plant.add_image(entity_picture)
+                return
+            try:
+                url = valid_url(entity_picture)
+                _LOGGER.info("Url 1 %s", url)
+            except Exception as exc1:
+                _LOGGER.warning("Not a valid url: %s", entity_picture)
+                if entity_picture.startswith("/local/"):
+                    try:
+                        url = valid_path(entity_picture)
+                        _LOGGER.info("Url 2 %s", url)
+                    except Exception as exc2:
+                        _LOGGER.warning("Not a valid path: %s", entity_picture)
+                        raise vol.Invalid(f"Invalid URL: {entity_picture}") from exc2
+                else:
+                    raise vol.Invalid(f"Invalid URL: {entity_picture}") from exc1
+            _LOGGER.info("Update image to %s", entity_picture)
+            self.plant.add_image(entity_picture)
+
+        new_display_species = entry.options.get(OPB_DISPLAY_PID)
+        _LOGGER.info("New display pid")
+        if new_display_species is not None:
+            self.plant.display_species = new_display_species
+
+        new_species = entry.options.get(FLOW_PLANT_SPECIES)
+        if new_species and new_species != self.plant.species:
+            opb_plant = None
+            opb_ok = False
+            _LOGGER.info(
+                "Species changed from '%s' to '%s'", self.plant.species, new_species
+            )
+
+            if "openplantbook" in self.hass.services.async_services():
+                _LOGGER.info("We have OpenPlantbook configured")
+                await self.hass.services.async_call(
+                    domain="openplantbook",
+                    service="get",
+                    service_data={"species": new_species},
+                    blocking=True,
+                    limit=30,
+                )
+                try:
+                    opb_plant = self.hass.states.get(
+                        "openplantbook."
+                        + new_species.replace("'", "").replace(" ", "_")
+                    )
+
+                    _LOGGER.info("Result: %s", opb_plant)
+                    opb_ok = True
+                except AttributeError:
+                    _LOGGER.warning("Did not find '%s' in OpenPlantbook", new_species)
+                    await self.hass.services.async_call(
+                        domain="persistent_notification",
+                        service="create",
+                        service_data={
+                            "title": "Species not found",
+                            "message": f"Could not find '{new_species}' in OpenPlantbook",
+                        },
+                    )
+                    return True
+            if opb_plant:
+                _LOGGER.info(
+                    "Setting entity_image to %s", opb_plant.attributes[FLOW_PLANT_IMAGE]
+                )
+                self.plant.add_image(opb_plant.attributes[FLOW_PLANT_IMAGE])
+
+                for (ha_attribute, opb_attribute) in CONF_PLANTBOOK_MAPPING.items():
+
+                    set_entity = getattr(self.plant, ha_attribute)
+
+                    set_entity_id = set_entity.entity_id
+                    _LOGGER.info(
+                        "Setting %s to %s",
+                        set_entity_id,
+                        opb_plant.attributes[opb_attribute],
+                    )
+                    self.hass.states.async_set(
+                        set_entity_id, opb_plant.attributes[opb_attribute]
+                    )
+                self.plant.species = opb_plant.attributes[OPB_PID]
+                _LOGGER.info(
+                    "Setting display_species to %s",
+                    opb_plant.attributes[OPB_DISPLAY_PID],
+                )
+
+                self.plant.display_species = opb_plant.attributes[OPB_DISPLAY_PID]
+                # self.async_write_ha_state()
+
+            else:
+                if opb_ok:
+                    _LOGGER.warning("Did not find '%s' in OpenPlantbook", new_species)
+                    await self.hass.services.async_call(
+                        domain="persistent_notification",
+                        service="create",
+                        service_data={
+                            "title": "Species not found",
+                            "message": f"Could not find '{new_species}' in OpenPlantbook. See the state of openplantbook.search_result for suggestions",
+                        },
+                    )
+                    # Just do a plantbook search to allow the user to find a better result
+                    await self.hass.services.async_call(
+                        domain="openplantbook",
+                        service="search",
+                        service_data={"alias": new_species},
+                        blocking=False,
+                        limit=30,
+                    )
+                else:
+                    # We just accept whatever species the user sets.
+                    # They can always change it later
+
+                    self.plant.species = new_species
+                    # self.async_write_ha_state()
+
+                return True
+
+        self.plant.update_registry()

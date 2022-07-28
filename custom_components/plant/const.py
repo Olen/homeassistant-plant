@@ -6,11 +6,16 @@ DOMAIN = "plant"
 ATTR_TEMPERATURE = "temperature"
 ATTR_PROBLEM = "problem"
 ATTR_SENSORS = "sensors"
+ATTR_METERS = "meters"
+ATTR_THRESHOLDS = "thresholds"
+
 PROBLEM_NONE = "none"
 ATTR_MAX_BRIGHTNESS_HISTORY = "max_brightness"
 ATTR_SPECIES = "species"
 ATTR_LIMITS = "limits"
 ATTR_IMAGE = "image"
+ATTR_MIN = "min"
+ATTR_MAX = "max"
 
 READING_BATTERY = "battery"
 READING_TEMPERATURE = ATTR_TEMPERATURE
@@ -19,6 +24,9 @@ READING_CONDUCTIVITY = "conductivity"
 READING_BRIGHTNESS = "brightness"
 READING_HUMIDITY = "humidity"
 READING_MMOL = "mmol"
+
+UNIT_PPFDF = "μmol/m²/s"
+UNIT_CONDUCTIVITY = "μS/cm"
 
 FLOW_PLANT_INFO = "plant_info"
 FLOW_PLANT_SPECIES = "plant_species"

@@ -2,10 +2,13 @@
 from __future__ import annotations
 
 from collections import deque
+from collections.abc import Mapping
 from contextlib import suppress
+import copy
 from datetime import datetime, timedelta
 import logging
 from types import MethodDescriptorType
+from typing import Any
 
 import voluptuous as vol
 
@@ -13,11 +16,11 @@ from homeassistant.components.integration.const import METHOD_TRAPEZOIDAL
 from homeassistant.components.integration.sensor import IntegrationSensor
 from homeassistant.components.recorder import get_instance, history
 from homeassistant.components.sensor import (
-    STATE_CLASS_MEASUREMENT,
     RestoreSensor,
     SensorDeviceClass,
+    SensorStateClass,
 )
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import ConfigEntries, ConfigEntry
 from homeassistant.const import (
     ATTR_ENTITY_ID,
     ATTR_ENTITY_PICTURE,
@@ -56,6 +59,10 @@ from homeassistant.util import dt as dt_util
 from homeassistant.util.temperature import convert as convert_temperature
 
 from .const import (
+    ATTR_MAX,
+    ATTR_METERS,
+    ATTR_MIN,
+    ATTR_THRESHOLDS,
     CONF_CHECK_DAYS,
     CONF_IMAGE,
     CONF_MAX_BRIGHTNESS,
@@ -90,8 +97,12 @@ from .const import (
     READING_BATTERY,
     READING_BRIGHTNESS,
     READING_CONDUCTIVITY,
+    READING_HUMIDITY,
+    READING_MMOL,
     READING_MOISTURE,
     READING_TEMPERATURE,
+    UNIT_CONDUCTIVITY,
+    UNIT_PPFDF,
 )
 
 CONF_SCALE_TEMPERATURE = "temp_scale"
@@ -141,6 +152,9 @@ DEFAULT_MAX_HUMIDITY = 60
 DEFAULT_MIN_MMOL = 0
 DEFAULT_MAX_MMOL = 100000
 
+# See https://www.apogeeinstruments.com/conversion-ppfd-to-lux/
+DEFAULT_LUX_TO_PPFD = 0.185
+
 DEFAULT_CHECK_DAYS = 3
 
 STATE_LOW = "Low"
@@ -167,7 +181,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
 
     plant = PlantDevice(hass, entry)
-    pspieces = PlantSpecies(hass, entry, plant)
+    # pspieces = PlantSpecies(hass, entry, plant)
     pmaxm = PlantMaxMoisture(hass, entry, plant)
     pminm = PlantMinMoisture(hass, entry, plant)
     pmaxt = PlantMaxTemperature(hass, entry, plant)
@@ -193,7 +207,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
     plant_entities = [
         plant,
-        pspieces,
+        # pspieces,
     ]
     plant_maxmin = [
         pmaxm,
@@ -221,7 +235,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     await component.async_add_entities(plant_entities)
     hass.data[DOMAIN][entry.entry_id]["meters"] = plant_maxmin
     hass.data[DOMAIN][entry.entry_id]["sensors"] = plant_sensors
-    hass.data[DOMAIN][entry.entry_id]["species"] = pspieces
+    # hass.data[DOMAIN][entry.entry_id]["species"] = pspieces
 
     brightness_integral = IntegrationSensor(
         integration_method=METHOD_TRAPEZOIDAL,
@@ -258,9 +272,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
         brightness=pcurb,
         humidity=pcurh,
     )
-    plant.add_species(species=pspieces)
+    # plant.add_species(species=pspieces)
 
     async def replace_sensor(call: ServiceCall) -> None:
+        """Replace a sensor entity within a plant device"""
         meter_entity = call.data.get("meter_entity")
         new_sensor = call.data.get("new_sensor")
         if not meter_entity.startswith(DOMAIN + "."):
@@ -311,41 +326,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
                     meter.replace_external_sensor(new_sensor)
         return
 
-    async def replace_image(call: ServiceCall) -> None:
-        _LOGGER.info(call.data)
-
-        entity_picture = call.data.get(ATTR_ENTITY_PICTURE)
-        entity_id = call.data.get(ATTR_ENTITY_ID)
-        try:
-            url = valid_url(entity_picture)
-            _LOGGER.info("Url 1 %s", url)
-        except vol.Invalid:
-            _LOGGER.warning("Not a valid url: %s", entity_picture)
-            if entity_picture.startswith("/local/"):
-                try:
-                    url = valid_path(entity_picture)
-                    _LOGGER.info("Url 2 %s", url)
-                except vol.Invalid:
-                    _LOGGER.warning("Not a valid path: %s", entity_picture)
-                    raise vol.Invalid(f"Invalid URL: {entity_picture}")
-            else:
-                raise vol.Invalid(f"Invalid URL: {entity_picture}")
-
-        _LOGGER.info("Entity: %s URL: %s -> %s", entity_id, entity_picture, url)
-        for key in hass.data[DOMAIN]:
-            entry = hass.data[DOMAIN][key]["plant"]
-            _LOGGER.info(
-                "Entry: %s",
-                entry,
-            )
-            if entity_id == entry.entity_id:
-                _LOGGER.info("Replace image")
-            else:
-                _LOGGER.info("Wrong plant")
-
     # if not DOMAIN in hass.services.async_services():
     hass.services.async_register(DOMAIN, SERVICE_REPLACE_SENSOR, replace_sensor)
-    hass.services.async_register(DOMAIN, SERVICE_REPLACE_IMAGE, replace_image)
 
     return True
 
@@ -371,9 +353,23 @@ class PlantDevice(Entity):
         self._hass = hass
         self._attr_name = config.data[FLOW_PLANT_INFO][FLOW_PLANT_NAME]
         self._config_entries = []
-        self._attr_entity_picture = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
-            ATTR_ENTITY_PICTURE
-        )
+
+        self._attr_entity_picture = self._config.options.get(ATTR_ENTITY_PICTURE)
+        if not self._attr_entity_picture:
+            self._attr_entity_picture = self._config.data[FLOW_PLANT_INFO][
+                FLOW_PLANT_LIMITS
+            ].get(ATTR_ENTITY_PICTURE)
+
+        self.species = self._config.options.get(FLOW_PLANT_SPECIES)
+        if not self.species:
+            self.species = self._config.data[FLOW_PLANT_INFO][FLOW_PLANT_SPECIES]
+
+        self.display_species = self._config.options.get(OPB_DISPLAY_PID)
+        if not self.display_species:
+            self.display_species = self._config.data[FLOW_PLANT_INFO][
+                FLOW_PLANT_LIMITS
+            ][OPB_DISPLAY_PID]
+
         self._attr_unique_id = self._config.entry_id
 
         self.entity_id = async_generate_entity_id(
@@ -382,7 +378,7 @@ class PlantDevice(Entity):
 
         self._device_id = None
 
-        self.species = None
+        self._check_days = None
 
         self.max_moisture = None
         self.min_moisture = None
@@ -426,76 +422,92 @@ class PlantDevice(Entity):
             "config_entries": self._config_entries,
         }
 
+    # @property
+    # def display_species(self) -> str:
+    #     """The visible name of the plant species"""
+    #     if self.species is None:
+    #         return STATE_UNKNOWN
+    #     if not "display_species" in self.species.extra_state_attributes:
+    #         return STATE_UNKNOWN
+    #     return self.species.extra_state_attributes["display_species"]
+
     @property
-    def display_species(self) -> str:
-        if self.species is None:
-            return STATE_UNKNOWN
-        if not "display_species" in self.species.extra_state_attributes:
-            return STATE_UNKNOWN
-        return self.species.extra_state_attributes["display_species"]
+    def check_days(self) -> int:
+        """Number of days to use for monitoring"""
+        return self._config.options.get(CONF_CHECK_DAYS) or DEFAULT_CHECK_DAYS
 
     @property
     def extra_state_attributes(self) -> dict:
         """Return the device specific state attributes."""
-        if not self.species:
+        if not self.max_temperature:
             return {}
         attributes = {
-            "species": self.species.entity_id,
-            "moisture_status": self.moisture_status,
-            "temperature_status": self.temperature_status,
-            "conductivity_status": self.conductivity_status,
-            "brightness_status": self.brightness_status,
-            "humidity_status": self.humidity_status,
-            "meters": {
-                "moisture": None,
-                "temperature": None,
-                "humidity": None,
-                "conductivity": None,
-                "brightness": None,
+            ATTR_SPECIES: self.display_species,
+            CONF_CHECK_DAYS: self.check_days,
+            f"{READING_MOISTURE}_status": self.moisture_status,
+            f"{READING_TEMPERATURE}_status": self.temperature_status,
+            f"{READING_CONDUCTIVITY}_status": self.conductivity_status,
+            f"{READING_BRIGHTNESS}_status": self.brightness_status,
+            f"{READING_HUMIDITY}_status": self.humidity_status,
+            ATTR_METERS: {
+                READING_MOISTURE: None,
+                READING_TEMPERATURE: None,
+                READING_HUMIDITY: None,
+                READING_CONDUCTIVITY: None,
+                READING_BRIGHTNESS: None,
             },
-            "thresholds": {
-                "temperature": {
-                    "max": self.max_temperature.entity_id,
-                    "min": self.min_temperature.entity_id,
+            ATTR_THRESHOLDS: {
+                READING_TEMPERATURE: {
+                    ATTR_MAX: self.max_temperature.entity_id,
+                    ATTR_MIN: self.min_temperature.entity_id,
                 },
-                "brightness": {
-                    "max": self.max_brightness.entity_id,
-                    "min": self.min_brightness.entity_id,
+                READING_BRIGHTNESS: {
+                    ATTR_MAX: self.max_brightness.entity_id,
+                    ATTR_MIN: self.min_brightness.entity_id,
                 },
-                "moisture": {
-                    "max": self.max_moisture.entity_id,
-                    "min": self.min_moisture.entity_id,
+                READING_MOISTURE: {
+                    ATTR_MAX: self.max_moisture.entity_id,
+                    ATTR_MIN: self.min_moisture.entity_id,
                 },
-                "conductivity": {
-                    "max": self.max_conductivity.entity_id,
-                    "min": self.min_conductivity.entity_id,
+                READING_CONDUCTIVITY: {
+                    ATTR_MAX: self.max_conductivity.entity_id,
+                    ATTR_MIN: self.min_conductivity.entity_id,
                 },
-                "humidity": {
-                    "max": self.max_humidity.entity_id,
-                    "min": self.min_humidity.entity_id,
+                READING_HUMIDITY: {
+                    ATTR_MAX: self.max_humidity.entity_id,
+                    ATTR_MIN: self.min_humidity.entity_id,
                 },
-                "mmol": {
-                    "max": self.max_mmol.entity_id,
-                    "min": self.min_mmol.entity_id,
+                READING_MMOL: {
+                    ATTR_MAX: self.max_mmol.entity_id,
+                    ATTR_MIN: self.min_mmol.entity_id,
                 },
             },
         }
         if self.sensor_moisture is not None:
-            attributes["meters"]["moisture"] = self.sensor_moisture.entity_id
+            attributes[ATTR_METERS][READING_MOISTURE] = self.sensor_moisture.entity_id
         if self.sensor_conductivity is not None:
-            attributes["meters"]["conductivity"] = self.sensor_conductivity.entity_id
+            attributes[ATTR_METERS][
+                READING_CONDUCTIVITY
+            ] = self.sensor_conductivity.entity_id
         if self.sensor_brightness is not None:
-            attributes["meters"]["brightness"] = self.sensor_brightness.entity_id
+            attributes[ATTR_METERS][
+                READING_BRIGHTNESS
+            ] = self.sensor_brightness.entity_id
         if self.sensor_temperature is not None:
-            attributes["meters"]["temperature"] = self.sensor_temperature.entity_id
+            attributes[ATTR_METERS][
+                READING_TEMPERATURE
+            ] = self.sensor_temperature.entity_id
         if self.sensor_humidity is not None:
-            attributes["meters"]["humidity"] = self.sensor_humidity.entity_id
+            attributes[ATTR_METERS][READING_HUMIDITY] = self.sensor_humidity.entity_id
 
         return attributes
 
     def add_image(self, image_url: str | None) -> None:
         """Set new entity_picture"""
         self._attr_entity_picture = image_url
+        options = self._config.options.copy()
+        options[ATTR_ENTITY_PICTURE] = image_url
+        self._hass.config_entries.async_update_entry(self._config, options=options)
 
     def add_species(self, species: Entity | None) -> None:
         """Set new species"""
@@ -517,6 +529,7 @@ class PlantDevice(Entity):
         min_mmol: Entity | None,
     ) -> None:
         """Add the threshold entities"""
+        _LOGGER.info("Adding thresholds")
         self.max_moisture = max_moisture
         self.min_moisture = min_moisture
         self.max_temperature = max_temperature
@@ -610,6 +623,9 @@ class PlantDevice(Entity):
             else:
                 self.humidity_status = STATE_OK
 
+        # TODO
+        # better handlng of brightness
+
         if (
             self.sensor_brightness is not None
             and self.sensor_brightness.state != STATE_UNKNOWN
@@ -617,11 +633,11 @@ class PlantDevice(Entity):
             and self.sensor_brightness.state is not None
             and self.sensor_brightness.extra_state_attributes is not None
         ):
-            _LOGGER.info(
-                "Brightness-test: Hist Min: %s Hist Max: %s",
-                self.sensor_brightness.extra_state_attributes.get("history_min"),
-                self.sensor_brightness.extra_state_attributes.get("history_max"),
-            )
+            # _LOGGER.info(
+            #     "Brightness-test: Hist Min: %s Hist Max: %s",
+            #     self.sensor_brightness.extra_state_attributes.get("history_min"),
+            #     self.sensor_brightness.extra_state_attributes.get("history_max"),
+            # )
             if int(
                 self.sensor_brightness.extra_state_attributes.get("history_min", 999999)
             ) < int(self.min_brightness.state):
@@ -634,9 +650,6 @@ class PlantDevice(Entity):
                 state = STATE_PROBLEM
             else:
                 self.brightness_status = STATE_OK
-
-        # TODO
-        # How to handle brightness?
 
         self._attr_state = state
         self.update_registry()
@@ -672,6 +685,7 @@ class PlantSpecies(RestoreEntity):
     ) -> None:
         """Initialize the Plant component."""
         self._config = config
+        self._hass = hass
         self._attr_name = f"{config.data[FLOW_PLANT_INFO][FLOW_PLANT_NAME]} Species"
         self._attr_state = config.data[FLOW_PLANT_INFO][FLOW_PLANT_SPECIES]
         self._display_species = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS][
@@ -700,12 +714,33 @@ class PlantSpecies(RestoreEntity):
     def extra_state_attributes(self) -> Mapping[str, Any] | None:
         return {"display_species": self._display_species}
 
-    async def async_update(self):
+    async def _state_changed_event(self, event):
+        _LOGGER.info(event.data)
+        if event.data.get("old_state") is None or event.data.get("new_state") is None:
+            _LOGGER.info("Nothing changed")
+            return
+        if event.data.get("old_state").state == event.data.get("new_state").state:
+            _LOGGER.info("Only attributes changed for %s", event.data.get("entity_id"))
+            await self.state_attributes_changed(
+                old_attributes=event.data.get("old_state").attributes,
+                new_attributes=event.data.get("new_state").attributes,
+            )
+            return
+        await self.state_changed(
+            old_state=event.data.get("old_state").state,
+            new_state=event.data.get("new_state").state,
+        )
+
+    async def state_attributes_changed(self, old_attributes, new_attributes) -> None:
+        """Placeholder"""
+        pass
+
+    async def state_changed(self, old_state, new_state):
         """Run on every update"""
 
         # Here we ensure that you can change the species from the GUI, and we update
         # all parameters to match the new species
-        new_species = self.hass.states.get(self.entity_id).state
+        new_species = new_state
         if new_species != self._attr_state and self._attr_state != STATE_UNKNOWN:
             opb_plant = None
             opb_ok = False
@@ -752,9 +787,14 @@ class PlantSpecies(RestoreEntity):
                     set_entity = getattr(self._plant, ha_attribute)
 
                     set_entity_id = set_entity.entity_id
-                    self.hass.states.get(set_entity_id).state = opb_plant.attributes[
-                        opb_attribute
-                    ]
+                    _LOGGER.info(
+                        "Setting %s to %s",
+                        set_entity_id,
+                        opb_plant.attributes[opb_attribute],
+                    )
+                    self.hass.states.async_set(
+                        set_entity_id, opb_plant.attributes[opb_attribute]
+                    )
                 self._attr_state = opb_plant.attributes[OPB_PID]
                 _LOGGER.info(
                     "Setting display_species to %s",
@@ -796,6 +836,12 @@ class PlantSpecies(RestoreEntity):
 
     async def async_added_to_hass(self) -> None:
         """Restore state of species on startup."""
+        async_track_state_change_event(
+            self._hass,
+            list([self.entity_id]),
+            self._state_changed_event,
+        )
+
         await super().async_added_to_hass()
         state = await self.async_get_last_state()
         if not state:
@@ -832,11 +878,6 @@ class PlantMinMax(RestoreEntity):
         )
         if not self._attr_state or self._attr_state == STATE_UNKNOWN:
             self._attr_state = self._default_state
-        async_track_state_change_event(
-            self._hass,
-            list([self.entity_id]),
-            self._state_changed_event,
-        )
 
     @property
     def entity_category(self):
@@ -862,6 +903,7 @@ class PlantMinMax(RestoreEntity):
         )
 
     def state_changed(self, old_state, new_state):
+        """Ensure that we store the state if changed from the UI"""
         _LOGGER.info(
             "State of %s changed from %s to %s, attr_state = %s",
             self.entity_id,
@@ -872,7 +914,7 @@ class PlantMinMax(RestoreEntity):
         self._attr_state = new_state
 
     def state_attributes_changed(self, old_attributes, new_attributes):
-        _LOGGER.debug("Parent changed is running")
+        """Placeholder"""
         pass
 
     def self_updated(self) -> None:
@@ -890,6 +932,12 @@ class PlantMinMax(RestoreEntity):
     async def async_added_to_hass(self) -> None:
         """Restore state of thresholds on startup."""
         await super().async_added_to_hass()
+        async_track_state_change_event(
+            self._hass,
+            list([self.entity_id]),
+            self._state_changed_event,
+        )
+
         state = await self.async_get_last_state()
         if not state:
             return
@@ -968,9 +1016,7 @@ class PlantMaxTemperature(PlantMinMax):
             CONF_MAX_TEMPERATURE, DEFAULT_MAX_TEMPERATURE
         )
         super().__init__(hass, config, plantdevice)
-        self._default_unit_of_measurement = config.data[FLOW_PLANT_INFO][
-            FLOW_PLANT_LIMITS
-        ].get(CONF_SCALE_TEMPERATURE, self._hass.config.units.temperature_unit)
+        self._default_unit_of_measurement = self._hass.config.units.temperature_unit
 
     @property
     def device_class(self):
@@ -981,7 +1027,7 @@ class PlantMaxTemperature(PlantMinMax):
         """Get unit of measurement from the temperature meter"""
         if not hasattr(self, "_attr_unit_of_measurement"):
             _LOGGER.info("UoM is Unset")
-            return None
+            self._attr_unit_of_measurement = self._default_unit_of_measurement
         if self._attr_unit_of_measurement is None:
             _LOGGER.info("UoM is set but None")
             self._attr_unit_of_measurement = self._default_unit_of_measurement
@@ -996,12 +1042,12 @@ class PlantMaxTemperature(PlantMinMax):
             if not ATTR_UNIT_OF_MEASUREMENT in meter.attributes:
                 return self._attr_unit_of_measurement
 
-            _LOGGER.debug(
-                "Default: %s, Mine: %s, Parent: %s",
-                self._default_unit_of_measurement,
-                self._attr_unit_of_measurement,
-                meter.attributes[ATTR_UNIT_OF_MEASUREMENT],
-            )
+            # _LOGGER.debug(
+            #    "Default: %s, Mine: %s, Parent: %s",
+            #    self._default_unit_of_measurement,
+            #    self._attr_unit_of_measurement,
+            #    meter.attributes[ATTR_UNIT_OF_MEASUREMENT],
+            # )
             if (
                 self._attr_unit_of_measurement
                 != meter.attributes[ATTR_UNIT_OF_MEASUREMENT]
@@ -1072,9 +1118,7 @@ class PlantMinTemperature(PlantMinMax):
 
         self._attr_unique_id = f"{config.entry_id}-min-temperature"
         super().__init__(hass, config, plantdevice)
-        self._default_unit_of_measurement = config.data[FLOW_PLANT_INFO][
-            FLOW_PLANT_LIMITS
-        ].get(CONF_SCALE_TEMPERATURE, self._hass.config.units.temperature_unit)
+        self._default_unit_of_measurement = self._hass.config.units.temperature_unit
 
     @property
     def device_class(self):
@@ -1096,12 +1140,12 @@ class PlantMinTemperature(PlantMinMax):
             )
             if not ATTR_UNIT_OF_MEASUREMENT in meter.attributes:
                 return self._attr_unit_of_measurement
-            _LOGGER.info(
-                "Default: %s, Mine: %s, Parent: %s",
-                self._default_unit_of_measurement,
-                self._attr_unit_of_measurement,
-                meter.attributes[ATTR_UNIT_OF_MEASUREMENT],
-            )
+            # _LOGGER.info(
+            #     "Default: %s, Mine: %s, Parent: %s",
+            #     self._default_unit_of_measurement,
+            #     self._attr_unit_of_measurement,
+            #     meter.attributes[ATTR_UNIT_OF_MEASUREMENT],
+            # )
             if (
                 self._attr_unit_of_measurement
                 != meter.attributes[ATTR_UNIT_OF_MEASUREMENT]
@@ -1256,7 +1300,7 @@ class PlantMaxConductivity(PlantMinMax):
             CONF_MAX_CONDUCTIVITY, STATE_UNKNOWN
         )
         self._attr_unique_id = f"{config.entry_id}-max-conductivity"
-        self._attr_unit_of_measurement = "ucs"
+        self._attr_unit_of_measurement = UNIT_CONDUCTIVITY
         super().__init__(hass, config, plantdevice)
 
 
@@ -1274,7 +1318,7 @@ class PlantMinConductivity(PlantMinMax):
             CONF_MIN_CONDUCTIVITY, STATE_UNKNOWN
         )
         self._attr_unique_id = f"{config.entry_id}-min-conductivity"
-        self._attr_unit_of_measurement = "ucs"
+        self._attr_unit_of_measurement = UNIT_CONDUCTIVITY
 
         super().__init__(hass, config, plantdevice)
 
@@ -1335,7 +1379,7 @@ class PlantCurrentStatus(RestoreSensor):
         self._config = config
         self._default_state = 0
         self._plant = plantdevice
-        self._conf_check_days = DEFAULT_CHECK_DAYS
+        self._conf_check_days = self._plant.check_days
         self.entity_id = async_generate_entity_id(
             f"{DOMAIN}.{{}}", self.name, current_ids={}
         )
@@ -1345,7 +1389,7 @@ class PlantCurrentStatus(RestoreSensor):
 
     @property
     def state_class(self):
-        return STATE_CLASS_MEASUREMENT
+        return SensorStateClass.MEASUREMENT
 
     @property
     def extra_state_attributes(self) -> dict:
@@ -1436,16 +1480,6 @@ class PlantCurrentStatus(RestoreSensor):
         self._history.add_measurement(self.state, new_state.last_updated)
 
         return
-        """Update the sensor status."""
-        if new_state is None:
-            return
-        value = new_state.state
-        _LOGGER.info("Received callback from %s with value %s", entity_id, value)
-        if value == STATE_UNKNOWN:
-            return
-        _LOGGER.info("Adding measurement to the db for %s: %s", entity_id, value)
-
-        self._history.add_measurement(value, new_state.last_updated)
 
     def _load_history_from_db(self):
         """Load the history of the brightness values from the database.
@@ -1461,7 +1495,11 @@ class PlantCurrentStatus(RestoreSensor):
         start_date = dt_util.utcnow() - timedelta(days=self._conf_check_days)
         entity_id = self.entity_id
 
-        _LOGGER.debug("Initializing values for %s from the database", self.name)
+        _LOGGER.debug(
+            "Initializing values for %s days for %s from the database",
+            self._conf_check_days,
+            self.name,
+        )
         lower_entity_id = entity_id.lower()
         history_list = history.state_changes_during_period(
             self.hass,
@@ -1504,13 +1542,20 @@ class PlantCurrentBrightness(PlantCurrentStatus):
     #     return "lx"
 
     @property
-    def ppfd(self):
+    def ppfd(self) -> float:
+        """
+        Returns a calculated PPFD-value from the lx-value
+
+        See https://community.home-assistant.io/t/light-accumulation-for-xiaomi-flower-sensor/111180/3
+        https://www.apogeeinstruments.com/conversion-ppfd-to-lux/
+        μmol/m²/s
+        """
         if (
             self.state
             and self.state != STATE_UNAVAILABLE
             and self.state != STATE_UNKNOWN
         ):
-            return (float(self.state) * 0.0185) / 1000000
+            return (float(self.state) * DEFAULT_LUX_TO_PPFD) / 1000000
 
     @property
     def extra_state_attributes(self) -> dict:
@@ -1635,8 +1680,8 @@ class DailyHistory:
         self._days = None
         self._max_dict = {}
         self._min_dict = {}
-        self.max = None
-        self.min = None
+        self.max = 0
+        self.min = 0
 
     def add_measurement(self, value, timestamp=None):
         """Add a new measurement for a certain day."""

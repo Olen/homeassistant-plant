@@ -20,22 +20,3 @@ replace_sensor:
       selector:
         entity:
           domain: sensor
-
-replace_image:
-  description: Replace the image of a plant
-  fields:
-    entity_id:
-      description: The plant to replace the image for
-      example: plant.my_plant
-      required: true
-      selector:
-        entity:
-          domain: plant
-    entity_picture:
-      name: Image URL
-      description: New URL to the plant image.  Either /local/something or a full URL starting with http[s]://
-      required: true
-      example: /local/plant/my_plant.jpg or https://plant,images/my_plant.png
-      selector:
-        text:
-          type: url

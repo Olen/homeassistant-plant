@@ -46,7 +46,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.util import dt as dt_util, slugify
 
-from .const import DOMAIN
+from .const import DOMAIN, UNIT_CONDUCTIVITY
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -166,7 +166,7 @@ class PlantDummyConductivity(PlantDummyStatus):
         )
         self._attr_unique_id = f"{config.entry_id}-dummy-conductivity"
         self._attr_icon = "mdi:spa-outline"
-        self._attr_native_unit_of_measurement = "uS/cm"
+        self._attr_native_unit_of_measurement = UNIT_CONDUCTIVITY
         super().__init__(hass, config)
 
     async def async_update(self):
