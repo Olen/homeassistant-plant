@@ -102,7 +102,7 @@ from .const import (
     READING_MOISTURE,
     READING_TEMPERATURE,
     UNIT_CONDUCTIVITY,
-    UNIT_PPFDF,
+    UNIT_PPFD,
 )
 
 CONF_SCALE_TEMPERATURE = "temp_scale"
@@ -1257,7 +1257,7 @@ class PlantMaxMmol(PlantMinMax):
             CONF_MAX_MMOL, STATE_UNKNOWN
         )
         self._attr_unique_id = f"{config.entry_id}-max-mmol"
-        self._attr_unit_of_measurement = "mmol"
+        self._attr_unit_of_measurement = UNIT_PPFD
         super().__init__(hass, config, plantdevice)
 
     @property
@@ -1277,7 +1277,7 @@ class PlantMinMmol(PlantMinMax):
             CONF_MIN_MMOL, STATE_UNKNOWN
         )
         self._attr_unique_id = f"{config.entry_id}-min-mmol"
-        self._attr_unit_of_measurement = "mmol"
+        self._attr_unit_of_measurement = UNIT_PPFD
 
         super().__init__(hass, config, plantdevice)
 
