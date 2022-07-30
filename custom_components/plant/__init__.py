@@ -13,6 +13,8 @@ from typing import Any
 
 import voluptuous as vol
 
+from config.custom_components.plant.config_flow import DOMAIN_PLANTBOOK
+from homeassistant import config_entries
 from homeassistant.components.integration.const import METHOD_TRAPEZOIDAL
 from homeassistant.components.integration.sensor import (
     UNIT_PREFIXES,
@@ -34,7 +36,7 @@ from homeassistant.components.utility_meter.sensor import (
     PERIOD2CRON,
     UtilityMeterSensor,
 )
-from homeassistant.config_entries import ConfigEntries, ConfigEntry
+from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntries, ConfigEntry
 from homeassistant.const import (
     ATTR_ENTITY_ID,
     ATTR_ENTITY_PICTURE,
@@ -82,6 +84,7 @@ from .const import (
     ATTR_THRESHOLDS,
     CONF_CHECK_DAYS,
     CONF_IMAGE,
+    CONF_MAX_BRIGHTNESS,
     CONF_MAX_CONDUCTIVITY,
     CONF_MAX_HUMIDITY,
     CONF_MAX_ILLUMINANCE,
@@ -90,6 +93,7 @@ from .const import (
     CONF_MAX_MOL,
     CONF_MAX_TEMPERATURE,
     CONF_MIN_BATTERY_LEVEL,
+    CONF_MIN_BRIGHTNESS,
     CONF_MIN_CONDUCTIVITY,
     CONF_MIN_HUMIDITY,
     CONF_MIN_ILLUMINANCE,
@@ -100,6 +104,20 @@ from .const import (
     CONF_PLANTBOOK,
     CONF_PLANTBOOK_MAPPING,
     CONF_SPECIES,
+    DEFAULT_MAX_CONDUCTIVITY,
+    DEFAULT_MAX_HUMIDITY,
+    DEFAULT_MAX_ILLUMINANCE,
+    DEFAULT_MAX_MMOL,
+    DEFAULT_MAX_MOISTURE,
+    DEFAULT_MAX_MOL,
+    DEFAULT_MAX_TEMPERATURE,
+    DEFAULT_MIN_CONDUCTIVITY,
+    DEFAULT_MIN_HUMIDITY,
+    DEFAULT_MIN_ILLUMINANCE,
+    DEFAULT_MIN_MMOL,
+    DEFAULT_MIN_MOISTURE,
+    DEFAULT_MIN_MOL,
+    DEFAULT_MIN_TEMPERATURE,
     DOMAIN,
     FLOW_ILLUMINANCE_TRIGGER,
     FLOW_PLANT_IMAGE,
@@ -164,22 +182,6 @@ CONF_SENSOR_ILLUMINANCE = READING_ILLUMINANCE
 
 CONF_WARN_ILLUMINANCE = "warn_low_illuminance"
 
-DEFAULT_MIN_BATTERY_LEVEL = 20
-DEFAULT_MIN_TEMPERATURE = 10
-DEFAULT_MAX_TEMPERATURE = 40
-DEFAULT_MIN_MOISTURE = 20
-DEFAULT_MAX_MOISTURE = 60
-DEFAULT_MIN_CONDUCTIVITY = 500
-DEFAULT_MAX_CONDUCTIVITY = 3000
-DEFAULT_MIN_ILLUMINANCE = 0
-DEFAULT_MAX_ILLUMINANCE = 100000
-DEFAULT_MIN_HUMIDITY = 20
-DEFAULT_MAX_HUMIDITY = 60
-DEFAULT_MIN_MMOL = 2000
-DEFAULT_MAX_MMOL = 20000
-DEFAULT_MIN_MOL = 2
-DEFAULT_MAX_MOL = 30
-
 
 # See https://www.apogeeinstruments.com/conversion-ppfd-to-lux/
 DEFAULT_LUX_TO_PPFD = 0.0185
@@ -202,7 +204,200 @@ PLANTBOOK_TOKEN = None
 
 async def async_setup(hass: HomeAssistant, config: dict):
     """Set up the OpenPlantBook component."""
+    if config.get(DOMAIN):
+        # Only import if we haven't before.
+        config_entry = _async_find_matching_config_entry(hass)
+        if not config_entry:
+            _LOGGER.error("Old setup - with config: %s", config[DOMAIN])
+            for plant in config[DOMAIN]:
+                _LOGGER.warning("Migrating plant: %s", plant)
+                await async_migrate_plant(hass, plant, config[DOMAIN][plant])
+        else:
+            _LOGGER.warning(
+                "Config already imported. Please delete all your plant config from configuration.yaml"
+            )
     return True
+
+
+@callback
+def _async_find_matching_config_entry(hass):
+    for entry in hass.config_entries.async_entries(DOMAIN):
+        if entry.source == SOURCE_IMPORT:
+            return entry
+
+
+async def async_migrate_plant(hass: HomeAssistant, plant_id: str, config: dict) -> None:
+    """Tries to migrate the config from yaml"""
+
+    max_moisture = DEFAULT_MAX_MOISTURE
+    min_moisture = DEFAULT_MIN_MOISTURE
+    max_light_lx = DEFAULT_MAX_ILLUMINANCE
+    min_light_lx = DEFAULT_MIN_ILLUMINANCE
+    max_temp = display_temp(
+        hass,
+        DEFAULT_MAX_TEMPERATURE,
+        TEMP_CELSIUS,
+        0,
+    )
+    min_temp = display_temp(
+        hass,
+        DEFAULT_MIN_TEMPERATURE,
+        TEMP_CELSIUS,
+        0,
+    )
+    max_conductivity = DEFAULT_MAX_CONDUCTIVITY
+    min_condictivity = DEFAULT_MIN_CONDUCTIVITY
+    max_mol = DEFAULT_MAX_MOL
+    min_mol = DEFAULT_MIN_MOL
+    max_humidity = DEFAULT_MAX_HUMIDITY
+    min_humidity = DEFAULT_MIN_HUMIDITY
+    opb_image = None
+    opb_name = None
+
+    if not config.get("species"):
+        _LOGGER.error(
+            "Plant %s does not specify a species.  Can not be auto-migrated", plant_id
+        )
+        return
+
+    # Lets try to get data from OPB
+    if DOMAIN_PLANTBOOK in hass.services.async_services():
+        logging.info("opb in services")
+        plant_get = await hass.services.async_call(
+            domain=DOMAIN_PLANTBOOK,
+            service="get",
+            service_data={"species": config["species"]},
+            blocking=True,
+            limit=30,
+        )
+        if plant_get:
+            opb_plant = hass.states.get(
+                f"{DOMAIN_PLANTBOOK}."
+                + config["species"].replace("'", "").replace(" ", "_")
+            )
+
+            _LOGGER.info("Result: %s", opb_plant)
+            _LOGGER.info("Result A: %s", opb_plant.attributes)
+            max_moisture = opb_plant.attributes.get(
+                CONF_PLANTBOOK_MAPPING[CONF_MAX_MOISTURE], DEFAULT_MAX_MOISTURE
+            )
+            min_moisture = opb_plant.attributes.get(
+                CONF_PLANTBOOK_MAPPING[CONF_MIN_MOISTURE], DEFAULT_MIN_MOISTURE
+            )
+            max_light_lx = opb_plant.attributes.get(
+                CONF_PLANTBOOK_MAPPING[CONF_MAX_ILLUMINANCE],
+                DEFAULT_MAX_ILLUMINANCE,
+            )
+            min_light_lx = opb_plant.attributes.get(
+                CONF_PLANTBOOK_MAPPING[CONF_MIN_ILLUMINANCE],
+                DEFAULT_MIN_ILLUMINANCE,
+            )
+            max_temp = display_temp(
+                hass,
+                opb_plant.attributes.get(
+                    CONF_PLANTBOOK_MAPPING[CONF_MAX_TEMPERATURE],
+                    DEFAULT_MAX_TEMPERATURE,
+                ),
+                TEMP_CELSIUS,
+                0,
+            )
+            min_temp = display_temp(
+                hass,
+                opb_plant.attributes.get(
+                    CONF_PLANTBOOK_MAPPING[CONF_MIN_TEMPERATURE],
+                    DEFAULT_MIN_TEMPERATURE,
+                ),
+                TEMP_CELSIUS,
+                0,
+            )
+            opb_mmol = opb_plant.attributes.get(CONF_PLANTBOOK_MAPPING[CONF_MAX_MMOL])
+            if opb_mmol:
+                max_mol = round(opb_mmol * PPFD_DLI_FACTOR)
+            else:
+                max_mol = DEFAULT_MAX_MOL
+            opb_mmol = opb_plant.attributes.get(CONF_PLANTBOOK_MAPPING[CONF_MIN_MMOL])
+            if opb_mmol:
+                min_mol = round(opb_mmol * PPFD_DLI_FACTOR)
+            else:
+                min_mol = DEFAULT_MIN_MOL
+            max_conductivity = opb_plant.attributes.get(
+                CONF_PLANTBOOK_MAPPING[CONF_MAX_CONDUCTIVITY],
+                DEFAULT_MAX_CONDUCTIVITY,
+            )
+            min_condictivity = opb_plant.attributes.get(
+                CONF_PLANTBOOK_MAPPING[CONF_MIN_CONDUCTIVITY],
+                DEFAULT_MIN_CONDUCTIVITY,
+            )
+            max_humidity = opb_plant.attributes.get(
+                CONF_PLANTBOOK_MAPPING[CONF_MAX_HUMIDITY], DEFAULT_MAX_HUMIDITY
+            )
+            min_humidity = opb_plant.attributes.get(
+                CONF_PLANTBOOK_MAPPING[CONF_MIN_HUMIDITY], DEFAULT_MIN_HUMIDITY
+            )
+            opb_image = opb_plant.attributes.get(FLOW_PLANT_IMAGE)
+            opb_name = opb_plant.attributes.get(OPB_DISPLAY_PID)
+
+    # The we override with any data from the config:
+    new_min_moisture = config.get(CONF_MIN_MOISTURE, min_moisture)
+    new_max_moisture = config.get(CONF_MAX_MOISTURE, max_moisture)
+    new_min_conductivity = config.get(CONF_MAX_CONDUCTIVITY, max_conductivity)
+    new_max_conductivity = config.get(CONF_MIN_CONDUCTIVITY, min_condictivity)
+    new_max_temperature = config.get(CONF_MAX_TEMPERATURE, max_temp)
+    new_min_temperature = config.get(CONF_MIN_TEMPERATURE, min_temp)
+    new_max_light_lx = config.get(CONF_MAX_BRIGHTNESS, max_light_lx)
+    new_min_light_lx = config.get(CONF_MIN_BRIGHTNESS, min_light_lx)
+    new_min_mol = min_mol or DEFAULT_MIN_MOL
+    new_max_mol = max_mol or DEFAULT_MAX_MOL
+    new_min_humidity = min_humidity or DEFAULT_MIN_HUMIDITY
+    new_max_humidity = max_humidity or DEFAULT_MAX_HUMIDITY
+    new_image = config.get("image", opb_image)
+    new_display = opb_name or config.get(FLOW_PLANT_SPECIES)
+
+    new_plant = {
+        FLOW_PLANT_INFO: {
+            FLOW_PLANT_NAME: config["name"],
+            FLOW_PLANT_SPECIES: config["species"],
+            ATTR_LIMITS: {
+                ATTR_ENTITY_PICTURE: new_image,
+                OPB_DISPLAY_PID: new_display,
+                CONF_MAX_ILLUMINANCE: new_max_light_lx,
+                CONF_MIN_ILLUMINANCE: new_min_light_lx,
+                CONF_MAX_CONDUCTIVITY: new_max_conductivity,
+                CONF_MIN_CONDUCTIVITY: new_min_conductivity,
+                CONF_MAX_MOISTURE: new_max_moisture,
+                CONF_MIN_MOISTURE: new_min_moisture,
+                CONF_MAX_TEMPERATURE: new_max_temperature,
+                CONF_MIN_TEMPERATURE: new_min_temperature,
+                CONF_MAX_HUMIDITY: new_max_humidity,
+                CONF_MIN_HUMIDITY: new_min_humidity,
+                CONF_MAX_MOL: new_max_mol,
+                CONF_MIN_MOL: new_min_mol,
+            },
+            FLOW_SENSOR_TEMPERATURE: config[ATTR_SENSORS].get(READING_TEMPERATURE),
+            FLOW_SENSOR_MOISTURE: config[ATTR_SENSORS].get(READING_MOISTURE),
+            FLOW_SENSOR_CONDUCTIVITY: config[ATTR_SENSORS].get(READING_CONDUCTIVITY),
+            FLOW_SENSOR_ILLUMINANCE: config[ATTR_SENSORS]["brightness"],
+        }
+    }
+    _LOGGER.info(new_plant)
+    hass.async_create_task(
+        hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": SOURCE_IMPORT}, data=new_plant
+        )
+    )
+
+
+# OrderedDict([('test_config_plant', OrderedDict([('species', 'capsicum annuum'), ('name', 'Min Chilly'), ('sensors', OrderedDict([('moisture', 'sensor.new_ppdf_dli_dummy_moisture_level'), ('conductivity', 'sensor.orchid_test_dummy_conductivity'), ('temperature', 'sensor.new_ppdf_dli_dummy_temperature'), ('brightness', 'sensor.new_ppdf_dli_dummy_illuminance')])), ('warn_low_brightness', False)]))])
+
+
+# 2022-07-30 15:44:36.255 INFO (MainThread) [custom_components.plant.config_flow] User Input {'right_plant': True, 'display_pid': 'Capsicum Cubana Red', 'max_moisture': 65, 'min_moisture': 20, 'max_illuminance': 95000, 'min_illuminance': 3000, 'max_mol': 43, 'min_mol': 16, 'max_temperature': 35, 'min_temperature': 10, 'max_conductivity': 2000, 'min_conductivity': 150, 'max_humidity': 80, 'min_humidity': 30, 'entity_picture': 'https://opb-img.plantbook.io/capsicum%20cubana%20red.jpg'}
+# 2022-07-30 15:44:36.255 INFO (MainThread) [custom_components.plant.config_flow] Plant_info: {'plant_name': 'Check Sensors', 'plant_species': 'capsicum cubana red', 'temperature_sensor': 'sensor.min_chilly_dummy_temperature', 'moisture_sensor': 'sensor.orchid_test_dummy_moisture_level', 'conductivity_sensor': 'sensor.orchid_test_dummy_conductivity', 'illuminance_sensor': 'sensor.min_chilly_dummy_illuminance', 'humidity_sensor': 'sensor.orchid_test_dummy_humidity', 'limits': {'right_plant': True, 'display_pid': 'Capsicum Cubana Red', 'max_moisture': 65, 'min_moisture': 20, 'max_illuminance': 95000, 'min_illuminance': 3000, 'max_mol': 43, 'min_mol': 16, 'max_temperature': 35, 'min_temperature': 10, 'max_conductivity': 2000, 'min_conductivity': 150, 'max_humidity': 80, 'min_humidity': 30, 'entity_picture': 'https://opb-img.plantbook.io/capsicum%20cubana%20red.jpg'}}
+# 2022-07-30 15:44:36.256 INFO (MainThread) [homeassistant.components.sensor] Setting up sensor.plant
+# 2022-07-30 15:44:36.256 INFO (MainThread) [custom_components.plant.sensor] {'plant_info': {'plant_name': 'Check Sensors', 'plant_species': 'capsicum cubana red', 'temperature_sensor': 'sensor.min_chilly_dummy_temperature', 'moisture_sensor': 'sensor.orchid_test_dummy_moisture_level', 'conductivity_sensor': 'sensor.orchid_test_dummy_conductivity', 'illuminance_sensor': 'sensor.min_chilly_dummy_illuminance', 'humidity_sensor': 'sensor.orchid_test_dummy_humidity', 'limits': {'right_plant': True, 'display_pid': 'Capsicum Cubana Red', 'max_moisture': 65, 'min_moisture': 20, 'max_illuminance': 95000, 'min_illuminance': 3000, 'max_mol': 43, 'min_mol': 16, 'max_temperature': 35, 'min_temperature': 10, 'max_conductivity': 2000, 'min_conductivity': 150, 'max_humidity': 80, 'min_humidity': 30, 'entity_picture': 'https://opb-img.plantbook.io/capsicum%20cubana%20red.jpg'}}}
+
+
+# 2022-07-30 13:57:09.329 INFO (MainThread) [custom_components.plant.sensor] {'plant_info': {'plant_name': 'New PPDF DLI', 'plant_species': 'capsicum bomba yellow red', 'limits': {'display_pid': 'Capsicum Bomba yellow red', 'max_moisture': 65, 'min_moisture': 20, 'max_illuminance': 95000, 'min_illuminance': 3000, 'max_mmol': 12000, 'min_mmol': 4400, 'max_temperature': 35, 'min_temperature': 10, 'max_conductivity': 2000, 'min_conductivity': 150, 'max_humidity': 80, 'min_humidity': 30, 'entity_picture': 'https://opb-img.plantbook.io/capsicum%20bomba%20yellow%20red.jpg'}}}
+# 2022-07-30 13:57:09.330 INFO (MainThread) [custom_components.plant.sensor] {'plant_info': {'plant_name': 'Orchid Test', 'plant_species': 'cymbidium cochleare', 'limits': {'display_pid': 'Cymbidium cochleare', 'max_moisture': 45, 'min_moisture': 15, 'max_illuminance': 25000, 'min_illuminance': 800, 'max_mol': 12, 'min_mol': 7, 'max_temperature': 32, 'min_temperature': 8, 'max_conductivity': 2000, 'min_conductivity': 350, 'max_humidity': 85, 'min_humidity': 30, 'entity_picture': 'https://opb-img.plantbook.io/cymbidium%20cochleare.jpg'}}}
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
@@ -385,21 +580,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
     # if not DOMAIN in hass.services.async_services():
     hass.services.async_register(DOMAIN, SERVICE_REPLACE_SENSOR, replace_sensor)
-    # Lets add the dummy sensors automatically
 
+    # Lets add the dummy sensors automatically
     for sensor in plant_sensors:
-        await hass.services.async_call(
-            domain=DOMAIN,
-            service=SERVICE_REPLACE_SENSOR,
-            service_data={
-                "meter_entity": sensor.entity_id,
-                "new_sensor": sensor.entity_id.replace("plant.", "sensor.").replace(
-                    "current", "dummy"
-                ),
-            },
-            blocking=False,
-            limit=30,
-        )
+        _LOGGER.error("EXT: %s", sensor._external_sensor)
+        if sensor._external_sensor is None:
+            await hass.services.async_call(
+                domain=DOMAIN,
+                service=SERVICE_REPLACE_SENSOR,
+                service_data={
+                    "meter_entity": sensor.entity_id,
+                    "new_sensor": sensor.entity_id.replace("plant.", "sensor.").replace(
+                        "current", "dummy"
+                    ),
+                },
+                blocking=False,
+                limit=30,
+            )
 
     return True
 
@@ -499,12 +696,13 @@ class PlantDevice(Entity):
 
     @property
     def illuminance_trigger(self) -> bool:
+        """Whether we will generate alarms based on illuminance or dli"""
         return self._config.options.get(FLOW_ILLUMINANCE_TRIGGER, True)
 
-    @property
-    def check_days(self) -> int:
-        """Number of days to use for monitoring"""
-        return self._config.options.get(CONF_CHECK_DAYS) or DEFAULT_CHECK_DAYS
+    # @property
+    # def check_days(self) -> int:
+    #     """Number of days to use for monitoring"""
+    #     return self._config.options.get(CONF_CHECK_DAYS) or DEFAULT_CHECK_DAYS
 
     @property
     def extra_state_attributes(self) -> dict:
@@ -513,7 +711,7 @@ class PlantDevice(Entity):
             return {}
         attributes = {
             ATTR_SPECIES: self.display_species,
-            CONF_CHECK_DAYS: self.check_days,
+            # CONF_CHECK_DAYS: self.check_days,
             f"{READING_MOISTURE}_status": self.moisture_status,
             f"{READING_TEMPERATURE}_status": self.temperature_status,
             f"{READING_CONDUCTIVITY}_status": self.conductivity_status,
@@ -703,11 +901,10 @@ class PlantDevice(Entity):
             else:
                 self.humidity_status = STATE_OK
 
-        # TODO
-        # better handlng of illuminance
+        # Check the instant values for illuminance against "max"
+        # - Checking Low values would create "problem" every night...
+        # Check DLI from the previous day against max/min DLI
 
-        # Check the instant values for illuminance, but only high values
-        # Checking Low values would create "problem" every night...
         _LOGGER.info(
             "S0: %s S1: %s S2: %s, M1: %s M2: %s",
             self.dli.state,
@@ -737,7 +934,6 @@ class PlantDevice(Entity):
                     self.entity_id,
                     self.sensor_illuminance.state,
                 )
-            # check dli against max/min mol
             elif float(self.dli.extra_state_attributes["last_period"]) > 0 and float(
                 self.dli.extra_state_attributes["last_period"]
             ) < int(self.min_mol.state):
@@ -857,10 +1053,10 @@ class PlantSpecies(RestoreEntity):
                 "Species changed from '%s' to '%s'", self._attr_state, new_species
             )
 
-            if "openplantbook" in self.hass.services.async_services():
+            if CONF_PLANTBOOK in self.hass.services.async_services():
                 _LOGGER.info("We have OpenPlantbook configured")
                 await self.hass.services.async_call(
-                    domain="openplantbook",
+                    domain=CONF_PLANTBOOK,
                     service="get",
                     service_data={"species": new_species},
                     blocking=True,
@@ -926,7 +1122,7 @@ class PlantSpecies(RestoreEntity):
                     )
                     # Just do a plantbook search to allow the user to find a better result
                     await self.hass.services.async_call(
-                        domain="openplantbook",
+                        domain=CONF_PLANTBOOK,
                         service="search",
                         service_data={"alias": new_species},
                         blocking=False,
@@ -1000,7 +1196,7 @@ class PlantMinMax(RestoreEntity):
         if event.data.get("old_state") is None or event.data.get("new_state") is None:
             return
         if event.data.get("old_state").state == event.data.get("new_state").state:
-            _LOGGER.info("Only attributes changed for %s", event.data.get("entity_id"))
+            # _LOGGER.info("Only attributes changed for %s", event.data.get("entity_id"))
             self.state_attributes_changed(
                 old_attributes=event.data.get("old_state").attributes,
                 new_attributes=event.data.get("new_state").attributes,
@@ -1168,8 +1364,8 @@ class PlantMaxTemperature(PlantMinMax):
 
     def state_attributes_changed(self, old_attributes, new_attributes):
         """Calculate C or F"""
-        _LOGGER.debug("Old attributes: %s", old_attributes)
-        _LOGGER.debug("New attributes: %s", new_attributes)
+        # _LOGGER.debug("Old attributes: %s", old_attributes)
+        # _LOGGER.debug("New attributes: %s", new_attributes)
         if new_attributes.get(ATTR_UNIT_OF_MEASUREMENT) is None:
             return
         if old_attributes.get(ATTR_UNIT_OF_MEASUREMENT) is None:
@@ -1487,13 +1683,13 @@ class PlantCurrentStatus(RestoreSensor):
         self._config = config
         self._default_state = 0
         self._plant = plantdevice
-        self._conf_check_days = self._plant.check_days
+        # self._conf_check_days = self._plant.check_days
         self.entity_id = async_generate_entity_id(
             f"{DOMAIN}.{{}}", self.name, current_ids={}
         )
         if not self._attr_native_value or self._attr_native_value == STATE_UNKNOWN:
             self._attr_native_value = self._default_state
-        self._history = DailyHistory(self._conf_check_days)
+        # self._history = DailyHistory(self._conf_check_days)
 
     @property
     def state_class(self):
@@ -1504,8 +1700,8 @@ class PlantCurrentStatus(RestoreSensor):
         if self._external_sensor:
             attributes = {
                 "external_sensor": self._external_sensor,
-                "history_max": self._history.max,
-                "history_min": self._history.min,
+                # "history_max": self._history.max,
+                # "history_min": self._history.min,
             }
             return attributes
 
@@ -1537,11 +1733,11 @@ class PlantCurrentStatus(RestoreSensor):
                     state.attributes["external_sensor"],
                 )
                 self.replace_external_sensor(state.attributes["external_sensor"])
-        if "recorder" in self.hass.config.components:
-            # only use the database if it's configured
-            await get_instance(self.hass).async_add_executor_job(
-                self._load_history_from_db
-            )
+        # if "recorder" in self.hass.config.components:
+        #     # only use the database if it's configured
+        #     await get_instance(self.hass).async_add_executor_job(
+        #         self._load_history_from_db
+        #     )
         tracker = [self.entity_id]
         if self._external_sensor:
             tracker.append(self._external_sensor)
@@ -1593,7 +1789,7 @@ class PlantCurrentStatus(RestoreSensor):
         if self.state == STATE_UNKNOWN or self.state is None:
             return
         # _LOGGER.info("Adding measurement to the db for %s: %s", entity_id, self.state)
-        self._history.add_measurement(self.state, new_state.last_updated)
+        # self._history.add_measurement(self.state, new_state.last_updated)
 
         return
 
@@ -1829,7 +2025,7 @@ class PlantCurrentPpfd(PlantCurrentStatus):
     @callback
     def state_changed(self, entity_id, new_state):
         """Run on every update to allow for changes from the GUI and service call"""
-        _LOGGER.info("Updating PPFD-sensor: %s %s", entity_id, new_state)
+        # _LOGGER.info("Updating PPFD-sensor: %s %s", entity_id, new_state)
         if not self.hass.states.get(self.entity_id):
             return
         if self._external_sensor != self._plant.sensor_illuminance.entity_id:
@@ -1846,7 +2042,7 @@ class PlantCurrentPpfd(PlantCurrentStatus):
         if self.state == STATE_UNKNOWN or self.state is None:
             return
         # _LOGGER.info("Adding measurement to the db for %s: %s", entity_id, self.state)
-        self._history.add_measurement(self.state, new_state.last_updated)
+        # self._history.add_measurement(self.state, new_state.last_updated)
 
         return
 
@@ -1885,7 +2081,7 @@ class PlantDailyLightIntegral(UtilityMeterSensor):
         hass: HomeAssistant,
         config: ConfigEntry,
         illuminance_integration_sensor: Entity,
-    ):
+    ) -> None:
         self._name = (
             f"{config.data[FLOW_PLANT_INFO][FLOW_PLANT_NAME]} Daily Light Integral"
         )

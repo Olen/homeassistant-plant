@@ -7,24 +7,6 @@ from typing import Any
 
 import voluptuous as vol
 
-from config.custom_components import plant
-from config.custom_components.plant import (
-    DEFAULT_CHECK_DAYS,
-    DEFAULT_MAX_CONDUCTIVITY,
-    DEFAULT_MAX_HUMIDITY,
-    DEFAULT_MAX_ILLUMINANCE,
-    DEFAULT_MAX_MMOL,
-    DEFAULT_MAX_MOISTURE,
-    DEFAULT_MAX_MOL,
-    DEFAULT_MAX_TEMPERATURE,
-    DEFAULT_MIN_CONDUCTIVITY,
-    DEFAULT_MIN_HUMIDITY,
-    DEFAULT_MIN_ILLUMINANCE,
-    DEFAULT_MIN_MMOL,
-    DEFAULT_MIN_MOISTURE,
-    DEFAULT_MIN_MOL,
-    DEFAULT_MIN_TEMPERATURE,
-)
 from homeassistant import config_entries, data_entry_flow
 from homeassistant.components.sensor import (
     DEVICE_CLASSES,
@@ -39,6 +21,7 @@ from homeassistant.const import (
     TEMP_CELSIUS,
 )
 from homeassistant.core import HomeAssistant, ServiceCall, callback
+from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.selector import selector
 from homeassistant.helpers.temperature import display_temp
@@ -64,6 +47,20 @@ from .const import (
     CONF_PLANTBOOK,
     CONF_PLANTBOOK_MAPPING,
     CONF_SPECIES,
+    DEFAULT_MAX_CONDUCTIVITY,
+    DEFAULT_MAX_HUMIDITY,
+    DEFAULT_MAX_ILLUMINANCE,
+    DEFAULT_MAX_MMOL,
+    DEFAULT_MAX_MOISTURE,
+    DEFAULT_MAX_MOL,
+    DEFAULT_MAX_TEMPERATURE,
+    DEFAULT_MIN_CONDUCTIVITY,
+    DEFAULT_MIN_HUMIDITY,
+    DEFAULT_MIN_ILLUMINANCE,
+    DEFAULT_MIN_MMOL,
+    DEFAULT_MIN_MOISTURE,
+    DEFAULT_MIN_MOL,
+    DEFAULT_MIN_TEMPERATURE,
     DOMAIN,
     FLOW_ILLUMINANCE_TRIGGER,
     FLOW_PLANT_IMAGE,
@@ -120,6 +117,14 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     ) -> config_entries.OptionsFlow:
         """Create the options flow."""
         return OptionsFlowHandler(config_entry)
+
+    async def async_step_import(self, import_input):
+        _LOGGER.error(import_input)
+        # return FlowResultType.ABORT
+        return self.async_create_entry(
+            title=import_input[FLOW_PLANT_INFO][FLOW_PLANT_NAME],
+            data=import_input,
+        )
 
     async def async_step_user(self, user_input=None):
         """Handle the initial step."""
