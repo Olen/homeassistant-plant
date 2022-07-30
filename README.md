@@ -8,7 +8,7 @@ This integration is about to be completely rewritten.  The next version will *no
 
 This is just a heads up for now, but I want to give everyone fair warning. We are looking into different options to make the transition to the new version as smooth as possible.
 
-![image](https://user-images.githubusercontent.com/203184/180956019-2733ad82-3be2-47cb-bdbf-3f5db2127a96.png)
+![image](https://user-images.githubusercontent.com/203184/181916412-dfeab387-083b-4260-8ca9-c91983ac7247.png)
 
 
 ## Highlights 
@@ -35,20 +35,31 @@ This is just a heads up for now, but I want to give everyone fair warning. We ar
 * If you change the species of a plant in the UI, new data are fetched from OpenPlantbook
 * Image can also be updated from the UI
 
-![image](https://user-images.githubusercontent.com/203184/181514309-4863cb98-e2af-4426-8a82-8682e319cfb6.png)
+![image](https://user-images.githubusercontent.com/203184/181916091-db7de9ca-d120-4614-a83e-d93a5dad9183.png)
+
+* You can chose to disable warnings on high/low illuminance.
+  * Illuminance warnings are now triggered by calculating the "Daily Light Integral" - DLI.
 
 ### Easier to replace sensors
 
 * You can use a service call to replace the different sensors used to monitor the plant
 
-![image](https://user-images.githubusercontent.com/203184/180942138-d77cbad4-8e06-448c-bd1a-4e2b8f12a951.png)
+![image](https://user-images.githubusercontent.com/203184/181916318-67bddc07-0e32-477d-bc15-3f32bbc4768b.png)
 
+* A new Daily Light Integral - DLI - sensor is created for all plants. 
+
+![image](https://user-images.githubusercontent.com/203184/181916359-65d34768-96b9-4ef3-8432-4a65836ed6cc.png)
+
+See https://en.wikipedia.org/wiki/Daily_light_integral for what DLI means
 
 ### More flexible lovelace card
 
 * I have upgraded the Lovelace flower card to make use of the new integration, and made it more flexible.
 
-![image](https://user-images.githubusercontent.com/203184/181259328-f5d386bf-3dce-4ed2-b683-882f2d4b0c66.png)
+![image](https://user-images.githubusercontent.com/203184/181916249-bd32478f-888f-40e0-b000-572f062aadc6.png)
+
+![image](https://user-images.githubusercontent.com/203184/181916283-6263cb3f-1903-4538-a9a1-3e33d102ec88.png)
+
 
 * The flower card also handles both °C and °F
 
