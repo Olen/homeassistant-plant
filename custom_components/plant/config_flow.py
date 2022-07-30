@@ -10,17 +10,19 @@ import voluptuous as vol
 from config.custom_components import plant
 from config.custom_components.plant import (
     DEFAULT_CHECK_DAYS,
-    DEFAULT_MAX_BRIGHTNESS,
     DEFAULT_MAX_CONDUCTIVITY,
     DEFAULT_MAX_HUMIDITY,
+    DEFAULT_MAX_ILLUMINANCE,
     DEFAULT_MAX_MMOL,
     DEFAULT_MAX_MOISTURE,
+    DEFAULT_MAX_MOL,
     DEFAULT_MAX_TEMPERATURE,
-    DEFAULT_MIN_BRIGHTNESS,
     DEFAULT_MIN_CONDUCTIVITY,
     DEFAULT_MIN_HUMIDITY,
+    DEFAULT_MIN_ILLUMINANCE,
     DEFAULT_MIN_MMOL,
     DEFAULT_MIN_MOISTURE,
+    DEFAULT_MIN_MOL,
     DEFAULT_MIN_TEMPERATURE,
 )
 from homeassistant import config_entries, data_entry_flow
@@ -37,56 +39,57 @@ from homeassistant.const import (
     TEMP_CELSIUS,
 )
 from homeassistant.core import HomeAssistant, ServiceCall, callback
-from homeassistant.helpers.config_validation import (
-    DEVICE_ACTION_BASE_SCHEMA,
-    path as valid_path,
-    url as valid_url,
-)
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.selector import selector
 from homeassistant.helpers.temperature import display_temp
 
 from .const import (
     CONF_CHECK_DAYS,
     CONF_IMAGE,
-    CONF_MAX_BRIGHTNESS,
     CONF_MAX_CONDUCTIVITY,
     CONF_MAX_HUMIDITY,
+    CONF_MAX_ILLUMINANCE,
     CONF_MAX_MMOL,
     CONF_MAX_MOISTURE,
+    CONF_MAX_MOL,
     CONF_MAX_TEMPERATURE,
     CONF_MIN_BATTERY_LEVEL,
-    CONF_MIN_BRIGHTNESS,
     CONF_MIN_CONDUCTIVITY,
     CONF_MIN_HUMIDITY,
+    CONF_MIN_ILLUMINANCE,
     CONF_MIN_MMOL,
     CONF_MIN_MOISTURE,
+    CONF_MIN_MOL,
     CONF_MIN_TEMPERATURE,
     CONF_PLANTBOOK,
     CONF_PLANTBOOK_MAPPING,
     CONF_SPECIES,
     DOMAIN,
+    FLOW_ILLUMINANCE_TRIGGER,
     FLOW_PLANT_IMAGE,
     FLOW_PLANT_INFO,
     FLOW_PLANT_LIMITS,
     FLOW_PLANT_NAME,
     FLOW_PLANT_SPECIES,
-    FLOW_SENSOR_BRIGHTNESS,
     FLOW_SENSOR_CONDUCTIVITY,
     FLOW_SENSOR_HUMIDITY,
+    FLOW_SENSOR_ILLUMINANCE,
     FLOW_SENSOR_MOISTURE,
     FLOW_SENSOR_TEMPERATURE,
     OPB_DISPLAY_PID,
     OPB_PID,
     OPB_SEARCH,
     OPB_SEARCH_RESULT,
+    PPFD_DLI_FACTOR,
     READING_BATTERY,
-    READING_BRIGHTNESS,
     READING_CONDUCTIVITY,
+    READING_ILLUMINANCE,
     READING_MOISTURE,
     READING_TEMPERATURE,
 )
 
 FLOW_WRONG_PLANT = "wrong_plant"
+FLOW_RIGHT_PLANT = "right_plant"
 FLOW_ERROR_NOTFOUND = "opb_notfound"
 FLOW_STRING_DESCRIPTION = "desc"
 
@@ -163,7 +166,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         data_schema[FLOW_SENSOR_CONDUCTIVITY] = selector(
             {ATTR_ENTITY: {ATTR_DOMAIN: DOMAIN_SENSOR}}
         )
-        data_schema[FLOW_SENSOR_BRIGHTNESS] = selector(
+        data_schema[FLOW_SENSOR_ILLUMINANCE] = selector(
             {
                 ATTR_ENTITY: {
                     ATTR_DEVICE_CLASS: SensorDeviceClass.ILLUMINANCE,
@@ -265,10 +268,10 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             _LOGGER.info("User Input %s", user_input)
             # Validate user input
             valid = await self.validate_step_1(user_input)
-            if user_input.get(FLOW_WRONG_PLANT):
+            if not user_input.get(FLOW_RIGHT_PLANT):
                 return await self.async_step_select_species()
             if valid:
-                # Store info to use in next step
+
                 self.plant_info[FLOW_PLANT_LIMITS] = user_input
                 _LOGGER.info("Plant_info: %s", self.plant_info)
                 # Return the form of the next step
@@ -277,8 +280,8 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         data_schema = {}
         max_moisture = DEFAULT_MAX_MOISTURE
         min_moisture = DEFAULT_MIN_MOISTURE
-        max_light_lx = DEFAULT_MAX_BRIGHTNESS
-        min_light_lx = DEFAULT_MIN_BRIGHTNESS
+        max_light_lx = DEFAULT_MAX_ILLUMINANCE
+        min_light_lx = DEFAULT_MIN_ILLUMINANCE
         max_temp = display_temp(
             self.hass,
             DEFAULT_MAX_TEMPERATURE,
@@ -293,8 +296,8 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )
         max_conductivity = DEFAULT_MAX_CONDUCTIVITY
         min_condictivity = DEFAULT_MIN_CONDUCTIVITY
-        max_mmol = DEFAULT_MAX_MMOL
-        min_mmol = DEFAULT_MIN_MMOL
+        max_mol = DEFAULT_MAX_MOL
+        min_mol = DEFAULT_MIN_MOL
         max_humidity = DEFAULT_MAX_HUMIDITY
         min_humidity = DEFAULT_MIN_HUMIDITY
 
@@ -330,10 +333,12 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     CONF_PLANTBOOK_MAPPING[CONF_MIN_MOISTURE], DEFAULT_MIN_MOISTURE
                 )
                 max_light_lx = opb_plant.attributes.get(
-                    CONF_PLANTBOOK_MAPPING[CONF_MAX_BRIGHTNESS], DEFAULT_MAX_BRIGHTNESS
+                    CONF_PLANTBOOK_MAPPING[CONF_MAX_ILLUMINANCE],
+                    DEFAULT_MAX_ILLUMINANCE,
                 )
                 min_light_lx = opb_plant.attributes.get(
-                    CONF_PLANTBOOK_MAPPING[CONF_MIN_BRIGHTNESS], DEFAULT_MIN_BRIGHTNESS
+                    CONF_PLANTBOOK_MAPPING[CONF_MIN_ILLUMINANCE],
+                    DEFAULT_MIN_ILLUMINANCE,
                 )
                 max_temp = display_temp(
                     self.hass,
@@ -353,12 +358,21 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     TEMP_CELSIUS,
                     0,
                 )
-                max_mmol = opb_plant.attributes.get(
-                    CONF_PLANTBOOK_MAPPING[CONF_MAX_MMOL], DEFAULT_MAX_MMOL
+                opb_mmol = opb_plant.attributes.get(
+                    CONF_PLANTBOOK_MAPPING[CONF_MAX_MMOL]
                 )
-                min_mmol = opb_plant.attributes.get(
-                    CONF_PLANTBOOK_MAPPING[CONF_MIN_MMOL], DEFAULT_MIN_MMOL
+                if opb_mmol:
+                    max_mol = round(opb_mmol * PPFD_DLI_FACTOR)
+                else:
+                    max_mol = DEFAULT_MAX_MOL
+
+                opb_mmol = opb_plant.attributes.get(
+                    CONF_PLANTBOOK_MAPPING[CONF_MIN_MMOL]
                 )
+                if opb_mmol:
+                    min_mol = round(opb_mmol * PPFD_DLI_FACTOR)
+                else:
+                    min_mol = DEFAULT_MIN_MOL
 
                 max_conductivity = opb_plant.attributes.get(
                     CONF_PLANTBOOK_MAPPING[CONF_MAX_CONDUCTIVITY],
@@ -378,14 +392,16 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 opb_image = opb_plant.attributes.get(FLOW_PLANT_IMAGE)
                 opb_name = opb_plant.attributes.get(OPB_DISPLAY_PID)
 
-                data_schema[FLOW_WRONG_PLANT] = selector({"boolean": {}})
+                data_schema[vol.Optional(FLOW_RIGHT_PLANT, default=True)] = cv.boolean
+
+                # data_schema[FLOW_WRONG_PLANT] = selector({"boolean": {}})
         data_schema[vol.Required(OPB_DISPLAY_PID, default=opb_name)] = str
         data_schema[vol.Required(CONF_MAX_MOISTURE, default=max_moisture)] = int
         data_schema[vol.Required(CONF_MIN_MOISTURE, default=min_moisture)] = int
-        data_schema[vol.Required(CONF_MAX_BRIGHTNESS, default=max_light_lx)] = int
-        data_schema[vol.Required(CONF_MIN_BRIGHTNESS, default=min_light_lx)] = int
-        data_schema[vol.Required(CONF_MAX_MMOL, default=max_mmol)] = int
-        data_schema[vol.Required(CONF_MIN_MMOL, default=min_mmol)] = int
+        data_schema[vol.Required(CONF_MAX_ILLUMINANCE, default=max_light_lx)] = int
+        data_schema[vol.Required(CONF_MIN_ILLUMINANCE, default=min_light_lx)] = int
+        data_schema[vol.Required(CONF_MAX_MOL, default=max_mol)] = int
+        data_schema[vol.Required(CONF_MIN_MOL, default=min_mol)] = int
         data_schema[
             vol.Required(
                 CONF_MAX_TEMPERATURE,
@@ -480,7 +496,13 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         data_schema[
             vol.Optional(ATTR_ENTITY_PICTURE, default=self.plant._attr_entity_picture)
         ] = str
-        data_schema[vol.Optional(CONF_CHECK_DAYS, default=self.plant.check_days)] = int
+
+        data_schema[
+            vol.Optional(
+                FLOW_ILLUMINANCE_TRIGGER, default=self.plant.illuminance_trigger
+            )
+        ] = cv.boolean
+        # data_schema[vol.Optional(CONF_CHECK_DAYS, default=self.plant.check_days)] = int
 
         return self.async_show_form(step_id="init", data_schema=vol.Schema(data_schema))
 
@@ -499,13 +521,13 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 self.plant.add_image(entity_picture)
                 return
             try:
-                url = valid_url(entity_picture)
+                url = cv.url(entity_picture)
                 _LOGGER.info("Url 1 %s", url)
             except Exception as exc1:
                 _LOGGER.warning("Not a valid url: %s", entity_picture)
                 if entity_picture.startswith("/local/"):
                     try:
-                        url = valid_path(entity_picture)
+                        url = cv.path(entity_picture)
                         _LOGGER.info("Url 2 %s", url)
                     except Exception as exc2:
                         _LOGGER.warning("Not a valid path: %s", entity_picture)

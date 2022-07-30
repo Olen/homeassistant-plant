@@ -10,7 +10,7 @@
           "temperature_sensor": "Temperature sensor",
           "moisture_sensor": "Moisture sensor",
           "conductivity_sensor": "Conductivity sensor",
-          "brightness_sensor": "Light sensor",
+          "illuminance_sensor": "Light sensor",
           "humidity_sensor": "Humidity (environment) sensor"
         },
         "data_description": {
@@ -31,14 +31,14 @@
         "title": "Set limits",
         "description": "# {plant_name}\n![Plant]({entity_picture})<br />\nTemperature unit is {temp_unit}",
         "data": {
-          "wrong_plant": "Wrong plant? (Go back and select another one)",
+          "right_plant": "This is the plant I was looking for",
           "display_pid": "Plant species to display",
           "max_moisture": "Maximum moisture level (%)",
           "min_moisture": "Minimum moisture level (%)",
-          "max_brightness": "Maximum light level (lx)",
-          "min_brightness": "Minimum light level (lx)",
-          "max_mmol": "Maximum MMOL",
-          "min_mmol": "Minimum MMOL",
+          "max_illuminance": "Maximum light level (lx)",
+          "min_illuminance": "Minimum light level (lx)",
+          "max_mol": "Maximum DLI (mol/d⋅m²)",
+          "min_mol": "Minimum DLI (mol/d⋅m²)",
           "max_temperature": "Maximum temperature (see above)",
           "min_temperature": "Minimum temperature (see above)",
           "max_conductivity": "Maximum conductivity (uS/cm)",
@@ -59,15 +59,16 @@
         "title": "Options",
         "description": "Only update the options you want to modify. Empty fields are ignored.",
         "data": {
-          "check_days": "Brightness check days",
+          "check_days": "Illuminance check days",
           "plant_species": "Species",
           "display_pid": "Plant species to display",
           "temperature_sensor": "Temperature sensor",
           "moisture_sensor": "Moisture sensor",
           "conductivity_sensor": "Conductivity sensor",
-          "brightness_sensor": "Light sensor",
+          "illuminance_sensor": "Light sensor",
           "humidity_sensor": "Humidity (environment) sensor",
-          "entity_picture": "Image URL. Will be automatically updated if species is found in OpnePlantbook."
+          "entity_picture": "Image URL. Will be automatically updated if species is found in OpnePlantbook",
+          "illuminance_trigger": "Trigger warning when Daily Light Integral is too high/low. Ignore illuminance as problem trigger if turned off"
         }
       }
     }

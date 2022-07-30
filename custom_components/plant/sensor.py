@@ -44,6 +44,7 @@ from homeassistant.helpers.entity import (
 from homeassistant.helpers.entity_component import EntityComponent
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_state_change_event
+from homeassistant.helpers.template import now
 from homeassistant.util import dt as dt_util, slugify
 
 from .const import DOMAIN, UNIT_CONDUCTIVITY
@@ -56,12 +57,12 @@ READING_BATTERY = "battery"
 READING_TEMPERATURE = ATTR_TEMPERATURE
 READING_MOISTURE = "moisture"
 READING_CONDUCTIVITY = "conductivity"
-READING_BRIGHTNESS = "brightness"
+READING_ILLUMINANCE = "illuminance"
 
 ATTR_PROBLEM = "problem"
 ATTR_SENSORS = "sensors"
 PROBLEM_NONE = "none"
-ATTR_MAX_BRIGHTNESS_HISTORY = "max_brightness"
+ATTR_MAX_ILLUMINANCE_HISTORY = "max_illuminance"
 ATTR_SPECIES = "species"
 ATTR_LIMITS = "limits"
 ATTR_IMAGE = "image"
@@ -77,8 +78,8 @@ CONF_MIN_MOISTURE = f"min_{READING_MOISTURE}"
 CONF_MAX_MOISTURE = f"max_{READING_MOISTURE}"
 CONF_MIN_CONDUCTIVITY = f"min_{READING_CONDUCTIVITY}"
 CONF_MAX_CONDUCTIVITY = f"max_{READING_CONDUCTIVITY}"
-CONF_MIN_BRIGHTNESS = f"min_{READING_BRIGHTNESS}"
-CONF_MAX_BRIGHTNESS = f"max_{READING_BRIGHTNESS}"
+CONF_MIN_ILLUMINANCE = f"min_{READING_ILLUMINANCE}"
+CONF_MAX_ILLUMINANCE = f"max_{READING_ILLUMINANCE}"
 CONF_CHECK_DAYS = "check_days"
 CONF_SPECIES = "species"
 CONF_IMAGE = "image"
@@ -92,9 +93,9 @@ CONF_SENSOR_BATTERY_LEVEL = READING_BATTERY
 CONF_SENSOR_MOISTURE = READING_MOISTURE
 CONF_SENSOR_CONDUCTIVITY = READING_CONDUCTIVITY
 CONF_SENSOR_TEMPERATURE = READING_TEMPERATURE
-CONF_SENSOR_BRIGHTNESS = READING_BRIGHTNESS
+CONF_SENSOR_ILLUMINANCE = READING_ILLUMINANCE
 
-CONF_WARN_BRIGHTNESS = "warn_low_brightness"
+CONF_WARN_ILLUMINANCE = "warn_low_illuminance"
 
 DEFAULT_MIN_BATTERY_LEVEL = 20
 DEFAULT_MIN_TEMPERATURE = 10
@@ -103,8 +104,8 @@ DEFAULT_MIN_MOISTURE = 20
 DEFAULT_MAX_MOISTURE = 60
 DEFAULT_MIN_CONDUCTIVITY = 500
 DEFAULT_MAX_CONDUCTIVITY = 3000
-DEFAULT_MIN_BRIGHTNESS = 0
-DEFAULT_MAX_BRIGHTNESS = 100000
+DEFAULT_MIN_ILLUMINANCE = 0
+DEFAULT_MAX_ILLUMINANCE = 100000
 DEFAULT_CHECK_DAYS = 3
 
 
@@ -122,7 +123,7 @@ async def async_setup_entry(
     sensor_entities = [
         PlantDummyMoisture(hass, entry),
         PlantDummyTemperature(hass, entry),
-        PlantDummyBrightness(hass, entry),
+        PlantDummyIlluminance(hass, entry),
         PlantDummyConductivity(hass, entry),
         PlantDummyHumidity(hass, entry),
     ]
@@ -143,16 +144,22 @@ class PlantDummyStatus(SensorEntity):
             self._attr_native_value = self._default_state
 
 
-class PlantDummyBrightness(PlantDummyStatus):
+class PlantDummyIlluminance(PlantDummyStatus):
     def __init__(self, hass, config):
-        self._attr_name = f"{config.data['plant_info']['plant_name']} Dummy Brightness"
-        self._attr_unique_id = f"{config.entry_id}-dummy-brightness"
-        self._attr_icon = "mdi:brightness-6"
+        self._attr_name = f"{config.data['plant_info']['plant_name']} Dummy Illuminance"
+        self._attr_unique_id = f"{config.entry_id}-dummy-illuminance"
+        self._attr_icon = "mdi:illuminance-6"
         self._attr_native_unit_of_measurement = LIGHT_LUX
         super().__init__(hass, config)
 
     async def async_update(self):
-        self._attr_native_value = random.randint(0, 100) * 1000
+        # _LOGGER.info(datetime.now().hour)
+        if datetime.now().hour < 5:
+            self._attr_native_value = random.randint(1, 10) * 100
+        elif datetime.now().hour < 15:
+            self._attr_native_value = random.randint(20, 50) * 1000
+        else:
+            self._attr_native_value = random.randint(1, 10) * 100
 
     @property
     def device_class(self):
@@ -185,7 +192,7 @@ class PlantDummyMoisture(PlantDummyStatus):
         super().__init__(hass, config)
 
     async def async_update(self):
-        self._attr_native_value = random.randint(0, 80)
+        self._attr_native_value = random.randint(10, 70)
 
     @property
     def device_class(self):
@@ -220,7 +227,7 @@ class PlantDummyHumidity(PlantDummyStatus):
         super().__init__(hass, config)
 
     async def async_update(self):
-        r = random.randint(20, 90)
+        r = random.randint(25, 90)
         # _LOGGER.info("Getting curret temperature: %s", r)
         self._attr_native_value = r
 
