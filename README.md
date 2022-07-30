@@ -8,6 +8,16 @@ This integration is about to be completely rewritten.  The next version will *no
 
 This is just a heads up for now, but I want to give everyone fair warning. We are looking into different options to make the transition to the new version as smooth as possible.
 
+> **Warning** 
+>
+> The new plant integration will try to convert all `plant:` entries from `configuration.yaml`.  But please notice that `entity_id` of the plant will **NOT** be preserved.  Also, since the "layout" of the new integration is completely different from the old one, you probably have to update and modify any automation, scripts or notification you have made based on the old version.
+>
+> Also, certain options might be missed, so make sure you check you plant settings after the first restart. 
+
+# Plants are now treated as _devices_
+
+This means that the main plant entity references other entities, and they are grouped togheter in the GUI as a single device.
+
 ![image](https://user-images.githubusercontent.com/203184/181916412-dfeab387-083b-4260-8ca9-c91983ac7247.png)
 
 
@@ -22,29 +32,36 @@ This is just a heads up for now, but I want to give everyone fair warning. We ar
 
 ### Better handling of thresholds
 
-* All thresholds and plant images are fetched automatically from OpenPlantbook
-* All thresholds now are their own entities and their values can be changed from the UI or by scripts and automations
+* All thresholds and plant images are fetched automatically from OpenPlantbook if available
+* All thresholds now are their own entities and their values can be changed from the UI or by scripts and automations.
+* These changes are instantly reflected in HA. No need to restart to change the thresholds.
 
 ![image](https://user-images.githubusercontent.com/203184/180942669-016e2552-6694-4c37-95e2-2a5a8204b148.png)
 
 * Max and min temperature is now dependent on the unit of measurement - currently °C and °F is supported.
   * The values will be updated if you change your units in the Home Assistant settings
 
+### Easier to replace sensors
+
+* You can use a service call to replace the different sensors used to monitor the plant
+
+![image](https://user-images.githubusercontent.com/203184/181916318-67bddc07-0e32-477d-bc15-3f32bbc4768b.png)
+
+* The new sensor values are immediately picked up by the plant integration without any need to restart
+
 ### Better handling of species and image
 
 * If you change the species of a plant in the UI, new data are fetched from OpenPlantbook
 * Image can also be updated from the UI
+* These updates are immediately reflected in HA without restarting anything.
 
 ![image](https://user-images.githubusercontent.com/203184/181916091-db7de9ca-d120-4614-a83e-d93a5dad9183.png)
 
 * You can chose to disable warnings on high/low illuminance.
   * Illuminance warnings are now triggered by calculating the "Daily Light Integral" - DLI.
 
-### Easier to replace sensors
 
-* You can use a service call to replace the different sensors used to monitor the plant
-
-![image](https://user-images.githubusercontent.com/203184/181916318-67bddc07-0e32-477d-bc15-3f32bbc4768b.png)
+### Daily Light Integral
 
 * A new Daily Light Integral - DLI - sensor is created for all plants. 
 
