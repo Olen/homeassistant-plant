@@ -10,7 +10,6 @@ from typing import Any
 
 import voluptuous as vol
 
-from config.custom_components.plant.plant_helpers import PlantHelper
 from homeassistant import config_entries
 from homeassistant.components.integration.const import METHOD_TRAPEZOIDAL
 from homeassistant.components.integration.sensor import (
@@ -125,6 +124,7 @@ from .const import (
     UNIT_MICRO_PPFD,
     UNIT_PPFD,
 )
+from .plant_helpers import PlantHelper
 from .plant_meters import (
     PlantCurrentConductivity,
     PlantCurrentHumidity,
@@ -757,4 +757,3 @@ class PlantDevice(Entity):
 
     async def async_added_to_hass(self) -> None:
         self.update_registry()
-
