@@ -640,10 +640,10 @@ class PlantDevice(Entity):
             and self.sensor_moisture.state != STATE_UNAVAILABLE
             and self.sensor_moisture.state is not None
         ):
-            if int(self.sensor_moisture.state) < int(self.min_moisture.state):
+            if float(self.sensor_moisture.state) < float(self.min_moisture.state):
                 self.moisture_status = STATE_LOW
                 new_state = STATE_PROBLEM
-            elif int(self.sensor_moisture.state) > int(self.max_moisture.state):
+            elif float(self.sensor_moisture.state) > float(self.max_moisture.state):
                 self.moisture_status = STATE_HIGH
                 new_state = STATE_PROBLEM
             else:
@@ -655,10 +655,14 @@ class PlantDevice(Entity):
             and self.sensor_conductivity.state != STATE_UNAVAILABLE
             and self.sensor_conductivity.state is not None
         ):
-            if int(self.sensor_conductivity.state) < int(self.min_conductivity.state):
+            if float(self.sensor_conductivity.state) < float(
+                self.min_conductivity.state
+            ):
                 self.conductivity_status = STATE_LOW
                 new_state = STATE_PROBLEM
-            elif int(self.sensor_conductivity.state) > int(self.max_conductivity.state):
+            elif float(self.sensor_conductivity.state) > float(
+                self.max_conductivity.state
+            ):
                 self.conductivity_status = STATE_HIGH
                 new_state = STATE_PROBLEM
             else:
@@ -670,10 +674,12 @@ class PlantDevice(Entity):
             and self.sensor_temperature.state != STATE_UNAVAILABLE
             and self.sensor_temperature.state is not None
         ):
-            if int(self.sensor_temperature.state) < int(self.min_temperature.state):
+            if float(self.sensor_temperature.state) < float(self.min_temperature.state):
                 self.temperature_status = STATE_LOW
                 new_state = STATE_PROBLEM
-            elif int(self.sensor_temperature.state) > int(self.max_temperature.state):
+            elif float(self.sensor_temperature.state) > float(
+                self.max_temperature.state
+            ):
                 self.temperature_status = STATE_HIGH
                 new_state = STATE_PROBLEM
             else:
@@ -685,10 +691,10 @@ class PlantDevice(Entity):
             and self.sensor_humidity.state != STATE_UNAVAILABLE
             and self.sensor_humidity.state is not None
         ):
-            if int(self.sensor_humidity.state) < int(self.min_humidity.state):
+            if float(self.sensor_humidity.state) < float(self.min_humidity.state):
                 self.humidity_status = STATE_LOW
                 new_state = STATE_PROBLEM
-            elif int(self.sensor_humidity.state) > int(self.max_humidity.state):
+            elif float(self.sensor_humidity.state) > float(self.max_humidity.state):
                 self.humidity_status = STATE_HIGH
                 new_state = STATE_PROBLEM
             else:
@@ -703,7 +709,7 @@ class PlantDevice(Entity):
             and self.sensor_illuminance.state != STATE_UNAVAILABLE
             and self.sensor_illuminance.state is not None
         ):
-            if int(self.sensor_illuminance.state) > int(self.max_illuminance.state):
+            if float(self.sensor_illuminance.state) > float(self.max_illuminance.state):
                 self.illuminance_status = STATE_HIGH
                 new_state = STATE_PROBLEM
 
@@ -718,12 +724,12 @@ class PlantDevice(Entity):
         ):
             if float(self.dli.extra_state_attributes["last_period"]) > 0 and float(
                 self.dli.extra_state_attributes["last_period"]
-            ) < int(self.min_mol.state):
+            ) < float(self.min_mol.state):
                 self.dli_status = STATE_LOW
                 new_state = STATE_PROBLEM
             elif float(self.dli.extra_state_attributes["last_period"]) > 0 and float(
                 self.dli.extra_state_attributes["last_period"]
-            ) > int(self.max_mol.state):
+            ) > float(self.max_mol.state):
                 self.dli_status = STATE_HIGH
                 new_state = STATE_PROBLEM
             else:
