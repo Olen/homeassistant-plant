@@ -1,11 +1,10 @@
 {
   "domain": "plant",
   "name": "Plant Monitor",
-  "documentation": "https://www.home-assistant.io/integrations/plant",
+  "documentation": "https://github.com/Olen/homeassistant-plant/",
   "issue_tracker": "https://github.com/Olen/homeassistant-plant/issues",
   "after_dependencies": ["recorder", "openplantbook"],
-  "codeowners": ["@ChristianKuehnel"],
-  "quality_scale": "internal",
-  "version": "0.2",
+  "codeowners": ["@Olen"],
+  "version": "2.0.0",
   "config_flow": true
 }

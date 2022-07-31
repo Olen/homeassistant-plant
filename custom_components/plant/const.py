@@ -2,14 +2,21 @@
 from homeassistant.const import ATTR_TEMPERATURE
 
 DOMAIN = "plant"
+DOMAIN_SENSOR = "sensor"
+DOMAIN_PLANTBOOK = "openplantbook"
+
 
 ATTR_TEMPERATURE = "temperature"
 ATTR_PROBLEM = "problem"
 ATTR_SENSORS = "sensors"
 ATTR_METERS = "meters"
 ATTR_THRESHOLDS = "thresholds"
+ATTR_ENTITY = "entity"
+ATTR_SELECT = "select"
+ATTR_OPTIONS = "options"
+ATTR_PLANT = "plant"
 
-PROBLEM_NONE = "none"
+
 ATTR_MAX_ILLUMINANCE_HISTORY = "max_illuminance"
 ATTR_SPECIES = "species"
 ATTR_LIMITS = "limits"
@@ -33,6 +40,12 @@ DEFAULT_MAX_MMOL = 20000
 DEFAULT_MIN_MOL = 2
 DEFAULT_MAX_MOL = 30
 
+DATA_SOURCE = "data_source"
+DATA_SOURCE_PLANTBOOK = "OpenPlantbook"
+DATA_SOURCE_MANUAL = "Manual"
+DATA_SOURCE_DEFAULT = "Default values"
+DATA_UPDATED = "plant_data_updated"
+
 
 READING_BATTERY = "battery"
 READING_TEMPERATURE = ATTR_TEMPERATURE
@@ -50,6 +63,11 @@ UNIT_DLI = "mol/d⋅m²"
 UNIT_MICRO_DLI = "μmol/d⋅m²"
 UNIT_CONDUCTIVITY = "μS/cm"
 
+FLOW_WRONG_PLANT = "wrong_plant"
+FLOW_RIGHT_PLANT = "right_plant"
+FLOW_ERROR_NOTFOUND = "opb_notfound"
+FLOW_STRING_DESCRIPTION = "desc"
+
 FLOW_PLANT_INFO = "plant_info"
 FLOW_PLANT_SPECIES = "plant_species"
 FLOW_PLANT_NAME = "plant_name"
@@ -62,8 +80,10 @@ FLOW_SENSOR_CONDUCTIVITY = "conductivity_sensor"
 FLOW_SENSOR_ILLUMINANCE = "illuminance_sensor"
 FLOW_SENSOR_HUMIDITY = "humidity_sensor"
 
+FLOW_TEMP_UNIT = "temperature_unit"
 FLOW_ILLUMINANCE_TRIGGER = "illuminance_trigger"
 
+OPB_GET = "get"
 OPB_SEARCH = "search"
 OPB_SEARCH_RESULT = "search_result"
 OPB_PID = "pid"
@@ -71,6 +91,18 @@ OPB_DISPLAY_PID = "display_pid"
 
 # PPFD to DLI: /1000000 * 3600 to get from microseconds to hours
 PPFD_DLI_FACTOR = 0.0036
+# See https://www.apogeeinstruments.com/conversion-ppfd-to-lux/
+# This equals normal sunlight
+DEFAULT_LUX_TO_PPFD = 0.0185
+
+
+SERVICE_REPLACE_SENSOR = "replace_sensor"
+
+STATE_LOW = "Low"
+STATE_HIGH = "High"
+STATE_DLI_LOW = "Previous DLI Low"
+STATE_DLI_HIGH = "Previous DLI High"
+
 
 CONF_MIN_BATTERY_LEVEL = f"min_{READING_BATTERY}"
 CONF_MIN_TEMPERATURE = f"min_{READING_TEMPERATURE}"
@@ -87,8 +119,8 @@ CONF_MIN_MMOL = f"min_{READING_MMOL}"
 CONF_MAX_MMOL = f"max_{READING_MMOL}"
 CONF_MIN_MOL = f"min_{READING_MOL}"
 CONF_MAX_MOL = f"max_{READING_MOL}"
-CONF_MIN_BRIGHTNESS = "min_brightness"  # DEPRECATED
-CONF_MAX_BRIGHTNESS = "max_brightness"  # DEPRECATED
+CONF_MIN_BRIGHTNESS = "min_brightness"  # DEPRECATED. Only used for config migration
+CONF_MAX_BRIGHTNESS = "max_brightness"  # DEPRECATED. Only used for config migration
 
 
 CONF_CHECK_DAYS = "check_days"

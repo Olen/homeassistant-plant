@@ -5,8 +5,8 @@
       "user": {
         "title": "Configure a plant",
         "data": {
-          "plant_name": "Plant name",
-          "plant_species": "Species",
+          "name": "Plant name",
+          "species": "Species",
           "temperature_sensor": "Temperature sensor",
           "moisture_sensor": "Moisture sensor",
           "conductivity_sensor": "Conductivity sensor",
@@ -14,14 +14,14 @@
           "humidity_sensor": "Humidity (environment) sensor"
         },
         "data_description": {
-          "plant_species": "Will be used for searching OpenPlantbook"
+          "species": "Will be used for searching OpenPlantbook"
         }
       },
       "select_species": {
         "title": "Select speices from OpenPlantbook",
         "description": "{desc}",
         "data": {
-          "plant_species": "Species"
+          "species": "Species"
         },
         "menu_options": {
           "user": "Go back"
@@ -29,7 +29,7 @@
       },
       "limits": {
         "title": "Set limits",
-        "description": "# {plant_name}\n![Plant]({entity_picture})<br />\nTemperature unit is {temp_unit}",
+        "description": "# {name}\n![Plant]({entity_picture})<br />\nTemperature unit is {temperature_unit}",
         "data": {
           "right_plant": "This is the plant I was looking for",
           "display_pid": "Plant species to display",
@@ -60,7 +60,7 @@
         "description": "Only update the options you want to modify. Empty fields are ignored.",
         "data": {
           "check_days": "Illuminance check days",
-          "plant_species": "Species",
+          "species": "Species",
           "display_pid": "Plant species to display",
           "temperature_sensor": "Temperature sensor",
           "moisture_sensor": "Moisture sensor",
