@@ -80,7 +80,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_import(self, import_input):
         """Importing config from configuration.yaml"""
-        _LOGGER.error(import_input)
+        _LOGGER.debug(import_input)
         # return FlowResultType.ABORT
         return self.async_create_entry(
             title=import_input[FLOW_PLANT_INFO][ATTR_NAME],
@@ -91,13 +91,13 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Handle the initial step."""
         errors = {}
         if user_input is not None:
-            _LOGGER.info("User Input %s", user_input)
+            _LOGGER.debug("User Input %s", user_input)
             # Validate user input
             valid = await self.validate_step_1(user_input)
             if valid:
                 # Store info to use in next step
                 self.plant_info = user_input
-                _LOGGER.info("Plant_info: %s", self.plant_info)
+                _LOGGER.debug("Plant_info: %s", self.plant_info)
 
                 # Return the form of the next step
                 return await self.async_step_select_species()
@@ -157,7 +157,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
 
         if user_input is not None:
-            _LOGGER.info("User Input %s", user_input)
+            _LOGGER.debug("User Input %s", user_input)
             # Validate user input
             valid = await self.validate_step_2(user_input)
             if valid:
@@ -165,7 +165,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 self.plant_info[ATTR_SPECIES] = user_input[ATTR_SPECIES]
 
                 # Return the form of the next step
-                _LOGGER.info("Plant_info: %s", self.plant_info)
+                _LOGGER.debug("Plant_info: %s", self.plant_info)
                 return await self.async_step_limits()
         ph = PlantHelper(self.hass)
         search_result = await ph.openplantbook_search(
@@ -176,7 +176,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         dropdown = []
         for (pid, display_pid) in search_result.items():
             dropdown.append({"label": display_pid, "value": pid})
-        _LOGGER.info("Dropdown: %s", dropdown)
+        _LOGGER.debug("Dropdown: %s", dropdown)
         data_schema = {}
         data_schema[ATTR_SPECIES] = selector({ATTR_SELECT: {ATTR_OPTIONS: dropdown}})
 
@@ -194,7 +194,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Handle max/min values"""
 
         if user_input is not None:
-            _LOGGER.info("User Input %s", user_input)
+            _LOGGER.debug("User Input %s", user_input)
             # Validate user input
             valid = await self.validate_step_1(user_input)
             if not user_input.get(FLOW_RIGHT_PLANT):
@@ -208,7 +208,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 user_input.pop(OPB_DISPLAY_PID)
                 user_input.pop(FLOW_RIGHT_PLANT)
                 self.plant_info[FLOW_PLANT_LIMITS] = user_input
-                _LOGGER.info("Plant_info: %s", self.plant_info)
+                _LOGGER.debug("Plant_info: %s", self.plant_info)
                 # Return the form of the next step
                 return await self.async_step_limits_done()
 
@@ -387,10 +387,10 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
     ) -> data_entry_flow.FlowResult:
         """Manage the options."""
         if user_input is not None:
-            _LOGGER.info("User Input: %s", user_input)
+            _LOGGER.debug("User Input: %s", user_input)
             return self.async_create_entry(title="", data=user_input)
 
-        _LOGGER.info(self.entry.data)
+        _LOGGER.debug(self.entry.data)
         self.plant = self.hass.data[DOMAIN][self.entry.entry_id]["plant"]
 
         data_schema = {}
@@ -423,7 +423,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         self, hass: HomeAssistant, entry: config_entries.ConfigEntry
     ):
         """Handle options update."""
-        _LOGGER.info("Entry Data %s", entry.options)
+        _LOGGER.debug("Entry Data %s", entry.options)
         entity_picture = entry.options.get(ATTR_ENTITY_PICTURE)
 
         if entity_picture is not None:
@@ -432,13 +432,13 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             else:
                 try:
                     url = cv.url(entity_picture)
-                    _LOGGER.info("Url 1 %s", url)
+                    _LOGGER.debug("Url 1 %s", url)
                 except Exception as exc1:
                     _LOGGER.warning("Not a valid url: %s", entity_picture)
                     if entity_picture.startswith("/local/"):
                         try:
                             url = cv.path(entity_picture)
-                            _LOGGER.info("Url 2 %s", url)
+                            _LOGGER.debug("Url 2 %s", url)
                         except Exception as exc2:
                             _LOGGER.warning("Not a valid path: %s", entity_picture)
                             raise vol.Invalid(
@@ -446,7 +446,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                             ) from exc2
                     else:
                         raise vol.Invalid(f"Invalid URL: {entity_picture}") from exc1
-                _LOGGER.info("Update image to %s", entity_picture)
+                _LOGGER.debug("Update image to %s", entity_picture)
                 self.plant.add_image(entity_picture)
 
         new_display_species = entry.options.get(OPB_DISPLAY_PID)
@@ -455,7 +455,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
         new_species = entry.options.get(ATTR_SPECIES)
         if new_species and new_species != self.plant.species:
-            _LOGGER.info(
+            _LOGGER.debug(
                 "Species changed from '%s' to '%s'", self.plant.species, new_species
             )
             ph = PlantHelper(hass=self.hass)
@@ -463,7 +463,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 config={ATTR_SPECIES: new_species}
             )
             if plant_config[DATA_SOURCE] == DATA_SOURCE_PLANTBOOK:
-                _LOGGER.info(plant_config)
+                _LOGGER.debug(plant_config)
                 self.plant.species = new_species
                 self.plant.add_image(plant_config[FLOW_PLANT_INFO][ATTR_ENTITY_PICTURE])
                 self.plant.display_species = plant_config[FLOW_PLANT_INFO][
@@ -473,9 +473,9 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     FLOW_PLANT_LIMITS
                 ].items():
                     set_entity = getattr(self.plant, key)
-                    _LOGGER.info("Entity: %s To: %s", set_entity, value)
+                    _LOGGER.debug("Entity: %s To: %s", set_entity, value)
                     set_entity_id = set_entity.entity_id
-                    _LOGGER.info(
+                    _LOGGER.debug(
                         "Setting %s to %s",
                         set_entity_id,
                         value,
