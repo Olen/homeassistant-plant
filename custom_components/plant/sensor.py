@@ -134,9 +134,7 @@ class PlantDummyTemperature(PlantDummyStatus):
 
     async def async_update(self) -> int:
         """Give out a dummy value"""
-
-        r = random.randint(15, 20)
-        self._attr_native_value = r
+        self._attr_native_value = random.randint(15, 20)
 
     @property
     def device_class(self) -> str:
@@ -157,8 +155,7 @@ class PlantDummyHumidity(PlantDummyStatus):
 
     async def async_update(self) -> int:
         """Give out a dummy value"""
-        r = random.randint(25, 90)
-        self._attr_native_value = r
+        self._attr_native_value = random.randint(25, 90)
 
     @property
     def device_class(self) -> str:

@@ -30,14 +30,12 @@ from .const import (
     CONF_MAX_HUMIDITY,
     CONF_MAX_ILLUMINANCE,
     CONF_MAX_MOISTURE,
-    CONF_MAX_MOL,
     CONF_MAX_TEMPERATURE,
     CONF_MIN_CONDUCTIVITY,
     CONF_MIN_DLI,
     CONF_MIN_HUMIDITY,
     CONF_MIN_ILLUMINANCE,
     CONF_MIN_MOISTURE,
-    CONF_MIN_MOL,
     CONF_MIN_TEMPERATURE,
     DATA_SOURCE,
     DATA_SOURCE_PLANTBOOK,
@@ -169,8 +167,8 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 # Return the form of the next step
                 _LOGGER.debug("Plant_info: %s", self.plant_info)
                 return await self.async_step_limits()
-        ph = PlantHelper(self.hass)
-        search_result = await ph.openplantbook_search(
+        plant_helper = PlantHelper(self.hass)
+        search_result = await plant_helper.openplantbook_search(
             species=self.plant_info[ATTR_SPECIES]
         )
         if search_result is None:
@@ -215,8 +213,8 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 return await self.async_step_limits_done()
 
         data_schema = {}
-        ph = PlantHelper(self.hass)
-        plant_config = await ph.generate_configentry(
+        plant_helper = PlantHelper(self.hass)
+        plant_config = await plant_helper.generate_configentry(
             config={
                 ATTR_NAME: self.plant_info[ATTR_NAME],
                 ATTR_SPECIES: self.plant_info[ATTR_SPECIES],
@@ -435,6 +433,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 try:
                     url = cv.url(entity_picture)
                     _LOGGER.debug("Url 1 %s", url)
+                # pylint: disable=broad-except
                 except Exception as exc1:
                     _LOGGER.warning("Not a valid url: %s", entity_picture)
                     if entity_picture.startswith("/local/"):
@@ -460,8 +459,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             _LOGGER.debug(
                 "Species changed from '%s' to '%s'", self.plant.species, new_species
             )
-            ph = PlantHelper(hass=self.hass)
-            plant_config = await ph.generate_configentry(
+            plant_helper = PlantHelper(hass=self.hass)
+            plant_config = await plant_helper.generate_configentry(
                 config={ATTR_SPECIES: new_species, ATTR_ENTITY_PICTURE: entity_picture}
             )
             if plant_config[DATA_SOURCE] == DATA_SOURCE_PLANTBOOK:

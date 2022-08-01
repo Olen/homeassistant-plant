@@ -1,76 +1,27 @@
 """Support for monitoring plants."""
 from __future__ import annotations
 
-from collections import deque
-from collections.abc import Mapping
-from contextlib import suppress
-from datetime import datetime, timedelta
 import logging
-from typing import Any
 
-import voluptuous as vol
-
-from homeassistant import config_entries
-from homeassistant.components.integration.const import METHOD_TRAPEZOIDAL
-from homeassistant.components.integration.sensor import (
-    UNIT_PREFIXES,
-    UNIT_TIME,
-    IntegrationSensor,
-)
-from homeassistant.components.recorder import get_instance, history
-from homeassistant.components.sensor import (
-    RestoreSensor,
-    SensorDeviceClass,
-    SensorStateClass,
-)
 from homeassistant.components.utility_meter.const import (
-    DAILY,
     DATA_TARIFF_SENSORS,
     DATA_UTILITY,
 )
-from homeassistant.components.utility_meter.sensor import (
-    PERIOD2CRON,
-    UtilityMeterSensor,
-)
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
 from homeassistant.const import (
-    ATTR_ENTITY_ID,
     ATTR_ENTITY_PICTURE,
     ATTR_NAME,
-    ATTR_TEMPERATURE,
-    ATTR_UNIT_OF_MEASUREMENT,
-    CONDUCTIVITY,
-    CONF_NAME,
-    CONF_SENSORS,
-    LIGHT_LUX,
-    PERCENTAGE,
     STATE_OK,
     STATE_PROBLEM,
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
-    TEMP_CELSIUS,
-    TEMP_FAHRENHEIT,
-    TIME_DAYS,
-    TIME_HOURS,
-    TIME_SECONDS,
-    URL_API_TEMPLATE,
 )
-from homeassistant.core import Event, HomeAssistant, ServiceCall, callback
+from homeassistant.core import HomeAssistant, ServiceCall, callback
 from homeassistant.helpers import device_registry as dr, entity_registry as er
-from homeassistant.helpers.dispatcher import async_dispatcher_connect
-from homeassistant.helpers.entity import (
-    Entity,
-    EntityCategory,
-    async_generate_entity_id,
-)
+from homeassistant.helpers.entity import Entity, async_generate_entity_id
 from homeassistant.helpers.entity_component import EntityComponent
-from homeassistant.helpers.event import async_track_state_change_event
-from homeassistant.helpers.restore_state import RestoreEntity
-from homeassistant.helpers.temperature import display_temp
-from homeassistant.util.temperature import convert as convert_temperature
 
 from .const import (
-    ATTR_LIMITS,
     ATTR_MAX,
     ATTR_METERS,
     ATTR_MIN,
@@ -78,51 +29,20 @@ from .const import (
     ATTR_SENSORS,
     ATTR_SPECIES,
     ATTR_THRESHOLDS,
-    CONF_MAX_CONDUCTIVITY,
-    CONF_MAX_HUMIDITY,
-    CONF_MAX_ILLUMINANCE,
-    CONF_MAX_MOISTURE,
-    CONF_MAX_MOL,
-    CONF_MAX_TEMPERATURE,
-    CONF_MIN_CONDUCTIVITY,
-    CONF_MIN_HUMIDITY,
-    CONF_MIN_ILLUMINANCE,
-    CONF_MIN_MOISTURE,
-    CONF_MIN_MOL,
-    CONF_MIN_TEMPERATURE,
     DATA_SOURCE,
-    DATA_UPDATED,
-    DEFAULT_LUX_TO_PPFD,
-    DEFAULT_MAX_TEMPERATURE,
-    DEFAULT_MIN_TEMPERATURE,
     DOMAIN,
     FLOW_ILLUMINANCE_TRIGGER,
     FLOW_PLANT_INFO,
-    FLOW_PLANT_LIMITS,
-    FLOW_SENSOR_CONDUCTIVITY,
-    FLOW_SENSOR_HUMIDITY,
-    FLOW_SENSOR_ILLUMINANCE,
-    FLOW_SENSOR_MOISTURE,
-    FLOW_SENSOR_TEMPERATURE,
     OPB_DISPLAY_PID,
-    PPFD_DLI_FACTOR,
-    READING_BATTERY,
     READING_CONDUCTIVITY,
     READING_DLI,
     READING_HUMIDITY,
     READING_ILLUMINANCE,
     READING_MOISTURE,
-    READING_MOL,
     READING_TEMPERATURE,
     SERVICE_REPLACE_SENSOR,
-    STATE_DLI_HIGH,
-    STATE_DLI_LOW,
     STATE_HIGH,
     STATE_LOW,
-    UNIT_CONDUCTIVITY,
-    UNIT_DLI,
-    UNIT_MICRO_PPFD,
-    UNIT_PPFD,
 )
 from .plant_helpers import PlantHelper
 from .plant_meters import (
@@ -194,8 +114,8 @@ def _async_find_matching_config_entry(hass: HomeAssistant) -> ConfigEntry | None
 async def async_migrate_plant(hass: HomeAssistant, plant_id: str, config: dict) -> None:
     """Try to migrate the config from yaml"""
 
-    ph = PlantHelper(hass)
-    plant_config = await ph.generate_configentry(config=config)
+    plant_helper = PlantHelper(hass)
+    plant_config = await plant_helper.generate_configentry(config=config)
     hass.async_create_task(
         hass.config_entries.flow.async_init(
             DOMAIN, context={"source": SOURCE_IMPORT}, data=plant_config
@@ -376,7 +296,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     # Lets add the dummy sensors automatically if we are testing stuff
     if USE_DUMMY_SENSORS is True:
         for sensor in plant_sensors:
-            if sensor._external_sensor is None:
+            if sensor.external_sensor is None:
                 await hass.services.async_call(
                     domain=DOMAIN,
                     service=SERVICE_REPLACE_SENSOR,

@@ -64,6 +64,7 @@ class PlantMinMax(RestoreEntity):
         self.entity_id = async_generate_entity_id(
             f"{DOMAIN}.{{}}", self.name, current_ids={}
         )
+        # pylint: disable=no-member
         if not self._attr_state or self._attr_state == STATE_UNKNOWN:
             self._attr_state = self._default_state
 

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import timedelta
-from decimal import Decimal
 import logging
 
 from homeassistant.components.integration.const import METHOD_TRAPEZOIDAL
@@ -27,7 +26,6 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import Entity, async_generate_entity_id
 from homeassistant.helpers.event import async_track_state_change_event
-from homeassistant.util import dt as dt_util
 
 from .const import (
     DATA_UPDATED,
@@ -72,15 +70,21 @@ class PlantCurrentStatus(RestoreSensor):
     def extra_state_attributes(self) -> dict:
         if self._external_sensor:
             attributes = {
-                "external_sensor": self._external_sensor,
+                "external_sensor": self.external_sensor,
                 # "history_max": self._history.max,
                 # "history_min": self._history.min,
             }
             return attributes
 
+    @property
+    def external_sensor(self) -> str:
+        """The external sensor we are tracking"""
+        return self._external_sensor
+
     def replace_external_sensor(self, new_sensor: str | None) -> None:
         """Modify the external sensor"""
         _LOGGER.info("Setting %s external sensor to %s", self.entity_id, new_sensor)
+        # pylint: disable=attribute-defined-outside-init
         self._external_sensor = new_sensor
         async_track_state_change_event(
             self._hass,
@@ -336,21 +340,6 @@ class PlantTotalLightIntegral(IntegrationSensor):
         )
         self._unit_of_measurement = UNIT_PPFD
 
-        # self._method = METHOD_TRAPEZOIDAL
-        # self._attr_name = (
-        #     f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Total PPFD (mol) Integral"
-        # )
-
-        # self._attr_unique_id = f"{config.entry_id}-ppfd-integral"
-        # self._unit_time_str = TIME_SECONDS
-        # self._round_digits = 2
-        # self._sensor_source_id = illuminance_ppfd_sensor.entity_id
-        # self._unit_time = UNIT_TIME[self._unit_time_str]
-        # self._unit_prefix = 1
-        # self._unit_template = "{}"
-        # self._state = None
-        # self._attr_icon = "mdi:math-integral"
-
     def _unit(self, source_unit: str) -> str:
         """Override unit"""
         return self._unit_of_measurement
@@ -381,25 +370,4 @@ class PlantDailyLightIntegral(UtilityMeterSensor):
             suggested_entity_id=None,
         )
 
-        # self._name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Daily Light Integral"
-
-        # self._attr_unique_id = f"{config.entry_id}-dli"
         self._unit_of_measurement = UNIT_DLI
-        # self._sensor_source_id = illuminance_integration_sensor.entity_id
-        # self._period = DAILY
-        # self._meter_offset = timedelta(seconds=0)
-        # self._cron_pattern = PERIOD2CRON[self._period].format(
-        #     minute=self._meter_offset.seconds % 3600 // 60,
-        #     hour=self._meter_offset.seconds // 3600,
-        #     day=self._meter_offset.days + 1,
-        # )
-
-        # self._last_period = Decimal(0)
-        # self._last_reset = dt_util.utcnow()
-        # self._sensor_delta_values = None
-        # self._sensor_net_consumption = None
-        # self._parent_meter = config.entry_id
-        # self._tariff = None
-        # self._tariff_entity = None
-        # self._state = 0
-        # self._collecting = None
