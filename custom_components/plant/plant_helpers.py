@@ -172,9 +172,9 @@ class PlantHelper:
             entity_picture = config[ATTR_ENTITY_PICTURE]
         elif ATTR_IMAGE in config:
             entity_picture = config[ATTR_IMAGE]
-        elif cv.isfile(f"{DEFAULT_IMAGE_PATH}{config[ATTR_SPECIES]}.jpg")
+        elif cv.isfile(f"{DEFAULT_IMAGE_PATH}{config[ATTR_SPECIES]}.jpg"):
             entity_picture = f"{DEFAULT_IMAGE_LOCAL_URL}{config[ATTR_SPECIES]}.jpg"
-        elif cv.isfile(f"{DEFAULT_IMAGE_PATH}{config[ATTR_SPECIES]}.png")
+        elif cv.isfile(f"{DEFAULT_IMAGE_PATH}{config[ATTR_SPECIES]}.png"):
             entity_picture = f"{DEFAULT_IMAGE_LOCAL_URL}{config[ATTR_SPECIES]}.png"
 
         if ATTR_SENSORS not in config:
@@ -239,7 +239,7 @@ class PlantHelper:
             min_humidity = opb_plant.get(
                 CONF_PLANTBOOK_MAPPING[CONF_MIN_HUMIDITY], DEFAULT_MIN_HUMIDITY
             )
-            if entity_picture is None or entity_picture = "":
+            if entity_picture is None or entity_picture == "":
                 entity_picture = opb_plant.get(FLOW_PLANT_IMAGE)
             display_species = opb_plant.get(OPB_DISPLAY_PID)
 
