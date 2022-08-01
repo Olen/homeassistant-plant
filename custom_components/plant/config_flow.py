@@ -460,7 +460,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             )
             ph = PlantHelper(hass=self.hass)
             plant_config = await ph.generate_configentry(
-                config={ATTR_SPECIES: new_species}
+                config={ATTR_SPECIES: new_species, ATTR_ENTITY_PICTURE: entity_picture}
             )
             if plant_config[DATA_SOURCE] == DATA_SOURCE_PLANTBOOK:
                 _LOGGER.debug(plant_config)

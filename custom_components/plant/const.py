@@ -1,4 +1,5 @@
 """Constants"""
+from homeassistant.config_entries import PATH_CONFIG
 from homeassistant.const import ATTR_TEMPERATURE
 
 DOMAIN = "plant"
@@ -41,6 +42,9 @@ DEFAULT_MIN_MOL = 2
 DEFAULT_MAX_MOL = 30
 DEFAULT_MIN_DLI = 2
 DEFAULT_MAX_DLI = 30
+
+DEFAULT_IMAGE_PATH = "/config/www/images/plants/"
+DEFAULT_IMAGE_LOCAL_URL = "/local/images/plants/"
 
 
 DATA_SOURCE = "data_source"

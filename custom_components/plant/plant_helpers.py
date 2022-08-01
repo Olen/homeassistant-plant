@@ -11,6 +11,7 @@ from homeassistant.components.persistent_notification import (
 )
 from homeassistant.const import ATTR_ENTITY_PICTURE, ATTR_NAME, TEMP_CELSIUS
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import config_validation as cv, entity
 from homeassistant.helpers.temperature import display_temp
 
 from .const import (
@@ -38,6 +39,8 @@ from .const import (
     DATA_SOURCE,
     DATA_SOURCE_DEFAULT,
     DATA_SOURCE_PLANTBOOK,
+    DEFAULT_IMAGE_LOCAL_URL,
+    DEFAULT_IMAGE_PATH,
     DEFAULT_MAX_CONDUCTIVITY,
     DEFAULT_MAX_DLI,
     DEFAULT_MAX_HUMIDITY,
@@ -163,10 +166,21 @@ class PlantHelper:
         display_species = None
         data_source = DATA_SOURCE_DEFAULT
 
+        # If we have image defined in the config, or a local file
+        # prefer that.  If neither, image will be set to openplantbook
+        if ATTR_ENTITY_PICTURE in config:
+            entity_picture = config[ATTR_ENTITY_PICTURE]
+        elif ATTR_IMAGE in config:
+            entity_picture = config[ATTR_IMAGE]
+        elif cv.isfile(f"{DEFAULT_IMAGE_PATH}{config[ATTR_SPECIES]}.jpg")
+            entity_picture = f"{DEFAULT_IMAGE_LOCAL_URL}{config[ATTR_SPECIES]}.jpg"
+        elif cv.isfile(f"{DEFAULT_IMAGE_PATH}{config[ATTR_SPECIES]}.png")
+            entity_picture = f"{DEFAULT_IMAGE_LOCAL_URL}{config[ATTR_SPECIES]}.png"
+
         if ATTR_SENSORS not in config:
             config[ATTR_SENSORS] = {}
 
-        opb_plant = await self.openplantbook_get(config["species"])
+        opb_plant = await self.openplantbook_get(config[ATTR_SPECIES])
         if opb_plant:
             data_source = DATA_SOURCE_PLANTBOOK
             max_moisture = opb_plant.get(
@@ -225,7 +239,8 @@ class PlantHelper:
             min_humidity = opb_plant.get(
                 CONF_PLANTBOOK_MAPPING[CONF_MIN_HUMIDITY], DEFAULT_MIN_HUMIDITY
             )
-            entity_picture = opb_plant.get(FLOW_PLANT_IMAGE)
+            if entity_picture is None or entity_picture = "":
+                entity_picture = opb_plant.get(FLOW_PLANT_IMAGE)
             display_species = opb_plant.get(OPB_DISPLAY_PID)
 
         return {
@@ -233,10 +248,7 @@ class PlantHelper:
             FLOW_PLANT_INFO: {
                 ATTR_NAME: config.get(ATTR_NAME),
                 ATTR_SPECIES: config[ATTR_SPECIES],
-                ATTR_ENTITY_PICTURE: config.get(
-                    ATTR_ENTITY_PICTURE, config.get(ATTR_IMAGE, entity_picture)
-                )
-                or "",
+                ATTR_ENTITY_PICTURE: entity_picture or "",
                 OPB_DISPLAY_PID: display_species or "",
                 ATTR_LIMITS: {
                     CONF_MAX_ILLUMINANCE: config.get(
