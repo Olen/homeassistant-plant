@@ -87,12 +87,44 @@ See https://en.wikipedia.org/wiki/Daily_light_integral for what DLI means
 
 ## Dependencies
 
-Add the OpenPlantbook integration: https://github.com/Olen/home-assistant-openplantbook
+OpenPlantbook integration: https://github.com/Olen/home-assistant-openplantbook
 
-Add the updated Lovelace Flower Card: https://github.com/Olen/lovelace-flower-card/tree/new_plant
+Updated Lovelace Flower Card: https://github.com/Olen/lovelace-flower-card/tree/new_plant
 
 
-### Installation
+# Installation
+
+Until the branch is merged, only manual installation is possible.
+
+### Install and set up OpenPlantbook
+
+* Upgrade to the latest version of the OpenPlantbook integration: https://github.com/Olen/home-assistant-openplantbook
+* Set it up, and add your client_id and secret, and test it by using e.g. the `openplantbook.search` service call to search for something.   
+
+### Install new flower-card for Lovelace
+
+* Copy the latest flower-card.json from https://github.com/Olen/lovelace-flower-card/tree/new_plant to somewhere under /config/www/ in your HA installation, and add it as a lovelace resource.
+
+### Install this integration
+
+* Move your old `custom_components/plant/` out of the way.  
+* Copy all the content from this branchs custom_components/plant/ to custom_components/plant/ in you HA installation
+
+* Restart HA
+
+The first restart might take some time, as it tries to convert all your plants from your configuration.yaml to the new format.  You can follow this process in the log-file.
+
+After HA is restarted, you will find all your plants under "Setting" - "Devices and Services" - "Devices".  It will take a minute or two before the current values start to update.
+
+> **Warning**
+> The `entity_id` of your plants will probably have changed from the old integration to the new one.  This means that any automations, scripts etc. that use the entity_id or reacts to changes in your plants status will need to be updated.  You probably also need to change the way you read data from the plant device in any such components.
+
+> **Warning**
+> This integration is NOT compatible with the built in original plant component.  This means that e.g. the plant cards etc. in the UI, and any blueprints etc. that are built for the original plant intergation wil NOT work with this version.
+
+
+# Info kept until this version is released in HACS. Ignore for now.
+
 This can be installed manually or through HACS
 #### Via HACS
 * Add this repo as a "Custom repository" with type "Integration"
@@ -104,6 +136,5 @@ This can be installed manually or through HACS
 ## Problem reports
 By default, all problems (e.g. every time a sensor reports a value that is above or below the threshold set in "limits"), the plant state will be set to "problem".
 
-The exception is the Brightness sensors which will be ignored for now
 
 
