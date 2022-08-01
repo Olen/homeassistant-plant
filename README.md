@@ -45,7 +45,7 @@ This means that the main plant entity references other entities, and they are gr
 
 * You can use a service call to replace the different sensors used to monitor the plant
 
-![image](https://user-images.githubusercontent.com/203184/181916318-67bddc07-0e32-477d-bc15-3f32bbc4768b.png)
+![image](https://user-images.githubusercontent.com/203184/182139407-895b011b-6841-4bf4-ad01-ea6a1bb76500.png)
 
 * The new sensor values are immediately picked up by the plant integration without any need to restart
 
