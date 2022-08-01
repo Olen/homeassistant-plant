@@ -39,6 +39,9 @@ DEFAULT_MIN_MMOL = 2000
 DEFAULT_MAX_MMOL = 20000
 DEFAULT_MIN_MOL = 2
 DEFAULT_MAX_MOL = 30
+DEFAULT_MIN_DLI = 2
+DEFAULT_MAX_DLI = 30
+
 
 DATA_SOURCE = "data_source"
 DATA_SOURCE_PLANTBOOK = "OpenPlantbook"
@@ -119,6 +122,8 @@ CONF_MIN_MMOL = f"min_{READING_MMOL}"
 CONF_MAX_MMOL = f"max_{READING_MMOL}"
 CONF_MIN_MOL = f"min_{READING_MOL}"
 CONF_MAX_MOL = f"max_{READING_MOL}"
+CONF_MIN_DLI = f"min_{READING_DLI}"
+CONF_MAX_DLI = f"max_{READING_DLI}"
 CONF_MIN_BRIGHTNESS = "min_brightness"  # DEPRECATED. Only used for config migration
 CONF_MAX_BRIGHTNESS = "max_brightness"  # DEPRECATED. Only used for config migration
 

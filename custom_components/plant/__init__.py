@@ -297,8 +297,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
         min_conductivity=pminc,
         max_humidity=pmaxh,
         min_humidity=pminh,
-        max_mol=pmaxmm,
-        min_mol=pminmm,
+        max_dli=pmaxmm,
+        min_dli=pminmm,
     )
 
     # Crete and add the integral-entities
@@ -453,8 +453,8 @@ class PlantDevice(Entity):
         self.min_illuminance = None
         self.max_humidity = None
         self.min_humidity = None
-        self.max_mol = None
-        self.min_mol = None
+        self.max_dli = None
+        self.min_dli = None
 
         self.sensor_moisture = None
         self.sensor_temperature = None
@@ -539,9 +539,9 @@ class PlantDevice(Entity):
                     ATTR_MAX: self.max_humidity.entity_id,
                     ATTR_MIN: self.min_humidity.entity_id,
                 },
-                READING_MOL: {
-                    ATTR_MAX: self.max_mol.entity_id,
-                    ATTR_MIN: self.min_mol.entity_id,
+                READING_DLI: {
+                    ATTR_MAX: self.max_dli.entity_id,
+                    ATTR_MIN: self.min_dli.entity_id,
                 },
             },
         }
@@ -589,8 +589,8 @@ class PlantDevice(Entity):
         min_illuminance: Entity | None,
         max_humidity: Entity | None,
         min_humidity: Entity | None,
-        max_mol: Entity | None,
-        min_mol: Entity | None,
+        max_dli: Entity | None,
+        min_dli: Entity | None,
     ) -> None:
         """Add the threshold entities"""
         self.max_moisture = max_moisture
@@ -603,8 +603,8 @@ class PlantDevice(Entity):
         self.min_illuminance = min_illuminance
         self.max_humidity = max_humidity
         self.min_humidity = min_humidity
-        self.max_mol = max_mol
-        self.min_mol = min_mol
+        self.max_dli = max_dli
+        self.min_dli = min_dli
 
     def add_sensors(
         self,
@@ -724,12 +724,12 @@ class PlantDevice(Entity):
         ):
             if float(self.dli.extra_state_attributes["last_period"]) > 0 and float(
                 self.dli.extra_state_attributes["last_period"]
-            ) < float(self.min_mol.state):
+            ) < float(self.min_dli.state):
                 self.dli_status = STATE_LOW
                 new_state = STATE_PROBLEM
             elif float(self.dli.extra_state_attributes["last_period"]) > 0 and float(
                 self.dli.extra_state_attributes["last_period"]
-            ) > float(self.max_mol.state):
+            ) > float(self.max_dli.state):
                 self.dli_status = STATE_HIGH
                 new_state = STATE_PROBLEM
             else:

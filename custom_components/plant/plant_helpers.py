@@ -19,6 +19,7 @@ from .const import (
     ATTR_SENSORS,
     ATTR_SPECIES,
     CONF_MAX_CONDUCTIVITY,
+    CONF_MAX_DLI,
     CONF_MAX_HUMIDITY,
     CONF_MAX_ILLUMINANCE,
     CONF_MAX_MMOL,
@@ -26,6 +27,7 @@ from .const import (
     CONF_MAX_MOL,
     CONF_MAX_TEMPERATURE,
     CONF_MIN_CONDUCTIVITY,
+    CONF_MIN_DLI,
     CONF_MIN_HUMIDITY,
     CONF_MIN_ILLUMINANCE,
     CONF_MIN_MMOL,
@@ -37,6 +39,7 @@ from .const import (
     DATA_SOURCE_DEFAULT,
     DATA_SOURCE_PLANTBOOK,
     DEFAULT_MAX_CONDUCTIVITY,
+    DEFAULT_MAX_DLI,
     DEFAULT_MAX_HUMIDITY,
     DEFAULT_MAX_ILLUMINANCE,
     DEFAULT_MAX_MOISTURE,
@@ -152,8 +155,8 @@ class PlantHelper:
         )
         max_conductivity = DEFAULT_MAX_CONDUCTIVITY
         min_conductivity = DEFAULT_MIN_CONDUCTIVITY
-        max_mol = DEFAULT_MAX_MOL
-        min_mol = DEFAULT_MIN_MOL
+        max_dli = DEFAULT_MAX_DLI
+        min_dli = DEFAULT_MIN_DLI
         max_humidity = DEFAULT_MAX_HUMIDITY
         min_humidity = DEFAULT_MIN_HUMIDITY
         entity_picture = None
@@ -200,14 +203,14 @@ class PlantHelper:
             )
             opb_mmol = opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MAX_MMOL])
             if opb_mmol:
-                max_mol = round(opb_mmol * PPFD_DLI_FACTOR)
+                max_dli = round(opb_mmol * PPFD_DLI_FACTOR)
             else:
-                max_mol = DEFAULT_MAX_MOL
+                max_dli = DEFAULT_MAX_DLI
             opb_mmol = opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MIN_MMOL])
             if opb_mmol:
-                min_mol = round(opb_mmol * PPFD_DLI_FACTOR)
+                min_dli = round(opb_mmol * PPFD_DLI_FACTOR)
             else:
-                min_mol = DEFAULT_MIN_MOL
+                min_dli = DEFAULT_MIN_DLI
             max_conductivity = opb_plant.get(
                 CONF_PLANTBOOK_MAPPING[CONF_MAX_CONDUCTIVITY],
                 DEFAULT_MAX_CONDUCTIVITY,
@@ -254,8 +257,8 @@ class PlantHelper:
                     CONF_MIN_TEMPERATURE: config.get(CONF_MIN_TEMPERATURE, min_temp),
                     CONF_MAX_HUMIDITY: config.get(CONF_MAX_HUMIDITY, max_humidity),
                     CONF_MIN_HUMIDITY: config.get(CONF_MIN_HUMIDITY, min_humidity),
-                    CONF_MAX_MOL: config.get(CONF_MAX_MOL, max_mol),
-                    CONF_MIN_MOL: config.get(CONF_MIN_MOL, min_mol),
+                    CONF_MAX_DLI: config.get(CONF_MAX_DLI, max_dli),
+                    CONF_MIN_DLI: config.get(CONF_MIN_DLI, min_dli),
                 },
                 FLOW_SENSOR_TEMPERATURE: config[ATTR_SENSORS].get(READING_TEMPERATURE),
                 FLOW_SENSOR_MOISTURE: config[ATTR_SENSORS].get(READING_MOISTURE),
