@@ -5,6 +5,7 @@ import logging
 from typing import Any
 
 from slugify import slugify
+import voluptuous as vol
 
 from homeassistant.components.persistent_notification import (
     create as create_notification,
@@ -169,13 +170,22 @@ class PlantHelper:
 
         # If we have image defined in the config, or a local file
         # prefer that.  If neither, image will be set to openplantbook
+        try:
+            jpeg_exists = cv.isfile(f"{DEFAULT_IMAGE_PATH}{config[ATTR_SPECIES]}.jpg")
+        except vol.Invalid:
+            jpeg_exists = None
+        try:
+            png_exists = cv.isfile(f"{DEFAULT_IMAGE_PATH}{config[ATTR_SPECIES]}.png")
+        except vol.Invalid:
+            png_exists = None
+
         if ATTR_ENTITY_PICTURE in config:
             entity_picture = config[ATTR_ENTITY_PICTURE]
         elif ATTR_IMAGE in config:
             entity_picture = config[ATTR_IMAGE]
-        elif cv.isfile(f"{DEFAULT_IMAGE_PATH}{config[ATTR_SPECIES]}.jpg"):
+        elif jpeg_exists:
             entity_picture = f"{DEFAULT_IMAGE_LOCAL_URL}{config[ATTR_SPECIES]}.jpg"
-        elif cv.isfile(f"{DEFAULT_IMAGE_PATH}{config[ATTR_SPECIES]}.png"):
+        elif png_exists:
             entity_picture = f"{DEFAULT_IMAGE_LOCAL_URL}{config[ATTR_SPECIES]}.png"
 
         if ATTR_SENSORS not in config:
