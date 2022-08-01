@@ -7,17 +7,14 @@ from decimal import Decimal
 import logging
 
 from homeassistant.components.integration.const import METHOD_TRAPEZOIDAL
-from homeassistant.components.integration.sensor import UNIT_TIME, IntegrationSensor
+from homeassistant.components.integration.sensor import IntegrationSensor
 from homeassistant.components.sensor import (
     RestoreSensor,
     SensorDeviceClass,
     SensorStateClass,
 )
 from homeassistant.components.utility_meter.const import DAILY
-from homeassistant.components.utility_meter.sensor import (
-    PERIOD2CRON,
-    UtilityMeterSensor,
-)
+from homeassistant.components.utility_meter.sensor import UtilityMeterSensor
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     ATTR_NAME,
@@ -328,21 +325,35 @@ class PlantTotalLightIntegral(IntegrationSensor):
         illuminance_ppfd_sensor: Entity,
     ) -> None:
         """Initialize the sensor"""
-        self._method = METHOD_TRAPEZOIDAL
-        self._attr_name = (
-            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Total PPFD (mol) Integral"
+        super().__init__(
+            integration_method=METHOD_TRAPEZOIDAL,
+            name=f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Total PPFD (mol) Integral",
+            round_digits=2,
+            source_entity=illuminance_ppfd_sensor.entity_id,
+            unique_id=f"{config.entry_id}-ppfd-integral",
+            unit_prefix=None,
+            unit_time=TIME_SECONDS,
         )
-
-        self._attr_unique_id = f"{config.entry_id}-ppfd-integral"
         self._unit_of_measurement = UNIT_PPFD
-        self._unit_time_str = TIME_SECONDS
-        self._round_digits = 2
-        self._sensor_source_id = illuminance_ppfd_sensor.entity_id
-        self._unit_time = UNIT_TIME[self._unit_time_str]
-        self._unit_prefix = 1
-        self._unit_template = f"{''}{{}}"
-        self._state = None
-        self._attr_icon = "mdi:math-integral"
+
+        # self._method = METHOD_TRAPEZOIDAL
+        # self._attr_name = (
+        #     f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Total PPFD (mol) Integral"
+        # )
+
+        # self._attr_unique_id = f"{config.entry_id}-ppfd-integral"
+        # self._unit_time_str = TIME_SECONDS
+        # self._round_digits = 2
+        # self._sensor_source_id = illuminance_ppfd_sensor.entity_id
+        # self._unit_time = UNIT_TIME[self._unit_time_str]
+        # self._unit_prefix = 1
+        # self._unit_template = "{}"
+        # self._state = None
+        # self._attr_icon = "mdi:math-integral"
+
+    def _unit(self, source_unit: str) -> str:
+        """Override unit"""
+        return self._unit_of_measurement
 
 
 class PlantDailyLightIntegral(UtilityMeterSensor):
@@ -355,25 +366,40 @@ class PlantDailyLightIntegral(UtilityMeterSensor):
         illuminance_integration_sensor: Entity,
     ) -> None:
         """Initialize the sensor"""
-        self._name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Daily Light Integral"
-
-        self._attr_unique_id = f"{config.entry_id}-dli"
-        self._unit_of_measurement = UNIT_DLI
-        self._sensor_source_id = illuminance_integration_sensor.entity_id
-        self._period = DAILY
-        self._meter_offset = timedelta(seconds=0)
-        self._cron_pattern = PERIOD2CRON[self._period].format(
-            minute=self._meter_offset.seconds % 3600 // 60,
-            hour=self._meter_offset.seconds // 3600,
-            day=self._meter_offset.days + 1,
+        super().__init__(
+            cron_pattern=None,
+            delta_values=None,
+            meter_offset=timedelta(seconds=0),
+            meter_type=DAILY,
+            name=f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Daily Light Integral",
+            net_consumption=None,
+            parent_meter=config.entry_id,
+            source_entity=illuminance_integration_sensor.entity_id,
+            tariff_entity=None,
+            tariff=None,
+            unique_id=f"{config.entry_id}-dli",
+            suggested_entity_id=None,
         )
 
-        self._last_period = Decimal(0)
-        self._last_reset = dt_util.utcnow()
-        self._sensor_delta_values = None
-        self._sensor_net_consumption = None
-        self._parent_meter = config.entry_id
-        self._tariff = None
-        self._tariff_entity = None
-        self._state = 0
-        self._collecting = None
+        # self._name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Daily Light Integral"
+
+        # self._attr_unique_id = f"{config.entry_id}-dli"
+        self._unit_of_measurement = UNIT_DLI
+        # self._sensor_source_id = illuminance_integration_sensor.entity_id
+        # self._period = DAILY
+        # self._meter_offset = timedelta(seconds=0)
+        # self._cron_pattern = PERIOD2CRON[self._period].format(
+        #     minute=self._meter_offset.seconds % 3600 // 60,
+        #     hour=self._meter_offset.seconds // 3600,
+        #     day=self._meter_offset.days + 1,
+        # )
+
+        # self._last_period = Decimal(0)
+        # self._last_reset = dt_util.utcnow()
+        # self._sensor_delta_values = None
+        # self._sensor_net_consumption = None
+        # self._parent_meter = config.entry_id
+        # self._tariff = None
+        # self._tariff_entity = None
+        # self._state = 0
+        # self._collecting = None

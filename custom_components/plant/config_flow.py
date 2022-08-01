@@ -26,12 +26,14 @@ from .const import (
     ATTR_SENSORS,
     ATTR_SPECIES,
     CONF_MAX_CONDUCTIVITY,
+    CONF_MAX_DLI,
     CONF_MAX_HUMIDITY,
     CONF_MAX_ILLUMINANCE,
     CONF_MAX_MOISTURE,
     CONF_MAX_MOL,
     CONF_MAX_TEMPERATURE,
     CONF_MIN_CONDUCTIVITY,
+    CONF_MIN_DLI,
     CONF_MIN_HUMIDITY,
     CONF_MIN_ILLUMINANCE,
     CONF_MIN_MOISTURE,
@@ -200,9 +202,9 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             if not user_input.get(FLOW_RIGHT_PLANT):
                 return await self.async_step_select_species()
             if valid:
-                self.plant_info[ATTR_ENTITY_PICTURE] = user_input.get[
+                self.plant_info[ATTR_ENTITY_PICTURE] = user_input.get(
                     ATTR_ENTITY_PICTURE
-                ]
+                )
                 self.plant_info[OPB_DISPLAY_PID] = user_input.get(OPB_DISPLAY_PID)
                 user_input.pop(ATTR_ENTITY_PICTURE)
                 user_input.pop(OPB_DISPLAY_PID)
@@ -266,14 +268,14 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         ] = int
         data_schema[
             vol.Required(
-                CONF_MAX_MOL,
-                default=plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(CONF_MAX_MOL),
+                CONF_MAX_DLI,
+                default=plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(CONF_MAX_DLI),
             )
         ] = int
         data_schema[
             vol.Required(
-                CONF_MIN_MOL,
-                default=plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(CONF_MIN_MOL),
+                CONF_MIN_DLI,
+                default=plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(CONF_MIN_DLI),
             )
         ] = int
         data_schema[
@@ -407,7 +409,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 default=display_species,
             )
         ] = str
-        entity_picture = self.plant._attr_entity_picture or ""
+        entity_picture = self.plant.entity_picture or ""
         data_schema[vol.Optional(ATTR_ENTITY_PICTURE, default=entity_picture)] = str
 
         data_schema[

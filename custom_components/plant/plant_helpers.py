@@ -12,7 +12,7 @@ from homeassistant.components.persistent_notification import (
 )
 from homeassistant.const import ATTR_ENTITY_PICTURE, ATTR_NAME, TEMP_CELSIUS
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import config_validation as cv, entity
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.temperature import display_temp
 
 from .const import (
@@ -26,7 +26,6 @@ from .const import (
     CONF_MAX_ILLUMINANCE,
     CONF_MAX_MMOL,
     CONF_MAX_MOISTURE,
-    CONF_MAX_MOL,
     CONF_MAX_TEMPERATURE,
     CONF_MIN_CONDUCTIVITY,
     CONF_MIN_DLI,
@@ -34,7 +33,6 @@ from .const import (
     CONF_MIN_ILLUMINANCE,
     CONF_MIN_MMOL,
     CONF_MIN_MOISTURE,
-    CONF_MIN_MOL,
     CONF_MIN_TEMPERATURE,
     CONF_PLANTBOOK_MAPPING,
     DATA_SOURCE,
@@ -47,14 +45,12 @@ from .const import (
     DEFAULT_MAX_HUMIDITY,
     DEFAULT_MAX_ILLUMINANCE,
     DEFAULT_MAX_MOISTURE,
-    DEFAULT_MAX_MOL,
     DEFAULT_MAX_TEMPERATURE,
     DEFAULT_MIN_CONDUCTIVITY,
     DEFAULT_MIN_DLI,
     DEFAULT_MIN_HUMIDITY,
     DEFAULT_MIN_ILLUMINANCE,
     DEFAULT_MIN_MOISTURE,
-    DEFAULT_MIN_MOL,
     DEFAULT_MIN_TEMPERATURE,
     DOMAIN_PLANTBOOK,
     FLOW_PLANT_IMAGE,

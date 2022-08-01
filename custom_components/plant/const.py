@@ -1,6 +1,4 @@
 """Constants"""
-from homeassistant.config_entries import PATH_CONFIG
-from homeassistant.const import ATTR_TEMPERATURE
 
 DOMAIN = "plant"
 DOMAIN_SENSOR = "sensor"

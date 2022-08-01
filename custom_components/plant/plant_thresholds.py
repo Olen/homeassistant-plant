@@ -45,7 +45,7 @@ from .const import (
     FLOW_PLANT_INFO,
     FLOW_PLANT_LIMITS,
     UNIT_CONDUCTIVITY,
-    UNIT_MICRO_PPFD,
+    UNIT_PPFD,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -431,7 +431,7 @@ class PlantMaxDli(PlantMinMax):
             CONF_MAX_MOL, STATE_UNKNOWN
         )
         self._attr_unique_id = f"{config.entry_id}-max-dli"
-        self._attr_unit_of_measurement = UNIT_MICRO_PPFD
+        self._attr_unit_of_measurement = UNIT_PPFD
         super().__init__(hass, config, plantdevice)
 
     @property
@@ -451,7 +451,7 @@ class PlantMinDli(PlantMinMax):
             CONF_MIN_MOL, STATE_UNKNOWN
         )
         self._attr_unique_id = f"{config.entry_id}-min-dli"
-        self._attr_unit_of_measurement = UNIT_MICRO_PPFD
+        self._attr_unit_of_measurement = UNIT_PPFD
 
         super().__init__(hass, config, plantdevice)
 
