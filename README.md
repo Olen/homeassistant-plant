@@ -1,18 +1,19 @@
-# Implementation of OpenPlantBook in the plants component
+# Alternative implementation plants component for Home Assistant
 
-OpenPlantBook: https://open.plantbook.io/docs.html
+This integration can automatically fetch data from [OpenPlantBook](https://open.plantbook.io/docs.html) if you are a registered user. Registration is free.
 
-# BREAKING CHANGES COMING UP
+# BREAKING CHANGES
 
-This integration is about to be completely rewritten.  The next version will *not* be compatible with the original plant integration in HA or with the current release in this repository.
+This integration is now completely rewritten.  Versions >= 2.0.0 is *not* compatible with the original plant integration in HA or with the earlier releases in this repository.
 
-This is just a heads up for now, but I want to give everyone fair warning. We are looking into different options to make the transition to the new version as smooth as possible.
-
-> **Warning** 
+> **Note** 
 >
-> The new plant integration will try to convert all `plant:` entries from `configuration.yaml`.  But please notice that `entity_id` of the plant will **NOT** be preserved.  Also, since the "layout" of the new integration is completely different from the old one, you probably have to update and modify any automation, scripts or notification you have made based on the old version.
+> This integration will try to convert all `plant:` entries from `configuration.yaml` to the new format.  After migration, you can (and should) remove your `plant:` entries from your YAML-configuration.   
+
+> **Warning**
+> Please notice that the `entity_id` of the plants will **NOT** be preserved during auto-migration.  Also, since the "layout" of the new integration is completely different from the old one, you probably have to update and modify any automations, scripts, blueprints etc. you have made based on the old version.
 >
-> Also, certain options might be missed, so make sure you check you plant settings after the first restart. 
+> Make sure you check you plant settings after the first restart. You can find the configuration options in the Integrations page under Settings in Home Assistant.
 
 # Plants are now treated as _devices_
 
@@ -126,6 +127,9 @@ After HA is restarted, you will find all your plants under "Setting" - "Devices 
 # Info kept until this version is released in HACS. Ignore for now.
 
 This can be installed manually or through HACS
+
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
+
 #### Via HACS
 * Add this repo as a "Custom repository" with type "Integration"
 * Click "Install" in the new "Home Assistant Plant" card in HACS
