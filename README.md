@@ -1,4 +1,4 @@
-# Alternative implementation plants component for Home Assistant
+# Alternative plants component for Home Assistant
 
 This integration can automatically fetch data from [OpenPlantBook](https://open.plantbook.io/docs.html) if you are a registered user. Registration is free.
 
