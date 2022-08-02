@@ -27,16 +27,16 @@ from homeassistant.util.temperature import convert as convert_temperature
 
 from .const import (
     CONF_MAX_CONDUCTIVITY,
+    CONF_MAX_DLI,
     CONF_MAX_HUMIDITY,
     CONF_MAX_ILLUMINANCE,
     CONF_MAX_MOISTURE,
-    CONF_MAX_MOL,
     CONF_MAX_TEMPERATURE,
     CONF_MIN_CONDUCTIVITY,
+    CONF_MIN_DLI,
     CONF_MIN_HUMIDITY,
     CONF_MIN_ILLUMINANCE,
     CONF_MIN_MOISTURE,
-    CONF_MIN_MOL,
     CONF_MIN_TEMPERATURE,
     DATA_UPDATED,
     DEFAULT_MAX_TEMPERATURE,
@@ -429,7 +429,7 @@ class PlantMaxDli(PlantMinMax):
         """Initialize the component."""
         self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Max DLI"
         self._default_state = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
-            CONF_MAX_MOL, STATE_UNKNOWN
+            CONF_MAX_DLI, STATE_UNKNOWN
         )
         self._attr_unique_id = f"{config.entry_id}-max-dli"
         self._attr_unit_of_measurement = UNIT_PPFD
@@ -449,7 +449,7 @@ class PlantMinDli(PlantMinMax):
         """Initialize the component."""
         self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Min DLI"
         self._default_state = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
-            CONF_MIN_MOL, STATE_UNKNOWN
+            CONF_MIN_DLI, STATE_UNKNOWN
         )
         self._attr_unique_id = f"{config.entry_id}-min-dli"
         self._attr_unit_of_measurement = UNIT_PPFD
