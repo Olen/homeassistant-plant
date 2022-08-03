@@ -129,11 +129,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN].setdefault(entry.entry_id, {})
 
-    # Set up utility sensor
-    hass.data.setdefault(DATA_UTILITY, {})
-    hass.data[DATA_UTILITY].setdefault(entry.entry_id, {})
-    hass.data[DATA_UTILITY][entry.entry_id].setdefault(DATA_TARIFF_SENSORS, [])
-
     if FLOW_PLANT_INFO not in entry.data:
         return True
 
@@ -243,6 +238,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
     plant.add_dli(dli=pdli)
 
+    # Set up utility sensor
+    hass.data.setdefault(DATA_UTILITY, {})
+    hass.data[DATA_UTILITY].setdefault(entry.entry_id, {})
+    hass.data[DATA_UTILITY][entry.entry_id].setdefault(DATA_TARIFF_SENSORS, [])
     hass.data[DATA_UTILITY][entry.entry_id][DATA_TARIFF_SENSORS].append(pdli)
     await _plant_add_to_device_registry(hass, integral_entities, device_id)
 
@@ -655,7 +654,7 @@ class PlantDevice(Entity):
                 if self.illuminance_trigger:
                     new_state = STATE_PROBLEM
             else:
-                self.illumninace_status = STATE_OK
+                self.illuminance_status = STATE_OK
 
         # - Checking Low values would create "problem" every night...
         # Check DLI from the previous day against max/min DLI
