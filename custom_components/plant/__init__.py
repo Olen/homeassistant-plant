@@ -31,8 +31,10 @@ from .const import (
     ATTR_THRESHOLDS,
     DATA_SOURCE,
     DOMAIN,
+    FLOW_HUMIDITY_TRIGGER,
     FLOW_ILLUMINANCE_TRIGGER,
     FLOW_PLANT_INFO,
+    FLOW_TEMPERATURE_TRIGGER,
     OPB_DISPLAY_PID,
     READING_CONDUCTIVITY,
     READING_DLI,
@@ -423,6 +425,16 @@ class PlantDevice(Entity):
         return self._config.options.get(FLOW_ILLUMINANCE_TRIGGER, True)
 
     @property
+    def humidity_trigger(self) -> bool:
+        """Whether we will generate alarms based on humidity"""
+        return self._config.options.get(FLOW_HUMIDITY_TRIGGER, True)
+
+    @property
+    def temperature_trigger(self) -> bool:
+        """Whether we will generate alarms based on temperature"""
+        return self._config.options.get(FLOW_TEMPERATURE_TRIGGER, True)
+
+    @property
     def extra_state_attributes(self) -> dict:
         """Return the device specific state attributes."""
         if not self.plant_complete:
@@ -602,12 +614,14 @@ class PlantDevice(Entity):
         ):
             if float(self.sensor_temperature.state) < float(self.min_temperature.state):
                 self.temperature_status = STATE_LOW
-                new_state = STATE_PROBLEM
+                if self.temperature_trigger:
+                    new_state = STATE_PROBLEM
             elif float(self.sensor_temperature.state) > float(
                 self.max_temperature.state
             ):
                 self.temperature_status = STATE_HIGH
-                new_state = STATE_PROBLEM
+                if self.temperature_trigger:
+                    new_state = STATE_PROBLEM
             else:
                 self.temperature_status = STATE_OK
 
@@ -619,31 +633,34 @@ class PlantDevice(Entity):
         ):
             if float(self.sensor_humidity.state) < float(self.min_humidity.state):
                 self.humidity_status = STATE_LOW
-                new_state = STATE_PROBLEM
+                if self.humidity_trigger:
+                    new_state = STATE_PROBLEM
             elif float(self.sensor_humidity.state) > float(self.max_humidity.state):
                 self.humidity_status = STATE_HIGH
-                new_state = STATE_PROBLEM
+                if self.humidity_trigger:
+                    new_state = STATE_PROBLEM
             else:
                 self.humidity_status = STATE_OK
 
         # Check the instant values for illuminance against "max"
-
+        # Ignoring "min" value for illuminance as it would probably trigger every night
         if (
-            self.illuminance_trigger is True
-            and self.sensor_illuminance is not None
+            self.sensor_illuminance is not None
             and self.sensor_illuminance.state != STATE_UNKNOWN
             and self.sensor_illuminance.state != STATE_UNAVAILABLE
             and self.sensor_illuminance.state is not None
         ):
             if float(self.sensor_illuminance.state) > float(self.max_illuminance.state):
                 self.illuminance_status = STATE_HIGH
-                new_state = STATE_PROBLEM
+                if self.illuminance_trigger:
+                    new_state = STATE_PROBLEM
+            else:
+                self.illumninace_status = STATE_OK
 
         # - Checking Low values would create "problem" every night...
         # Check DLI from the previous day against max/min DLI
         if (
-            self.illuminance_trigger is True
-            and self.dli is not None
+            self.dli is not None
             and self.dli.state != STATE_UNKNOWN
             and self.dli.state != STATE_UNAVAILABLE
             and self.dli.state is not None
@@ -652,14 +669,16 @@ class PlantDevice(Entity):
                 self.dli.extra_state_attributes["last_period"]
             ) < float(self.min_dli.state):
                 self.dli_status = STATE_LOW
-                new_state = STATE_PROBLEM
+                if self.illuminance_trigger:
+                    new_state = STATE_PROBLEM
             elif float(self.dli.extra_state_attributes["last_period"]) > 0 and float(
                 self.dli.extra_state_attributes["last_period"]
             ) > float(self.max_dli.state):
                 self.dli_status = STATE_HIGH
-                new_state = STATE_PROBLEM
+                if self.illuminance_trigger:
+                    new_state = STATE_PROBLEM
             else:
-                self.illuminance_status = STATE_OK
+                self.dli_status = STATE_OK
 
         self._attr_state = new_state
         self.update_registry()

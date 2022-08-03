@@ -42,6 +42,7 @@ from .const import (
     DOMAIN,
     DOMAIN_SENSOR,
     FLOW_ERROR_NOTFOUND,
+    FLOW_HUMIDITY_TRIGGER,
     FLOW_ILLUMINANCE_TRIGGER,
     FLOW_PLANT_INFO,
     FLOW_PLANT_LIMITS,
@@ -53,6 +54,7 @@ from .const import (
     FLOW_SENSOR_TEMPERATURE,
     FLOW_STRING_DESCRIPTION,
     FLOW_TEMP_UNIT,
+    FLOW_TEMPERATURE_TRIGGER,
     OPB_DISPLAY_PID,
 )
 from .plant_helpers import PlantHelper
@@ -415,6 +417,15 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 FLOW_ILLUMINANCE_TRIGGER, default=self.plant.illuminance_trigger
             )
         ] = cv.boolean
+        data_schema[
+            vol.Optional(FLOW_HUMIDITY_TRIGGER, default=self.plant.humidity_trigger)
+        ] = cv.boolean
+        data_schema[
+            vol.Optional(
+                FLOW_TEMPERATURE_TRIGGER, default=self.plant.temperature_trigger
+            )
+        ] = cv.boolean
+
         # data_schema[vol.Optional(CONF_CHECK_DAYS, default=self.plant.check_days)] = int
 
         return self.async_show_form(step_id="init", data_schema=vol.Schema(data_schema))

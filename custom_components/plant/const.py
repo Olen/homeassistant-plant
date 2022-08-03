@@ -87,6 +87,9 @@ FLOW_SENSOR_HUMIDITY = "humidity_sensor"
 
 FLOW_TEMP_UNIT = "temperature_unit"
 FLOW_ILLUMINANCE_TRIGGER = "illuminance_trigger"
+FLOW_HUMIDITY_TRIGGER = "humidity_trigger"
+FLOW_TEMPERATURE_TRIGGER = "temperature_trigger"
+
 
 OPB_GET = "get"
 OPB_SEARCH = "search"

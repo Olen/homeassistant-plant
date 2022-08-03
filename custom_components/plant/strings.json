@@ -57,7 +57,7 @@
     "step": {
       "init": {
         "title": "Options",
-        "description": "Only update the options you want to modify. Empty fields are ignored.",
+        "description": "",
         "data": {
           "check_days": "Illuminance check days",
           "species": "Species",
@@ -68,7 +68,9 @@
           "illuminance_sensor": "Light sensor",
           "humidity_sensor": "Humidity (environment) sensor",
           "entity_picture": "Image URL. Will be automatically updated if species is found in OpnePlantbook",
-          "illuminance_trigger": "Trigger warning when Daily Light Integral is too high/low. Ignore illuminance as problem trigger if turned off"
+          "illuminance_trigger": "Turn off to ignore illuminance and DLI as problem trigger",
+          "humidity_trigger": "Turn off to ignore humidity as problem trigger",
+          "temperature_trigger": "Turn off to ignore temperature as problem trigger"
         }
       }
     }
