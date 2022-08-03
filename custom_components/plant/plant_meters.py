@@ -37,6 +37,7 @@ from .const import (
     FLOW_SENSOR_ILLUMINANCE,
     FLOW_SENSOR_MOISTURE,
     FLOW_SENSOR_TEMPERATURE,
+    READING_CONDUCTIVITY,
     UNIT_DLI,
     UNIT_PPFD,
 )
@@ -196,7 +197,7 @@ class PlantCurrentConductivity(PlantCurrentStatus):
     @property
     def device_class(self) -> None:
         """Device class - not defined for conductivity"""
-        return None
+        return READING_CONDUCTIVITY
 
 
 class PlantCurrentMoisture(PlantCurrentStatus):

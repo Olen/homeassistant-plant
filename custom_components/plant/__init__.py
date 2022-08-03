@@ -73,7 +73,6 @@ from .plant_thresholds import (
 _LOGGER = logging.getLogger(__name__)
 
 
-#
 # Use this during testing to generate some dummy-sensors
 # to provide random readings for temperature, moisture etc.
 #
@@ -132,6 +131,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     hass.data.setdefault(DATA_UTILITY, {})
     hass.data[DATA_UTILITY].setdefault(entry.entry_id, {})
     hass.data[DATA_UTILITY][entry.entry_id].setdefault(DATA_TARIFF_SENSORS, [])
+
+    if FLOW_PLANT_INFO not in entry.data:
+        return True
 
     if USE_DUMMY_SENSORS:
         # We are creating some dummy sensors to play with during testing
@@ -396,6 +398,10 @@ class PlantDevice(Entity):
     def entity_category(self) -> None:
         """The plant device itself does not have a category"""
         return None
+
+    @property
+    def device_class(self):
+        return DOMAIN
 
     @property
     def device_id(self) -> str:

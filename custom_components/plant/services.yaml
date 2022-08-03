@@ -12,6 +12,7 @@ replace_sensor:
       selector:
         entity:
           domain: plant
+
     new_sensor:
       name: Sensor entity
       description: Entity id of the new sensor

@@ -8,6 +8,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     ATTR_NAME,
     ATTR_UNIT_OF_MEASUREMENT,
+    CONDUCTIVITY,
     LIGHT_LUX,
     PERCENTAGE,
     STATE_UNKNOWN,
@@ -39,11 +40,22 @@ from .const import (
     CONF_MIN_MOISTURE,
     CONF_MIN_TEMPERATURE,
     DATA_UPDATED,
+    DEFAULT_MAX_CONDUCTIVITY,
+    DEFAULT_MAX_DLI,
+    DEFAULT_MAX_HUMIDITY,
+    DEFAULT_MAX_ILLUMINANCE,
+    DEFAULT_MAX_MOISTURE,
     DEFAULT_MAX_TEMPERATURE,
+    DEFAULT_MIN_CONDUCTIVITY,
+    DEFAULT_MIN_DLI,
+    DEFAULT_MIN_HUMIDITY,
+    DEFAULT_MIN_ILLUMINANCE,
+    DEFAULT_MIN_MOISTURE,
     DEFAULT_MIN_TEMPERATURE,
     DOMAIN,
     FLOW_PLANT_INFO,
     FLOW_PLANT_LIMITS,
+    READING_CONDUCTIVITY,
     UNIT_CONDUCTIVITY,
     UNIT_PPFD,
 )
@@ -155,7 +167,7 @@ class PlantMaxMoisture(PlantMinMax):
         """Initialize the component."""
         self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Max Moisture"
         self._default_state = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
-            CONF_MAX_MOISTURE, STATE_UNKNOWN
+            CONF_MAX_MOISTURE, DEFAULT_MAX_MOISTURE
         )
         self._attr_unique_id = f"{config.entry_id}-max-moisture"
         self._attr_unit_of_measurement = PERCENTAGE
@@ -164,7 +176,7 @@ class PlantMaxMoisture(PlantMinMax):
 
     @property
     def device_class(self):
-        return SensorDeviceClass.HUMIDITY
+        return f"{SensorDeviceClass.HUMIDITY} threshold"
 
 
 class PlantMinMoisture(PlantMinMax):
@@ -176,7 +188,7 @@ class PlantMinMoisture(PlantMinMax):
         """Initialize the Plant component."""
         self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Min Moisture"
         self._default_state = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
-            CONF_MIN_MOISTURE, STATE_UNKNOWN
+            CONF_MIN_MOISTURE, DEFAULT_MIN_MOISTURE
         )
         self._attr_unique_id = f"{config.entry_id}-min-moisture"
         self._attr_unit_of_measurement = PERCENTAGE
@@ -185,7 +197,7 @@ class PlantMinMoisture(PlantMinMax):
 
     @property
     def device_class(self):
-        return SensorDeviceClass.HUMIDITY
+        return f"{SensorDeviceClass.HUMIDITY} threshold"
 
 
 class PlantMaxTemperature(PlantMinMax):
@@ -206,7 +218,7 @@ class PlantMaxTemperature(PlantMinMax):
 
     @property
     def device_class(self):
-        return SensorDeviceClass.TEMPERATURE
+        return f"{SensorDeviceClass.TEMPERATURE} threshold"
 
     @property
     def unit_of_measurement(self) -> str | None:
@@ -302,7 +314,7 @@ class PlantMinTemperature(PlantMinMax):
 
     @property
     def device_class(self):
-        return SensorDeviceClass.TEMPERATURE
+        return f"{SensorDeviceClass.TEMPERATURE} threshold"
 
     @property
     def unit_of_measurement(self) -> str | None:
@@ -389,7 +401,7 @@ class PlantMaxIlluminance(PlantMinMax):
         """Initialize the component."""
         self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Max Illuminance"
         self._default_state = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
-            CONF_MAX_ILLUMINANCE, STATE_UNKNOWN
+            CONF_MAX_ILLUMINANCE, DEFAULT_MAX_ILLUMINANCE
         )
         self._attr_unique_id = f"{config.entry_id}-max-illuminance"
         self._attr_unit_of_measurement = LIGHT_LUX
@@ -397,7 +409,7 @@ class PlantMaxIlluminance(PlantMinMax):
 
     @property
     def device_class(self):
-        return SensorDeviceClass.ILLUMINANCE
+        return f"{SensorDeviceClass.ILLUMINANCE} threshold"
 
 
 class PlantMinIlluminance(PlantMinMax):
@@ -409,7 +421,7 @@ class PlantMinIlluminance(PlantMinMax):
         """Initialize the Plant component."""
         self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Min Brghtness"
         self._default_state = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
-            CONF_MIN_ILLUMINANCE, STATE_UNKNOWN
+            CONF_MIN_ILLUMINANCE, DEFAULT_MIN_ILLUMINANCE
         )
         self._attr_unique_id = f"{config.entry_id}-min-illuminance"
         self._attr_unit_of_measurement = LIGHT_LUX
@@ -429,7 +441,7 @@ class PlantMaxDli(PlantMinMax):
         """Initialize the component."""
         self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Max DLI"
         self._default_state = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
-            CONF_MAX_DLI, STATE_UNKNOWN
+            CONF_MAX_DLI, DEFAULT_MAX_DLI
         )
         self._attr_unique_id = f"{config.entry_id}-max-dli"
         self._attr_unit_of_measurement = UNIT_PPFD
@@ -437,7 +449,7 @@ class PlantMaxDli(PlantMinMax):
 
     @property
     def device_class(self):
-        return SensorDeviceClass.ILLUMINANCE
+        return f"{SensorDeviceClass.ILLUMINANCE} threshold"
 
 
 class PlantMinDli(PlantMinMax):
@@ -449,7 +461,7 @@ class PlantMinDli(PlantMinMax):
         """Initialize the component."""
         self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Min DLI"
         self._default_state = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
-            CONF_MIN_DLI, STATE_UNKNOWN
+            CONF_MIN_DLI, DEFAULT_MIN_DLI
         )
         self._attr_unique_id = f"{config.entry_id}-min-dli"
         self._attr_unit_of_measurement = UNIT_PPFD
@@ -470,11 +482,15 @@ class PlantMaxConductivity(PlantMinMax):
         """Initialize the component."""
         self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Max Condctivity"
         self._default_state = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
-            CONF_MAX_CONDUCTIVITY, STATE_UNKNOWN
+            CONF_MAX_CONDUCTIVITY, DEFAULT_MAX_CONDUCTIVITY
         )
         self._attr_unique_id = f"{config.entry_id}-max-conductivity"
         self._attr_unit_of_measurement = UNIT_CONDUCTIVITY
         super().__init__(hass, config, plantdevice)
+
+    @property
+    def device_class(self):
+        return f"{READING_CONDUCTIVITY} threshold"
 
 
 class PlantMinConductivity(PlantMinMax):
@@ -486,12 +502,16 @@ class PlantMinConductivity(PlantMinMax):
         """Initialize the component."""
         self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Min Conductivity"
         self._default_state = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
-            CONF_MIN_CONDUCTIVITY, STATE_UNKNOWN
+            CONF_MIN_CONDUCTIVITY, DEFAULT_MIN_CONDUCTIVITY
         )
         self._attr_unique_id = f"{config.entry_id}-min-conductivity"
         self._attr_unit_of_measurement = UNIT_CONDUCTIVITY
 
         super().__init__(hass, config, plantdevice)
+
+    @property
+    def device_class(self):
+        return f"{READING_CONDUCTIVITY} threshold"
 
 
 class PlantMaxHumidity(PlantMinMax):
@@ -503,7 +523,7 @@ class PlantMaxHumidity(PlantMinMax):
         """Initialize the component."""
         self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Max Humidity"
         self._default_state = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
-            CONF_MAX_HUMIDITY, STATE_UNKNOWN
+            CONF_MAX_HUMIDITY, DEFAULT_MAX_HUMIDITY
         )
         self._attr_unique_id = f"{config.entry_id}-max-humidity"
         self._attr_unit_of_measurement = PERCENTAGE
@@ -512,7 +532,7 @@ class PlantMaxHumidity(PlantMinMax):
 
     @property
     def device_class(self):
-        return SensorDeviceClass.HUMIDITY
+        return f"{SensorDeviceClass.HUMIDITY} threshold"
 
 
 class PlantMinHumidity(PlantMinMax):
@@ -524,7 +544,7 @@ class PlantMinHumidity(PlantMinMax):
         """Initialize the component."""
         self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Min Humidity"
         self._default_state = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
-            CONF_MIN_HUMIDITY, STATE_UNKNOWN
+            CONF_MIN_HUMIDITY, DEFAULT_MIN_HUMIDITY
         )
         self._attr_unique_id = f"{config.entry_id}-min-humidity"
         self._attr_unit_of_measurement = PERCENTAGE
@@ -532,4 +552,4 @@ class PlantMinHumidity(PlantMinMax):
 
     @property
     def device_class(self):
-        return SensorDeviceClass.HUMIDITY
+        return f"{SensorDeviceClass.HUMIDITY} threshold"
