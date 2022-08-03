@@ -56,10 +56,10 @@ This means that the main plant entity references other entities, and they are gr
 * Image can also be updated from the UI
 * These updates are immediately reflected in HA without restarting anything.
 
-![image](https://user-images.githubusercontent.com/203184/181916091-db7de9ca-d120-4614-a83e-d93a5dad9183.png)
+![image](https://user-images.githubusercontent.com/203184/182644580-e3c50a82-f548-4c7e-8826-7e27389cd145.png)
 
-* You can chose to disable warnings on high/low illuminance.
-  * Illuminance warnings are now triggered by calculating the "Daily Light Integral" - DLI.
+* Illuminance warnings are now triggered by calculating the "Daily Light Integral" - DLI.
+* You can chose to disable warnings on high/low temperature, humidity and illuminance/DLI.
 
 
 ### Daily Light Integral
