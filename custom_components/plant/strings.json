@@ -1,5 +1,5 @@
 {
-  "title": "Plant Monitor",
+  "title": "Plant monitor",
   "state": {
     "_": {
       "ok": "[%key:component::binary_sensor::state::problem::off%]",
