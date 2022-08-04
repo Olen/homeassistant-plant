@@ -3,6 +3,9 @@ from __future__ import annotations
 
 import logging
 
+import voluptuous as vol
+
+from homeassistant.components import websocket_api
 from homeassistant.components.utility_meter.const import (
     DATA_TARIFF_SENSORS,
     DATA_UTILITY,
@@ -10,7 +13,9 @@ from homeassistant.components.utility_meter.const import (
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
 from homeassistant.const import (
     ATTR_ENTITY_PICTURE,
+    ATTR_ICON,
     ATTR_NAME,
+    ATTR_UNIT_OF_MEASUREMENT,
     STATE_OK,
     STATE_PROBLEM,
     STATE_UNAVAILABLE,
@@ -22,13 +27,13 @@ from homeassistant.helpers.entity import Entity, async_generate_entity_id
 from homeassistant.helpers.entity_component import EntityComponent
 
 from .const import (
+    ATTR_CURRENT,
     ATTR_MAX,
     ATTR_METERS,
     ATTR_MIN,
     ATTR_PLANT,
     ATTR_SENSORS,
     ATTR_SPECIES,
-    ATTR_THRESHOLDS,
     DATA_SOURCE,
     DOMAIN,
     FLOW_HUMIDITY_TRIGGER,
@@ -78,6 +83,7 @@ _LOGGER = logging.getLogger(__name__)
 # Use this during testing to generate some dummy-sensors
 # to provide random readings for temperature, moisture etc.
 #
+SETUP_DUMMY_SENSORS = False
 USE_DUMMY_SENSORS = False
 
 
@@ -132,7 +138,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     if FLOW_PLANT_INFO not in entry.data:
         return True
 
-    if USE_DUMMY_SENSORS:
+    if SETUP_DUMMY_SENSORS:
         # We are creating some dummy sensors to play with during testing
         await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
 
@@ -288,13 +294,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
             new_sensor,
         )
         for key in hass.data[DOMAIN]:
-            meters = hass.data[DOMAIN][key]["sensors"]
-            for meter in meters:
-                if meter.entity_id == meter_entity:
-                    meter.replace_external_sensor(new_sensor)
+            if ATTR_SENSORS in hass.data[DOMAIN][key]:
+                meters = hass.data[DOMAIN][key][ATTR_SENSORS]
+                for meter in meters:
+                    if meter.entity_id == meter_entity:
+                        meter.replace_external_sensor(new_sensor)
         return
 
     hass.services.async_register(DOMAIN, SERVICE_REPLACE_SENSOR, replace_sensor)
+    hass.components.websocket_api.async_register_command(ws_get_info)
+    plant.async_schedule_update_ha_state(True)
 
     # Lets add the dummy sensors automatically if we are testing stuff
     if USE_DUMMY_SENSORS is True:
@@ -326,6 +335,35 @@ async def _plant_add_to_device_registry(
     for entity in plant_entities:
         erreg = er.async_get(hass)
         erreg.async_update_entity(entity.registry_entry.entity_id, device_id=device_id)
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "plant/get_info",
+        vol.Required("entity_id"): str,
+    }
+)
+@callback
+def ws_get_info(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict
+) -> None:
+    """Handle the websocket command."""
+
+    for key in hass.data[DOMAIN]:
+        if not ATTR_PLANT in hass.data[DOMAIN][key]:
+            connection.send_error(
+                msg["id"], "domain_not_found", f"Domain {DOMAIN} not found"
+            )
+            return
+        plant_entity = hass.data[DOMAIN][key][ATTR_PLANT]
+        if plant_entity.entity_id == msg["entity_id"]:
+            connection.send_result(msg["id"], {"result": plant_entity.websocket_info})
+            return
+    connection.send_error(
+        msg["id"], "entity_not_found", f"Entity {msg['entity_id']} not found"
+    )
+
+    return
 
 
 class PlantDevice(Entity):
@@ -447,61 +485,62 @@ class PlantDevice(Entity):
             f"{READING_ILLUMINANCE}_status": self.illuminance_status,
             f"{READING_HUMIDITY}_status": self.humidity_status,
             f"{READING_DLI}_status": self.dli_status,
-            ATTR_METERS: {
-                READING_MOISTURE: None,
-                READING_TEMPERATURE: None,
-                READING_HUMIDITY: None,
-                READING_CONDUCTIVITY: None,
-                READING_ILLUMINANCE: None,
-                READING_DLI: None,
+            f"{ATTR_SPECIES}_original": self.species,
+        }
+        return attributes
+
+    @property
+    def websocket_info(self) -> dict:
+        """Wesocket response"""
+        if not self.plant_complete:
+            # We are not fully set up, so we just return an empty dict for now
+            return {}
+
+        response = {
+            READING_TEMPERATURE: {
+                ATTR_MAX: self.max_temperature.state,
+                ATTR_MIN: self.min_temperature.state,
+                ATTR_CURRENT: self.sensor_temperature.state or STATE_UNKNOWN,
+                ATTR_ICON: self.sensor_temperature.icon,
+                ATTR_UNIT_OF_MEASUREMENT: self.sensor_temperature.unit_of_measurement,
             },
-            ATTR_THRESHOLDS: {
-                READING_TEMPERATURE: {
-                    ATTR_MAX: self.max_temperature.entity_id,
-                    ATTR_MIN: self.min_temperature.entity_id,
-                },
-                READING_ILLUMINANCE: {
-                    ATTR_MAX: self.max_illuminance.entity_id,
-                    ATTR_MIN: self.min_illuminance.entity_id,
-                },
-                READING_MOISTURE: {
-                    ATTR_MAX: self.max_moisture.entity_id,
-                    ATTR_MIN: self.min_moisture.entity_id,
-                },
-                READING_CONDUCTIVITY: {
-                    ATTR_MAX: self.max_conductivity.entity_id,
-                    ATTR_MIN: self.min_conductivity.entity_id,
-                },
-                READING_HUMIDITY: {
-                    ATTR_MAX: self.max_humidity.entity_id,
-                    ATTR_MIN: self.min_humidity.entity_id,
-                },
-                READING_DLI: {
-                    ATTR_MAX: self.max_dli.entity_id,
-                    ATTR_MIN: self.min_dli.entity_id,
-                },
+            READING_ILLUMINANCE: {
+                ATTR_MAX: self.max_illuminance.state,
+                ATTR_MIN: self.min_illuminance.state,
+                ATTR_CURRENT: self.sensor_illuminance.state or STATE_UNKNOWN,
+                ATTR_ICON: self.sensor_illuminance.icon,
+                ATTR_UNIT_OF_MEASUREMENT: self.sensor_illuminance.unit_of_measurement,
+            },
+            READING_MOISTURE: {
+                ATTR_MAX: self.max_moisture.state,
+                ATTR_MIN: self.min_moisture.state,
+                ATTR_CURRENT: self.sensor_moisture.state or STATE_UNKNOWN,
+                ATTR_ICON: self.sensor_moisture.icon,
+                ATTR_UNIT_OF_MEASUREMENT: self.sensor_moisture.unit_of_measurement,
+            },
+            READING_CONDUCTIVITY: {
+                ATTR_MAX: self.max_conductivity.state,
+                ATTR_MIN: self.min_conductivity.state,
+                ATTR_CURRENT: self.sensor_conductivity.state or STATE_UNKNOWN,
+                ATTR_ICON: self.sensor_conductivity.icon,
+                ATTR_UNIT_OF_MEASUREMENT: self.sensor_conductivity.unit_of_measurement,
+            },
+            READING_HUMIDITY: {
+                ATTR_MAX: self.max_humidity.state,
+                ATTR_MIN: self.min_humidity.state,
+                ATTR_CURRENT: self.sensor_humidity.state or STATE_UNKNOWN,
+                ATTR_ICON: self.sensor_humidity.icon,
+                ATTR_UNIT_OF_MEASUREMENT: self.sensor_humidity.unit_of_measurement,
+            },
+            READING_DLI: {
+                ATTR_MAX: self.max_dli.state,
+                ATTR_MIN: self.min_dli.state,
+                ATTR_CURRENT: float(self.dli.state) or STATE_UNKNOWN,
+                ATTR_ICON: self.dli.icon,
+                ATTR_UNIT_OF_MEASUREMENT: self.dli.unit_of_measurement,
             },
         }
-        if self.sensor_moisture is not None:
-            attributes[ATTR_METERS][READING_MOISTURE] = self.sensor_moisture.entity_id
-        if self.sensor_conductivity is not None:
-            attributes[ATTR_METERS][
-                READING_CONDUCTIVITY
-            ] = self.sensor_conductivity.entity_id
-        if self.sensor_illuminance is not None:
-            attributes[ATTR_METERS][
-                READING_ILLUMINANCE
-            ] = self.sensor_illuminance.entity_id
-        if self.sensor_temperature is not None:
-            attributes[ATTR_METERS][
-                READING_TEMPERATURE
-            ] = self.sensor_temperature.entity_id
-        if self.sensor_humidity is not None:
-            attributes[ATTR_METERS][READING_HUMIDITY] = self.sensor_humidity.entity_id
-        if self.dli is not None:
-            attributes[ATTR_METERS][READING_DLI] = self.dli.entity_id
-
-        return attributes
+        return response
 
     def add_image(self, image_url: str | None) -> None:
         """Set new entity_picture"""

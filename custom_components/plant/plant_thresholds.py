@@ -8,7 +8,6 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     ATTR_NAME,
     ATTR_UNIT_OF_MEASUREMENT,
-    CONDUCTIVITY,
     LIGHT_LUX,
     PERCENTAGE,
     STATE_UNKNOWN,
