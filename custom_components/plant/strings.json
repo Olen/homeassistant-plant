@@ -29,7 +29,7 @@
       },
       "limits": {
         "title": "Set limits",
-        "description": "# {name}\n![Plant]({entity_picture})<br />\nTemperature unit is {temperature_unit}",
+        "description": "# {name}\n![Plant]({entity_picture}){br}\nTemperature unit is {temperature_unit}",
         "data": {
           "right_plant": "This is the plant I was looking for",
           "display_pid": "Plant species to display",
@@ -47,9 +47,6 @@
           "min_humidity": "Minimum air humidity (%)",
           "entity_picture": "Image URL"
         }
-      },
-      "error": {
-        "opb_notfound": "Did not find this species in OpenPlantbook"
       }
     }
   },

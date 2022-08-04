@@ -343,6 +343,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 ),
                 ATTR_NAME: plant_config[FLOW_PLANT_INFO].get(ATTR_NAME),
                 FLOW_TEMP_UNIT: self.hass.config.units.temperature_unit,
+                "br": "<br />",
             },
         )
 
