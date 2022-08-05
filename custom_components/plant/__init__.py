@@ -38,6 +38,7 @@ from .const import (
     ATTR_MIN,
     ATTR_MOISTURE,
     ATTR_PLANT,
+    ATTR_SENSOR,
     ATTR_SENSORS,
     ATTR_SPECIES,
     ATTR_TEMPERATURE,
@@ -364,6 +365,7 @@ def ws_get_info(
             return
         plant_entity = hass.data[DOMAIN][key][ATTR_PLANT]
         if plant_entity.entity_id == msg["entity_id"]:
+            _LOGGER.debug("Websocket info: %s", plant_entity.websocket_info)
             connection.send_result(msg["id"], {"result": plant_entity.websocket_info})
             return
     connection.send_error(
@@ -510,6 +512,7 @@ class PlantDevice(Entity):
                 ATTR_CURRENT: self.sensor_temperature.state or STATE_UNKNOWN,
                 ATTR_ICON: self.sensor_temperature.icon,
                 ATTR_UNIT_OF_MEASUREMENT: self.sensor_temperature.unit_of_measurement,
+                ATTR_SENSOR: self.sensor_temperature.entity_id,
             },
             ATTR_ILLUMINANCE: {
                 ATTR_MAX: self.max_illuminance.state,
@@ -517,6 +520,7 @@ class PlantDevice(Entity):
                 ATTR_CURRENT: self.sensor_illuminance.state or STATE_UNKNOWN,
                 ATTR_ICON: self.sensor_illuminance.icon,
                 ATTR_UNIT_OF_MEASUREMENT: self.sensor_illuminance.unit_of_measurement,
+                ATTR_SENSOR: self.sensor_illuminance.entity_id,
             },
             ATTR_MOISTURE: {
                 ATTR_MAX: self.max_moisture.state,
@@ -524,6 +528,7 @@ class PlantDevice(Entity):
                 ATTR_CURRENT: self.sensor_moisture.state or STATE_UNKNOWN,
                 ATTR_ICON: self.sensor_moisture.icon,
                 ATTR_UNIT_OF_MEASUREMENT: self.sensor_moisture.unit_of_measurement,
+                ATTR_SENSOR: self.sensor_moisture.entity_id,
             },
             ATTR_CONDUCTIVITY: {
                 ATTR_MAX: self.max_conductivity.state,
@@ -531,6 +536,7 @@ class PlantDevice(Entity):
                 ATTR_CURRENT: self.sensor_conductivity.state or STATE_UNKNOWN,
                 ATTR_ICON: self.sensor_conductivity.icon,
                 ATTR_UNIT_OF_MEASUREMENT: self.sensor_conductivity.unit_of_measurement,
+                ATTR_SENSOR: self.sensor_conductivity.entity_id,
             },
             ATTR_HUMIDITY: {
                 ATTR_MAX: self.max_humidity.state,
@@ -538,6 +544,7 @@ class PlantDevice(Entity):
                 ATTR_CURRENT: self.sensor_humidity.state or STATE_UNKNOWN,
                 ATTR_ICON: self.sensor_humidity.icon,
                 ATTR_UNIT_OF_MEASUREMENT: self.sensor_humidity.unit_of_measurement,
+                ATTR_SENSOR: self.sensor_humidity.entity_id,
             },
             ATTR_DLI: {
                 ATTR_MAX: self.max_dli.state,
@@ -545,6 +552,7 @@ class PlantDevice(Entity):
                 ATTR_CURRENT: STATE_UNKNOWN,
                 ATTR_ICON: self.dli.icon,
                 ATTR_UNIT_OF_MEASUREMENT: self.dli.unit_of_measurement,
+                ATTR_SENSOR: self.dli.entity_id,
             },
         }
         if self.dli.state and self.dli.state != STATE_UNKNOWN:

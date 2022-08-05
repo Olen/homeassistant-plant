@@ -66,9 +66,9 @@
           "illuminance_sensor": "Illuminance sensor",
           "humidity_sensor": "Air humidity sensor",
           "entity_picture": "Image URL. Will be automatically updated if species is found in OpnePlantbook",
-          "illuminance_trigger": "Turn off to ignore illuminance and DLI as problem trigger",
-          "humidity_trigger": "Turn off to ignore humidity as problem trigger",
-          "temperature_trigger": "Turn off to ignore temperature as problem trigger"
+          "illuminance_trigger": "Use illuminance and DLI as problem trigger",
+          "humidity_trigger": "Use humidity as problem trigger",
+          "temperature_trigger": "Use temperature as problem trigger"
         }
       }
     }
