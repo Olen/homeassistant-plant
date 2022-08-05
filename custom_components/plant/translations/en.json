@@ -4,14 +4,15 @@
     "step": {
       "user": {
         "title": "Configure a plant",
+        "description": "If you can't find the correct sensors in the dropdown menus, sensors can be added after the plant is set up",
         "data": {
           "name": "Plant name",
           "species": "Species",
           "temperature_sensor": "Temperature sensor",
-          "moisture_sensor": "Moisture sensor",
+          "moisture_sensor": "Soil moisture sensor",
           "conductivity_sensor": "Conductivity sensor",
-          "illuminance_sensor": "Light sensor",
-          "humidity_sensor": "Humidity (environment) sensor"
+          "illuminance_sensor": "Illuminance sensor",
+          "humidity_sensor": "Air humidity sensor"
         },
         "data_description": {
           "species": "Will be used for searching OpenPlantbook"
@@ -33,10 +34,10 @@
         "data": {
           "right_plant": "This is the plant I was looking for",
           "display_pid": "Plant species to display",
-          "max_moisture": "Maximum moisture level (%)",
-          "min_moisture": "Minimum moisture level (%)",
-          "max_illuminance": "Maximum light level (lx)",
-          "min_illuminance": "Minimum light level (lx)",
+          "max_moisture": "Maximum soil moisture (%)",
+          "min_moisture": "Minimum soil moisture (%)",
+          "max_illuminance": "Maximum illuminance (lx)",
+          "min_illuminance": "Minimum illuminance (lx)",
           "max_dli": "Maximum DLI (mol/d⋅m²)",
           "min_dli": "Minimum DLI (mol/d⋅m²)",
           "max_temperature": "Maximum temperature (see above)",
@@ -60,10 +61,10 @@
           "species": "Species",
           "display_pid": "Plant species to display",
           "temperature_sensor": "Temperature sensor",
-          "moisture_sensor": "Moisture sensor",
+          "moisture_sensor": "Soil moisture sensor",
           "conductivity_sensor": "Conductivity sensor",
-          "illuminance_sensor": "Light sensor",
-          "humidity_sensor": "Humidity (environment) sensor",
+          "illuminance_sensor": "Illuminance sensor",
+          "humidity_sensor": "Air humidity sensor",
           "entity_picture": "Image URL. Will be automatically updated if species is found in OpnePlantbook",
           "illuminance_trigger": "Turn off to ignore illuminance and DLI as problem trigger",
           "humidity_trigger": "Turn off to ignore humidity as problem trigger",

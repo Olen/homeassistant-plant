@@ -27,13 +27,20 @@ from homeassistant.helpers.entity import Entity, async_generate_entity_id
 from homeassistant.helpers.entity_component import EntityComponent
 
 from .const import (
+    ATTR_CONDUCTIVITY,
     ATTR_CURRENT,
+    ATTR_DLI,
+    ATTR_HUMIDITY,
+    ATTR_ILLUMINANCE,
+    ATTR_LIMITS,
     ATTR_MAX,
     ATTR_METERS,
     ATTR_MIN,
+    ATTR_MOISTURE,
     ATTR_PLANT,
     ATTR_SENSORS,
     ATTR_SPECIES,
+    ATTR_TEMPERATURE,
     DATA_SOURCE,
     DOMAIN,
     FLOW_HUMIDITY_TRIGGER,
@@ -315,8 +322,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
                     service_data={
                         "meter_entity": sensor.entity_id,
                         "new_sensor": sensor.entity_id.replace(
-                            "plant.", "sensor."
-                        ).replace("current", "dummy"),
+                            "plant.", "sensor.dummy_"
+                        ),
                     },
                     blocking=False,
                     limit=30,
@@ -479,12 +486,12 @@ class PlantDevice(Entity):
             return {}
         attributes = {
             ATTR_SPECIES: self.display_species,
-            f"{READING_MOISTURE}_status": self.moisture_status,
-            f"{READING_TEMPERATURE}_status": self.temperature_status,
-            f"{READING_CONDUCTIVITY}_status": self.conductivity_status,
-            f"{READING_ILLUMINANCE}_status": self.illuminance_status,
-            f"{READING_HUMIDITY}_status": self.humidity_status,
-            f"{READING_DLI}_status": self.dli_status,
+            f"{ATTR_MOISTURE}_status": self.moisture_status,
+            f"{ATTR_TEMPERATURE}_status": self.temperature_status,
+            f"{ATTR_CONDUCTIVITY}_status": self.conductivity_status,
+            f"{ATTR_ILLUMINANCE}_status": self.illuminance_status,
+            f"{ATTR_HUMIDITY}_status": self.humidity_status,
+            f"{ATTR_LIMITS}_status": self.dli_status,
             f"{ATTR_SPECIES}_original": self.species,
         }
         return attributes
@@ -497,49 +504,52 @@ class PlantDevice(Entity):
             return {}
 
         response = {
-            READING_TEMPERATURE: {
+            ATTR_TEMPERATURE: {
                 ATTR_MAX: self.max_temperature.state,
                 ATTR_MIN: self.min_temperature.state,
                 ATTR_CURRENT: self.sensor_temperature.state or STATE_UNKNOWN,
                 ATTR_ICON: self.sensor_temperature.icon,
                 ATTR_UNIT_OF_MEASUREMENT: self.sensor_temperature.unit_of_measurement,
             },
-            READING_ILLUMINANCE: {
+            ATTR_ILLUMINANCE: {
                 ATTR_MAX: self.max_illuminance.state,
                 ATTR_MIN: self.min_illuminance.state,
                 ATTR_CURRENT: self.sensor_illuminance.state or STATE_UNKNOWN,
                 ATTR_ICON: self.sensor_illuminance.icon,
                 ATTR_UNIT_OF_MEASUREMENT: self.sensor_illuminance.unit_of_measurement,
             },
-            READING_MOISTURE: {
+            ATTR_MOISTURE: {
                 ATTR_MAX: self.max_moisture.state,
                 ATTR_MIN: self.min_moisture.state,
                 ATTR_CURRENT: self.sensor_moisture.state or STATE_UNKNOWN,
                 ATTR_ICON: self.sensor_moisture.icon,
                 ATTR_UNIT_OF_MEASUREMENT: self.sensor_moisture.unit_of_measurement,
             },
-            READING_CONDUCTIVITY: {
+            ATTR_CONDUCTIVITY: {
                 ATTR_MAX: self.max_conductivity.state,
                 ATTR_MIN: self.min_conductivity.state,
                 ATTR_CURRENT: self.sensor_conductivity.state or STATE_UNKNOWN,
                 ATTR_ICON: self.sensor_conductivity.icon,
                 ATTR_UNIT_OF_MEASUREMENT: self.sensor_conductivity.unit_of_measurement,
             },
-            READING_HUMIDITY: {
+            ATTR_HUMIDITY: {
                 ATTR_MAX: self.max_humidity.state,
                 ATTR_MIN: self.min_humidity.state,
                 ATTR_CURRENT: self.sensor_humidity.state or STATE_UNKNOWN,
                 ATTR_ICON: self.sensor_humidity.icon,
                 ATTR_UNIT_OF_MEASUREMENT: self.sensor_humidity.unit_of_measurement,
             },
-            READING_DLI: {
+            ATTR_DLI: {
                 ATTR_MAX: self.max_dli.state,
                 ATTR_MIN: self.min_dli.state,
-                ATTR_CURRENT: float(self.dli.state) or STATE_UNKNOWN,
+                ATTR_CURRENT: STATE_UNKNOWN,
                 ATTR_ICON: self.dli.icon,
                 ATTR_UNIT_OF_MEASUREMENT: self.dli.unit_of_measurement,
             },
         }
+        if self.dli.state and self.dli.state != STATE_UNKNOWN:
+            response[ATTR_DLI][ATTR_CURRENT] = float(self.dli.state)
+
         return response
 
     def add_image(self, image_url: str | None) -> None:

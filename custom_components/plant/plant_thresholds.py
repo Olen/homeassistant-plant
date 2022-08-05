@@ -26,6 +26,9 @@ from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.util.temperature import convert as convert_temperature
 
 from .const import (
+    ATTR_CONDUCTIVITY,
+    ATTR_MAX,
+    ATTR_MIN,
     CONF_MAX_CONDUCTIVITY,
     CONF_MAX_DLI,
     CONF_MAX_HUMIDITY,
@@ -55,6 +58,11 @@ from .const import (
     FLOW_PLANT_INFO,
     FLOW_PLANT_LIMITS,
     READING_CONDUCTIVITY,
+    READING_DLI,
+    READING_HUMIDITY,
+    READING_ILLUMINANCE,
+    READING_MOISTURE,
+    READING_TEMPERATURE,
     UNIT_CONDUCTIVITY,
     UNIT_PPFD,
 )
@@ -164,7 +172,9 @@ class PlantMaxMoisture(PlantMinMax):
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the component."""
-        self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Max Moisture"
+        self._attr_name = (
+            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {ATTR_MAX} {READING_MOISTURE}"
+        )
         self._default_state = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
             CONF_MAX_MOISTURE, DEFAULT_MAX_MOISTURE
         )
@@ -185,7 +195,9 @@ class PlantMinMoisture(PlantMinMax):
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the Plant component."""
-        self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Min Moisture"
+        self._attr_name = (
+            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {ATTR_MIN} {READING_MOISTURE}"
+        )
         self._default_state = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
             CONF_MIN_MOISTURE, DEFAULT_MIN_MOISTURE
         )
@@ -206,7 +218,7 @@ class PlantMaxTemperature(PlantMinMax):
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the Plant component."""
-        self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Max Temperature"
+        self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {ATTR_MAX} {READING_TEMPERATURE}"
         self._attr_unique_id = f"{config.entry_id}-max-temperature"
 
         self._default_state = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
@@ -222,30 +234,24 @@ class PlantMaxTemperature(PlantMinMax):
     @property
     def unit_of_measurement(self) -> str | None:
         """Get unit of measurement from the temperature meter"""
-        if not hasattr(self, "_attr_unit_of_measurement"):
-            self._attr_unit_of_measurement = self._default_unit_of_measurement
-        if self._attr_unit_of_measurement is None:
-            self._attr_unit_of_measurement = self._default_unit_of_measurement
-
         if (
-            "meters" in self._plant.extra_state_attributes
-            and "temperature" in self._plant.extra_state_attributes["meters"]
+            not hasattr(self, "_attr_unit_of_measurement")
+            or self._attr_unit_of_measurement is None
         ):
-            meter = self._hass.states.get(
-                self._plant.extra_state_attributes["meters"]["temperature"]
-            )
-            if not ATTR_UNIT_OF_MEASUREMENT in meter.attributes:
-                return self._attr_unit_of_measurement
+            self._attr_unit_of_measurement = self._default_unit_of_measurement
 
+        if self._plant.sensor_temperature:
+            if not self._plant.sensor_temperature.unit_of_measurement:
+                return self._attr_unit_of_measurement
             if (
                 self._attr_unit_of_measurement
-                != meter.attributes[ATTR_UNIT_OF_MEASUREMENT]
+                != self._plant.sensor_temperature.unit_of_measurement
             ):
-                self._attr_unit_of_measurement = meter.attributes[
-                    ATTR_UNIT_OF_MEASUREMENT
-                ]
+                self._attr_unit_of_measurement = (
+                    self._plant.sensor_temperature.unit_of_measurement
+                )
 
-            return self._attr_unit_of_measurement
+        return self._attr_unit_of_measurement
 
     def state_attributes_changed(self, old_attributes, new_attributes):
         """Calculate C or F"""
@@ -302,7 +308,7 @@ class PlantMinTemperature(PlantMinMax):
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the component."""
-        self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Min Temperature"
+        self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {ATTR_MIN} {READING_TEMPERATURE}"
         self._default_state = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
             CONF_MIN_TEMPERATURE, DEFAULT_MIN_TEMPERATURE
         )
@@ -317,29 +323,24 @@ class PlantMinTemperature(PlantMinMax):
 
     @property
     def unit_of_measurement(self) -> str | None:
-        if not hasattr(self, "_attr_unit_of_measurement"):
-            self._attr_unit_of_measurement = self._default_unit_of_measurement
-        if self._attr_unit_of_measurement is None:
+        if (
+            not hasattr(self, "_attr_unit_of_measurement")
+            or self._attr_unit_of_measurement is None
+        ):
             self._attr_unit_of_measurement = self._default_unit_of_measurement
 
-        if (
-            "meters" in self._plant.extra_state_attributes
-            and "temperature" in self._plant.extra_state_attributes["meters"]
-        ):
-            meter = self._hass.states.get(
-                self._plant.extra_state_attributes["meters"]["temperature"]
-            )
-            if not ATTR_UNIT_OF_MEASUREMENT in meter.attributes:
+        if self._plant.sensor_temperature:
+            if not self._plant.sensor_temperature.unit_of_measurement:
                 return self._attr_unit_of_measurement
             if (
                 self._attr_unit_of_measurement
-                != meter.attributes[ATTR_UNIT_OF_MEASUREMENT]
+                != self._plant.sensor_temperature.unit_of_measurement
             ):
-                self._attr_unit_of_measurement = meter.attributes[
-                    ATTR_UNIT_OF_MEASUREMENT
-                ]
+                self._attr_unit_of_measurement = (
+                    self._plant.sensor_temperature.unit_of_measurement
+                )
 
-            return self._attr_unit_of_measurement
+        return self._attr_unit_of_measurement
 
     def state_attributes_changed(self, old_attributes, new_attributes):
         """Calculate C or F"""
@@ -398,7 +399,7 @@ class PlantMaxIlluminance(PlantMinMax):
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the component."""
-        self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Max Illuminance"
+        self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {ATTR_MAX} {READING_ILLUMINANCE}"
         self._default_state = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
             CONF_MAX_ILLUMINANCE, DEFAULT_MAX_ILLUMINANCE
         )
@@ -418,7 +419,7 @@ class PlantMinIlluminance(PlantMinMax):
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the Plant component."""
-        self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Min Brghtness"
+        self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {ATTR_MIN} {READING_ILLUMINANCE}"
         self._default_state = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
             CONF_MIN_ILLUMINANCE, DEFAULT_MIN_ILLUMINANCE
         )
@@ -438,7 +439,9 @@ class PlantMaxDli(PlantMinMax):
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the component."""
-        self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Max DLI"
+        self._attr_name = (
+            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {ATTR_MAX} {READING_DLI}"
+        )
         self._default_state = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
             CONF_MAX_DLI, DEFAULT_MAX_DLI
         )
@@ -458,7 +461,9 @@ class PlantMinDli(PlantMinMax):
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the component."""
-        self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Min DLI"
+        self._attr_name = (
+            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {ATTR_MIN} {READING_DLI}"
+        )
         self._default_state = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
             CONF_MIN_DLI, DEFAULT_MIN_DLI
         )
@@ -479,7 +484,7 @@ class PlantMaxConductivity(PlantMinMax):
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the component."""
-        self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Max Condctivity"
+        self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {ATTR_MAX} {READING_CONDUCTIVITY}"
         self._default_state = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
             CONF_MAX_CONDUCTIVITY, DEFAULT_MAX_CONDUCTIVITY
         )
@@ -489,7 +494,7 @@ class PlantMaxConductivity(PlantMinMax):
 
     @property
     def device_class(self):
-        return f"{READING_CONDUCTIVITY} threshold"
+        return f"{ATTR_CONDUCTIVITY} threshold"
 
 
 class PlantMinConductivity(PlantMinMax):
@@ -499,7 +504,7 @@ class PlantMinConductivity(PlantMinMax):
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the component."""
-        self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Min Conductivity"
+        self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {ATTR_MIN} {READING_CONDUCTIVITY}"
         self._default_state = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
             CONF_MIN_CONDUCTIVITY, DEFAULT_MIN_CONDUCTIVITY
         )
@@ -510,7 +515,7 @@ class PlantMinConductivity(PlantMinMax):
 
     @property
     def device_class(self):
-        return f"{READING_CONDUCTIVITY} threshold"
+        return f"{ATTR_CONDUCTIVITY} threshold"
 
 
 class PlantMaxHumidity(PlantMinMax):
@@ -520,7 +525,9 @@ class PlantMaxHumidity(PlantMinMax):
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the component."""
-        self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Max Humidity"
+        self._attr_name = (
+            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {ATTR_MAX} {READING_HUMIDITY}"
+        )
         self._default_state = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
             CONF_MAX_HUMIDITY, DEFAULT_MAX_HUMIDITY
         )
@@ -541,7 +548,9 @@ class PlantMinHumidity(PlantMinMax):
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the component."""
-        self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Min Humidity"
+        self._attr_name = (
+            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {ATTR_MIN} {READING_HUMIDITY}"
+        )
         self._default_state = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
             CONF_MIN_HUMIDITY, DEFAULT_MIN_HUMIDITY
         )

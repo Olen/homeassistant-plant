@@ -16,7 +16,16 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import async_generate_entity_id
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, FLOW_PLANT_INFO, UNIT_CONDUCTIVITY
+from .const import (
+    DOMAIN,
+    FLOW_PLANT_INFO,
+    READING_CONDUCTIVITY,
+    READING_HUMIDITY,
+    READING_ILLUMINANCE,
+    READING_MOISTURE,
+    READING_TEMPERATURE,
+    UNIT_CONDUCTIVITY,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -56,7 +65,9 @@ class PlantDummyIlluminance(PlantDummyStatus):
 
     def __init__(self, hass: HomeAssistant, config: ConfigEntry) -> None:
         """Init the dummy sensor"""
-        self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Dummy Illuminance"
+        self._attr_name = (
+            f"dummy {config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_ILLUMINANCE}"
+        )
         self._attr_unique_id = f"{config.entry_id}-dummy-illuminance"
         self._attr_icon = "mdi:illuminance-6"
         self._attr_native_unit_of_measurement = LIGHT_LUX
@@ -83,7 +94,7 @@ class PlantDummyConductivity(PlantDummyStatus):
     def __init__(self, hass: HomeAssistant, config: ConfigEntry) -> None:
         """Init the dummy sensor"""
         self._attr_name = (
-            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Dummy Conductivity"
+            f"dummy {config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_CONDUCTIVITY}"
         )
         self._attr_unique_id = f"{config.entry_id}-dummy-conductivity"
         self._attr_icon = "mdi:spa-outline"
@@ -101,7 +112,7 @@ class PlantDummyMoisture(PlantDummyStatus):
     def __init__(self, hass: HomeAssistant, config: ConfigEntry) -> None:
         """Init the dummy sensor"""
         self._attr_name = (
-            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Dummy Moisture Level"
+            f"dummy {config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_MOISTURE}"
         )
         self._attr_unique_id = f"{config.entry_id}-dummy-moisture"
         self._attr_icon = "mdi:water"
@@ -125,7 +136,9 @@ class PlantDummyTemperature(PlantDummyStatus):
     def __init__(self, hass: HomeAssistant, config: ConfigEntry) -> None:
         """Init the dummy sensor"""
 
-        self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Dummy Temperature"
+        self._attr_name = (
+            f"dummy {config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_TEMPERATURE}"
+        )
         self._attr_unique_id = f"{config.entry_id}-dummy-temperature"
         self._attr_icon = "mdi:thermometer"
         self._attr_native_unit_of_measurement = TEMP_CELSIUS
@@ -147,7 +160,9 @@ class PlantDummyHumidity(PlantDummyStatus):
 
     def __init__(self, hass: HomeAssistant, config: ConfigEntry) -> None:
         """Init the dummy sensor"""
-        self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Dummy Humidity"
+        self._attr_name = (
+            f"dummy {config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_HUMIDITY}"
+        )
         self._attr_unique_id = f"{config.entry_id}-dummy-humidity"
         self._attr_icon = "mdi:water-percent"
         self._attr_native_unit_of_measurement = PERCENTAGE

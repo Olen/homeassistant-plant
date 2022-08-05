@@ -28,6 +28,7 @@ from homeassistant.helpers.entity import Entity, async_generate_entity_id
 from homeassistant.helpers.event import async_track_state_change_event
 
 from .const import (
+    ATTR_CONDUCTIVITY,
     DATA_UPDATED,
     DEFAULT_LUX_TO_PPFD,
     DOMAIN,
@@ -38,6 +39,12 @@ from .const import (
     FLOW_SENSOR_MOISTURE,
     FLOW_SENSOR_TEMPERATURE,
     READING_CONDUCTIVITY,
+    READING_DLI,
+    READING_HUMIDITY,
+    READING_ILLUMINANCE,
+    READING_MOISTURE,
+    READING_PPFD,
+    READING_TEMPERATURE,
     UNIT_DLI,
     UNIT_PPFD,
 )
@@ -158,7 +165,7 @@ class PlantCurrentIlluminance(PlantCurrentStatus):
     ) -> None:
         """Initialize the sensor"""
         self._attr_name = (
-            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Current Illuminance"
+            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_ILLUMINANCE}"
         )
         self._attr_unique_id = f"{config.entry_id}-current-illuminance"
         self._attr_icon = "mdi:brightness-6"
@@ -184,7 +191,7 @@ class PlantCurrentConductivity(PlantCurrentStatus):
     ) -> None:
         """Initialize the sensor"""
         self._attr_name = (
-            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Current Conductivity"
+            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_CONDUCTIVITY}"
         )
         self._attr_unique_id = f"{config.entry_id}-current-conductivity"
         self._attr_icon = "mdi:spa-outline"
@@ -197,7 +204,7 @@ class PlantCurrentConductivity(PlantCurrentStatus):
     @property
     def device_class(self) -> None:
         """Device class - not defined for conductivity"""
-        return READING_CONDUCTIVITY
+        return ATTR_CONDUCTIVITY
 
 
 class PlantCurrentMoisture(PlantCurrentStatus):
@@ -208,7 +215,7 @@ class PlantCurrentMoisture(PlantCurrentStatus):
     ) -> None:
         """Initialize the sensor"""
         self._attr_name = (
-            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Current Moisture Level"
+            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_MOISTURE}"
         )
         self._attr_unique_id = f"{config.entry_id}-current-moisture"
         self._external_sensor = config.data[FLOW_PLANT_INFO].get(FLOW_SENSOR_MOISTURE)
@@ -230,7 +237,7 @@ class PlantCurrentTemperature(PlantCurrentStatus):
     ) -> None:
         """Initialize the sensor"""
         self._attr_name = (
-            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Current Temperature"
+            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_TEMPERATURE}"
         )
         self._attr_unique_id = f"{config.entry_id}-current-temperature"
         self._external_sensor = config.data[FLOW_PLANT_INFO].get(
@@ -252,7 +259,9 @@ class PlantCurrentHumidity(PlantCurrentStatus):
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the sensor"""
-        self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Current Humidity"
+        self._attr_name = (
+            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_HUMIDITY}"
+        )
         self._attr_unique_id = f"{config.entry_id}-current-humidity"
         self._external_sensor = config.data[FLOW_PLANT_INFO].get(FLOW_SENSOR_HUMIDITY)
         self._attr_icon = "mdi:water-percent"
@@ -271,9 +280,7 @@ class PlantCurrentPpfd(PlantCurrentStatus):
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the sensor"""
-        self._attr_name = (
-            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Current PPFD (mol)"
-        )
+        self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_PPFD}"
 
         self._attr_unique_id = f"{config.entry_id}-current-ppfd"
         self._attr_unit_of_measurement = UNIT_PPFD
@@ -332,7 +339,7 @@ class PlantTotalLightIntegral(IntegrationSensor):
         """Initialize the sensor"""
         super().__init__(
             integration_method=METHOD_TRAPEZOIDAL,
-            name=f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Total PPFD (mol) Integral",
+            name=f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Total {READING_PPFD} Integral",
             round_digits=2,
             source_entity=illuminance_ppfd_sensor.entity_id,
             unique_id=f"{config.entry_id}-ppfd-integral",
@@ -361,7 +368,7 @@ class PlantDailyLightIntegral(UtilityMeterSensor):
             delta_values=None,
             meter_offset=timedelta(seconds=0),
             meter_type=DAILY,
-            name=f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Daily Light Integral",
+            name=f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_DLI}",
             net_consumption=None,
             parent_meter=config.entry_id,
             source_entity=illuminance_integration_sensor.entity_id,

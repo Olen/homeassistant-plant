@@ -16,10 +16,15 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.temperature import display_temp
 
 from .const import (
+    ATTR_BRIGHTNESS,
+    ATTR_CONDUCTIVITY,
+    ATTR_ILLUMINANCE,
     ATTR_IMAGE,
     ATTR_LIMITS,
+    ATTR_MOISTURE,
     ATTR_SENSORS,
     ATTR_SPECIES,
+    ATTR_TEMPERATURE,
     CONF_MAX_CONDUCTIVITY,
     CONF_MAX_DLI,
     CONF_MAX_HUMIDITY,
@@ -64,9 +69,6 @@ from .const import (
     OPB_SEARCH,
     OPB_SEARCH_RESULT,
     PPFD_DLI_FACTOR,
-    READING_CONDUCTIVITY,
-    READING_MOISTURE,
-    READING_TEMPERATURE,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -279,11 +281,10 @@ class PlantHelper:
                     CONF_MAX_DLI: config.get(CONF_MAX_DLI, max_dli),
                     CONF_MIN_DLI: config.get(CONF_MIN_DLI, min_dli),
                 },
-                FLOW_SENSOR_TEMPERATURE: config[ATTR_SENSORS].get(READING_TEMPERATURE),
-                FLOW_SENSOR_MOISTURE: config[ATTR_SENSORS].get(READING_MOISTURE),
-                FLOW_SENSOR_CONDUCTIVITY: config[ATTR_SENSORS].get(
-                    READING_CONDUCTIVITY
-                ),
-                FLOW_SENSOR_ILLUMINANCE: config[ATTR_SENSORS].get("brightness"),
+                FLOW_SENSOR_TEMPERATURE: config[ATTR_SENSORS].get(ATTR_TEMPERATURE),
+                FLOW_SENSOR_MOISTURE: config[ATTR_SENSORS].get(ATTR_MOISTURE),
+                FLOW_SENSOR_CONDUCTIVITY: config[ATTR_SENSORS].get(ATTR_CONDUCTIVITY),
+                FLOW_SENSOR_ILLUMINANCE: config[ATTR_SENSORS].get(ATTR_ILLUMINANCE)
+                or config[ATTR_SENSORS].get(ATTR_BRIGHTNESS),
             },
         }
