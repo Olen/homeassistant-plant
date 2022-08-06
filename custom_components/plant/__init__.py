@@ -44,8 +44,11 @@ from .const import (
     ATTR_TEMPERATURE,
     DATA_SOURCE,
     DOMAIN,
+    FLOW_CONDUCTIVITY_TRIGGER,
+    FLOW_DLI_TRIGGER,
     FLOW_HUMIDITY_TRIGGER,
     FLOW_ILLUMINANCE_TRIGGER,
+    FLOW_MOISTURE_TRIGGER,
     FLOW_PLANT_INFO,
     FLOW_TEMPERATURE_TRIGGER,
     OPB_DISPLAY_PID,
@@ -467,7 +470,7 @@ class PlantDevice(Entity):
 
     @property
     def illuminance_trigger(self) -> bool:
-        """Whether we will generate alarms based on illuminance or dli"""
+        """Whether we will generate alarms based on illuminance"""
         return self._config.options.get(FLOW_ILLUMINANCE_TRIGGER, True)
 
     @property
@@ -479,6 +482,21 @@ class PlantDevice(Entity):
     def temperature_trigger(self) -> bool:
         """Whether we will generate alarms based on temperature"""
         return self._config.options.get(FLOW_TEMPERATURE_TRIGGER, True)
+
+    @property
+    def dli_trigger(self) -> bool:
+        """Whether we will generate alarms based on dli"""
+        return self._config.options.get(FLOW_DLI_TRIGGER, True)
+
+    @property
+    def moisture_trigger(self) -> bool:
+        """Whether we will generate alarms based on moisture"""
+        return self._config.options.get(FLOW_MOISTURE_TRIGGER, True)
+
+    @property
+    def conductivity_trigger(self) -> bool:
+        """Whether we will generate alarms based on conductivity"""
+        return self._config.options.get(FLOW_CONDUCTIVITY_TRIGGER, True)
 
     @property
     def extra_state_attributes(self) -> dict:
@@ -636,10 +654,12 @@ class PlantDevice(Entity):
         ):
             if float(self.sensor_moisture.state) < float(self.min_moisture.state):
                 self.moisture_status = STATE_LOW
-                new_state = STATE_PROBLEM
+                if self.moisture_trigger:
+                    new_state = STATE_PROBLEM
             elif float(self.sensor_moisture.state) > float(self.max_moisture.state):
                 self.moisture_status = STATE_HIGH
-                new_state = STATE_PROBLEM
+                if self.moisture_trigger:
+                    new_state = STATE_PROBLEM
             else:
                 self.moisture_status = STATE_OK
 
@@ -653,12 +673,14 @@ class PlantDevice(Entity):
                 self.min_conductivity.state
             ):
                 self.conductivity_status = STATE_LOW
-                new_state = STATE_PROBLEM
+                if self.conductivity_trigger:
+                    new_state = STATE_PROBLEM
             elif float(self.sensor_conductivity.state) > float(
                 self.max_conductivity.state
             ):
                 self.conductivity_status = STATE_HIGH
-                new_state = STATE_PROBLEM
+                if self.conductivity_trigger:
+                    new_state = STATE_PROBLEM
             else:
                 self.conductivity_status = STATE_OK
 
@@ -725,13 +747,13 @@ class PlantDevice(Entity):
                 self.dli.extra_state_attributes["last_period"]
             ) < float(self.min_dli.state):
                 self.dli_status = STATE_LOW
-                if self.illuminance_trigger:
+                if self.dli_trigger:
                     new_state = STATE_PROBLEM
             elif float(self.dli.extra_state_attributes["last_period"]) > 0 and float(
                 self.dli.extra_state_attributes["last_period"]
             ) > float(self.max_dli.state):
                 self.dli_status = STATE_HIGH
-                if self.illuminance_trigger:
+                if self.dli_trigger:
                     new_state = STATE_PROBLEM
             else:
                 self.dli_status = STATE_OK

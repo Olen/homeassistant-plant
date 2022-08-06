@@ -66,8 +66,11 @@
           "illuminance_sensor": "Illuminance sensor",
           "humidity_sensor": "Air humidity sensor",
           "entity_picture": "Image URL. Will be automatically updated if species is found in OpnePlantbook",
-          "illuminance_trigger": "Use illuminance and DLI as problem trigger",
-          "humidity_trigger": "Use humidity as problem trigger",
+          "illuminance_trigger": "Use illuminance and as problem trigger",
+          "dli_trigger": "Use daily light integral (dli) and as problem trigger",
+          "humidity_trigger": "Use air humidity as problem trigger",
+          "conductivity_trigger": "Use conductivity as problem trigger",
+          "moisture_trigger": "Use soil moisture as problem trigger",
           "temperature_trigger": "Use temperature as problem trigger"
         }
       }

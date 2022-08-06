@@ -105,6 +105,9 @@ FLOW_TEMP_UNIT = "temperature_unit"
 FLOW_ILLUMINANCE_TRIGGER = "illuminance_trigger"
 FLOW_HUMIDITY_TRIGGER = "humidity_trigger"
 FLOW_TEMPERATURE_TRIGGER = "temperature_trigger"
+FLOW_DLI_TRIGGER = "dli_trigger"
+FLOW_MOISTURE_TRIGGER = "moisture_trigger"
+FLOW_CONDUCTIVITY_TRIGGER = "conductivity_trigger"
 
 
 OPB_GET = "get"

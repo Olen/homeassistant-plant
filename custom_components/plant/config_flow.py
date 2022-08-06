@@ -41,9 +41,12 @@ from .const import (
     DATA_SOURCE_PLANTBOOK,
     DOMAIN,
     DOMAIN_SENSOR,
+    FLOW_CONDUCTIVITY_TRIGGER,
+    FLOW_DLI_TRIGGER,
     FLOW_ERROR_NOTFOUND,
     FLOW_HUMIDITY_TRIGGER,
     FLOW_ILLUMINANCE_TRIGGER,
+    FLOW_MOISTURE_TRIGGER,
     FLOW_PLANT_INFO,
     FLOW_PLANT_LIMITS,
     FLOW_RIGHT_PLANT,
@@ -419,11 +422,23 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             )
         ] = cv.boolean
         data_schema[
+            vol.Optional(FLOW_DLI_TRIGGER, default=self.plant.dli_trigger)
+        ] = cv.boolean
+
+        data_schema[
             vol.Optional(FLOW_HUMIDITY_TRIGGER, default=self.plant.humidity_trigger)
         ] = cv.boolean
         data_schema[
             vol.Optional(
                 FLOW_TEMPERATURE_TRIGGER, default=self.plant.temperature_trigger
+            )
+        ] = cv.boolean
+        data_schema[
+            vol.Optional(FLOW_MOISTURE_TRIGGER, default=self.plant.moisture_trigger)
+        ] = cv.boolean
+        data_schema[
+            vol.Optional(
+                FLOW_CONDUCTIVITY_TRIGGER, default=self.plant.conductivity_trigger
             )
         ] = cv.boolean
 
