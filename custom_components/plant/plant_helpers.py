@@ -25,6 +25,7 @@ from .const import (
     ATTR_SENSORS,
     ATTR_SPECIES,
     ATTR_TEMPERATURE,
+    CONF_MAX_BRIGHTNESS,
     CONF_MAX_CONDUCTIVITY,
     CONF_MAX_DLI,
     CONF_MAX_HUMIDITY,
@@ -32,6 +33,7 @@ from .const import (
     CONF_MAX_MMOL,
     CONF_MAX_MOISTURE,
     CONF_MAX_TEMPERATURE,
+    CONF_MIN_BRIGHTNESS,
     CONF_MIN_CONDUCTIVITY,
     CONF_MIN_DLI,
     CONF_MIN_HUMIDITY,
@@ -252,7 +254,8 @@ class PlantHelper:
                 entity_picture = opb_plant.get(FLOW_PLANT_IMAGE)
             display_species = opb_plant.get(OPB_DISPLAY_PID)
 
-        return {
+        _LOGGER.debug("Parsing input config: %s", config)
+        ret = {
             DATA_SOURCE: data_source,
             FLOW_PLANT_INFO: {
                 ATTR_NAME: config.get(ATTR_NAME),
@@ -261,10 +264,12 @@ class PlantHelper:
                 OPB_DISPLAY_PID: display_species or "",
                 ATTR_LIMITS: {
                     CONF_MAX_ILLUMINANCE: config.get(
-                        CONF_MAX_ILLUMINANCE, max_light_lx
+                        CONF_MAX_BRIGHTNESS,
+                        config.get(CONF_MAX_ILLUMINANCE, max_light_lx),
                     ),
                     CONF_MIN_ILLUMINANCE: config.get(
-                        CONF_MIN_ILLUMINANCE, min_light_lx
+                        CONF_MIN_BRIGHTNESS,
+                        config.get(CONF_MIN_ILLUMINANCE, min_light_lx),
                     ),
                     CONF_MAX_CONDUCTIVITY: config.get(
                         CONF_MAX_CONDUCTIVITY, max_conductivity
@@ -288,3 +293,5 @@ class PlantHelper:
                 or config[ATTR_SENSORS].get(ATTR_BRIGHTNESS),
             },
         }
+        _LOGGER.debug("Resulting config: %s", ret)
+        return ret
