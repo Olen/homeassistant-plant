@@ -1,35 +1,38 @@
-# BREAKING CHANGES COMING UP
+# Alternative plants component for Home Assistant
+
+This integration can automatically fetch data from [OpenPlantBook](https://open.plantbook.io/docs.html) if you are a registered user. Registration is free.
+
+# BREAKING CHANGES
 
 >**Warning**
 >
-> **This integration is about to be completely rewritten.  The next version will *not* be compatible with the original plant integration in HA or with this release.**
+> **This integration is about to be completely rewritten.  Versions > 2.0.0 will *not* be compatible with the original plant integration in HA or with earlier releases of this integration.**
 
-## Breaking Changes
+> **Note** 
+>
+> Version 2 of this integration will try to convert all `plant:` entries from `configuration.yaml` to the new format.  After migration, you can (and should) remove your `plant:` entries from your YAML-configuration.   
 
-Completely new integration.  Please [read this](Version%202.md) carefully before upgrading.
-
-## Changes
-
-## Bugfixes
-
-## Features in v1.0.0
-
-* Compatible with the original integration i Home Assistant
-* Can optionally fetch data from [OpenPlantbook](https://open.plantbook.io/)
-
-## Features coming in v2.0.0
-
-* Setup and configuration of plants using the GUI
-* Automatically fetch thresholds and plant images from [OpenPlantbook](https://open.plantbook.io/)
-  * Requires [this integration] https://github.com/Olen/home-assistant-openplantbook
-* Easy modification of thresholds, images, names and species of the plants from GUI
-* Easy to replace which sensors are used to monitor the plants
-* New daily light integral ("DLI") sensor added automatically to all plants
-* Incompatible with the original integration i Home Assistant means you can not use the HA default "plant card" in Lovelace
-  * A compatible flower card for Lovelace can be installed [from here](https://github.com/Olen/lovelace-flower-card)
-  * Make sure you install version 2.0.0 or higher of that card 
-
-![image](https://user-images.githubusercontent.com/203184/182670259-9abd27c3-8641-444f-9002-4ffc0a80c016.png)
+> **Warning**
+> Please notice that the `entity_id` of the plants will **NOT** be preserved during auto-migration.  Also, since the "layout" of the new integration is completely different from the old one, you probably have to update and modify any automations, scripts, blueprints etc. you have made based on the old version.
+>
+> Make sure you check you plant settings after the first restart. You can find the configuration options in the Integrations page under Settings in Home Assistant.
 
 
+# Version 1
+
+This is the "old" version.  Requiring `plant`-entries in `configuration.yaml` and manual setup.
+
+This version will no longer be maintained, and I strongly urge everyone to test out the new version and report any issues.
+
+[Read more and see installation instructions](https://github.com/Olen/homeassistant-plant/blob/master/Version%201.md)
+
+The rest of this file will describe the upcoming version - 2.0.0.
+
+# Version 2
+
+This is the new and upcoming version.  It is set up in the UI and all configuration of your plants can be managed there or by automations and scripts.
+
+All existing entries in `configuration.yaml` from version 1 will be migrated to the new format automatically.  Notice that some options (like `warn_low_brightness`) will not be migrated over, but can be easily changed in the UI configuration after migration. 
+
+Version 2 is available as a beta release in HACS. 
 
