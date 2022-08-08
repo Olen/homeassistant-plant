@@ -6,7 +6,7 @@ This integration can automatically fetch data from [OpenPlantBook](https://open.
 
 >**Warning**
 >
-> **This integration is about to be completely rewritten.  Versions > 2.0.0 will *not* be compatible with the original plant integration in HA or with earlier releases of this integration.**
+> **This integration is about to be completely rewritten.  Versions >= 2.0.0 will *not* be compatible with the original plant integration in HA or with earlier releases of this integration.**
 
 > **Note** 
 >
@@ -35,10 +35,6 @@ This is the new and upcoming version.  It is set up in the UI and all configurat
 All existing entries in `configuration.yaml` from version 1 will be migrated to the new format automatically.  Notice that some options (like `warn_low_brightness`) will not be migrated over, but can be easily changed in the UI configuration after migration. 
 
 Version 2 is available as a beta release in HACS. 
-
->**Note**
->
->**HACS releases are coming soon**
 
 ## Plants are now treated as _devices_
 
@@ -120,8 +116,6 @@ Updated Lovelace Flower Card: https://github.com/Olen/lovelace-flower-card/tree/
 
 # Installation
 
-Until the branch is merged, only manual installation is possible.
-
 ### Install and set up OpenPlantbook
 
 * Upgrade to the latest version of the OpenPlantbook integration: https://github.com/Olen/home-assistant-openplantbook
@@ -129,13 +123,17 @@ Until the branch is merged, only manual installation is possible.
 
 ### Install new flower-card for Lovelace
 
-* Copy the latest flower-card.json from https://github.com/Olen/lovelace-flower-card/tree/new_plant to somewhere under /config/www/ in your HA installation, and add it as a lovelace resource.
+* Install verson 2 (currently available as beta in HACS) of the Flower Card from https://github.com/Olen/lovelace-flower-card/
 
 ### Install this integration
 
-* Move your old `custom_components/plant/` out of the way.  
-* Copy all the content from this branchs custom_components/plant/ to custom_components/plant/ in you HA installation
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
 
+#### Via HACS
+* Add this repo as a "Custom repository" with type "Integration"
+* Click "Install" in the new "Home Assistant Plant" card in HACS.
+* Select "Show beta versions" and select the latest beta
+* Install
 * Restart HA
 
 The first restart might take some time, as it tries to convert all your plants from your configuration.yaml to the new format.  You can follow this process in the log-file.
@@ -153,11 +151,6 @@ After HA is restarted, you will find all your plants under "Setting" - "Devices 
 
 This can be installed manually or through HACS
 
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
-
-#### Via HACS
-* Add this repo as a "Custom repository" with type "Integration"
-* Click "Install" in the new "Home Assistant Plant" card in HACS
 #### Manual Installation
 * Copy the `plant` directory to your server's `<config>/custom_components` directory
 * Restart Home Assistant
