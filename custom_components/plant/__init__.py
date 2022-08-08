@@ -44,6 +44,7 @@ from .const import (
     ATTR_TEMPERATURE,
     DATA_SOURCE,
     DOMAIN,
+    DOMAIN_PLANTBOOK,
     FLOW_CONDUCTIVITY_TRIGGER,
     FLOW_DLI_TRIGGER,
     FLOW_HUMIDITY_TRIGGER,
@@ -111,8 +112,9 @@ async def async_setup(hass: HomeAssistant, config: dict):
         if not config_entry:
             _LOGGER.debug("Old setup - with config: %s", config[DOMAIN])
             for plant in config[DOMAIN]:
-                _LOGGER.warning("Migrating plant: %s", plant)
-                await async_migrate_plant(hass, plant, config[DOMAIN][plant])
+                if plant != DOMAIN_PLANTBOOK:
+                    _LOGGER.warning("Migrating plant: %s", plant)
+                    await async_migrate_plant(hass, plant, config[DOMAIN][plant])
         else:
             _LOGGER.warning(
                 "Config already imported. Please delete all your %s related config from configuration.yaml",
