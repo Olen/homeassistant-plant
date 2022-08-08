@@ -22,6 +22,7 @@ from .const import (
     ATTR_ENTITY,
     ATTR_LIMITS,
     ATTR_OPTIONS,
+    ATTR_SEARCH_FOR,
     ATTR_SELECT,
     ATTR_SENSORS,
     ATTR_SPECIES,
@@ -102,6 +103,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             if valid:
                 # Store info to use in next step
                 self.plant_info = user_input
+                self.plant_info[ATTR_SEARCH_FOR] = user_input[ATTR_SPECIES]
                 _LOGGER.debug("Plant_info: %s", self.plant_info)
 
                 # Return the form of the next step
@@ -125,7 +127,6 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         data_schema[FLOW_SENSOR_MOISTURE] = selector(
             {
                 ATTR_ENTITY: {
-                    ATTR_DEVICE_CLASS: SensorDeviceClass.HUMIDITY,
                     ATTR_DOMAIN: DOMAIN_SENSOR,
                 }
             }
@@ -167,6 +168,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             valid = await self.validate_step_2(user_input)
             if valid:
                 # Store info to use in next step
+
                 self.plant_info[ATTR_SPECIES] = user_input[ATTR_SPECIES]
 
                 # Return the form of the next step
@@ -174,7 +176,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 return await self.async_step_limits()
         plant_helper = PlantHelper(self.hass)
         search_result = await plant_helper.openplantbook_search(
-            species=self.plant_info[ATTR_SPECIES]
+            species=self.plant_info[ATTR_SEARCH_FOR]
         )
         if search_result is None:
             return await self.async_step_limits()
