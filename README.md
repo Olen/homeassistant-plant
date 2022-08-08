@@ -134,11 +134,16 @@ Updated Lovelace Flower Card: https://github.com/Olen/lovelace-flower-card/tree/
 * Click "Install" in the new "Home Assistant Plant" card in HACS.
 * Select "Show beta versions" and select the latest beta
 * Install
-* Restart HA
+* Restart Home Assistant
+
+#### Manual Installation
+* Copy the entire `custom_components/plant/` directory to your server's `<config>/custom_components` directory
+* Restart Home Assistant
+
 
 The first restart might take some time, as it tries to convert all your plants from your configuration.yaml to the new format.  You can follow this process in the log-file.
 
-After HA is restarted, you will find all your plants under "Setting" - "Devices and Services" - "Devices".  It will take a minute or two before the current values start to update.
+After Home Assistant is restarted, you will find all your plants under "Settings" - "Devices and Services" - "Devices".  It will take a minute or two before the current values start to update.
 
 > **Warning**
 > The `entity_id` of your plants will probably have changed from the old integration to the new one.  This means that any automations, scripts etc. that use the entity_id or reacts to changes in your plants status will need to be updated.  You probably also need to change the way you read data from the plant device in any such components.
@@ -147,16 +152,14 @@ After HA is restarted, you will find all your plants under "Setting" - "Devices 
 > This integration is NOT compatible with the built in original plant component.  This means that e.g. the plant cards etc. in the UI, and any blueprints etc. that are built for the original plant intergation wil NOT work with this version.
 
 
-# Info kept until this version is released in HACS. Ignore for now.
-
-This can be installed manually or through HACS
-
-#### Manual Installation
-* Copy the `plant` directory to your server's `<config>/custom_components` directory
-* Restart Home Assistant
-
 ## Problem reports
 By default, all problems (e.g. every time a sensor reports a value that is above or below the threshold set in "limits"), the plant state will be set to "problem".
+
+This can be adjusted under "Settings" -> "Devices and Services" -> "Plant Monitor" -> "Your Plant Name" and "Configure".
+
+![image](https://user-images.githubusercontent.com/203184/183286212-000391c2-9c5d-4c1a-a166-a27e1bf0d3ed.png)
+
+Here you can select what kind of threshold violations should trigger a "problem" state of the plant entity.
 
 
 
