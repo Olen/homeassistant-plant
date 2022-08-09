@@ -67,7 +67,7 @@
           "humidity_sensor": "Air humidity sensor",
           "entity_picture": "Image URL. Will be automatically updated if species is found in OpenPlantbook",
           "illuminance_trigger": "Use illuminance as problem trigger",
-          "dli_trigger": "Use daily light integral (dli) and as problem trigger",
+          "dli_trigger": "Use daily light integral (dli) as problem trigger",
           "humidity_trigger": "Use air humidity as problem trigger",
           "conductivity_trigger": "Use conductivity as problem trigger",
           "moisture_trigger": "Use soil moisture as problem trigger",

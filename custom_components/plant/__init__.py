@@ -6,6 +6,8 @@ import logging
 import voluptuous as vol
 
 from homeassistant.components import websocket_api
+from homeassistant.components.number import SERVICE_SET_VALUE, async_set_value
+from homeassistant.components.number.const import ATTR_VALUE
 from homeassistant.components.utility_meter.const import (
     DATA_TARIFF_SENSORS,
     DATA_UTILITY,
@@ -42,6 +44,7 @@ from .const import (
     ATTR_SENSORS,
     ATTR_SPECIES,
     ATTR_TEMPERATURE,
+    ATTR_THRESHOLDS,
     DATA_SOURCE,
     DOMAIN,
     DOMAIN_PLANTBOOK,
@@ -64,30 +67,6 @@ from .const import (
     STATE_LOW,
 )
 from .plant_helpers import PlantHelper
-from .plant_meters import (
-    PlantCurrentConductivity,
-    PlantCurrentHumidity,
-    PlantCurrentIlluminance,
-    PlantCurrentMoisture,
-    PlantCurrentPpfd,
-    PlantCurrentTemperature,
-    PlantDailyLightIntegral,
-    PlantTotalLightIntegral,
-)
-from .plant_thresholds import (
-    PlantMaxConductivity,
-    PlantMaxDli,
-    PlantMaxHumidity,
-    PlantMaxIlluminance,
-    PlantMaxMoisture,
-    PlantMaxTemperature,
-    PlantMinConductivity,
-    PlantMinDli,
-    PlantMinHumidity,
-    PlantMinIlluminance,
-    PlantMinMoisture,
-    PlantMinTemperature,
-)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -113,7 +92,7 @@ async def async_setup(hass: HomeAssistant, config: dict):
             _LOGGER.debug("Old setup - with config: %s", config[DOMAIN])
             for plant in config[DOMAIN]:
                 if plant != DOMAIN_PLANTBOOK:
-                    _LOGGER.warning("Migrating plant: %s", plant)
+                    _LOGGER.info("Migrating plant: %s", plant)
                     await async_migrate_plant(hass, plant, config[DOMAIN][plant])
         else:
             _LOGGER.warning(
@@ -151,127 +130,48 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     if FLOW_PLANT_INFO not in entry.data:
         return True
 
-    if SETUP_DUMMY_SENSORS:
-        # We are creating some dummy sensors to play with during testing
-        await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
-
     plant = PlantDevice(hass, entry)
-    pmaxm = PlantMaxMoisture(hass, entry, plant)
-    pminm = PlantMinMoisture(hass, entry, plant)
-    pmaxt = PlantMaxTemperature(hass, entry, plant)
-    pmint = PlantMinTemperature(hass, entry, plant)
-    pmaxb = PlantMaxIlluminance(hass, entry, plant)
-    pminb = PlantMinIlluminance(hass, entry, plant)
-    pmaxc = PlantMaxConductivity(hass, entry, plant)
-    pminc = PlantMinConductivity(hass, entry, plant)
-    pmaxh = PlantMaxHumidity(hass, entry, plant)
-    pminh = PlantMinHumidity(hass, entry, plant)
-    pmaxmm = PlantMaxDli(hass, entry, plant)
-    pminmm = PlantMinDli(hass, entry, plant)
-
-    pcurb = PlantCurrentIlluminance(hass, entry, plant)
-    pcurc = PlantCurrentConductivity(hass, entry, plant)
-    pcurm = PlantCurrentMoisture(hass, entry, plant)
-    pcurt = PlantCurrentTemperature(hass, entry, plant)
-    pcurh = PlantCurrentHumidity(hass, entry, plant)
-
     hass.data[DOMAIN][entry.entry_id][ATTR_PLANT] = plant
+
+    await hass.config_entries.async_forward_entry_setups(entry, ["number"])
+    await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
 
     plant_entities = [
         plant,
     ]
-    plant_maxmin = [
-        pmaxm,
-        pminm,
-        pmaxt,
-        pmint,
-        pmaxb,
-        pminb,
-        pmaxc,
-        pminc,
-        pmaxh,
-        pminh,
-        pmaxmm,
-        pminmm,
-    ]
-    plant_sensors = [
-        pcurb,
-        pcurc,
-        pcurm,
-        pcurt,
-        pcurh,
-    ]
-    plant_entities.extend(plant_maxmin)
-    plant_entities.extend(plant_sensors)
 
     # Add all the entities to Hass
     component = EntityComponent(_LOGGER, DOMAIN, hass)
     await component.async_add_entities(plant_entities)
 
-    # Store the entities for later
-    hass.data[DOMAIN][entry.entry_id][ATTR_METERS] = plant_maxmin
-    hass.data[DOMAIN][entry.entry_id][ATTR_SENSORS] = plant_sensors
-
     # Add the rest of the entities to device registry together with plant
     device_id = plant.device_id
     await _plant_add_to_device_registry(hass, plant_entities, device_id)
+    await _plant_add_to_device_registry(hass, plant.threshold_entities, device_id)
+    await _plant_add_to_device_registry(hass, plant.meter_entities, device_id)
+    await _plant_add_to_device_registry(hass, plant.integral_entities, device_id)
 
-    plant.add_sensors(
-        temperature=pcurt,
-        moisture=pcurm,
-        conductivity=pcurc,
-        illuminance=pcurb,
-        humidity=pcurh,
-    )
-
-    plant.add_thresholds(
-        max_moisture=pmaxm,
-        min_moisture=pminm,
-        max_temperature=pmaxt,
-        min_temperature=pmint,
-        max_illuminance=pmaxb,
-        min_illuminance=pminb,
-        max_conductivity=pmaxc,
-        min_conductivity=pminc,
-        max_humidity=pmaxh,
-        min_humidity=pminh,
-        max_dli=pmaxmm,
-        min_dli=pminmm,
-    )
-
-    # Crete and add the integral-entities
-    # Must be run after the sensors are added to the plant
-    integral_entities = []
-
-    pcurppfd = PlantCurrentPpfd(hass, entry, plant)
-    await component.async_add_entities([pcurppfd])
-    integral_entities.append(pcurppfd)
-
-    pintegral = PlantTotalLightIntegral(hass, entry, pcurppfd)
-    await component.async_add_entities([pintegral])
-    integral_entities.append(pintegral)
-
-    pdli = PlantDailyLightIntegral(hass, entry, pintegral)
-    await component.async_add_entities([pdli])
-    integral_entities.append(pdli)
-
-    plant.add_dli(dli=pdli)
-
+    #
     # Set up utility sensor
     hass.data.setdefault(DATA_UTILITY, {})
     hass.data[DATA_UTILITY].setdefault(entry.entry_id, {})
     hass.data[DATA_UTILITY][entry.entry_id].setdefault(DATA_TARIFF_SENSORS, [])
-    hass.data[DATA_UTILITY][entry.entry_id][DATA_TARIFF_SENSORS].append(pdli)
-    await _plant_add_to_device_registry(hass, integral_entities, device_id)
+    hass.data[DATA_UTILITY][entry.entry_id][DATA_TARIFF_SENSORS].append(plant.dli)
 
     #
     # Service call to replace sensors
-    #
     async def replace_sensor(call: ServiceCall) -> None:
         """Replace a sensor entity within a plant device"""
         meter_entity = call.data.get("meter_entity")
         new_sensor = call.data.get("new_sensor")
-        if not meter_entity.startswith(DOMAIN + "."):
+        found = False
+        for entry_id in hass.data[DOMAIN]:
+            if ATTR_SENSORS in hass.data[DOMAIN][entry_id]:
+                for sensor in hass.data[DOMAIN][entry_id][ATTR_SENSORS]:
+                    if sensor.entity_id == meter_entity:
+                        found = True
+                        break
+        if not found:
             _LOGGER.warning(
                 "Refuse to update non-%s entities: %s", DOMAIN, meter_entity
             )
@@ -320,7 +220,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
     # Lets add the dummy sensors automatically if we are testing stuff
     if USE_DUMMY_SENSORS is True:
-        for sensor in plant_sensors:
+        for sensor in plant.meter_entities:
             if sensor.external_sensor is None:
                 await hass.services.async_call(
                     domain=DOMAIN,
@@ -328,7 +228,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
                     service_data={
                         "meter_entity": sensor.entity_id,
                         "new_sensor": sensor.entity_id.replace(
-                            "plant.", "sensor.dummy_"
+                            "sensor.", "sensor.dummy_"
                         ),
                     },
                     blocking=False,
@@ -345,8 +245,8 @@ async def _plant_add_to_device_registry(
 
     # There must be a better way to do this, but I just can't find a way to set the
     # device_id when adding the entities.
+    erreg = er.async_get(hass)
     for entity in plant_entities:
-        erreg = er.async_get(hass)
         erreg.async_update_entity(entity.registry_entry.entity_id, device_id=device_id)
 
 
@@ -528,7 +428,7 @@ class PlantDevice(Entity):
             ATTR_TEMPERATURE: {
                 ATTR_MAX: self.max_temperature.state,
                 ATTR_MIN: self.min_temperature.state,
-                ATTR_CURRENT: self.sensor_temperature.state or STATE_UNKNOWN,
+                ATTR_CURRENT: self.sensor_temperature.state or STATE_UNAVAILABLE,
                 ATTR_ICON: self.sensor_temperature.icon,
                 ATTR_UNIT_OF_MEASUREMENT: self.sensor_temperature.unit_of_measurement,
                 ATTR_SENSOR: self.sensor_temperature.entity_id,
@@ -536,7 +436,7 @@ class PlantDevice(Entity):
             ATTR_ILLUMINANCE: {
                 ATTR_MAX: self.max_illuminance.state,
                 ATTR_MIN: self.min_illuminance.state,
-                ATTR_CURRENT: self.sensor_illuminance.state or STATE_UNKNOWN,
+                ATTR_CURRENT: self.sensor_illuminance.state or STATE_UNAVAILABLE,
                 ATTR_ICON: self.sensor_illuminance.icon,
                 ATTR_UNIT_OF_MEASUREMENT: self.sensor_illuminance.unit_of_measurement,
                 ATTR_SENSOR: self.sensor_illuminance.entity_id,
@@ -544,7 +444,7 @@ class PlantDevice(Entity):
             ATTR_MOISTURE: {
                 ATTR_MAX: self.max_moisture.state,
                 ATTR_MIN: self.min_moisture.state,
-                ATTR_CURRENT: self.sensor_moisture.state or STATE_UNKNOWN,
+                ATTR_CURRENT: self.sensor_moisture.state or STATE_UNAVAILABLE,
                 ATTR_ICON: self.sensor_moisture.icon,
                 ATTR_UNIT_OF_MEASUREMENT: self.sensor_moisture.unit_of_measurement,
                 ATTR_SENSOR: self.sensor_moisture.entity_id,
@@ -552,7 +452,7 @@ class PlantDevice(Entity):
             ATTR_CONDUCTIVITY: {
                 ATTR_MAX: self.max_conductivity.state,
                 ATTR_MIN: self.min_conductivity.state,
-                ATTR_CURRENT: self.sensor_conductivity.state or STATE_UNKNOWN,
+                ATTR_CURRENT: self.sensor_conductivity.state or STATE_UNAVAILABLE,
                 ATTR_ICON: self.sensor_conductivity.icon,
                 ATTR_UNIT_OF_MEASUREMENT: self.sensor_conductivity.unit_of_measurement,
                 ATTR_SENSOR: self.sensor_conductivity.entity_id,
@@ -560,7 +460,7 @@ class PlantDevice(Entity):
             ATTR_HUMIDITY: {
                 ATTR_MAX: self.max_humidity.state,
                 ATTR_MIN: self.min_humidity.state,
-                ATTR_CURRENT: self.sensor_humidity.state or STATE_UNKNOWN,
+                ATTR_CURRENT: self.sensor_humidity.state or STATE_UNAVAILABLE,
                 ATTR_ICON: self.sensor_humidity.icon,
                 ATTR_UNIT_OF_MEASUREMENT: self.sensor_humidity.unit_of_measurement,
                 ATTR_SENSOR: self.sensor_humidity.entity_id,
@@ -568,7 +468,7 @@ class PlantDevice(Entity):
             ATTR_DLI: {
                 ATTR_MAX: self.max_dli.state,
                 ATTR_MIN: self.min_dli.state,
-                ATTR_CURRENT: STATE_UNKNOWN,
+                ATTR_CURRENT: STATE_UNAVAILABLE,
                 ATTR_ICON: self.dli.icon,
                 ATTR_UNIT_OF_MEASUREMENT: self.dli.unit_of_measurement,
                 ATTR_SENSOR: self.dli.entity_id,
@@ -578,6 +478,39 @@ class PlantDevice(Entity):
             response[ATTR_DLI][ATTR_CURRENT] = float(self.dli.state)
 
         return response
+
+    @property
+    def threshold_entities(self) -> list[Entity]:
+        return [
+            self.max_conductivity,
+            self.max_dli,
+            self.max_humidity,
+            self.max_illuminance,
+            self.max_moisture,
+            self.max_temperature,
+            self.min_conductivity,
+            self.min_dli,
+            self.min_humidity,
+            self.min_illuminance,
+            self.min_moisture,
+            self.min_temperature,
+        ]
+
+    @property
+    def meter_entities(self) -> list[Entity]:
+        return [
+            self.sensor_conductivity,
+            self.sensor_humidity,
+            self.sensor_illuminance,
+            self.sensor_moisture,
+            self.sensor_temperature,
+        ]
+
+    @property
+    def integral_entities(self) -> list(Entity):
+        return [
+            self.dli,
+        ]
 
     def add_image(self, image_url: str | None) -> None:
         """Set new entity_picture"""

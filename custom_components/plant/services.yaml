@@ -11,7 +11,8 @@ replace_sensor:
       required: true
       selector:
         entity:
-          domain: plant
+          domain: sensor
+          integration: plant
 
     new_sensor:
       name: Sensor entity
