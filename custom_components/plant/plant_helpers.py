@@ -105,9 +105,17 @@ class PlantHelper:
                 "Result: %s",
                 self.hass.states.get(f"{DOMAIN_PLANTBOOK}.{OPB_SEARCH_RESULT}"),
             )
-            return self.hass.states.get(
-                f"{DOMAIN_PLANTBOOK}.{OPB_SEARCH_RESULT}"
-            ).attributes
+            if (
+                int(
+                    self.hass.states.get(
+                        f"{DOMAIN_PLANTBOOK}.{OPB_SEARCH_RESULT}"
+                    ).state
+                )
+                > 0
+            ):
+                return self.hass.states.get(
+                    f"{DOMAIN_PLANTBOOK}.{OPB_SEARCH_RESULT}"
+                ).attributes
         return None
 
     async def openplantbook_get(self, species: str) -> dict[str:Any] | None:

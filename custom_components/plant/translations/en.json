@@ -19,7 +19,7 @@
         }
       },
       "select_species": {
-        "title": "Select speices from OpenPlantbook",
+        "title": "Select species from OpenPlantbook",
         "description": "{desc}",
         "data": {
           "species": "Species"
@@ -30,7 +30,7 @@
       },
       "limits": {
         "title": "Set limits",
-        "description": "# {name}\n![Plant]({entity_picture}){br}\nTemperature unit is {temperature_unit}",
+        "description": "# {name}\n![Plant]({entity_picture}){br}\n{extra_desc}Temperature unit is {temperature_unit}",
         "data": {
           "right_plant": "This is the plant I was looking for",
           "display_pid": "Plant species to display",
@@ -65,8 +65,8 @@
           "conductivity_sensor": "Conductivity sensor",
           "illuminance_sensor": "Illuminance sensor",
           "humidity_sensor": "Air humidity sensor",
-          "entity_picture": "Image URL. Will be automatically updated if species is found in OpnePlantbook",
-          "illuminance_trigger": "Use illuminance and as problem trigger",
+          "entity_picture": "Image URL. Will be automatically updated if species is found in OpenPlantbook",
+          "illuminance_trigger": "Use illuminance as problem trigger",
           "dli_trigger": "Use daily light integral (dli) and as problem trigger",
           "humidity_trigger": "Use air humidity as problem trigger",
           "conductivity_trigger": "Use conductivity as problem trigger",

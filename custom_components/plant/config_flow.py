@@ -16,6 +16,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.network import get_url
 from homeassistant.helpers.selector import selector
 
 from .const import (
@@ -232,11 +233,16 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if plant_config[FLOW_PLANT_INFO].get(OPB_DISPLAY_PID):
             # We got data from OPB.  Display a "wrong plant" switch
             data_schema[vol.Optional(FLOW_RIGHT_PLANT, default=True)] = cv.boolean
-
+            extra_desc = ""
+            display_pid = plant_config[FLOW_PLANT_INFO].get(OPB_DISPLAY_PID)
+        else:
+            # We did not get any data from OPB.  Show a warning
+            extra_desc = f"Did not find **«{self.plant_info[ATTR_SEARCH_FOR]}»** in OpenPlantbook. Using default values for thresholds.<br /><br />"
+            display_pid = self.plant_info[ATTR_SEARCH_FOR]
         data_schema[
             vol.Required(
                 OPB_DISPLAY_PID,
-                default=plant_config[FLOW_PLANT_INFO].get(OPB_DISPLAY_PID, ""),
+                default=display_pid,
             )
         ] = str
         data_schema[
@@ -338,7 +344,11 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 default=plant_config[FLOW_PLANT_INFO].get(ATTR_ENTITY_PICTURE),
             )
         ] = str
-
+        entity_picture = plant_config[FLOW_PLANT_INFO].get(ATTR_ENTITY_PICTURE)
+        if not entity_picture.startswith("http"):
+            entity_picture = (
+                f"{get_url(self.hass, require_current_request=True)}{entity_picture}"
+            )
         return self.async_show_form(
             step_id="limits",
             data_schema=vol.Schema(data_schema),
@@ -349,6 +359,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 ATTR_NAME: plant_config[FLOW_PLANT_INFO].get(ATTR_NAME),
                 FLOW_TEMP_UNIT: self.hass.config.units.temperature_unit,
                 "br": "<br />",
+                "extra_desc": extra_desc,
             },
         )
 
@@ -365,6 +376,12 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def validate_step_2(self, user_input):
         """Validate step two"""
+        if not ATTR_SPECIES in user_input:
+            return False
+        if not isinstance(user_input[ATTR_SPECIES], str):
+            return False
+        if len(user_input[ATTR_SPECIES]) < 5:
+            return False
         return True
 
     async def validate_step_3(self, user_input):
