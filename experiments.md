@@ -52,7 +52,7 @@ Please modify it to suit your needs.
 I have an auto-watering setup, that will water multiple plants, and I don't want it to run just because one single plant might be slightly low on soil moisture.
 So I have this template sensor that averages out all the "moisture" sensors, and trigger the watering automation based on that instead.
 
-This is just an example, and ymml.
+This is just an example, and this sensor can of course be replaced by a min/max-helper, but this one will be updated automatically as soon as a plant is added to the area, which can be useful.
 
 ``` 
         {%- set ns = namespace(m=0, c=0) -%}
