@@ -41,6 +41,8 @@ from homeassistant.helpers.event import async_track_state_change_event
 from . import SETUP_DUMMY_SENSORS
 from .const import (
     ATTR_CONDUCTIVITY,
+    ATTR_DLI,
+    ATTR_MOISTURE,
     ATTR_PLANT,
     ATTR_SENSORS,
     DATA_UPDATED,
@@ -317,7 +319,7 @@ class PlantCurrentMoisture(PlantCurrentStatus):
     @property
     def device_class(self) -> str:
         """Device class"""
-        return SensorDeviceClass.HUMIDITY
+        return ATTR_MOISTURE
 
 
 class PlantCurrentTemperature(PlantCurrentStatus):
@@ -515,6 +517,10 @@ class PlantDailyLightIntegral(UtilityMeterSensor):
 
         self._unit_of_measurement = UNIT_DLI
 
+    @property
+    def device_class(self) -> str:
+        return ATTR_DLI
+
 
 class PlantDummyStatus(SensorEntity):
     """Simple dummy sensors. Parent class"""
@@ -579,6 +585,11 @@ class PlantDummyConductivity(PlantDummyStatus):
         """Give out a dummy value"""
         self._attr_native_value = random.randint(40, 200) * 10
 
+    @property
+    def device_class(self) -> str:
+        """Device class"""
+        return ATTR_CONDUCTIVITY
+
 
 class PlantDummyMoisture(PlantDummyStatus):
     """Dummy sensor"""
@@ -602,7 +613,7 @@ class PlantDummyMoisture(PlantDummyStatus):
     @property
     def device_class(self) -> str:
         """Device class"""
-        return SensorDeviceClass.HUMIDITY
+        return ATTR_MOISTURE
 
 
 class PlantDummyTemperature(PlantDummyStatus):

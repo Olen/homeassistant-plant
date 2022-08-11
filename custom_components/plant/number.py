@@ -28,6 +28,7 @@ from homeassistant.util.temperature import convert as convert_temperature
 
 from .const import (
     ATTR_CONDUCTIVITY,
+    ATTR_DLI,
     ATTR_MAX,
     ATTR_MIN,
     ATTR_PLANT,
@@ -502,7 +503,7 @@ class PlantMaxDli(PlantMinMax):
 
     @property
     def device_class(self):
-        return f"{SensorDeviceClass.ILLUMINANCE} threshold"
+        return f"{ATTR_DLI} threshold"
 
 
 class PlantMinDli(PlantMinMax):
@@ -528,7 +529,7 @@ class PlantMinDli(PlantMinMax):
 
     @property
     def device_class(self):
-        return SensorDeviceClass.ILLUMINANCE
+        return f"{ATTR_DLI} threshold"
 
 
 class PlantMaxConductivity(PlantMinMax):
