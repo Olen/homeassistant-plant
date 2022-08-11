@@ -338,6 +338,8 @@ class PlantDevice(Entity):
 
         self.dli = None
         self.micro_dli = None
+        self.ppfd = None
+        self.total_integral = None
 
         self.conductivity_status = None
         self.illuminance_status = None
@@ -513,6 +515,8 @@ class PlantDevice(Entity):
         """List all integral entities"""
         return [
             self.dli,
+            self.ppfd,
+            self.total_integral,
         ]
 
     def add_image(self, image_url: str | None) -> None:
@@ -577,6 +581,11 @@ class PlantDevice(Entity):
         """Add the DLI-utility sensors"""
         self.dli = dli
         self.plant_complete = True
+
+    def add_calculations(self, ppfd: Entity, total_integral: Entity) -> None:
+        """Add the intermediate calculation entities"""
+        self.ppfd = ppfd
+        self.total_integral = total_integral
 
     def update(self) -> None:
         """Run on every update of the entities"""

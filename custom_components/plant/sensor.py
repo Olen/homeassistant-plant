@@ -110,19 +110,16 @@ async def async_setup_entry(
     # Create and add the integral-entities
     # Must be run after the sensors are added to the plant
 
-    integral_entities = []
-
     pcurppfd = PlantCurrentPpfd(hass, entry, plant)
     async_add_entities([pcurppfd])
-    integral_entities.append(pcurppfd)
 
     pintegral = PlantTotalLightIntegral(hass, entry, pcurppfd)
     async_add_entities([pintegral], update_before_add=True)
-    integral_entities.append(pintegral)
+
+    plant.add_calculations(pcurppfd, pintegral)
 
     pdli = PlantDailyLightIntegral(hass, entry, pintegral)
     async_add_entities(new_entities=[pdli], update_before_add=True)
-    integral_entities.append(pdli)
 
     plant.add_dli(dli=pdli)
 
