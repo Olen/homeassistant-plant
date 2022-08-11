@@ -3,17 +3,7 @@ from __future__ import annotations
 
 import logging
 
-import voluptuous as vol
-
-from homeassistant.components import number
-from homeassistant.components.number import (
-    NumberDeviceClass,
-    NumberEntity,
-    NumberMode,
-    RestoreNumber,
-    async_set_value,
-)
-from homeassistant.components.number.const import ATTR_VALUE, SERVICE_SET_VALUE
+from homeassistant.components.number import NumberDeviceClass, NumberMode, RestoreNumber
 from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
@@ -26,17 +16,14 @@ from homeassistant.const import (
     TEMP_FAHRENHEIT,
 )
 from homeassistant.core import Event, HomeAssistant, callback
-from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import (
     Entity,
     EntityCategory,
     async_generate_entity_id,
 )
-from homeassistant.helpers.entity_component import EntityComponent
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_state_change_event
-from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.util.temperature import convert as convert_temperature
 
 from .const import (
@@ -159,7 +146,7 @@ class PlantMinMax(RestoreNumber):
         # pylint: disable=no-member
         if (
             not hasattr(self, "_attr_native_value")
-            or self._attr_native_value == None
+            or self._attr_native_value is None
             or self._attr_native_value == STATE_UNKNOWN
         ):
             self._attr_native_value = self._default_value
@@ -396,27 +383,6 @@ class PlantMinTemperature(PlantMinMax):
     @property
     def device_class(self):
         return NumberDeviceClass.TEMPERATURE
-
-    @property
-    def not_unit_of_measurement(self) -> str | None:
-        if (
-            not hasattr(self, "_attr_native_unit_of_measurement")
-            or self._attr_native_unit_of_measurement is None
-        ):
-            self._attr_native_unit_of_measurement = self._default_unit_of_measurement
-
-        if self._plant.sensor_temperature:
-            if not self._plant.sensor_temperature.unit_of_measurement:
-                return self._attr_native_unit_of_measurement
-            if (
-                self._attr_native_unit_of_measurement
-                != self._plant.sensor_temperature.unit_of_measurement
-            ):
-                self._attr_native_unit_of_measurement = (
-                    self._plant.sensor_temperature.unit_of_measurement
-                )
-
-        return self._attr_native_unit_of_measurement
 
     def state_attributes_changed(self, old_attributes, new_attributes):
         """Calculate C or F"""

@@ -14,14 +14,11 @@ from homeassistant.components.sensor import (
     SensorEntity,
     SensorStateClass,
 )
-from homeassistant.components.utility_meter.const import (
-    DAILY,
-    DATA_TARIFF_SENSORS,
-    DATA_UTILITY,
-)
+from homeassistant.components.utility_meter.const import DAILY
 from homeassistant.components.utility_meter.sensor import UtilityMeterSensor
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
+    ATTR_ICON,
     ATTR_NAME,
     ATTR_UNIT_OF_MEASUREMENT,
     LIGHT_LUX,
@@ -33,7 +30,11 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
-from homeassistant.helpers.entity import Entity, async_generate_entity_id
+from homeassistant.helpers.entity import (
+    Entity,
+    EntityCategory,
+    async_generate_entity_id,
+)
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_state_change_event
 
@@ -178,6 +179,7 @@ class PlantCurrentStatus(RestoreSensor):
         self.async_write_ha_state()
 
     def async_track_entity(self, entity_id: str) -> None:
+        """Track state_changed of certain entities"""
         if entity_id not in self._tracker:
             async_track_state_change_event(
                 self._hass,
@@ -234,6 +236,13 @@ class PlantCurrentStatus(RestoreSensor):
             current_attrs = self.hass.states.get(self.entity_id).attributes
             if current_attrs.get("external_sensor") != self.external_sensor:
                 self.replace_external_sensor(current_attrs.get("external_sensor"))
+
+            if (
+                ATTR_ICON in new_state.attributes
+                and self.icon != new_state.attributes[ATTR_ICON]
+            ):
+                self._attr_icon = new_state.attributes[ATTR_ICON]
+
         if self.external_sensor:
             self._attr_native_value = new_state.state
             if ATTR_UNIT_OF_MEASUREMENT in new_state.attributes:
@@ -386,6 +395,15 @@ class PlantCurrentPpfd(PlantCurrentStatus):
         """Device class"""
         return None
 
+    @property
+    def entity_category(self) -> str:
+        """The entity category"""
+        return EntityCategory.DIAGNOSTIC
+
+    @property
+    def entity_registry_visible_default(self) -> str:
+        return False
+
     def ppfd(self, value: float | int | str) -> float | str:
         """
         Returns a calculated PPFD-value from the lx-value
@@ -454,6 +472,15 @@ class PlantTotalLightIntegral(IntegrationSensor):
         self.entity_id = async_generate_entity_id(
             f"{DOMAIN_SENSOR}.{{}}", self.name, current_ids={}
         )
+
+    @property
+    def entity_category(self) -> str:
+        """The entity category"""
+        return EntityCategory.DIAGNOSTIC
+
+    @property
+    def entity_registry_visible_default(self) -> str:
+        return False
 
     def _unit(self, source_unit: str) -> str:
         """Override unit"""

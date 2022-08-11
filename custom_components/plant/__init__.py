@@ -481,6 +481,7 @@ class PlantDevice(Entity):
 
     @property
     def threshold_entities(self) -> list[Entity]:
+        """List all threshold entities"""
         return [
             self.max_conductivity,
             self.max_dli,
@@ -498,6 +499,7 @@ class PlantDevice(Entity):
 
     @property
     def meter_entities(self) -> list[Entity]:
+        """List all meter (sensor) entities"""
         return [
             self.sensor_conductivity,
             self.sensor_humidity,
@@ -508,6 +510,7 @@ class PlantDevice(Entity):
 
     @property
     def integral_entities(self) -> list(Entity):
+        """List all integral entities"""
         return [
             self.dli,
         ]
