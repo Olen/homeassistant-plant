@@ -110,6 +110,7 @@ FLOW_DLI_TRIGGER = "dli_trigger"
 FLOW_MOISTURE_TRIGGER = "moisture_trigger"
 FLOW_CONDUCTIVITY_TRIGGER = "conductivity_trigger"
 
+FLOW_FORCE_SPECIES_UPDATE = "force_update"
 
 OPB_GET = "get"
 OPB_SEARCH = "search"

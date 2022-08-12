@@ -59,6 +59,7 @@
         "data": {
           "check_days": "Illuminance check days",
           "species": "Species",
+          "force_update": "Force refresh data from OpenPlantbook",
           "display_pid": "Plant species to display",
           "temperature_sensor": "Temperature sensor",
           "moisture_sensor": "Soil moisture sensor",

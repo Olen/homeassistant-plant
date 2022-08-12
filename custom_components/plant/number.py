@@ -158,7 +158,7 @@ class PlantMinMax(RestoreNumber):
         return EntityCategory.CONFIG
 
     async def async_set_native_value(self, value: float) -> None:
-        _LOGGER.info("Setting value of %s to %s", self.entity_id, value)
+        _LOGGER.debug("Setting value of %s to %s", self.entity_id, value)
         self._attr_native_value = value
 
     def _state_changed_event(self, event: Event) -> None:
@@ -178,13 +178,13 @@ class PlantMinMax(RestoreNumber):
     def state_changed(self, old_state, new_state):
         """Ensure that we store the state if changed from the UI"""
         _LOGGER.debug(
-            "State of %s changed from %s to %s, attr_state = %s",
+            "State of %s changed from %s to %s, native_value = %s",
             self.entity_id,
             old_state,
             new_state,
-            self._attr_state,
+            self._attr_native_value,
         )
-        self._attr_state = new_state
+        self._attr_native_value = new_state
 
     def state_attributes_changed(self, old_attributes, new_attributes):
         """Placeholder"""
@@ -209,11 +209,6 @@ class PlantMinMax(RestoreNumber):
             return
         self._attr_native_value = state.native_value
         self._attr_native_unit_of_measurement = state.native_unit_of_measurement
-
-    async def not_async_added_to_hass(self) -> None:
-        """Restore state of thresholds on startup."""
-        await super().async_added_to_hass()
-
         # We track changes to our own state so we can update ourselves if state si changed
         # from the UI or by other means
         async_track_state_change_event(
@@ -221,6 +216,10 @@ class PlantMinMax(RestoreNumber):
             list([self.entity_id]),
             self._state_changed_event,
         )
+
+    async def not_async_added_to_hass(self) -> None:
+        """Restore state of thresholds on startup."""
+        await super().async_added_to_hass()
 
         # Restore state and attributes from DB
         state = await self.async_get_last_state()

@@ -46,6 +46,7 @@ from .const import (
     FLOW_CONDUCTIVITY_TRIGGER,
     FLOW_DLI_TRIGGER,
     FLOW_ERROR_NOTFOUND,
+    FLOW_FORCE_SPECIES_UPDATE,
     FLOW_HUMIDITY_TRIGGER,
     FLOW_ILLUMINANCE_TRIGGER,
     FLOW_MOISTURE_TRIGGER,
@@ -425,6 +426,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 default=self.plant.species,
             )
         ] = str
+        data_schema[vol.Optional(FLOW_FORCE_SPECIES_UPDATE, default=False)] = cv.boolean
+
         display_species = self.plant.display_species or ""
         data_schema[
             vol.Optional(
@@ -501,7 +504,11 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             self.plant.display_species = new_display_species
 
         new_species = entry.options.get(ATTR_SPECIES)
-        if new_species and new_species != self.plant.species:
+        force_new_species = entry.options.get(FLOW_FORCE_SPECIES_UPDATE)
+        if new_species and (
+            new_species != self.plant.species or force_new_species is True
+        ):
+
             _LOGGER.debug(
                 "Species changed from '%s' to '%s'", self.plant.species, new_species
             )
@@ -531,5 +538,15 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
             else:
                 self.plant.species = new_species
+
+            if force_new_species:
+                # We need to reset the force_update option back to False, or else
+                # this will only be run once (unchanged options are will not trigger the flow)
+                options = dict(entry.options)
+                data = dict(entry.data)
+                options[FLOW_FORCE_SPECIES_UPDATE] = False
+                hass.config_entries.async_update_entry(
+                    entry, data=data, options=options
+                )
 
         self.plant.update_registry()

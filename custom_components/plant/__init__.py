@@ -6,8 +6,6 @@ import logging
 import voluptuous as vol
 
 from homeassistant.components import websocket_api
-from homeassistant.components.number import SERVICE_SET_VALUE, async_set_value
-from homeassistant.components.number.const import ATTR_VALUE
 from homeassistant.components.utility_meter.const import (
     DATA_TARIFF_SENSORS,
     DATA_UTILITY,
@@ -24,7 +22,11 @@ from homeassistant.const import (
     STATE_UNKNOWN,
 )
 from homeassistant.core import HomeAssistant, ServiceCall, callback
-from homeassistant.helpers import device_registry as dr, entity_registry as er
+from homeassistant.helpers import (
+    config_validation as cv,
+    device_registry as dr,
+    entity_registry as er,
+)
 from homeassistant.helpers.entity import Entity, async_generate_entity_id
 from homeassistant.helpers.entity_component import EntityComponent
 
