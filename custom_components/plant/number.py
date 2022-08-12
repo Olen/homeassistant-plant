@@ -31,6 +31,7 @@ from .const import (
     ATTR_DLI,
     ATTR_MAX,
     ATTR_MIN,
+    ATTR_MOISTURE,
     ATTR_PLANT,
     ATTR_THRESHOLDS,
     CONF_MAX_CONDUCTIVITY,
@@ -61,6 +62,12 @@ from .const import (
     DOMAIN,
     FLOW_PLANT_INFO,
     FLOW_PLANT_LIMITS,
+    ICON_CONDUCTIVITY,
+    ICON_DLI,
+    ICON_HUMIDITY,
+    ICON_ILLUMINANCE,
+    ICON_MOISTURE,
+    ICON_TEMPERATURE,
     READING_CONDUCTIVITY,
     READING_DLI,
     READING_HUMIDITY,
@@ -257,12 +264,12 @@ class PlantMaxMoisture(PlantMinMax):
         self._attr_native_max_value = 100
         self._attr_native_min_value = 0
         self._attr_native_step = 1
-
+        self._attr_icon = ICON_MOISTURE
         super().__init__(hass, config, plantdevice)
 
     @property
     def device_class(self):
-        return f"{SensorDeviceClass.HUMIDITY} threshold"
+        return f"{ATTR_MOISTURE} threshold"
 
 
 class PlantMinMoisture(PlantMinMax):
@@ -284,10 +291,11 @@ class PlantMinMoisture(PlantMinMax):
         self._attr_native_max_value = 100
         self._attr_native_min_value = 0
         self._attr_native_step = 1
+        self._attr_icon = ICON_MOISTURE
 
     @property
     def device_class(self):
-        return f"{SensorDeviceClass.HUMIDITY} threshold"
+        return f"{ATTR_MOISTURE} threshold"
 
 
 class PlantMaxTemperature(PlantMinMax):
@@ -308,6 +316,7 @@ class PlantMaxTemperature(PlantMinMax):
         self._attr_native_max_value = 100
         self._attr_native_min_value = 0
         self._attr_native_step = 1
+        self._attr_icon = ICON_TEMPERATURE
 
     @property
     def device_class(self):
@@ -379,6 +388,7 @@ class PlantMinTemperature(PlantMinMax):
         self._attr_native_max_value = 100
         self._attr_native_min_value = 0
         self._attr_native_step = 1
+        self._attr_icon = ICON_TEMPERATURE
 
     @property
     def device_class(self):
@@ -451,6 +461,7 @@ class PlantMaxIlluminance(PlantMinMax):
         self._attr_native_max_value = 200000
         self._attr_native_min_value = 0
         self._attr_native_step = 500
+        self._attr_icon = ICON_ILLUMINANCE
 
     @property
     def device_class(self):
@@ -474,6 +485,7 @@ class PlantMinIlluminance(PlantMinMax):
         self._attr_native_max_value = 200000
         self._attr_native_min_value = 0
         self._attr_native_step = 500
+        self._attr_icon = ICON_ILLUMINANCE
 
     @property
     def device_class(self):
@@ -499,6 +511,7 @@ class PlantMaxDli(PlantMinMax):
         self._attr_native_max_value = 100
         self._attr_native_min_value = 0
         self._attr_native_step = 1
+        self._attr_icon = ICON_DLI
 
     @property
     def device_class(self):
@@ -525,6 +538,7 @@ class PlantMinDli(PlantMinMax):
         self._attr_native_max_value = 100
         self._attr_native_min_value = 0
         self._attr_native_step = 1
+        self._attr_icon = ICON_DLI
 
     @property
     def device_class(self):
@@ -548,6 +562,7 @@ class PlantMaxConductivity(PlantMinMax):
         self._attr_native_max_value = 3000
         self._attr_native_min_value = 0
         self._attr_native_step = 50
+        self._attr_icon = ICON_CONDUCTIVITY
 
     @property
     def device_class(self):
@@ -572,6 +587,7 @@ class PlantMinConductivity(PlantMinMax):
         self._attr_native_max_value = 3000
         self._attr_native_min_value = 0
         self._attr_native_step = 50
+        self._attr_icon = ICON_CONDUCTIVITY
 
     @property
     def device_class(self):
@@ -598,6 +614,7 @@ class PlantMaxHumidity(PlantMinMax):
         self._attr_native_max_value = 100
         self._attr_native_min_value = 0
         self._attr_native_step = 1
+        self._attr_icon = ICON_HUMIDITY
 
     @property
     def device_class(self):
@@ -623,6 +640,7 @@ class PlantMinHumidity(PlantMinMax):
         self._attr_native_max_value = 100
         self._attr_native_min_value = 0
         self._attr_native_step = 1
+        self._attr_icon = ICON_HUMIDITY
 
     @property
     def device_class(self):

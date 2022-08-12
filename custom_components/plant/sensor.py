@@ -55,6 +55,11 @@ from .const import (
     FLOW_SENSOR_ILLUMINANCE,
     FLOW_SENSOR_MOISTURE,
     FLOW_SENSOR_TEMPERATURE,
+    ICON_CONDUCTIVITY,
+    ICON_HUMIDITY,
+    ICON_ILLUMINANCE,
+    ICON_MOISTURE,
+    ICON_TEMPERATURE,
     READING_CONDUCTIVITY,
     READING_DLI,
     READING_HUMIDITY,
@@ -261,7 +266,7 @@ class PlantCurrentIlluminance(PlantCurrentStatus):
             f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_ILLUMINANCE}"
         )
         self._attr_unique_id = f"{config.entry_id}-current-illuminance"
-        self._attr_icon = "mdi:brightness-6"
+        self._attr_icon = ICON_ILLUMINANCE
         self._external_sensor = config.data[FLOW_PLANT_INFO].get(
             FLOW_SENSOR_ILLUMINANCE
         )
@@ -287,7 +292,7 @@ class PlantCurrentConductivity(PlantCurrentStatus):
             f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_CONDUCTIVITY}"
         )
         self._attr_unique_id = f"{config.entry_id}-current-conductivity"
-        self._attr_icon = "mdi:spa-outline"
+        self._attr_icon = ICON_CONDUCTIVITY
         self._external_sensor = config.data[FLOW_PLANT_INFO].get(
             FLOW_SENSOR_CONDUCTIVITY
         )
@@ -312,7 +317,7 @@ class PlantCurrentMoisture(PlantCurrentStatus):
         )
         self._attr_unique_id = f"{config.entry_id}-current-moisture"
         self._external_sensor = config.data[FLOW_PLANT_INFO].get(FLOW_SENSOR_MOISTURE)
-        self._attr_icon = "mdi:water"
+        self._attr_icon = ICON_MOISTURE
 
         super().__init__(hass, config, plantdevice)
 
@@ -336,7 +341,7 @@ class PlantCurrentTemperature(PlantCurrentStatus):
         self._external_sensor = config.data[FLOW_PLANT_INFO].get(
             FLOW_SENSOR_TEMPERATURE
         )
-        self._attr_icon = "mdi:thermometer"
+        self._attr_icon = ICON_TEMPERATURE
         super().__init__(hass, config, plantdevice)
 
     @property
@@ -357,7 +362,7 @@ class PlantCurrentHumidity(PlantCurrentStatus):
         )
         self._attr_unique_id = f"{config.entry_id}-current-humidity"
         self._external_sensor = config.data[FLOW_PLANT_INFO].get(FLOW_SENSOR_HUMIDITY)
-        self._attr_icon = "mdi:water-percent"
+        self._attr_icon = ICON_HUMIDITY
         super().__init__(hass, config, plantdevice)
 
     @property
