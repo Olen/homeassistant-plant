@@ -40,8 +40,7 @@ Version 2 is available as a beta release in HACS.
 
 This means that the main plant entity references other entities, and they are grouped togheter in the GUI as a single device.
 
-![image](https://user-images.githubusercontent.com/203184/183286104-4849fcd5-20eb-488d-9a7d-433e365f9657.png)
-
+![image](https://user-images.githubusercontent.com/203184/184302443-9d9fb1f2-4b2a-48bb-a479-1cd3a6e634af.png)
 
 This also means that this version is _not_ compatible with earlier releases from this repository, or with the "plant" integration that is part of your default Home Assistant installation 
 
@@ -60,7 +59,9 @@ This also means that this version is _not_ compatible with earlier releases from
 * All thresholds now are their own entities and their values can be changed from the UI or by scripts and automations.
 * These changes are instantly reflected in HA. No need to restart to change the thresholds.
 
-![image](https://user-images.githubusercontent.com/203184/183286156-d8c250ab-e54c-4983-9c1b-c709875d6be1.png)
+![image](https://user-images.githubusercontent.com/203184/184302654-dd1f46ec-d645-4d95-b25d-7202faa944cc.png) ![image](https://user-images.githubusercontent.com/203184/184302847-8e593300-2c68-49f3-803c-8a3f5323f7f8.png)
+
+
 
 
 * Max and min temperature is now dependent on the unit of measurement - currently °C and °F is supported.
@@ -77,13 +78,15 @@ This also means that this version is _not_ compatible with earlier releases from
 ### Better handling of species, image and problem triggers
 
 * If you change the species of a plant in the UI, new data are fetched from OpenPlantbook
+* You can optionally select to force a refresh of plant data from OpenPlantbook, even if you do not change the species.  
 * Image can also be updated from the UI
-* These updates are immediately reflected in HA without restarting anything.
-
-![image](https://user-images.githubusercontent.com/203184/183286212-000391c2-9c5d-4c1a-a166-a27e1bf0d3ed.png)
-
-* Illuminance warnings are now also triggered by calculating the "Daily Light Integral" - DLI.
 * You can chose to disable problem triggers on all sensors.
+
+![image](https://user-images.githubusercontent.com/203184/184301674-0461813a-a665-4e93-b5a8-7c9575fe4782.png)
+
+These updates are immediately reflected in HA without restarting anything.
+
+
 
 
 ### Daily Light Integral
