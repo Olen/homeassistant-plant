@@ -165,4 +165,29 @@ This can be adjusted under "Settings" -> "Devices and Services" -> "Plant Monito
 Here you can select what kind of threshold violations should trigger a "problem" state of the plant entity.
 
 
+## Fetching data from OpenPlantbook
+
+_This requires the [OpenPlantbook integration](https://github.com/Olen/home-assistant-openplantbook) to be installed._
+
+When you set up a new plant, the configuration flow will search OpenPlantbook for the species you enter.  If any matches are found, you are presented with a list of exact species to choose from.  Be aware that the OpenPlantbook API does currently not include any of your private user defined species, so you will not find them in the list.  See below for how to refresh data from OpenPlantbook.
+If no matches are found, the configuration flow will continue directly to the next step.
+
+In the following step, the threshold values from OpenPlantbook for the chosen species is pre filled and the image from OpenPlantbook is also displayed.  If you chose the incorrect species, you can uncheck the _"This is the plant I was looking for"_ checkbox, and you will be directed back to the dropdown of species to select another one.
+If no match is found in OpenPlantbook, the thresholds are pre filled with some default values that you probably want to adjust.
+
+If the species is found in OpenPlantbook, the image link is pre filled with the URL to the image there.  You may overrride this with your own links.  Both linkst starting with `http` and local images in your "www"-folder, e.g. `/local/...` are supported.
+
+### Changing the species / refreshing data
+
+If you later want to change the species of a plant, you do that under "Configuration" of the selected device.
+
+"Settings" -> "Devices and Services" -> "Plant Monitor" -> "Your Plant Name" and "Configure".
+
+![image](https://user-images.githubusercontent.com/203184/184328930-8be5fc06-1761-4067-a785-7c46c0b73162.png)
+
+From there, you have the option to set a new species. If you change the species, data for the new species will be automatically fetched from OpenPlantbook.  The species will have to be entered **exactly** as in OpenPlantbook (including any punctations etc.).  If no species are found in OpenPlantbook, the thresholds and image will be retained with their current values. 
+
+If you just want to refresh the data from OpenPlantbook, without changing the species - for instance if you have private species defined in OpenPlantbook that are not found during setup, you check the "Force refresh" checkbox, and data will be fetched from OpenPlantbook without needing to change the species.
+
+
 
