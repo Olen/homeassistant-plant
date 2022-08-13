@@ -112,21 +112,27 @@ See https://en.wikipedia.org/wiki/Daily_light_integral for what DLI means
 
 ## Dependencies
 
-OpenPlantbook integration: https://github.com/Olen/home-assistant-openplantbook
+* [Updated Lovelace Flower Card](https://github.com/Olen/lovelace-flower-card/tree/new_plant)
 
-Updated Lovelace Flower Card: https://github.com/Olen/lovelace-flower-card/tree/new_plant
+* [OpenPlantbook integration](https://github.com/Olen/home-assistant-openplantbook)
 
+This is not a strict requirement, but a strong recommendation. Without the OpenPlantbook integration, you need to set and adjust all the thresholds for every plant manually.  With the OpenPlantbook integration added, all data is fetched from OpenPlanbook automatically, and it makes setting up and maintaining plants much, much easier.   
 
 # Installation
 
 ### Install and set up OpenPlantbook
 
-* Upgrade to the latest version of the OpenPlantbook integration: https://github.com/Olen/home-assistant-openplantbook
+_Not required, but strongly recommended_
+
+* Upgrade to the latest version of the OpenPlantbook integration: https://github.com/Olen/home-assistant-openplantbook 
 * Set it up, and add your client_id and secret, and test it by using e.g. the `openplantbook.search` service call to search for something.   
 
 ### Install new flower-card for Lovelace
 
+_Currently this is the only card in lovelace that support this integration.  Feel free to fork and update - or create PRs - for other lovelace cards._ 
+
 * Install verson 2 (currently available as beta in HACS) of the Flower Card from https://github.com/Olen/lovelace-flower-card/
+
 
 ### Install this integration
 
