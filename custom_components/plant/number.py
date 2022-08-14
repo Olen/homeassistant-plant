@@ -164,6 +164,13 @@ class PlantMinMax(RestoreNumber):
         """The entity category"""
         return EntityCategory.CONFIG
 
+    @property
+    def device_info(self) -> dict:
+        """Device info for devices"""
+        return {
+            "identifiers": {(DOMAIN, self._plant.unique_id)},
+        }
+
     async def async_set_native_value(self, value: float) -> None:
         _LOGGER.debug("Setting value of %s to %s", self.entity_id, value)
         self._attr_native_value = value

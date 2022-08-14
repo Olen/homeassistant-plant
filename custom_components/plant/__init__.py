@@ -149,9 +149,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     # Add the rest of the entities to device registry together with plant
     device_id = plant.device_id
     await _plant_add_to_device_registry(hass, plant_entities, device_id)
-    await _plant_add_to_device_registry(hass, plant.threshold_entities, device_id)
-    await _plant_add_to_device_registry(hass, plant.meter_entities, device_id)
-    await _plant_add_to_device_registry(hass, plant.integral_entities, device_id)
+    # await _plant_add_to_device_registry(hass, plant.integral_entities, device_id)
+    # await _plant_add_to_device_registry(hass, plant.threshold_entities, device_id)
+    # await _plant_add_to_device_registry(hass, plant.meter_entities, device_id)
 
     #
     # Set up utility sensor
@@ -252,6 +252,22 @@ async def _plant_add_to_device_registry(
         erreg.async_update_entity(entity.registry_entry.entity_id, device_id=device_id)
 
 
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Unload a config entry."""
+    hass.data[DOMAIN].pop(entry.entry_id)
+    hass.data[DATA_UTILITY].pop(entry.entry_id)
+    _LOGGER.info(hass.data[DOMAIN])
+    for entry_id in list(hass.data[DOMAIN].keys()):
+        if len(hass.data[DOMAIN][entry_id]) == 0:
+            _LOGGER.info("Removing entry %s", entry_id)
+            del hass.data[DOMAIN][entry_id]
+    if len(hass.data[DOMAIN]) == 0:
+        _LOGGER.info("Removing domain %s", DOMAIN)
+        hass.services.async_remove(DOMAIN, SERVICE_REPLACE_SENSOR)
+        del hass.data[DOMAIN]
+    return True
+
+
 @websocket_api.websocket_command(
     {
         vol.Required("type"): "plant/get_info",
@@ -264,6 +280,12 @@ def ws_get_info(
 ) -> None:
     """Handle the websocket command."""
     _LOGGER.debug("Got websocket request: %s", msg)
+
+    if DOMAIN not in hass.data:
+        connection.send_error(
+            msg["id"], "domain_not_found", f"Domain {DOMAIN} not found"
+        )
+        return
 
     for key in hass.data[DOMAIN]:
         if not ATTR_PLANT in hass.data[DOMAIN][key]:
@@ -369,6 +391,8 @@ class PlantDevice(Entity):
             "identifiers": {(DOMAIN, self.unique_id)},
             "name": self.name,
             "config_entries": self._config_entries,
+            "model": self.display_species,
+            "manufacturer": self.data_source,
         }
 
     @property

@@ -84,11 +84,11 @@ async def async_setup_entry(
 
     if SETUP_DUMMY_SENSORS:
         sensor_entities = [
-            PlantDummyMoisture(hass, entry),
-            PlantDummyTemperature(hass, entry),
-            PlantDummyIlluminance(hass, entry),
-            PlantDummyConductivity(hass, entry),
-            PlantDummyHumidity(hass, entry),
+            PlantDummyMoisture(hass, entry, plant),
+            PlantDummyTemperature(hass, entry, plant),
+            PlantDummyIlluminance(hass, entry, plant),
+            PlantDummyConductivity(hass, entry, plant),
+            PlantDummyHumidity(hass, entry, plant),
         ]
         async_add_entities(sensor_entities)
 
@@ -120,12 +120,12 @@ async def async_setup_entry(
     pcurppfd = PlantCurrentPpfd(hass, entry, plant)
     async_add_entities([pcurppfd])
 
-    pintegral = PlantTotalLightIntegral(hass, entry, pcurppfd)
+    pintegral = PlantTotalLightIntegral(hass, entry, pcurppfd, plant)
     async_add_entities([pintegral], update_before_add=True)
 
     plant.add_calculations(pcurppfd, pintegral)
 
-    pdli = PlantDailyLightIntegral(hass, entry, pintegral)
+    pdli = PlantDailyLightIntegral(hass, entry, pintegral, plant)
     async_add_entities(new_entities=[pdli], update_before_add=True)
 
     plant.add_dli(dli=pdli)
@@ -156,6 +156,13 @@ class PlantCurrentStatus(RestoreSensor):
     @property
     def state_class(self):
         return SensorStateClass.MEASUREMENT
+
+    @property
+    def device_info(self) -> dict:
+        """Device info for devices"""
+        return {
+            "identifiers": {(DOMAIN, self._plant.unique_id)},
+        }
 
     @property
     def extra_state_attributes(self) -> dict:
@@ -247,7 +254,7 @@ class PlantCurrentStatus(RestoreSensor):
             ):
                 self._attr_icon = new_state.attributes[ATTR_ICON]
 
-        if self.external_sensor:
+        if self.external_sensor and new_state:
             self._attr_native_value = new_state.state
             if ATTR_UNIT_OF_MEASUREMENT in new_state.attributes:
                 self._attr_native_unit_of_measurement = new_state.attributes[
@@ -461,6 +468,7 @@ class PlantTotalLightIntegral(IntegrationSensor):
         hass: HomeAssistant,
         config: ConfigEntry,
         illuminance_ppfd_sensor: Entity,
+        plantdevice: Entity,
     ) -> None:
         """Initialize the sensor"""
         super().__init__(
@@ -476,11 +484,19 @@ class PlantTotalLightIntegral(IntegrationSensor):
         self.entity_id = async_generate_entity_id(
             f"{DOMAIN_SENSOR}.{{}}", self.name, current_ids={}
         )
+        self._plant = plantdevice
 
     @property
     def entity_category(self) -> str:
         """The entity category"""
         return EntityCategory.DIAGNOSTIC
+
+    @property
+    def device_info(self) -> dict:
+        """Device info for devices"""
+        return {
+            "identifiers": {(DOMAIN, self._plant.unique_id)},
+        }
 
     @property
     def entity_registry_visible_default(self) -> str:
@@ -499,6 +515,7 @@ class PlantDailyLightIntegral(UtilityMeterSensor):
         hass: HomeAssistant,
         config: ConfigEntry,
         illuminance_integration_sensor: Entity,
+        plantdevice: Entity,
     ) -> None:
         """Initialize the sensor"""
 
@@ -521,40 +538,61 @@ class PlantDailyLightIntegral(UtilityMeterSensor):
         )
 
         self._unit_of_measurement = UNIT_DLI
+        self._plant = plantdevice
 
     @property
     def device_class(self) -> str:
         return ATTR_DLI
 
+    @property
+    def device_info(self) -> dict:
+        """Device info for devices"""
+        return {
+            "identifiers": {(DOMAIN, self._plant.unique_id)},
+        }
+
 
 class PlantDummyStatus(SensorEntity):
     """Simple dummy sensors. Parent class"""
 
-    def __init__(self, hass: HomeAssistant, config: ConfigEntry) -> None:
+    def __init__(
+        self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
+    ) -> None:
         """Initialize the dummy sensor."""
         self._config = config
         self._default_state = STATE_UNKNOWN
         self.entity_id = async_generate_entity_id(
             f"{DOMAIN}.{{}}", self.name, current_ids={}
         )
+        self._plant = plantdevice
+
         if not self._attr_native_value or self._attr_native_value == STATE_UNKNOWN:
             self._attr_native_value = self._default_state
+
+    # @property
+    # def device_info(self) -> dict:
+    #     """Device info for devices"""
+    #     return {
+    #         "identifiers": {(DOMAIN, self._plant.unique_id)},
+    #     }
 
 
 class PlantDummyIlluminance(PlantDummyStatus):
     """Dummy sensor"""
 
-    def __init__(self, hass: HomeAssistant, config: ConfigEntry) -> None:
+    def __init__(
+        self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
+    ) -> None:
         """Init the dummy sensor"""
         self._attr_name = (
-            f"dummy {config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_ILLUMINANCE}"
+            f"Dummy {config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_ILLUMINANCE}"
         )
         self._attr_unique_id = f"{config.entry_id}-dummy-illuminance"
-        self._attr_icon = "mdi:illuminance-6"
+        self._attr_icon = ICON_ILLUMINANCE
         self._attr_native_unit_of_measurement = LIGHT_LUX
         self._attr_native_value = random.randint(20, 50) * 1000
 
-        super().__init__(hass, config)
+        super().__init__(hass, config, plantdevice)
 
     async def async_update(self) -> int:
         """Give out a dummy value"""
@@ -574,17 +612,19 @@ class PlantDummyIlluminance(PlantDummyStatus):
 class PlantDummyConductivity(PlantDummyStatus):
     """Dummy sensor"""
 
-    def __init__(self, hass: HomeAssistant, config: ConfigEntry) -> None:
+    def __init__(
+        self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
+    ) -> None:
         """Init the dummy sensor"""
         self._attr_name = (
-            f"dummy {config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_CONDUCTIVITY}"
+            f"Dummy {config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_CONDUCTIVITY}"
         )
         self._attr_unique_id = f"{config.entry_id}-dummy-conductivity"
-        self._attr_icon = "mdi:spa-outline"
+        self._attr_icon = ICON_CONDUCTIVITY
         self._attr_native_unit_of_measurement = UNIT_CONDUCTIVITY
         self._attr_native_value = random.randint(40, 200) * 10
 
-        super().__init__(hass, config)
+        super().__init__(hass, config, plantdevice)
 
     async def async_update(self) -> int:
         """Give out a dummy value"""
@@ -599,17 +639,19 @@ class PlantDummyConductivity(PlantDummyStatus):
 class PlantDummyMoisture(PlantDummyStatus):
     """Dummy sensor"""
 
-    def __init__(self, hass: HomeAssistant, config: ConfigEntry) -> None:
+    def __init__(
+        self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
+    ) -> None:
         """Init the dummy sensor"""
         self._attr_name = (
-            f"dummy {config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_MOISTURE}"
+            f"Dummy {config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_MOISTURE}"
         )
         self._attr_unique_id = f"{config.entry_id}-dummy-moisture"
-        self._attr_icon = "mdi:water"
+        self._attr_icon = ICON_MOISTURE
         self._attr_native_unit_of_measurement = PERCENTAGE
         self._attr_native_value = random.randint(10, 70)
 
-        super().__init__(hass, config)
+        super().__init__(hass, config, plantdevice)
 
     async def async_update(self) -> None:
         """Give out a dummy value"""
@@ -624,18 +666,20 @@ class PlantDummyMoisture(PlantDummyStatus):
 class PlantDummyTemperature(PlantDummyStatus):
     """Dummy sensor"""
 
-    def __init__(self, hass: HomeAssistant, config: ConfigEntry) -> None:
+    def __init__(
+        self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
+    ) -> None:
         """Init the dummy sensor"""
 
         self._attr_name = (
-            f"dummy {config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_TEMPERATURE}"
+            f"Dummy {config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_TEMPERATURE}"
         )
         self._attr_unique_id = f"{config.entry_id}-dummy-temperature"
-        self._attr_icon = "mdi:thermometer"
+        self._attr_icon = ICON_TEMPERATURE
         self._attr_native_unit_of_measurement = TEMP_CELSIUS
         self._attr_native_value = random.randint(15, 20)
 
-        super().__init__(hass, config)
+        super().__init__(hass, config, plantdevice)
 
     async def async_update(self) -> int:
         """Give out a dummy value"""
@@ -650,15 +694,17 @@ class PlantDummyTemperature(PlantDummyStatus):
 class PlantDummyHumidity(PlantDummyStatus):
     """Dummy sensor"""
 
-    def __init__(self, hass: HomeAssistant, config: ConfigEntry) -> None:
+    def __init__(
+        self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
+    ) -> None:
         """Init the dummy sensor"""
         self._attr_name = (
-            f"dummy {config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_HUMIDITY}"
+            f"Dummy {config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_HUMIDITY}"
         )
         self._attr_unique_id = f"{config.entry_id}-dummy-humidity"
-        self._attr_icon = "mdi:water-percent"
+        self._attr_icon = ICON_HUMIDITY
         self._attr_native_unit_of_measurement = PERCENTAGE
-        super().__init__(hass, config)
+        super().__init__(hass, config, plantdevice)
         self._attr_native_value = random.randint(25, 90)
 
     async def async_update(self) -> int:
