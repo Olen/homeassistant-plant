@@ -263,21 +263,19 @@ def ws_get_info(
     hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict
 ) -> None:
     """Handle the websocket command."""
+    _LOGGER.debug("Got websocket request: %s", msg)
 
     for key in hass.data[DOMAIN]:
         if not ATTR_PLANT in hass.data[DOMAIN][key]:
-            connection.send_error(
-                msg["id"], "domain_not_found", f"Domain {DOMAIN} not found"
-            )
-            return
+            continue
         plant_entity = hass.data[DOMAIN][key][ATTR_PLANT]
         if plant_entity.entity_id == msg["entity_id"]:
+            _LOGGER.debug("Sending websocket response: %s", plant_entity.websocket_info)
             connection.send_result(msg["id"], {"result": plant_entity.websocket_info})
             return
     connection.send_error(
         msg["id"], "entity_not_found", f"Entity {msg['entity_id']} not found"
     )
-
     return
 
 
