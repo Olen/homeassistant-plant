@@ -82,11 +82,20 @@ class PlantHelper:
     def __init__(self, hass: HomeAssistant) -> None:
         self.hass = hass
 
+    @property
+    def has_openplantbook(self) -> bool:
+        """Helper function to check if openplantbook is available"""
+        _LOGGER.debug(
+            "%s in services? %s",
+            DOMAIN_PLANTBOOK,
+            DOMAIN_PLANTBOOK in self.hass.services.async_services(),
+        )
+        return DOMAIN_PLANTBOOK in self.hass.services.async_services()
+
     async def openplantbook_search(self, species: str) -> dict[str:Any] | None:
         """Search OPB and return list of result"""
 
-        if not DOMAIN_PLANTBOOK in self.hass.services.async_services():
-            _LOGGER.info("%s not in services", DOMAIN_PLANTBOOK)
+        if not self.has_openplantbook:
             return None
 
         try:
@@ -120,8 +129,7 @@ class PlantHelper:
 
     async def openplantbook_get(self, species: str) -> dict[str:Any] | None:
         """Get information about a plant species from OpenPlantbook"""
-        if not DOMAIN_PLANTBOOK in self.hass.services.async_services():
-            _LOGGER.info("%s not in services", DOMAIN_PLANTBOOK)
+        if not self.has_openplantbook:
             return None
 
         plant_get = await self.hass.services.async_call(
