@@ -60,6 +60,7 @@ from .const import (
     DEFAULT_MIN_MOISTURE,
     DEFAULT_MIN_TEMPERATURE,
     DOMAIN_PLANTBOOK,
+    FLOW_FORCE_SPECIES_UPDATE,
     FLOW_PLANT_IMAGE,
     FLOW_PLANT_INFO,
     FLOW_SENSOR_CONDUCTIVITY,
@@ -131,6 +132,8 @@ class PlantHelper:
         """Get information about a plant species from OpenPlantbook"""
         if not self.has_openplantbook:
             return None
+        if species == "":
+            return None
 
         plant_get = await self.hass.services.async_call(
             domain=DOMAIN_PLANTBOOK,
@@ -155,7 +158,7 @@ class PlantHelper:
         )
         return None
 
-    async def generate_configentry(self, config) -> dict[str:Any]:
+    async def generate_configentry(self, config: dict) -> dict[str:Any]:
         """Generates a config-entry dict from current data and/or OPB"""
 
         max_moisture = DEFAULT_MAX_MOISTURE
@@ -203,6 +206,9 @@ class PlantHelper:
             entity_picture = f"{DEFAULT_IMAGE_LOCAL_URL}{config[ATTR_SPECIES]}.jpg"
         elif png_exists:
             entity_picture = f"{DEFAULT_IMAGE_LOCAL_URL}{config[ATTR_SPECIES]}.png"
+        # Clear old cruft
+        if entity_picture == "openplantbook":
+            entity_picture = None
 
         if ATTR_SENSORS not in config:
             config[ATTR_SENSORS] = {}
@@ -266,16 +272,29 @@ class PlantHelper:
             min_humidity = opb_plant.get(
                 CONF_PLANTBOOK_MAPPING[CONF_MIN_HUMIDITY], DEFAULT_MIN_HUMIDITY
             )
-            if entity_picture is None or entity_picture == "":
+            _LOGGER.info("Picture: %s", entity_picture)
+            if (
+                entity_picture is None
+                or entity_picture == ""
+                or "plantbook.io" in entity_picture
+                or config[FLOW_FORCE_SPECIES_UPDATE]
+            ):
                 entity_picture = opb_plant.get(FLOW_PLANT_IMAGE)
-            display_species = opb_plant.get(OPB_DISPLAY_PID)
+            if config[FLOW_FORCE_SPECIES_UPDATE]:
+                display_species = opb_plant.get(OPB_DISPLAY_PID, "")
+            else:
+                display_species = config.get(
+                    OPB_DISPLAY_PID, opb_plant.get(OPB_DISPLAY_PID, "")
+                )
 
         _LOGGER.debug("Parsing input config: %s", config)
+        _LOGGER.debug("Display pid: %s", display_species)
+
         ret = {
             DATA_SOURCE: data_source,
             FLOW_PLANT_INFO: {
                 ATTR_NAME: config.get(ATTR_NAME),
-                ATTR_SPECIES: config[ATTR_SPECIES],
+                ATTR_SPECIES: config[ATTR_SPECIES] or "",
                 ATTR_ENTITY_PICTURE: entity_picture or "",
                 OPB_DISPLAY_PID: display_species or "",
                 ATTR_LIMITS: {

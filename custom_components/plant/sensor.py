@@ -480,7 +480,7 @@ class PlantTotalLightIntegral(IntegrationSensor):
             unit_prefix=None,
             unit_time=TIME_SECONDS,
         )
-        self._unit_of_measurement = UNIT_PPFD
+        self._unit_of_measurement = UNIT_DLI
         self.entity_id = async_generate_entity_id(
             f"{DOMAIN_SENSOR}.{{}}", self.name, current_ids={}
         )

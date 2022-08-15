@@ -75,6 +75,7 @@ from .const import (
     READING_MOISTURE,
     READING_TEMPERATURE,
     UNIT_CONDUCTIVITY,
+    UNIT_DLI,
     UNIT_PPFD,
 )
 
@@ -513,7 +514,7 @@ class PlantMaxDli(PlantMinMax):
             CONF_MAX_DLI, DEFAULT_MAX_DLI
         )
         self._attr_unique_id = f"{config.entry_id}-max-dli"
-        self._attr_native_unit_of_measurement = UNIT_PPFD
+        self._attr_native_unit_of_measurement = UNIT_DLI
         super().__init__(hass, config, plantdevice)
         self._attr_native_max_value = 100
         self._attr_native_min_value = 0
@@ -539,7 +540,7 @@ class PlantMinDli(PlantMinMax):
             CONF_MIN_DLI, DEFAULT_MIN_DLI
         )
         self._attr_unique_id = f"{config.entry_id}-min-dli"
-        self._attr_native_unit_of_measurement = UNIT_PPFD
+        self._attr_native_unit_of_measurement = UNIT_DLI
 
         super().__init__(hass, config, plantdevice)
         self._attr_native_max_value = 100

@@ -279,7 +279,7 @@ def ws_get_info(
     hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict
 ) -> None:
     """Handle the websocket command."""
-    _LOGGER.debug("Got websocket request: %s", msg)
+    # _LOGGER.debug("Got websocket request: %s", msg)
 
     if DOMAIN not in hass.data:
         connection.send_error(
@@ -292,7 +292,7 @@ def ws_get_info(
             continue
         plant_entity = hass.data[DOMAIN][key][ATTR_PLANT]
         if plant_entity.entity_id == msg["entity_id"]:
-            _LOGGER.debug("Sending websocket response: %s", plant_entity.websocket_info)
+            # _LOGGER.debug("Sending websocket response: %s", plant_entity.websocket_info)
             connection.send_result(msg["id"], {"result": plant_entity.websocket_info})
             return
     connection.send_error(

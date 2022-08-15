@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any
 
 import voluptuous as vol
@@ -111,13 +112,18 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 # Return the form of the next step
                 return await self.async_step_select_species()
 
+        plant_helper = PlantHelper(self.hass)
+
         # Specify items in the order they are to be displayed in the UI
         if self.error == FLOW_ERROR_NOTFOUND:
             errors[ATTR_SPECIES] = self.error
         data_schema = {
-            vol.Required(ATTR_NAME, default=self.plant_info.get(ATTR_NAME)): str,
-            vol.Required(ATTR_SPECIES, default=self.plant_info.get(ATTR_SPECIES)): str,
+            vol.Required(ATTR_NAME, default=self.plant_info.get(ATTR_NAME)): cv.string,
+            vol.Optional(
+                ATTR_SPECIES, default=self.plant_info.get(ATTR_SPECIES, "")
+            ): cv.string,
         }
+
         data_schema[FLOW_SENSOR_TEMPERATURE] = selector(
             {
                 ATTR_ENTITY: {
@@ -208,13 +214,19 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             _LOGGER.debug("User Input %s", user_input)
             # Validate user input
             valid = await self.validate_step_3(user_input)
-            if plant_helper.has_openplantbook and not user_input.get(FLOW_RIGHT_PLANT):
+            if (
+                plant_helper.has_openplantbook
+                and self.plant_info.get(ATTR_SEARCH_FOR)
+                and not user_input.get(FLOW_RIGHT_PLANT)
+            ):
                 return await self.async_step_select_species()
             if valid:
                 self.plant_info[ATTR_ENTITY_PICTURE] = user_input.get(
                     ATTR_ENTITY_PICTURE
                 )
                 self.plant_info[OPB_DISPLAY_PID] = user_input.get(OPB_DISPLAY_PID)
+                if not self.plant_info[ATTR_SPECIES]:
+                    self.plant_info[ATTR_SPECIES] = self.plant_info[OPB_DISPLAY_PID]
                 user_input.pop(ATTR_ENTITY_PICTURE)
                 user_input.pop(OPB_DISPLAY_PID)
                 if FLOW_RIGHT_PLANT in user_input:
@@ -241,14 +253,20 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         else:
             if plant_helper.has_openplantbook:
                 # We did not get any data from OPB.  Show a warning
-                extra_desc = f"Did not find **«{self.plant_info[ATTR_SEARCH_FOR]}»** in OpenPlantbook. Using default values for thresholds.<br /><br />"
-            display_pid = self.plant_info[ATTR_SEARCH_FOR]
+                if (
+                    not self.plant_info[ATTR_SEARCH_FOR]
+                    or self.plant_info[ATTR_SEARCH_FOR] == ""
+                ):
+                    extra_desc = f"Skipping OpenPlantbook due to missing species. Using default values for thresholds.<br /><br />"
+                else:
+                    extra_desc = f"Did not find **«{self.plant_info[ATTR_SEARCH_FOR]}»** in OpenPlantbook. Using default values for thresholds.<br /><br />"
+            display_pid = self.plant_info[ATTR_SEARCH_FOR].title() or ""
         data_schema[
-            vol.Required(
+            vol.Optional(
                 OPB_DISPLAY_PID,
                 default=display_pid,
             )
-        ] = str
+        ] = cv.string
         data_schema[
             vol.Required(
                 CONF_MAX_MOISTURE,
@@ -376,12 +394,12 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def validate_step_1(self, user_input):
         """Validate step one"""
-        _LOGGER.debug("Validating step 1")
+        _LOGGER.debug("Validating step 1: %s", user_input)
         return True
 
     async def validate_step_2(self, user_input):
         """Validate step two"""
-        _LOGGER.debug("Validating step 2")
+        _LOGGER.debug("Validating step 2: %s", user_input)
 
         if not ATTR_SPECIES in user_input:
             return False
@@ -395,7 +413,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def validate_step_3(self, user_input):
         """Validate step three"""
-        _LOGGER.debug("Validating step 3")
+        _LOGGER.debug("Validating step 3: %s", user_input)
 
         return True
 
@@ -423,7 +441,11 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
     ) -> data_entry_flow.FlowResult:
         """Manage the options."""
         if user_input is not None:
-            _LOGGER.debug("User Input: %s", user_input)
+            _LOGGER.debug("User Input init: %s", user_input)
+            if not re.match(r"\w+", user_input[ATTR_SPECIES]):
+                user_input[ATTR_SPECIES] = ""
+            _LOGGER.debug("User Input after re: %s", user_input)
+
             return self.async_create_entry(title="", data=user_input)
 
         _LOGGER.debug(self.entry.data)
@@ -431,12 +453,12 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         plant_helper = PlantHelper(hass=self.hass)
         data_schema = {}
         data_schema[
-            vol.Required(
+            vol.Optional(
                 ATTR_SPECIES,
                 default=self.plant.species,
             )
-        ] = str
-        if plant_helper.has_openplantbook:
+        ] = cv.string
+        if plant_helper.has_openplantbook and self.plant.species:
             data_schema[
                 vol.Optional(FLOW_FORCE_SPECIES_UPDATE, default=False)
             ] = cv.boolean
@@ -518,7 +540,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
         new_species = entry.options.get(ATTR_SPECIES)
         force_new_species = entry.options.get(FLOW_FORCE_SPECIES_UPDATE)
-        if new_species and (
+        if new_species is not None and (
             new_species != self.plant.species or force_new_species is True
         ):
 
@@ -527,7 +549,12 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             )
             plant_helper = PlantHelper(hass=self.hass)
             plant_config = await plant_helper.generate_configentry(
-                config={ATTR_SPECIES: new_species, ATTR_ENTITY_PICTURE: entity_picture}
+                config={
+                    ATTR_SPECIES: new_species,
+                    ATTR_ENTITY_PICTURE: entity_picture,
+                    OPB_DISPLAY_PID: new_display_species,
+                    FLOW_FORCE_SPECIES_UPDATE: force_new_species,
+                }
             )
             if plant_config[DATA_SOURCE] == DATA_SOURCE_PLANTBOOK:
                 _LOGGER.debug(plant_config)
@@ -563,6 +590,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 options = dict(entry.options)
                 data = dict(entry.data)
                 options[FLOW_FORCE_SPECIES_UPDATE] = False
+                options[OPB_DISPLAY_PID] = self.plant.display_species
+                options[ATTR_ENTITY_PICTURE] = self.plant.entity_picture
                 hass.config_entries.async_update_entry(
                     entry, data=data, options=options
                 )
