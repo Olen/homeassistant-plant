@@ -161,6 +161,10 @@ After Home Assistant is restarted, you will find all your plants under "Settings
 > This integration is NOT compatible with the built in original plant component.  This means that e.g. the plant cards etc. in the UI, and any blueprints etc. that are built for the original plant intergation wil NOT work with this version.
 
 
+## Migration from yaml-config
+When the integration is first installed, and HomeAssistant is restarted for the first time, all old `plant:` entries will be migrated.
+The migration will set up all sensors, thresholds etc. from your yaml-config, and if species is set and OpenPlantbook is set up, it will fill in missing data with data from Openplantbook, or from default values if OpenPlantbook is not set up.
+
 ## Problem reports
 By default, all problems (e.g. every time a sensor reports a value that is above or below the threshold set in "limits"), the plant state will be set to "problem".
 
