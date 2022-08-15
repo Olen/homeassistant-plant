@@ -76,7 +76,6 @@ from .const import (
     READING_TEMPERATURE,
     UNIT_CONDUCTIVITY,
     UNIT_DLI,
-    UNIT_PPFD,
 )
 
 _LOGGER = logging.getLogger(__name__)

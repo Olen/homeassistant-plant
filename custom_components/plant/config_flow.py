@@ -112,8 +112,6 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 # Return the form of the next step
                 return await self.async_step_select_species()
 
-        plant_helper = PlantHelper(self.hass)
-
         # Specify items in the order they are to be displayed in the UI
         if self.error == FLOW_ERROR_NOTFOUND:
             errors[ATTR_SPECIES] = self.error
@@ -209,7 +207,6 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Handle max/min values"""
 
         plant_helper = PlantHelper(self.hass)
-
         if user_input is not None:
             _LOGGER.debug("User Input %s", user_input)
             # Validate user input
@@ -257,7 +254,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     not self.plant_info[ATTR_SEARCH_FOR]
                     or self.plant_info[ATTR_SEARCH_FOR] == ""
                 ):
-                    extra_desc = f"Skipping OpenPlantbook due to missing species. Using default values for thresholds.<br /><br />"
+                    extra_desc = "Skipping OpenPlantbook due to missing species. Using default values for thresholds.<br /><br />"
                 else:
                     extra_desc = f"Did not find **«{self.plant_info[ATTR_SEARCH_FOR]}»** in OpenPlantbook. Using default values for thresholds.<br /><br />"
             display_pid = self.plant_info[ATTR_SEARCH_FOR].title() or ""
@@ -441,21 +438,27 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
     ) -> data_entry_flow.FlowResult:
         """Manage the options."""
         if user_input is not None:
-            _LOGGER.debug("User Input init: %s", user_input)
-            if not re.match(r"\w+", user_input[ATTR_SPECIES]):
+            if ATTR_SPECIES not in user_input or not re.match(
+                r"\w+", user_input[ATTR_SPECIES]
+            ):
                 user_input[ATTR_SPECIES] = ""
-            _LOGGER.debug("User Input after re: %s", user_input)
+            if ATTR_ENTITY_PICTURE not in user_input or not re.match(
+                r"\w+", user_input[ATTR_ENTITY_PICTURE]
+            ):
+                user_input[ATTR_ENTITY_PICTURE] = ""
+            if OPB_DISPLAY_PID not in user_input or not re.match(
+                r"\w+", user_input[OPB_DISPLAY_PID]
+            ):
+                user_input[OPB_DISPLAY_PID] = ""
 
             return self.async_create_entry(title="", data=user_input)
 
-        _LOGGER.debug(self.entry.data)
         self.plant = self.hass.data[DOMAIN][self.entry.entry_id]["plant"]
         plant_helper = PlantHelper(hass=self.hass)
         data_schema = {}
         data_schema[
             vol.Optional(
-                ATTR_SPECIES,
-                default=self.plant.species,
+                ATTR_SPECIES, description={"suggested_value": self.plant.species}
             )
         ] = cv.string
         if plant_helper.has_openplantbook and self.plant.species:
@@ -466,12 +469,15 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         display_species = self.plant.display_species or ""
         data_schema[
             vol.Optional(
-                OPB_DISPLAY_PID,
-                default=display_species,
+                OPB_DISPLAY_PID, description={"suggested_value": display_species}
             )
         ] = str
         entity_picture = self.plant.entity_picture or ""
-        data_schema[vol.Optional(ATTR_ENTITY_PICTURE, default=entity_picture)] = str
+        data_schema[
+            vol.Optional(
+                ATTR_ENTITY_PICTURE, description={"suggested_value": entity_picture}
+            )
+        ] = str
 
         data_schema[
             vol.Optional(
@@ -507,7 +513,13 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         self, hass: HomeAssistant, entry: config_entries.ConfigEntry
     ):
         """Handle options update."""
-        _LOGGER.debug("Entry Data %s", entry.options)
+
+        _LOGGER.debug(
+            "Update plant options begin for %s Data %s, Options: %s",
+            entry.entry_id,
+            entry.options,
+            entry.data,
+        )
         entity_picture = entry.options.get(ATTR_ENTITY_PICTURE)
 
         if entity_picture is not None:
@@ -557,7 +569,6 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 }
             )
             if plant_config[DATA_SOURCE] == DATA_SOURCE_PLANTBOOK:
-                _LOGGER.debug(plant_config)
                 self.plant.species = new_species
                 self.plant.add_image(plant_config[FLOW_PLANT_INFO][ATTR_ENTITY_PICTURE])
                 self.plant.display_species = plant_config[FLOW_PLANT_INFO][
@@ -584,16 +595,19 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             else:
                 self.plant.species = new_species
 
-            if force_new_species:
-                # We need to reset the force_update option back to False, or else
-                # this will only be run once (unchanged options are will not trigger the flow)
-                options = dict(entry.options)
-                data = dict(entry.data)
-                options[FLOW_FORCE_SPECIES_UPDATE] = False
-                options[OPB_DISPLAY_PID] = self.plant.display_species
-                options[ATTR_ENTITY_PICTURE] = self.plant.entity_picture
-                hass.config_entries.async_update_entry(
-                    entry, data=data, options=options
-                )
+            # We need to reset the force_update option back to False, or else
+            # this will only be run once (unchanged options are will not trigger the flow)
+            options = dict(entry.options)
+            data = dict(entry.data)
+            options[FLOW_FORCE_SPECIES_UPDATE] = False
+            options[OPB_DISPLAY_PID] = self.plant.display_species
+            options[ATTR_ENTITY_PICTURE] = self.plant.entity_picture
+            _LOGGER.debug(
+                "Doing a refresh to update values: Data: %s Options: %s",
+                data,
+                options,
+            )
 
+            hass.config_entries.async_update_entry(entry, data=data, options=options)
+        _LOGGER.debug("Update plant options done for %s", entry.entry_id)
         self.plant.update_registry()

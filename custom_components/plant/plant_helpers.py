@@ -213,6 +213,9 @@ class PlantHelper:
         if ATTR_SENSORS not in config:
             config[ATTR_SENSORS] = {}
 
+        if config.get(OPB_DISPLAY_PID, "") == "":
+            config[OPB_DISPLAY_PID] = None
+
         opb_plant = await self.openplantbook_get(config[ATTR_SPECIES])
         if opb_plant:
             data_source = DATA_SOURCE_PLANTBOOK
@@ -277,14 +280,25 @@ class PlantHelper:
                 entity_picture is None
                 or entity_picture == ""
                 or "plantbook.io" in entity_picture
-                or config[FLOW_FORCE_SPECIES_UPDATE]
+                or (
+                    FLOW_FORCE_SPECIES_UPDATE in config
+                    and config[FLOW_FORCE_SPECIES_UPDATE] is True
+                )
             ):
                 entity_picture = opb_plant.get(FLOW_PLANT_IMAGE)
-            if config[FLOW_FORCE_SPECIES_UPDATE]:
+
+            if (
+                FLOW_FORCE_SPECIES_UPDATE in config
+                and config[FLOW_FORCE_SPECIES_UPDATE] is True
+            ):
                 display_species = opb_plant.get(OPB_DISPLAY_PID, "")
             else:
-                display_species = config.get(
-                    OPB_DISPLAY_PID, opb_plant.get(OPB_DISPLAY_PID, "")
+                _LOGGER.debug(
+                    "Setting display_pid to %s",
+                    config.get(OPB_DISPLAY_PID) or opb_plant.get(OPB_DISPLAY_PID, ""),
+                )
+                display_species = config.get(OPB_DISPLAY_PID) or opb_plant.get(
+                    OPB_DISPLAY_PID, ""
                 )
 
         _LOGGER.debug("Parsing input config: %s", config)

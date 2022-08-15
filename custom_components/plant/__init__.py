@@ -127,10 +127,11 @@ async def async_migrate_plant(hass: HomeAssistant, plant_id: str, config: dict) 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Set up Plant from a config entry."""
     hass.data.setdefault(DOMAIN, {})
-    hass.data[DOMAIN].setdefault(entry.entry_id, {})
-
     if FLOW_PLANT_INFO not in entry.data:
         return True
+
+    hass.data[DOMAIN].setdefault(entry.entry_id, {})
+    _LOGGER.debug("Setting up config entry %s: %s", entry.entry_id, entry)
 
     plant = PlantDevice(hass, entry)
     hass.data[DOMAIN][entry.entry_id][ATTR_PLANT] = plant
