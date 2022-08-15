@@ -201,5 +201,7 @@ If no species are found in OpenPlantbook, the thresholds and image will be retai
 If you just want to refresh the data from OpenPlantbook, without changing the species - for instance if you have private species defined in OpenPlantbook that are not found during setup, you check the "Force refresh" checkbox, and data will be fetched from OpenPlantbook without needing to change the species.  If this checkbox is checked, both the image and the "Species to display" is updated if the species is found in OpenPlantbook.
 If no species is found in OpenPlantbook, nothing is changed. 
 
-
+<a href="https://www.buymeacoffee.com/olatho" target="_blank">
+<img src="https://user-images.githubusercontent.com/203184/184674974-db7b9e53-8c5a-40a0-bf71-c01311b36b0a.png" style="height: 50px !important;"> 
+</a>
 
