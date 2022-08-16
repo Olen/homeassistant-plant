@@ -137,6 +137,11 @@ async def async_setup_entry(
     return True
 
 
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Unload a config entry."""
+    return True
+
+
 class PlantMinMax(RestoreNumber):
     """Parent class for the min/max classes below"""
 

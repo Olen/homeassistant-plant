@@ -98,6 +98,8 @@ class PlantHelper:
 
         if not self.has_openplantbook:
             return None
+        if not species or species == "":
+            return None
 
         try:
             plant_search = await self.hass.services.async_call(
@@ -132,7 +134,7 @@ class PlantHelper:
         """Get information about a plant species from OpenPlantbook"""
         if not self.has_openplantbook:
             return None
-        if species == "":
+        if not species or species == "":
             return None
 
         plant_get = await self.hass.services.async_call(
@@ -189,34 +191,38 @@ class PlantHelper:
 
         # If we have image defined in the config, or a local file
         # prefer that.  If neither, image will be set to openplantbook
-        try:
-            jpeg_exists = cv.isfile(f"{DEFAULT_IMAGE_PATH}{config[ATTR_SPECIES]}.jpg")
-        except vol.Invalid:
-            jpeg_exists = None
-        try:
-            png_exists = cv.isfile(f"{DEFAULT_IMAGE_PATH}{config[ATTR_SPECIES]}.png")
-        except vol.Invalid:
-            png_exists = None
+        jpeg_exists = None
+        png_exists = None
+
+        if ATTR_SPECIES in config:
+            try:
+                jpeg_exists = cv.isfile(
+                    f"{DEFAULT_IMAGE_PATH}{config[ATTR_SPECIES]}.jpg"
+                )
+            except vol.Invalid:
+                jpeg_exists = None
+            try:
+                png_exists = cv.isfile(
+                    f"{DEFAULT_IMAGE_PATH}{config[ATTR_SPECIES]}.png"
+                )
+            except vol.Invalid:
+                png_exists = None
 
         if ATTR_ENTITY_PICTURE in config:
             entity_picture = config[ATTR_ENTITY_PICTURE]
-        elif ATTR_IMAGE in config:
+        elif ATTR_IMAGE in config and config[ATTR_IMAGE] != DOMAIN_PLANTBOOK:
             entity_picture = config[ATTR_IMAGE]
         elif jpeg_exists:
             entity_picture = f"{DEFAULT_IMAGE_LOCAL_URL}{config[ATTR_SPECIES]}.jpg"
         elif png_exists:
             entity_picture = f"{DEFAULT_IMAGE_LOCAL_URL}{config[ATTR_SPECIES]}.png"
-        # Clear old cruft
-        if entity_picture == "openplantbook":
-            entity_picture = None
 
         if ATTR_SENSORS not in config:
             config[ATTR_SENSORS] = {}
 
         if config.get(OPB_DISPLAY_PID, "") == "":
             config[OPB_DISPLAY_PID] = None
-
-        opb_plant = await self.openplantbook_get(config[ATTR_SPECIES])
+        opb_plant = await self.openplantbook_get(config.get(ATTR_SPECIES))
         if opb_plant:
             data_source = DATA_SOURCE_PLANTBOOK
             max_moisture = opb_plant.get(
@@ -286,7 +292,6 @@ class PlantHelper:
                 )
             ):
                 entity_picture = opb_plant.get(FLOW_PLANT_IMAGE)
-
             if (
                 FLOW_FORCE_SPECIES_UPDATE in config
                 and config[FLOW_FORCE_SPECIES_UPDATE] is True
@@ -308,7 +313,7 @@ class PlantHelper:
             DATA_SOURCE: data_source,
             FLOW_PLANT_INFO: {
                 ATTR_NAME: config.get(ATTR_NAME),
-                ATTR_SPECIES: config[ATTR_SPECIES] or "",
+                ATTR_SPECIES: config.get(ATTR_SPECIES) or "",
                 ATTR_ENTITY_PICTURE: entity_picture or "",
                 OPB_DISPLAY_PID: display_species or "",
                 ATTR_LIMITS: {

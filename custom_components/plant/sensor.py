@@ -133,6 +133,11 @@ async def async_setup_entry(
     return True
 
 
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Unload a config entry."""
+    return True
+
+
 class PlantCurrentStatus(RestoreSensor):
     """Parent class for the meter classes below"""
 
