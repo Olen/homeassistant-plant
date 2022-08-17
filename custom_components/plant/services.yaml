@@ -16,9 +16,9 @@ replace_sensor:
 
     new_sensor:
       name: Sensor entity
-      description: Entity id of the new sensor
+      description: Entity id of the new sensor. Leave blank to remove sensor.
       example: sensor.new_temperature_outdoor
-      required: true
+      required: false
       selector:
         entity:
           domain: sensor

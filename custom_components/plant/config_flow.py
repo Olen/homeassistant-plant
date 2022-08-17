@@ -43,6 +43,7 @@ from .const import (
     DATA_SOURCE,
     DATA_SOURCE_PLANTBOOK,
     DOMAIN,
+    DOMAIN_PLANTBOOK,
     DOMAIN_SENSOR,
     FLOW_CONDUCTIVITY_TRIGGER,
     FLOW_DLI_TRIGGER,
@@ -174,7 +175,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             valid = await self.validate_step_2(user_input)
             if valid:
                 # Store info to use in next step
-
+                self.plant_info[DATA_SOURCE] = DOMAIN_PLANTBOOK
                 self.plant_info[ATTR_SPECIES] = user_input[ATTR_SPECIES]
 
                 # Return the form of the next step
@@ -214,6 +215,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             if (
                 plant_helper.has_openplantbook
                 and self.plant_info.get(ATTR_SEARCH_FOR)
+                and self.plant_info.get(DATA_SOURCE) == DOMAIN_PLANTBOOK
                 and not user_input.get(FLOW_RIGHT_PLANT)
             ):
                 return await self.async_step_select_species()

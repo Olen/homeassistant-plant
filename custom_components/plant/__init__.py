@@ -179,7 +179,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
                 "Refuse to update non-%s entities: %s", DOMAIN, meter_entity
             )
             return False
-        if not new_sensor.startswith("sensor.") and new_sensor != "":
+        if new_sensor and new_sensor != "" and not new_sensor.startswith("sensor."):
             _LOGGER.warning("%s is not a sensor", new_sensor)
             return False
 
@@ -192,7 +192,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
             _LOGGER.error("Meter entity %s not found", meter_entity)
             return False
 
-        if new_sensor != "":
+        if new_sensor and new_sensor != "":
             try:
                 test = hass.states.get(new_sensor)
             except AttributeError:
