@@ -115,6 +115,8 @@ def _async_find_matching_config_entry(hass: HomeAssistant) -> ConfigEntry | None
 async def async_migrate_plant(hass: HomeAssistant, plant_id: str, config: dict) -> None:
     """Try to migrate the config from yaml"""
 
+    if ATTR_NAME not in config:
+        config[ATTR_NAME] = plant_id.replace("_", " ").capitalize()
     plant_helper = PlantHelper(hass)
     plant_config = await plant_helper.generate_configentry(config=config)
     hass.async_create_task(
