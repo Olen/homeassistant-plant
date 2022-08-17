@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 import re
 from typing import Any
+import urllib.parse
 
 import voluptuous as vol
 
@@ -367,16 +368,12 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         ] = str
         entity_picture = plant_config[FLOW_PLANT_INFO].get(ATTR_ENTITY_PICTURE)
         if not entity_picture.startswith("http"):
-            entity_picture = (
-                f"{get_url(self.hass, require_current_request=True)}{entity_picture}"
-            )
+            entity_picture = f"{get_url(self.hass, require_current_request=True)}{urllib.parse.quote(entity_picture)}"
         return self.async_show_form(
             step_id="limits",
             data_schema=vol.Schema(data_schema),
             description_placeholders={
-                ATTR_ENTITY_PICTURE: plant_config[FLOW_PLANT_INFO].get(
-                    ATTR_ENTITY_PICTURE
-                ),
+                ATTR_ENTITY_PICTURE: entity_picture,
                 ATTR_NAME: plant_config[FLOW_PLANT_INFO].get(ATTR_NAME),
                 FLOW_TEMP_UNIT: self.hass.config.units.temperature_unit,
                 "br": "<br />",
