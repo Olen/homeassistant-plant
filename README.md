@@ -11,6 +11,7 @@ This integration can automatically fetch data from [OpenPlantBook](https://open.
 > **Note** 
 >
 > Version 2 of this integration will try to convert all `plant:` entries from `configuration.yaml` to the new format.  After migration, you can (and should) remove your `plant:` entries from your YAML-configuration.   
+> If something goes wrong during migration, delete all the plants from the UI, and correct any problems in your yaml config.  Then they will be migrated again at next restart.  Auto migration will not be done if there are existing plants of the new format alread.
 
 > **Warning**
 > 
