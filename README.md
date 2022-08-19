@@ -6,7 +6,7 @@ This integration can automatically fetch data from [OpenPlantBook](https://open.
 
 >**Warning**
 >
-> **This integration is about to be completely rewritten.  Versions >= 2.0.0 will *not* be compatible with the original plant integration in HA or with earlier releases of this integration.**
+> **This integration is completely rewritten.  Versions >= 2.0.0 is *not* compatible with the original plant integration in HA or with earlier releases of this integration.**
 
 > **Note** 
 >
@@ -19,6 +19,9 @@ This integration can automatically fetch data from [OpenPlantBook](https://open.
 >
 > Make sure you check you plant settings after the first restart. You can find the configuration options in the Integrations page under Settings in Home Assistant.
 
+<details>
+  <summary>Version 1</summary>
+  
 
 # Version 1
 
@@ -30,13 +33,14 @@ This version will no longer be maintained, and I strongly urge everyone to test 
 
 The rest of this file will describe the upcoming version - 2.0.0.
 
+</details>
+
+
 # Version 2
 
-This is the new and upcoming version.  It is set up in the UI and all configuration of your plants can be managed there or by automations and scripts.
+Plants are set up in the UI and all configuration of your plants can be managed there or by automations and scripts.
 
 All existing entries in `configuration.yaml` from version 1 will be migrated to the new format automatically.  Notice that some options (like `warn_low_brightness`) will not be migrated over, but can be easily changed in the UI configuration after migration. 
-
-Version 2 is available as a beta release in HACS. 
 
 ## Plants are now treated as _devices_
 
@@ -118,7 +122,7 @@ See https://en.wikipedia.org/wiki/Daily_light_integral for what DLI means
 
 * [OpenPlantbook integration](https://github.com/Olen/home-assistant-openplantbook)
 
-This is not a strict requirement, but a strong recommendation. Without the OpenPlantbook integration, you need to set and adjust all the thresholds for every plant manually.  With the OpenPlantbook integration added, all data is fetched from OpenPlanbook automatically, and it makes setting up and maintaining plants much, much easier.   
+OpenPlantbook is not a strict requirement, but a strong recommendation. Without the OpenPlantbook integration, you need to set and adjust all the thresholds for every plant manually.  With the OpenPlantbook integration added, all data is fetched from OpenPlanbook automatically, and it makes setting up and maintaining plants much, much easier.   
 
 # Installation
 
@@ -133,7 +137,7 @@ _Not required, but strongly recommended_
 
 _Currently this is the only card in lovelace that support this integration.  Feel free to fork and update - or create PRs - for other lovelace cards._ 
 
-* Install verson 2 (currently available as beta in HACS) of the Flower Card from https://github.com/Olen/lovelace-flower-card/
+* Install verson 2 of the Flower Card from https://github.com/Olen/lovelace-flower-card/
 
 
 ### Install this integration
@@ -143,7 +147,6 @@ _Currently this is the only card in lovelace that support this integration.  Fee
 #### Via HACS
 * Add this repo as a "Custom repository" with type "Integration"
 * Click "Install" in the new "Home Assistant Plant" card in HACS.
-* Select "Show beta versions" and select the latest beta
 * Install
 * Restart Home Assistant
 
