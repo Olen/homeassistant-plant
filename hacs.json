@@ -1,4 +1,5 @@
 {
     "name": "Home Assistant Plant",
-    "render_readme": true
-  }
+    "render_readme": true,
+    "homeassistant": "2022.8.0"
+}
