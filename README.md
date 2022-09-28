@@ -79,6 +79,19 @@ This also means that this version is _not_ compatible with earlier releases from
 
 ![image](https://user-images.githubusercontent.com/203184/183286188-174dc709-173f-42fb-9d66-678d0c1f62e4.png)
 
+What I personally do, to make a clearer separation between the physical sensor and the sensor that is part of the plant, is that all my _physical_ sensors (e.g BLE-devices) have generic entity_ids like `sensor.ble_sensor_1_moisture`, `sensor.ble_sensor_1_illumination`, `sensor.ble_sensor_2_conductivity` etc.
+And all my plants sensors have entity_ids like `sensor.rose_moisture`, `sensor.chili_conductivity` etc.
+
+That way, if I need to replace a (physical) sensor for e.g. my "Rose" plant, it is very easy to grasp the concept and use
+```
+service: plant.replace_sensor
+data:
+  meter_entity: sensor.rose_illumination
+  new_sensor: sensor.ble_sensor_12_illumination
+```
+
+
+
 * The new sensor values are immediately picked up by the plant integration without any need to restart
 
 ### Better handling of species, image and problem triggers
