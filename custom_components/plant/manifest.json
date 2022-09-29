@@ -10,6 +10,6 @@
     "utility_meter"
   ],
   "codeowners": ["@Olen"],
-  "version": "2.0.0",
+  "version": "2.0.1",
   "config_flow": true
 }
