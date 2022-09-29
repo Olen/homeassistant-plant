@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code from GitHub
-        uses: "actions/checkout@v2"
+        uses: "actions/checkout@v3"
       - name: Black Code Format Check
         uses: lgeiger/black-action@master
         with:
@@ -24,6 +24,6 @@ jobs:
     runs-on: "ubuntu-latest"
     steps:
       - name: Check out code from GitHub
-        uses: "actions/checkout@v2"
+        uses: "actions/checkout@v3"
       - name: Run hassfest
         uses: home-assistant/actions/hassfest@master
