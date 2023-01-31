@@ -18,9 +18,13 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     ATTR_NAME,
     ATTR_UNIT_OF_MEASUREMENT,
+    CONDUCTIVITY,
+    LIGHT_LUX,
+    PERCENTAGE,
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
     TIME_SECONDS,
+    UnitOfTemperature,
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
@@ -172,6 +176,8 @@ class PlantCurrentIlluminance(PlantCurrentStatus):
         self._external_sensor = config.data[FLOW_PLANT_INFO].get(
             FLOW_SENSOR_ILLUMINANCE
         )
+        self._attr_native_unit_of_measurement = LIGHT_LUX
+
         _LOGGER.info(
             "Added external sensor for %s %s", self.entity_id, self._external_sensor
         )
@@ -198,6 +204,7 @@ class PlantCurrentConductivity(PlantCurrentStatus):
         self._external_sensor = config.data[FLOW_PLANT_INFO].get(
             FLOW_SENSOR_CONDUCTIVITY
         )
+        self._attr_native_unit_of_measurement = CONDUCTIVITY
 
         super().__init__(hass, config, plantdevice)
 
@@ -219,6 +226,7 @@ class PlantCurrentMoisture(PlantCurrentStatus):
         )
         self._attr_unique_id = f"{config.entry_id}-current-moisture"
         self._external_sensor = config.data[FLOW_PLANT_INFO].get(FLOW_SENSOR_MOISTURE)
+        self._attr_native_unit_of_measurement = PERCENTAGE
         self._attr_icon = "mdi:water"
 
         super().__init__(hass, config, plantdevice)
@@ -244,6 +252,7 @@ class PlantCurrentTemperature(PlantCurrentStatus):
             FLOW_SENSOR_TEMPERATURE
         )
         self._attr_icon = "mdi:thermometer"
+        self._attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
         super().__init__(hass, config, plantdevice)
 
     @property
@@ -265,6 +274,7 @@ class PlantCurrentHumidity(PlantCurrentStatus):
         self._attr_unique_id = f"{config.entry_id}-current-humidity"
         self._external_sensor = config.data[FLOW_PLANT_INFO].get(FLOW_SENSOR_HUMIDITY)
         self._attr_icon = "mdi:water-percent"
+        self._attr_native_unit_of_measurement = PERCENTAGE
         super().__init__(hass, config, plantdevice)
 
     @property
