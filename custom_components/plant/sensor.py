@@ -21,12 +21,13 @@ from homeassistant.const import (
     ATTR_ICON,
     ATTR_NAME,
     ATTR_UNIT_OF_MEASUREMENT,
+    CONDUCTIVITY,
     LIGHT_LUX,
     PERCENTAGE,
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
-    TEMP_CELSIUS,
     TIME_SECONDS,
+    UnitOfTemperature,
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
@@ -285,6 +286,7 @@ class PlantCurrentIlluminance(PlantCurrentStatus):
         _LOGGER.info(
             "Added external sensor for %s %s", self.entity_id, self._external_sensor
         )
+        self._attr_native_unit_of_measurement = LIGHT_LUX
         super().__init__(hass, config, plantdevice)
 
     @property
@@ -308,6 +310,7 @@ class PlantCurrentConductivity(PlantCurrentStatus):
         self._external_sensor = config.data[FLOW_PLANT_INFO].get(
             FLOW_SENSOR_CONDUCTIVITY
         )
+        self._attr_native_unit_of_measurement = CONDUCTIVITY
 
         super().__init__(hass, config, plantdevice)
 
@@ -330,6 +333,7 @@ class PlantCurrentMoisture(PlantCurrentStatus):
         self._attr_unique_id = f"{config.entry_id}-current-moisture"
         self._external_sensor = config.data[FLOW_PLANT_INFO].get(FLOW_SENSOR_MOISTURE)
         self._attr_icon = ICON_MOISTURE
+        self._attr_native_unit_of_measurement = PERCENTAGE
 
         super().__init__(hass, config, plantdevice)
 
@@ -354,6 +358,7 @@ class PlantCurrentTemperature(PlantCurrentStatus):
             FLOW_SENSOR_TEMPERATURE
         )
         self._attr_icon = ICON_TEMPERATURE
+        self._attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
         super().__init__(hass, config, plantdevice)
 
     @property
@@ -375,6 +380,7 @@ class PlantCurrentHumidity(PlantCurrentStatus):
         self._attr_unique_id = f"{config.entry_id}-current-humidity"
         self._external_sensor = config.data[FLOW_PLANT_INFO].get(FLOW_SENSOR_HUMIDITY)
         self._attr_icon = ICON_HUMIDITY
+        self._attr_native_unit_of_measurement = PERCENTAGE
         super().__init__(hass, config, plantdevice)
 
     @property
@@ -681,7 +687,7 @@ class PlantDummyTemperature(PlantDummyStatus):
         )
         self._attr_unique_id = f"{config.entry_id}-dummy-temperature"
         self._attr_icon = ICON_TEMPERATURE
-        self._attr_native_unit_of_measurement = TEMP_CELSIUS
+        self._attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
         self._attr_native_value = random.randint(15, 20)
 
         super().__init__(hass, config, plantdevice)
