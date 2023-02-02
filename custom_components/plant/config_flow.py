@@ -189,7 +189,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if search_result is None:
             return await self.async_step_limits()
         dropdown = []
-        for (pid, display_pid) in search_result.items():
+        for pid, display_pid in search_result.items():
             dropdown.append({"label": display_pid, "value": pid})
         _LOGGER.debug("Dropdown: %s", dropdown)
         data_schema = {}
@@ -560,7 +560,6 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         if new_species is not None and (
             new_species != self.plant.species or force_new_species is True
         ):
-
             _LOGGER.debug(
                 "Species changed from '%s' to '%s'", self.plant.species, new_species
             )
@@ -579,7 +578,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 self.plant.display_species = plant_config[FLOW_PLANT_INFO][
                     OPB_DISPLAY_PID
                 ]
-                for (key, value) in plant_config[FLOW_PLANT_INFO][
+                for key, value in plant_config[FLOW_PLANT_INFO][
                     FLOW_PLANT_LIMITS
                 ].items():
                     set_entity = getattr(self.plant, key)
