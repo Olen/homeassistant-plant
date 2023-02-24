@@ -1,8 +1,6 @@
 {
   "domain": "plant",
   "name": "Plant Monitor",
-  "documentation": "https://github.com/Olen/homeassistant-plant/",
-  "issue_tracker": "https://github.com/Olen/homeassistant-plant/issues",
   "after_dependencies": [
     "recorder",
     "openplantbook",
@@ -10,6 +8,8 @@
     "utility_meter"
   ],
   "codeowners": ["@Olen"],
-  "version": "2.0.0",
-  "config_flow": true
+  "config_flow": true,
+  "documentation": "https://github.com/Olen/homeassistant-plant/",
+  "issue_tracker": "https://github.com/Olen/homeassistant-plant/issues",
+  "version": "2.0.0"
 }
