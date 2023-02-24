@@ -41,7 +41,7 @@
           "max_dli": "Maximális DLI (mol/d⋅m²)",
           "min_dli": "Minimális DLI (mol/d⋅m²)",
           "max_temperature": "Maximális hőmérséklet (lásd fent)",
-          "min_temperature": "Minimum temperature (lásd fent)",
+          "min_temperature": "Minimális hőmérséklet (lásd fent)",
           "max_conductivity": "Maximális talajvezetőképesség (uS/cm)",
           "min_conductivity": "Minimális talajvezetőképesség (uS/cm)",
           "max_humidity": "Maximális levegő páratartalom (%)",
