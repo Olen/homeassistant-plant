@@ -543,6 +543,7 @@ class PlantDailyLightIntegral(UtilityMeterSensor):
             tariff=None,
             unique_id=f"{config.entry_id}-dli",
             suggested_entity_id=None,
+            periodically_resetting=True,
         )
         self.entity_id = async_generate_entity_id(
             f"{DOMAIN_SENSOR}.{{}}", self.name, current_ids={}
