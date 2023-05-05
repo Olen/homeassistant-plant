@@ -157,14 +157,14 @@ class PlantCurrentStatus(RestoreSensor):
             f"{DOMAIN}.{{}}", self.name, current_ids={}
         )
         if (
-            not self._attr_native_value 
-            or self._attr_native_value == STATE_UNKNOWN 
+            not self._attr_native_value
+            or self._attr_native_value == STATE_UNKNOWN
             or self._attr_native_value == STATE_UNAVAILABLE
         ):
             _LOGGER.debug(
-                "Unknown native value for %s, setting to default: %s", 
-                self.entity_id, 
-                self._default_state
+                "Unknown native value for %s, setting to default: %s",
+                self.entity_id,
+                self._default_state,
             )
             self._attr_native_value = self._default_state
 
@@ -236,14 +236,14 @@ class PlantCurrentStatus(RestoreSensor):
         """Set state and unit to the parent sensor state and unit"""
         if self.external_sensor and self._hass.states.get(self.external_sensor):
             if (
-                self._hass.states.get(self.external_sensor).state == STATE_UNKNOWN 
-                or self._hass.states.get(self.external_sensor).state 
+                self._hass.states.get(self.external_sensor).state == STATE_UNKNOWN
+                or self._hass.states.get(self.external_sensor).state
                 == STATE_UNAVAILABLE
             ):
                 _LOGGER.debug(
-                    "Unknown external value for %s, setting to default: %s", 
-                    self.entity_id, 
-                    self._default_state
+                    "Unknown external value for %s, setting to default: %s",
+                    self.entity_id,
+                    self._default_state,
                 )
                 self._attr_native_value = self._default_state
             else:
@@ -286,9 +286,9 @@ class PlantCurrentStatus(RestoreSensor):
                 self._attr_icon = new_state.attributes[ATTR_ICON]
 
         if (
-            self.external_sensor 
-            and new_state 
-            and new_state is not STATE_UNKNOWN 
+            self.external_sensor
+            and new_state
+            and new_state is not STATE_UNKNOWN
             and new_state is not STATE_UNAVAILABLE
         ):
             self._attr_native_value = new_state.state
@@ -466,11 +466,7 @@ class PlantCurrentPpfd(PlantCurrentStatus):
         https://www.apogeeinstruments.com/conversion-ppfd-to-lux/
         μmol/m²/s
         """
-        if (
-            value is not None 
-            and value != STATE_UNAVAILABLE 
-            and value != STATE_UNKNOWN
-        ):
+        if value is not None and value != STATE_UNAVAILABLE and value != STATE_UNKNOWN
             value = float(value) * DEFAULT_LUX_TO_PPFD / 1000000
         else:
             value = None
