@@ -11,5 +11,5 @@
   "config_flow": true,
   "documentation": "https://github.com/Olen/homeassistant-plant/",
   "issue_tracker": "https://github.com/Olen/homeassistant-plant/issues",
-  "version": "2.1.0"
+  "version": "2.1.1"
 }
