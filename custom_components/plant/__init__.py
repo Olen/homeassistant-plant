@@ -624,8 +624,8 @@ class PlantDevice(Entity):
 
         if (
             self.sensor_moisture is not None
-            and self.sensor_moisture.state != STATE_UNKNOWN
-            and self.sensor_moisture.state != STATE_UNAVAILABLE
+            and self.sensor_moisture.native_value != STATE_UNKNOWN
+            and self.sensor_moisture.native_value != STATE_UNAVAILABLE
             and self.sensor_moisture.state is not None
         ):
             if float(self.sensor_moisture.state) < float(self.min_moisture.state):
@@ -641,8 +641,8 @@ class PlantDevice(Entity):
 
         if (
             self.sensor_conductivity is not None
-            and self.sensor_conductivity.state != STATE_UNKNOWN
-            and self.sensor_conductivity.state != STATE_UNAVAILABLE
+            and self.sensor_conductivity.native_value != STATE_UNKNOWN
+            and self.sensor_conductivity.native_value != STATE_UNAVAILABLE
             and self.sensor_conductivity.state is not None
         ):
             if float(self.sensor_conductivity.state) < float(
@@ -662,8 +662,8 @@ class PlantDevice(Entity):
 
         if (
             self.sensor_temperature is not None
-            and self.sensor_temperature.state != STATE_UNKNOWN
-            and self.sensor_temperature.state != STATE_UNAVAILABLE
+            and self.sensor_temperature.native_value != STATE_UNKNOWN
+            and self.sensor_temperature.native_value != STATE_UNAVAILABLE
             and self.sensor_temperature.state is not None
         ):
             if float(self.sensor_temperature.state) < float(self.min_temperature.state):
@@ -681,8 +681,8 @@ class PlantDevice(Entity):
 
         if (
             self.sensor_humidity is not None
-            and self.sensor_humidity.state != STATE_UNKNOWN
-            and self.sensor_humidity.state != STATE_UNAVAILABLE
+            and self.sensor_humidity.native_value != STATE_UNKNOWN
+            and self.sensor_humidity.native_value != STATE_UNAVAILABLE
             and self.sensor_humidity.state is not None
         ):
             if float(self.sensor_humidity.state) < float(self.min_humidity.state):
@@ -700,8 +700,8 @@ class PlantDevice(Entity):
         # Ignoring "min" value for illuminance as it would probably trigger every night
         if (
             self.sensor_illuminance is not None
-            and self.sensor_illuminance.state != STATE_UNKNOWN
-            and self.sensor_illuminance.state != STATE_UNAVAILABLE
+            and self.sensor_illuminance.native_value != STATE_UNKNOWN
+            and self.sensor_illuminance.native_value != STATE_UNAVAILABLE
             and self.sensor_illuminance.state is not None
         ):
             if float(self.sensor_illuminance.state) > float(self.max_illuminance.state):
@@ -715,8 +715,8 @@ class PlantDevice(Entity):
         # Check DLI from the previous day against max/min DLI
         if (
             self.dli is not None
-            and self.dli.state != STATE_UNKNOWN
-            and self.dli.state != STATE_UNAVAILABLE
+            and self.dli.native_value != STATE_UNKNOWN
+            and self.dli.native_value != STATE_UNAVAILABLE
             and self.dli.state is not None
         ):
             if float(self.dli.extra_state_attributes["last_period"]) > 0 and float(
