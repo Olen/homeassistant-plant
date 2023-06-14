@@ -87,7 +87,6 @@ async def async_setup(hass: HomeAssistant, config: dict):
     Configuration.yaml is no longer used.
     This function only tries to migrate the legacy config.
     """
-
     if config.get(DOMAIN):
         # Only import if we haven't before.
         config_entry = _async_find_matching_config_entry(hass)
