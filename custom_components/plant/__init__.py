@@ -622,94 +622,95 @@ class PlantDevice(Entity):
 
         new_state = STATE_OK
 
-        if (
-            self.sensor_moisture is not None
-            and self.sensor_moisture.native_value != STATE_UNKNOWN
-            and self.sensor_moisture.native_value != STATE_UNAVAILABLE
-            and self.sensor_moisture.state is not None
-        ):
-            if float(self.sensor_moisture.state) < float(self.min_moisture.state):
-                self.moisture_status = STATE_LOW
-                if self.moisture_trigger:
-                    new_state = STATE_PROBLEM
-            elif float(self.sensor_moisture.state) > float(self.max_moisture.state):
-                self.moisture_status = STATE_HIGH
-                if self.moisture_trigger:
-                    new_state = STATE_PROBLEM
-            else:
-                self.moisture_status = STATE_OK
-
-        if (
-            self.sensor_conductivity is not None
-            and self.sensor_conductivity.native_value != STATE_UNKNOWN
-            and self.sensor_conductivity.native_value != STATE_UNAVAILABLE
-            and self.sensor_conductivity.state is not None
-        ):
-            if float(self.sensor_conductivity.state) < float(
-                self.min_conductivity.state
+        if self.sensor_moisture is not None:
+            moisture = self._hass.states.get(self.sensor_moisture.entity_id).state
+            if (
+                moisture is not None
+                and moisture != STATE_UNKNOWN
+                and moisture != STATE_UNAVAILABLE
             ):
-                self.conductivity_status = STATE_LOW
-                if self.conductivity_trigger:
-                    new_state = STATE_PROBLEM
-            elif float(self.sensor_conductivity.state) > float(
-                self.max_conductivity.state
-            ):
-                self.conductivity_status = STATE_HIGH
-                if self.conductivity_trigger:
-                    new_state = STATE_PROBLEM
-            else:
-                self.conductivity_status = STATE_OK
+                if float(moisture) < float(self.min_moisture.state):
+                    self.moisture_status = STATE_LOW
+                    if self.moisture_trigger:
+                        new_state = STATE_PROBLEM
+                elif float(moisture) > float(self.max_moisture.state):
+                    self.moisture_status = STATE_HIGH
+                    if self.moisture_trigger:
+                        new_state = STATE_PROBLEM
+                else:
+                    self.moisture_status = STATE_OK
 
-        if (
-            self.sensor_temperature is not None
-            and self.sensor_temperature.native_value != STATE_UNKNOWN
-            and self.sensor_temperature.native_value != STATE_UNAVAILABLE
-            and self.sensor_temperature.state is not None
-        ):
-            if float(self.sensor_temperature.state) < float(self.min_temperature.state):
-                self.temperature_status = STATE_LOW
-                if self.temperature_trigger:
-                    new_state = STATE_PROBLEM
-            elif float(self.sensor_temperature.state) > float(
-                self.max_temperature.state
+        if self.sensor_conductivity is not None:
+            conductivity = self._hass.states.get(
+                self.sensor_conductivity.entity_id
+            ).state
+            if (
+                conductivity is not None
+                and conductivity != STATE_UNKNOWN
+                and conductivity != STATE_UNAVAILABLE
             ):
-                self.temperature_status = STATE_HIGH
-                if self.temperature_trigger:
-                    new_state = STATE_PROBLEM
-            else:
-                self.temperature_status = STATE_OK
+                if float(conductivity) < float(self.min_conductivity.state):
+                    self.conductivity_status = STATE_LOW
+                    if self.conductivity_trigger:
+                        new_state = STATE_PROBLEM
+                elif float(conductivity) > float(self.max_conductivity.state):
+                    self.conductivity_status = STATE_HIGH
+                    if self.conductivity_trigger:
+                        new_state = STATE_PROBLEM
+                else:
+                    self.conductivity_status = STATE_OK
 
-        if (
-            self.sensor_humidity is not None
-            and self.sensor_humidity.native_value != STATE_UNKNOWN
-            and self.sensor_humidity.native_value != STATE_UNAVAILABLE
-            and self.sensor_humidity.state is not None
-        ):
-            if float(self.sensor_humidity.state) < float(self.min_humidity.state):
-                self.humidity_status = STATE_LOW
-                if self.humidity_trigger:
-                    new_state = STATE_PROBLEM
-            elif float(self.sensor_humidity.state) > float(self.max_humidity.state):
-                self.humidity_status = STATE_HIGH
-                if self.humidity_trigger:
-                    new_state = STATE_PROBLEM
-            else:
-                self.humidity_status = STATE_OK
+        if self.sensor_temperature is not None:
+            temperature = self._hass.states.get(self.sensor_temperature.entity_id).state
+            if (
+                temperature is not None
+                and temperature != STATE_UNKNOWN
+                and temperature != STATE_UNAVAILABLE
+            ):
+                if float(temperature) < float(self.min_temperature.state):
+                    self.temperature_status = STATE_LOW
+                    if self.temperature_trigger:
+                        new_state = STATE_PROBLEM
+                elif float(temperature) > float(self.max_temperature.state):
+                    self.temperature_status = STATE_HIGH
+                    if self.temperature_trigger:
+                        new_state = STATE_PROBLEM
+                else:
+                    self.temperature_status = STATE_OK
+
+        if self.sensor_humidity is not None:
+            humidity = self._hass.states.get(self.sensor_humidity.entity_id).state
+            if (
+                humidity is not None
+                and humidity != STATE_UNKNOWN
+                and humidity != STATE_UNAVAILABLE
+            ):
+                if float(humidity) < float(self.min_humidity.state):
+                    self.humidity_status = STATE_LOW
+                    if self.humidity_trigger:
+                        new_state = STATE_PROBLEM
+                elif float(humidity) > float(self.max_humidity.state):
+                    self.humidity_status = STATE_HIGH
+                    if self.humidity_trigger:
+                        new_state = STATE_PROBLEM
+                else:
+                    self.humidity_status = STATE_OK
 
         # Check the instant values for illuminance against "max"
         # Ignoring "min" value for illuminance as it would probably trigger every night
-        if (
-            self.sensor_illuminance is not None
-            and self.sensor_illuminance.native_value != STATE_UNKNOWN
-            and self.sensor_illuminance.native_value != STATE_UNAVAILABLE
-            and self.sensor_illuminance.state is not None
-        ):
-            if float(self.sensor_illuminance.state) > float(self.max_illuminance.state):
-                self.illuminance_status = STATE_HIGH
-                if self.illuminance_trigger:
-                    new_state = STATE_PROBLEM
-            else:
-                self.illuminance_status = STATE_OK
+        if self.sensor_illuminance is not None:
+            illuminance = self._hass.states.get(self.sensor_illuminance.entity_id).state
+            if (
+                illuminance is not None
+                and illuminance != STATE_UNKNOWN
+                and illuminance != STATE_UNAVAILABLE
+            ):
+                if float(illuminance) > float(self.max_illuminance.state):
+                    self.illuminance_status = STATE_HIGH
+                    if self.illuminance_trigger:
+                        new_state = STATE_PROBLEM
+                else:
+                    self.illuminance_status = STATE_OK
 
         # - Checking Low values would create "problem" every night...
         # Check DLI from the previous day against max/min DLI
