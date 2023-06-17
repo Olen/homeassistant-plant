@@ -622,9 +622,7 @@ class PlantDevice(Entity):
 
         new_state = STATE_OK
 
-        if (
-            self.sensor_moisture is not None
-        ):
+        if self.sensor_moisture is not None:
             moisture = self._hass.states.get(self.sensor_moisture.entity_id).state
             if (
                 moisture is not None
@@ -642,33 +640,27 @@ class PlantDevice(Entity):
                 else:
                     self.moisture_status = STATE_OK
 
-        if (
-            self.sensor_conductivity is not None
-        ):
-            conductivity = self._hass.states.get(self.sensor_conductivity.entity_id).state
+        if self.sensor_conductivity is not None:
+            conductivity = self._hass.states.get(
+                self.sensor_conductivity.entity_id
+            ).state
             if (
                 conductivity is not None
                 and conductivity != STATE_UNKNOWN
                 and conductivity != STATE_UNAVAILABLE
             ):
-                if float(conductivity) < float(
-                    self.min_conductivity.state
-                ):
+                if float(conductivity) < float(self.min_conductivity.state):
                     self.conductivity_status = STATE_LOW
                     if self.conductivity_trigger:
                         new_state = STATE_PROBLEM
-                elif float(conductivity) > float(
-                    self.max_conductivity.state
-                ):
+                elif float(conductivity) > float(self.max_conductivity.state):
                     self.conductivity_status = STATE_HIGH
                     if self.conductivity_trigger:
                         new_state = STATE_PROBLEM
                 else:
                     self.conductivity_status = STATE_OK
 
-        if (
-            self.sensor_temperature is not None
-        ):
+        if self.sensor_temperature is not None:
             temperature = self._hass.states.get(self.sensor_temperature.entity_id).state
             if (
                 temperature is not None
@@ -679,18 +671,14 @@ class PlantDevice(Entity):
                     self.temperature_status = STATE_LOW
                     if self.temperature_trigger:
                         new_state = STATE_PROBLEM
-                elif float(temperature) > float(
-                    self.max_temperature.state
-                ):
+                elif float(temperature) > float(self.max_temperature.state):
                     self.temperature_status = STATE_HIGH
                     if self.temperature_trigger:
                         new_state = STATE_PROBLEM
                 else:
                     self.temperature_status = STATE_OK
 
-        if (
-            self.sensor_humidity is not None
-        ):
+        if self.sensor_humidity is not None:
             humidity = self._hass.states.get(self.sensor_humidity.entity_id).state
             if (
                 humidity is not None
@@ -710,9 +698,7 @@ class PlantDevice(Entity):
 
         # Check the instant values for illuminance against "max"
         # Ignoring "min" value for illuminance as it would probably trigger every night
-        if (
-            self.sensor_illuminance is not None
-        ):
+        if self.sensor_illuminance is not None:
             illuminance = self._hass.states.get(self.sensor_illuminance.entity_id).state
             if (
                 illuminance is not None
