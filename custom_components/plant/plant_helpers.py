@@ -142,7 +142,7 @@ class PlantHelper:
             service=OPB_GET,
             service_data={ATTR_SPECIES: species.lower()},
             blocking=True,
-            limit=30,
+            # limit=30,
         )
         if plant_get:
             opb_plant = self.hass.states.get(
