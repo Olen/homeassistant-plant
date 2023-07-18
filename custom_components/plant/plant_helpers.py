@@ -102,32 +102,31 @@ class PlantHelper:
             return None
 
         try:
-            plant_search = await self.hass.services.async_call(
+            await self.hass.services.async_call(
                 domain=DOMAIN_PLANTBOOK,
                 service=OPB_SEARCH,
                 service_data={"alias": species},
                 blocking=True,
-                # limit=30,  Has been removed in 2023.7  https://developers.home-assistant.io/blog/2023/06/14/service-calls/
+                # limit=30,  Has been removed in 2023.7  https://developers.home-assistant.io/blog/2023/06/14/service-calls/                
             )
         except KeyError:
             _LOGGER.warning("Openplantook does not work")
             return None
-        if plant_search:
-            _LOGGER.info(
-                "Result: %s",
-                self.hass.states.get(f"{DOMAIN_PLANTBOOK}.{OPB_SEARCH_RESULT}"),
-            )
-            if (
-                int(
-                    self.hass.states.get(
-                        f"{DOMAIN_PLANTBOOK}.{OPB_SEARCH_RESULT}"
-                    ).state
-                )
-                > 0
-            ):
-                return self.hass.states.get(
+        _LOGGER.info(
+            "Result: %s",
+            self.hass.states.get(f"{DOMAIN_PLANTBOOK}.{OPB_SEARCH_RESULT}"),
+        )
+        if (
+            int(
+                self.hass.states.get(
                     f"{DOMAIN_PLANTBOOK}.{OPB_SEARCH_RESULT}"
-                ).attributes
+                ).state
+            )
+            > 0
+        ):
+            return self.hass.states.get(
+                f"{DOMAIN_PLANTBOOK}.{OPB_SEARCH_RESULT}"
+            ).attributes
         return None
 
     async def openplantbook_get(self, species: str) -> dict[str:Any] | None:
@@ -137,20 +136,18 @@ class PlantHelper:
         if not species or species == "":
             return None
 
-        plant_get = await self.hass.services.async_call(
+        await self.hass.services.async_call(
             domain=DOMAIN_PLANTBOOK,
             service=OPB_GET,
             service_data={ATTR_SPECIES: species.lower()},
-            blocking=True,
-            # limit=30,
+            blocking=True
         )
-        if plant_get:
-            opb_plant = self.hass.states.get(
-                f"{DOMAIN_PLANTBOOK}.{slugify(species, separator='_')}"
-            )
-            _LOGGER.debug("Result for %s: %s", species, opb_plant)
-            if opb_plant is not None:
-                return opb_plant.attributes
+        opb_plant = self.hass.states.get(
+            f"{DOMAIN_PLANTBOOK}.{slugify(species, separator='_')}"
+        )
+        _LOGGER.debug("Result for %s: %s", species, opb_plant)
+        if opb_plant is not None:
+            return opb_plant.attributes
 
         _LOGGER.info("Did not find '%s' in OpenPlantbook", species)
         create_notification(
