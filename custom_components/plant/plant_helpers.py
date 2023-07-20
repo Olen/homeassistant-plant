@@ -71,7 +71,7 @@ from .const import (
     OPB_GET,
     OPB_SEARCH,
     PPFD_DLI_FACTOR,
-    REQUEST_TIMEOUT
+    REQUEST_TIMEOUT,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -108,7 +108,7 @@ class PlantHelper:
                     service=OPB_SEARCH,
                     service_data={"alias": species},
                     blocking=True,
-                    return_response=True
+                    return_response=True,
                 )
         except TimeoutError:
             _LOGGER.warning("Openplantook request timed out")
@@ -117,9 +117,7 @@ class PlantHelper:
             _LOGGER.warning("Openplantook does not work, error: %s", ex)
             return None
         if bool(plant_search_result):
-            _LOGGER.info(
-                "Result: %s",
-                plant_search_result)
+            _LOGGER.info("Result: %s", plant_search_result)
 
             return plant_search_result
         return None
@@ -138,7 +136,7 @@ class PlantHelper:
                     service=OPB_GET,
                     service_data={ATTR_SPECIES: species.lower()},
                     blocking=True,
-                    return_response=True
+                    return_response=True,
                 )
         except TimeoutError:
             _LOGGER.warning("Openplantook request timed out")
