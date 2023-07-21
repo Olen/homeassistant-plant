@@ -4,6 +4,8 @@ DOMAIN = "plant"
 DOMAIN_SENSOR = "sensor"
 DOMAIN_PLANTBOOK = "openplantbook"
 
+REQUEST_TIMEOUT = 30
+
 # ATTRs are used by machines
 ATTR_BATTERY = "battery"
 ATTR_BRIGHTNESS = "brightness"
