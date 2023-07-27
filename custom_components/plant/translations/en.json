@@ -76,7 +76,7 @@
         }
       }
     }
-  }
+  },
   "services": {
     "replace_sensor": {
       "name": "Replace sensor",
