@@ -1,0 +1,82 @@
+---
+name: "Auto Release"
+
+on:
+  push:
+    branches:
+      - 'main'
+      - 'master'
+    paths:
+      - 'custom_components/*/manifest.json'
+
+jobs:
+  auto-release:
+    name: "Auto Release"
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: "✏️ Checkout code"
+        uses: actions/checkout@v3
+        with: 
+          path: './'
+
+      - name: "🏷️ Get version tag"
+        id: set_var
+        run: echo "COMPONENT_VERSION=$(jq -r .version custom_components/*/manifest.json)" >> $GITHUB_ENV
+
+      - name: "🏷️ Check if tag exists already"
+        uses: mukunku/tag-exists-action@v1.2.0
+        id: "check_tag"
+        with: 
+          tag: "v${{ env.COMPONENT_VERSION }}"
+
+      - name: "❌ Cancel if tag is already present"
+        run: |
+          echo "Tag already present: v${{ env.COMPONENT_VERSION }}. Not creating a new release"
+          gh run cancel ${{ github.run_id }}
+          gh run watch ${{ github.run_id }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if: steps.check_tag.outputs.exists == 'true'
+
+      - name: "🗝️ Get previous release version"
+        id: last_release
+        uses: InsonusK/get-latest-release@v1.0.1
+        with:
+          myToken: ${{ github.token }}
+          exclude_types: "draft|prerelease"
+
+      - name: "🏷️ Create new tag"
+        uses: rickstaa/action-create-tag@v1
+        id: "tag_create"
+        with:
+          tag: "v${{ env.COMPONENT_VERSION }}"
+          tag_exists_error: false
+          message: "Version ${{ env.COMPONENT_VERSION }}"
+      # if: steps.check_tag.outputs.exists == 'false'
+
+      - name: "🗒️ Generate release changelog"
+        id: changelog
+        uses: heinrichreimer/github-changelog-generator-action@v2.3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }} 
+          sinceTag: ${{ steps.last_release.outputs.tag_name }}
+          headerLabel: "# Notable changes since ${{ steps.last_release.outputs.tag_name }}"
+          stripGeneratorNotice: true
+
+      - name: 👍 Create Stable release
+        uses: softprops/action-gh-release@v1
+        with:
+          prerelease: false
+          body: "${{ steps.changelog.outputs.changelog }}"
+          name: "Version ${{ env.COMPONENT_VERSION }}"
+          tag_name: "v${{ env.COMPONENT_VERSION }}"
+        if: contains(env.COMPONENT_VERSION, 'beta') == false
+
+      - name: 🤞 Create Beta release
+        uses: softprops/action-gh-release@v1
+        with:
+          prerelease: true
+          body: "${{ steps.changelog.outputs.changelog }}"
+          name: "Version ${{ env.COMPONENT_VERSION }}"
+          tag_name: "v${{ env.COMPONENT_VERSION }}"
+        if: contains(env.COMPONENT_VERSION, 'beta') == true
