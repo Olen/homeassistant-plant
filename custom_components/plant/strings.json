@@ -76,5 +76,21 @@
         }
       }
     }
+  },
+  "services": {
+    "replace_sensor": {
+      "name": "Replace sensor",
+      "description": "Replaces the source for a plant sensor.",
+      "fields": {
+        "meter_entity": {
+          "name": "Meter entity",
+          "description": "The meter entity to replace the sensor for."
+        },
+        "new_sensor": {
+          "name": "Sensor entity",
+          "description": "Entity id of the new sensor. Leave blank to remove sensor."
+        }
+      }
+    }
   }
 }
