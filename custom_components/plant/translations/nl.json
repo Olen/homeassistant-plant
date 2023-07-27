@@ -1,0 +1,80 @@
+{
+  "title": "Plant monitor",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Stel een plant in",
+        "description": "Als je de juiste sensoren niet kunt vinden in de dropdown menu's, dan kunnen de sensoren toegevoegd worden nadat de installatie voltooid is",
+        "data": {
+          "name": "Plantnaam",
+          "species": "Soort",
+          "temperature_sensor": "Temperatuursensor",
+          "moisture_sensor": "Bodemvochtsensor",
+          "conductivity_sensor": "Geleidbaarheidssensor",
+          "illuminance_sensor": "Lichtsensor",
+          "humidity_sensor": "Luchtvochtigheidssensor"
+        },
+        "data_description": {
+          "species": "Wordt gebruikt voor het zoeken in OpenPlantbook"
+        }
+      },
+      "select_species": {
+        "title": "Selecteer soort uit OpenPlantbook",
+        "description": "{desc}",
+        "data": {
+          "species": "Soort"
+        },
+        "menu_options": {
+          "user": "Terug"
+        }
+      },
+      "limits": {
+        "title": "Stel limieten in",
+        "description": "# {name}\n![Plant]({entity_picture}){br}\n{extra_desc}Temperatuureenheid is {temperature_unit}",
+        "data": {
+          "right_plant": "Dit is de plan waar ik naar op zoek was",
+          "display_pid": "Te tonen plantsoort",
+          "max_moisture": "Maximale bodemvochtigheid (%)",
+          "min_moisture": "Minimale bodemvochtigheid (%)",
+          "max_illuminance": "Maximale lichtsterkte (lx)",
+          "min_illuminance": "Minimale lichtsterkte (lx)",
+          "max_dli": "Maximale DLI (mol/dm²)",
+          "min_dli": "Minimale DLI (mol/dm²)",
+          "max_temperature": "Maximale temperatuur (zie hierboven)",
+          "min_temperature": "Minimale temperatuur (zie hierboven)",
+          "max_conductivity": "Maximale geleidbaarheid (uS/cm)",
+          "min_conductivity": "Minimale geleidbaarheid (uS/cm)",
+          "max_humidity": "Maximale luchtvochtigheid (%)",
+          "min_humidity": "Minimale luchtvochtigheid (%)",
+          "entity_picture": "Afbeeldings-URL"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opties",
+        "description": "",
+        "data": {
+          "check_days": "Lichtsterktecontroledagen",
+          "species": "Soort",
+          "force_update": "Forceer ophalen data van OpenPlantbook",
+          "display_pid": "Te tonen plantsoort",
+          "temperature_sensor": "Temperatuursensor",
+          "moisture_sensor": "Bodemvochtsensor",
+          "conductivity_sensor": "Geleidbaarheidssensor",
+          "illuminance_sensor": "Lichtsensor",
+          "humidity_sensor": "Luchtvochtigheidssensor",
+          "entity_picture": "Afbeeldings-URL. Wordt automatisch ingevuld als soort is gevonden in OpenPlantbook",
+          "illuminance_trigger": "Gebruik lichtsterkte als trigger voor probleem",
+          "dli_trigger": "Gebruik daily light integral (dli) als trigger voor probleem",
+          "humidity_trigger": "Gebruik luchtvochtigheid als trigger voor probleem",
+          "conductivity_trigger": "Gebruik geleidbaarheid als trigger voor probleem",
+          "moisture_trigger": "Gebruik bodemvochtigheid als trigger voor probleem",
+          "temperature_trigger": "Gebruik temperatuur als trigger voor probleem"
+        }
+      }
+    }
+  }
+}
