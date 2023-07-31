@@ -12,7 +12,7 @@
           "moisture_sensor": "Sensor de húmidade de solo",
           "conductivity_sensor": "Sensor de Condutividade",
           "illuminance_sensor": "Sensor de Iluminação",
-          "humidity_sensor": "Sensor de húmidade do a"
+          "humidity_sensor": "Sensor de húmidade do ar"
         },
         "data_description": {
           "species": "Ser usado o site OpenPlantbook para pesquisas"
@@ -88,7 +88,7 @@
         },
         "new_sensor": {
           "name": "Unidades de Sensor",
-          "description": "Deixem e branco para removero sensor."
+          "description": "Deixem e branco para remover o sensor."
         }
       }
     }
