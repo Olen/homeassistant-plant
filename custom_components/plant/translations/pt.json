@@ -1,0 +1,96 @@
+{
+  "title": "Monitorização de plantas",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configurar a planta",
+        "description": "Caso não consigoa encontrar o sensor correcto no dropdown pode personalizar posteriormente",
+        "data": {
+          "name": "Nome da planta",
+          "species": "Especie",
+          "temperature_sensor": "Sensor de Temperatura",
+          "moisture_sensor": "Sensor de húmidade de solo",
+          "conductivity_sensor": "Sensor de Condutividade",
+          "illuminance_sensor": "Sensor de Iluminação",
+          "humidity_sensor": "Sensor de húmidade do ar"
+        },
+        "data_description": {
+          "species": "Ser usado o site OpenPlantbook para pesquisas"
+        }
+      },
+      "select_species": {
+        "title": "Selecione a especie de  OpenPlantbook",
+        "description": "{desc}",
+        "data": {
+          "species": "especie"
+        },
+        "menu_options": {
+          "user": "ltar"
+        }
+      },
+      "limits": {
+        "title": "Definir limites",
+        "description": "# {name}\n![Plant]({entity_picture}){br}\n{extra_desc}A unidade de temperatura é {temperature_unit}",
+        "data": {
+          "right_plant": "É esta a planta que procuravas",
+          "display_pid": "Especies para mostrar",
+          "max_moisture": "Maximo de Húmidade do solo (%)",
+          "min_moisture": "Minimo de Húmidade do solo (%)",
+          "max_illuminance": "Maximo de luz (lx)",
+          "min_illuminance": "Minimo de luz (lx)",
+          "max_dli": "Maximo de DLI (mol/d⋅m²)",
+          "min_dli": "Minimo DLI (mol/d⋅m²)",
+          "max_temperature": "Maxima temperatura",
+          "min_temperature": "Minimo de temperatura",
+          "max_conductivity": "Maximo de condutividade (uS/cm)",
+          "min_conductivity": "Minimo de condutividade uS/cm)",
+          "max_humidity": "Maximo humidade do ar (%)",
+          "min_humidity": "Minimo humidade do ar (%)",
+          "entity_picture": "Link da imagem"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "opcções",
+        "description": "descrição",
+        "data": {
+          "check_days": "Verificar por dias",
+          "species": "Especies",
+          "force_update": "Forçar a atuailização de  OpenPlantbook",
+          "display_pid": "Especies de plantas a mostrar",
+          "temperature_sensor": "Sensor de Temperatura",
+          "moisture_sensor": "Húmidade do solo",
+          "conductivity_sensor": "Condutividade",
+          "illuminance_sensor": "Iluminação",
+          "humidity_sensor": "Humidade do AR",
+          "entity_picture": "Link da Imagen. Será automativamente atualizada de OpenPlantbook",
+          "illuminance_trigger": "Usar a iluminação como um gatilho",
+          "dli_trigger": "Usar a iluminação como um gatilho",
+          "humidity_trigger": "Usar a humidade como um gatilho",
+          "conductivity_trigger": "Usar a condutividade como um gatilho",
+          "moisture_trigger": "Usar a húmidade do solo como um gatilho",
+          "temperature_trigger": "Usa a temperatura como gatilho"
+        }
+      }
+    }
+  },
+  "services": {
+    "replace_sensor": {
+      "name": "Substituir sensor",
+      "description": "Substituir o sensor.",
+      "fields": {
+        "meter_entity": {
+          "name": "Medições",
+          "description": "Substituir o sensor de medições."
+        },
+        "new_sensor": {
+          "name": "Unidades de Sensor",
+          "description": "Deixem e branco para remover o sensor."
+        }
+      }
+    }
+  }
+}
