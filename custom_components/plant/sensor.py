@@ -236,9 +236,9 @@ class PlantCurrentStatus(RestoreSensor):
         """Set state and unit to the parent sensor state and unit"""
         if self.external_sensor:
             try:
-                self._attr_native_value = float(self._hass.states.get(
-                    self.external_sensor
-                ).state)
+                self._attr_native_value = float(
+                    self._hass.states.get(self.external_sensor).state
+                )
                 if (
                     ATTR_UNIT_OF_MEASUREMENT
                     in self._hass.states.get(self.external_sensor).attributes
