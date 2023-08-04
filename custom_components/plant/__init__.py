@@ -300,7 +300,9 @@ def ws_get_info(
         if plant_entity.entity_id == msg["entity_id"]:
             # _LOGGER.debug("Sending websocket response: %s", plant_entity.websocket_info)
             try:
-                connection.send_result(msg["id"], {"result": plant_entity.websocket_info})
+                connection.send_result(
+                    msg["id"], {"result": plant_entity.websocket_info}
+                )
             except ValueError as e:
                 _LOGGER.warning(e)
             return

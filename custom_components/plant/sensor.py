@@ -238,7 +238,7 @@ class PlantCurrentStatus(RestoreSensor):
             try:
                 self._attr_native_value = float(self._hass.states.get(
                     self.external_sensor
-                ).state
+                ).state)
                 if (
                     ATTR_UNIT_OF_MEASUREMENT
                     in self._hass.states.get(self.external_sensor).attributes
