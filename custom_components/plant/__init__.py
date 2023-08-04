@@ -299,7 +299,12 @@ def ws_get_info(
         plant_entity = hass.data[DOMAIN][key][ATTR_PLANT]
         if plant_entity.entity_id == msg["entity_id"]:
             # _LOGGER.debug("Sending websocket response: %s", plant_entity.websocket_info)
-            connection.send_result(msg["id"], {"result": plant_entity.websocket_info})
+            try:
+                connection.send_result(
+                    msg["id"], {"result": plant_entity.websocket_info}
+                )
+            except ValueError as e:
+                _LOGGER.warning(e)
             return
     connection.send_error(
         msg["id"], "entity_not_found", f"Entity {msg['entity_id']} not found"

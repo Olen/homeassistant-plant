@@ -234,30 +234,42 @@ class PlantCurrentStatus(RestoreSensor):
 
     async def async_update(self) -> None:
         """Set state and unit to the parent sensor state and unit"""
-        if self.external_sensor and self._hass.states.get(self.external_sensor):
-            if (
-                self._hass.states.get(self.external_sensor).state == STATE_UNKNOWN
-                or self._hass.states.get(self.external_sensor).state
-                == STATE_UNAVAILABLE
-            ):
+        if self.external_sensor:
+            try:
+                self._attr_native_value = float(
+                    self._hass.states.get(self.external_sensor).state
+                )
+                if (
+                    ATTR_UNIT_OF_MEASUREMENT
+                    in self._hass.states.get(self.external_sensor).attributes
+                ):
+                    self._attr_native_unit_of_measurement = self._hass.states.get(
+                        self.external_sensor
+                    ).attributes[ATTR_UNIT_OF_MEASUREMENT]
+            except AttributeError:
                 _LOGGER.debug(
-                    "Unknown external value for %s, setting to default: %s",
+                    "Unknown external sensor for %s: %s, setting to default: %s",
                     self.entity_id,
+                    self.external_sensor,
                     self._default_state,
                 )
                 self._attr_native_value = self._default_state
-            else:
-                self._attr_native_value = self._hass.states.get(
-                    self.external_sensor
-                ).state
-            if (
-                ATTR_UNIT_OF_MEASUREMENT
-                in self._hass.states.get(self.external_sensor).attributes
-            ):
-                self._attr_native_unit_of_measurement = self._hass.states.get(
-                    self.external_sensor
-                ).attributes[ATTR_UNIT_OF_MEASUREMENT]
+            except ValueError:
+                _LOGGER.debug(
+                    "Unknown external value for %s: %s = %s, setting to default: %s",
+                    self.entity_id,
+                    self.external_sensor,
+                    self._hass.states.get(self.external_sensor).state,
+                    self._default_state,
+                )
+                self._attr_native_value = self._default_state
+
         else:
+            _LOGGER.debug(
+                "External sensor not set for %s, setting to default: %s",
+                self.entity_id,
+                self._default_state,
+            )
             self._attr_native_value = self._default_state
 
     @callback
