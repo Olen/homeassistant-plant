@@ -158,7 +158,7 @@ _Currently this is the only card in lovelace that support this integration.  Fee
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
 
 #### Via HACS
-* Add this repo as a "Custom repository" with type "Integration"
+* Add this repo as a ["Custom repository"](https://hacs.xyz/docs/faq/custom_repositories/) with type "Integration"
 * Click "Install" in the new "Home Assistant Plant" card in HACS.
 * Install
 * Restart Home Assistant
