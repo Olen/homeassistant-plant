@@ -24,7 +24,7 @@ from homeassistant.helpers.entity import (
 )
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_state_change_event
-from homeassistant.util.temperature import convert as convert_temperature
+from homeassistant.util.unit_conversion import TemperatureConverter
 
 from .const import (
     ATTR_CONDUCTIVITY,
@@ -350,7 +350,7 @@ class PlantMaxTemperature(PlantMinMax):
             and new_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == "°C"
         ):
             new_state = round(
-                convert_temperature(
+                TemperatureConerter.convert(
                     temperature=float(self.state),
                     from_unit=TEMP_FAHRENHEIT,
                     to_unit=TEMP_CELSIUS,
@@ -367,7 +367,7 @@ class PlantMaxTemperature(PlantMinMax):
             and new_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == "°F"
         ):
             new_state = round(
-                convert_temperature(
+                TemperatureConerter.convert(
                     temperature=float(self.state),
                     from_unit=TEMP_CELSIUS,
                     to_unit=TEMP_FAHRENHEIT,
@@ -422,7 +422,7 @@ class PlantMinTemperature(PlantMinMax):
             and new_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == "°C"
         ):
             new_state = round(
-                convert_temperature(
+                TemperatureConerter.convert(
                     temperature=float(self.state),
                     from_unit=TEMP_FAHRENHEIT,
                     to_unit=TEMP_CELSIUS,
@@ -441,7 +441,7 @@ class PlantMinTemperature(PlantMinMax):
             and new_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == "°F"
         ):
             new_state = round(
-                convert_temperature(
+                TemperatureConerter.convert(
                     temperature=float(self.state),
                     from_unit=TEMP_CELSIUS,
                     to_unit=TEMP_FAHRENHEIT,
