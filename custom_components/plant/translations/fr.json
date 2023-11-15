@@ -1,0 +1,80 @@
+{
+  "title": "Surveillance de plantes",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configurer une plante",
+        "description": "Si vous ne trouvez pas les capteurs appropriés dans les menus déroulants, les capteurs peuvent être ajoutés après la configuration de la plante",
+        "data": {
+          "name": "Nom de la plante",
+          "species": "Espèce",
+          "temperature_sensor": "Capteur de température",
+          "moisture_sensor": "Capteur d'humidité du sol",
+          "conductivity_sensor": "Capteur de conductivité",
+          "illuminance_sensor": "Capteur de luminosité",
+          "humidity_sensor": "Capteur d'humidité de l'air"
+        },
+        "data_description": {
+          "species": "Sera utilisé pour la recherche dans OpenPlantbook"
+        }
+      },
+      "select_species": {
+        "title": "Sélectionner une espèce dans OpenPlantbook",
+        "description": "{desc}",
+        "data": {
+          "species": "Espèce"
+        },
+        "menu_options": {
+          "user": "Revenir en arrière"
+        }
+      },
+      "limits": {
+        "title": "Définir les limites",
+        "description": "# {name}\n![Plante]({entity_picture}){br}\n{extra_desc}L'unité de température est {temperature_unit}",
+        "data": {
+          "right_plant": "C'est la plante que je recherchais",
+          "display_pid": "Espèce de plante à afficher",
+          "max_moisture": "Humidité du sol maximale (%)",
+          "min_moisture": "Humidité du sol minimale (%)",
+          "max_illuminance": "Luminosité maximale (lx)",
+          "min_illuminance": "Luminosité minimale (lx)",
+          "max_dli": "DLI maximal (mol/d⋅m²)",
+          "min_dli": "DLI minimal (mol/d⋅m²)",
+          "max_temperature": "Température maximale (voir ci-dessus)",
+          "min_temperature": "Température minimale (voir ci-dessus)",
+          "max_conductivity": "Conductivité maximale (uS/cm)",
+          "min_conductivity": "Conductivité minimale (uS/cm)",
+          "max_humidity": "Humidité de l'air maximale (%)",
+          "min_humidity": "Humidité de l'air minimale (%)",
+          "entity_picture": "URL de l'image"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options",
+        "description": "",
+        "data": {
+          "check_days": "Contrôles des jours d'ensoleillement",
+          "species": "Espèce",
+          "force_update": "Forcer la mise à jour des données depuis OpenPlantbook",
+          "display_pid": "Espèce de plante à afficher",
+          "temperature_sensor": "Capteur de température",
+          "moisture_sensor": "Capteur d'humidité du sol",
+          "conductivity_sensor": "Capteur de conductivité",
+          "illuminance_sensor": "Capteur de luminosité",
+          "humidity_sensor": "Capteur d'humidité de l'air",
+          "entity_picture": "URL de l'image. Sera automatiquement mise à jour si l'espèce est trouvée dans OpenPlantbook",
+          "illuminance_trigger": "Utiliser la luminosité comme déclencheur de problème",
+          "dli_trigger": "Utiliser l'intégrale quotidienne de lumière (DLI) comme déclencheur de problème",
+          "humidity_trigger": "Utiliser l'humidité de l'air comme déclencheur de problème",
+          "conductivity_trigger": "Utiliser la conductivité comme déclencheur de problème",
+          "moisture_trigger": "Utiliser l'humidité du sol comme déclencheur de problème",
+          "temperature_trigger": "Utiliser la température comme déclencheur de problème"
+        }
+      }
+    }
+  }
+}
