@@ -1,0 +1,80 @@
+{
+  "title": "Plant monitor",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Eine Pflanze konfigurieren",
+        "description": "Wenn Sie in den Dropdown-Menüs nicht die richtigen Sensoren finden, können Sie die Sensoren nach Abschluss der Installation hinzufügen",
+        "data": {
+          "name": "Pflanzenname",
+          "species": "Sorte",
+          "temperature_sensor": "Temperatursensor",
+          "moisture_sensor": "Bodenfeuchtesensor",
+          "conductivity_sensor": "Leitfähigkeitssensor",
+          "illuminance_sensor": "Beleuchtungsstärkesensor",
+          "humidity_sensor": "Luftfeuchtigkeitssensor"
+        },
+        "data_description": {
+          "species": "Wird für die Suche in OpenPlantbook verwendet"
+        }
+      },
+      "select_species": {
+        "title": "Sorte aus OpenPlantbook auswählen",
+        "description": "{desc}",
+        "data": {
+          "species": "Sorte"
+        },
+        "menu_options": {
+          "user": "Zurück"
+        }
+      },
+      "limits": {
+        "title": "Grenzwerte festlegen",
+        "description": "# {name}\n![Plant]({entity_picture}){br}\n{extra_desc}Temperatureinheit ist  {temperature_unit}",
+        "data": {
+          "right_plant": "Das ist die Pflanze, die ich gesucht habe",
+          "display_pid": "Anzuzeigende Pflanzenarten",
+          "max_moisture": "Maximale Bodenfeuchtigkeit (%)",
+          "min_moisture": "Minimale Bodenfeuchtigkeit (%)",
+          "max_illuminance": "Maximale Beleuchtungsstärke (lx)",
+          "min_illuminance": "Minimale Beleuchtungsstärke (lx)",
+          "max_dli": "Maximale DLI (mol/d⋅m²)",
+          "min_dli": "Minimale DLI (mol/d⋅m²)",
+          "max_temperature": "Maximale Temperatur (siehe oben)",
+          "min_temperature": "Minimale Temperatur (siehe oben)",
+          "max_conductivity": "Maximale Leitfähigkeit (uS/cm)",
+          "min_conductivity": "Minimale Leitfähigkeit (uS/cm)",
+          "max_humidity": "Maximale Luftfeuchtigkeit (%)",
+          "min_humidity": "Minimale Luftfeuchtigkeit (%)",
+          "entity_picture": "Bild-URL"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Optionen",
+        "description": "",
+        "data": {
+          "check_days": "Beleuchtungsstärke-Kontrolltage",
+          "species": "Species",
+          "force_update": "Aktualisierung der Daten aus OpenPlantbook erzwingen",
+          "display_pid": "Anzuzeigende Pflanzenarten",
+          "temperature_sensor": "Temperatursensor",
+          "moisture_sensor": "Bodenfeuchtesensor",
+          "conductivity_sensor": "Leitfähigkeitssensor",
+          "illuminance_sensor": "Beleuchtungsstärkesensor",
+          "humidity_sensor": "Luftfeuchtigkeitssensor",
+          "entity_picture": "Bild-URL. Wird automatisch aktualisiert, wenn die Art in OpenPlantbook gefunden wird",
+          "illuminance_trigger": "Beleuchtungsstärke als Problemauslöser verwenden",
+          "dli_trigger": "Tägliches Lichtintegral (dli) als Problemauslöser verwenden",
+          "humidity_trigger": "Luftfeuchtigkeit als Problemauslöser verwenden",
+          "conductivity_trigger": "Leitfähigkeit als Problemauslöser verwenden",
+          "moisture_trigger": "Bodenfeuchte als Problemauslöser verwenden",
+          "temperature_trigger": "Temperatur als Problemauslöser verwenden"
+        }
+      }
+    }
+  }
+}
