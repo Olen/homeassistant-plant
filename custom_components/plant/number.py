@@ -12,8 +12,7 @@ from homeassistant.const import (
     LIGHT_LUX,
     PERCENTAGE,
     STATE_UNKNOWN,
-    TEMP_CELSIUS,
-    TEMP_FAHRENHEIT,
+    UnitOfTemperature,
 )
 from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
@@ -352,8 +351,8 @@ class PlantMaxTemperature(PlantMinMax):
             new_state = round(
                 TemperatureConerter.convert(
                     temperature=float(self.state),
-                    from_unit=TEMP_FAHRENHEIT,
-                    to_unit=TEMP_CELSIUS,
+                    from_unit=UnitOfTemperature.FAHRENHEIT,
+                    to_unit=UnitOfTemperature.CELSIUS,
                 )
             )
             _LOGGER.debug(
@@ -369,8 +368,8 @@ class PlantMaxTemperature(PlantMinMax):
             new_state = round(
                 TemperatureConerter.convert(
                     temperature=float(self.state),
-                    from_unit=TEMP_CELSIUS,
-                    to_unit=TEMP_FAHRENHEIT,
+                    from_unit=UnitOfTemperature.CELSIUS,
+                    to_unit=UnitOfTemperature.FAHRENHEIT,
                 )
             )
             _LOGGER.debug(
@@ -424,8 +423,8 @@ class PlantMinTemperature(PlantMinMax):
             new_state = round(
                 TemperatureConerter.convert(
                     temperature=float(self.state),
-                    from_unit=TEMP_FAHRENHEIT,
-                    to_unit=TEMP_CELSIUS,
+                    from_unit=UnitOfTemperature.FAHRENHEIT,
+                    to_unit=UnitOfTemperature.CELSIUS,
                 )
             )
             _LOGGER.debug(
@@ -443,8 +442,8 @@ class PlantMinTemperature(PlantMinMax):
             new_state = round(
                 TemperatureConerter.convert(
                     temperature=float(self.state),
-                    from_unit=TEMP_CELSIUS,
-                    to_unit=TEMP_FAHRENHEIT,
+                    from_unit=UnitOfTemperature.CELSIUS,
+                    to_unit=UnitOfTemperature.FAHRENHEIT,
                 )
             )
             _LOGGER.debug(
