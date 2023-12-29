@@ -535,7 +535,7 @@ class PlantTotalLightIntegral(IntegrationSensor):
             source_entity=illuminance_ppfd_sensor.entity_id,
             unique_id=f"{config.entry_id}-ppfd-integral",
             unit_prefix=None,
-            unit_time=UnitOfTime.Seconds,
+            unit_time=UnitOfTime.SECONDS,
         )
         self._unit_of_measurement = UNIT_DLI
         self.entity_id = async_generate_entity_id(
