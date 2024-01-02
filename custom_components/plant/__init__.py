@@ -626,6 +626,7 @@ class PlantDevice(Entity):
         """Run on every update of the entities"""
 
         new_state = STATE_OK
+        known_state = False
 
         if self.sensor_moisture is not None:
             moisture = self._hass.states.get(self.sensor_moisture.entity_id).state
@@ -634,6 +635,7 @@ class PlantDevice(Entity):
                 and moisture != STATE_UNKNOWN
                 and moisture != STATE_UNAVAILABLE
             ):
+                known_state = True
                 if float(moisture) < float(self.min_moisture.state):
                     self.moisture_status = STATE_LOW
                     if self.moisture_trigger:
@@ -654,6 +656,7 @@ class PlantDevice(Entity):
                 and conductivity != STATE_UNKNOWN
                 and conductivity != STATE_UNAVAILABLE
             ):
+                known_state = True
                 if float(conductivity) < float(self.min_conductivity.state):
                     self.conductivity_status = STATE_LOW
                     if self.conductivity_trigger:
@@ -672,6 +675,7 @@ class PlantDevice(Entity):
                 and temperature != STATE_UNKNOWN
                 and temperature != STATE_UNAVAILABLE
             ):
+                known_state = True
                 if float(temperature) < float(self.min_temperature.state):
                     self.temperature_status = STATE_LOW
                     if self.temperature_trigger:
@@ -690,6 +694,7 @@ class PlantDevice(Entity):
                 and humidity != STATE_UNKNOWN
                 and humidity != STATE_UNAVAILABLE
             ):
+                known_state = True
                 if float(humidity) < float(self.min_humidity.state):
                     self.humidity_status = STATE_LOW
                     if self.humidity_trigger:
@@ -710,6 +715,7 @@ class PlantDevice(Entity):
                 and illuminance != STATE_UNKNOWN
                 and illuminance != STATE_UNAVAILABLE
             ):
+                known_state = True
                 if float(illuminance) > float(self.max_illuminance.state):
                     self.illuminance_status = STATE_HIGH
                     if self.illuminance_trigger:
@@ -725,6 +731,7 @@ class PlantDevice(Entity):
             and self.dli.native_value != STATE_UNAVAILABLE
             and self.dli.state is not None
         ):
+            known_state = True
             if float(self.dli.extra_state_attributes["last_period"]) > 0 and float(
                 self.dli.extra_state_attributes["last_period"]
             ) < float(self.min_dli.state):
@@ -739,6 +746,9 @@ class PlantDevice(Entity):
                     new_state = STATE_PROBLEM
             else:
                 self.dli_status = STATE_OK
+
+        if not known_state:
+            new_state = STATE_UNKNOWN
 
         self._attr_state = new_state
         self.update_registry()
