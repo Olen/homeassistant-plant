@@ -26,7 +26,7 @@ from homeassistant.const import (
     PERCENTAGE,
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
-    TIME_SECONDS,
+    UnitOfTime,
     UnitOfTemperature,
 )
 from homeassistant.core import HomeAssistant, callback
@@ -535,7 +535,7 @@ class PlantTotalLightIntegral(IntegrationSensor):
             source_entity=illuminance_ppfd_sensor.entity_id,
             unique_id=f"{config.entry_id}-ppfd-integral",
             unit_prefix=None,
-            unit_time=TIME_SECONDS,
+            unit_time=UnitOfTime.SECONDS,
         )
         self._unit_of_measurement = UNIT_DLI
         self.entity_id = async_generate_entity_id(
