@@ -1,4 +1,5 @@
 """Config flow for Custom Plant integration."""
+
 from __future__ import annotations
 
 import logging
@@ -467,9 +468,9 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             )
         ] = cv.string
         if plant_helper.has_openplantbook and self.plant.species:
-            data_schema[
-                vol.Optional(FLOW_FORCE_SPECIES_UPDATE, default=False)
-            ] = cv.boolean
+            data_schema[vol.Optional(FLOW_FORCE_SPECIES_UPDATE, default=False)] = (
+                cv.boolean
+            )
 
         display_species = self.plant.display_species or ""
         data_schema[
@@ -489,9 +490,9 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 FLOW_ILLUMINANCE_TRIGGER, default=self.plant.illuminance_trigger
             )
         ] = cv.boolean
-        data_schema[
-            vol.Optional(FLOW_DLI_TRIGGER, default=self.plant.dli_trigger)
-        ] = cv.boolean
+        data_schema[vol.Optional(FLOW_DLI_TRIGGER, default=self.plant.dli_trigger)] = (
+            cv.boolean
+        )
 
         data_schema[
             vol.Optional(FLOW_HUMIDITY_TRIGGER, default=self.plant.humidity_trigger)
