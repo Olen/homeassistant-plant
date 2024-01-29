@@ -1,4 +1,5 @@
 """Helper functions for the plant integration"""
+
 from __future__ import annotations
 
 import logging

@@ -1,4 +1,5 @@
 """Support for monitoring plants."""
+
 from __future__ import annotations
 
 import logging
@@ -629,7 +630,9 @@ class PlantDevice(Entity):
         known_state = False
 
         if self.sensor_moisture is not None:
-            moisture = getattr(self._hass.states.get(self.sensor_moisture.entity_id), 'state', None)
+            moisture = getattr(
+                self._hass.states.get(self.sensor_moisture.entity_id), "state", None
+            )
             if (
                 moisture is not None
                 and moisture != STATE_UNKNOWN
@@ -648,7 +651,9 @@ class PlantDevice(Entity):
                     self.moisture_status = STATE_OK
 
         if self.sensor_conductivity is not None:
-            conductivity = getattr(self._hass.states.get(self.sensor_conductivity.entity_id), 'state', None)
+            conductivity = getattr(
+                self._hass.states.get(self.sensor_conductivity.entity_id), "state", None
+            )
             if (
                 conductivity is not None
                 and conductivity != STATE_UNKNOWN
@@ -667,7 +672,9 @@ class PlantDevice(Entity):
                     self.conductivity_status = STATE_OK
 
         if self.sensor_temperature is not None:
-            temperature = getattr(self._hass.states.get(self.sensor_temperature.entity_id), 'state', None)
+            temperature = getattr(
+                self._hass.states.get(self.sensor_temperature.entity_id), "state", None
+            )
             if (
                 temperature is not None
                 and temperature != STATE_UNKNOWN
@@ -686,7 +693,9 @@ class PlantDevice(Entity):
                     self.temperature_status = STATE_OK
 
         if self.sensor_humidity is not None:
-            humidity = getattr(self._hass.states.get(self.sensor_humidity.entity_id), 'state', None)
+            humidity = getattr(
+                self._hass.states.get(self.sensor_humidity.entity_id), "state", None
+            )
             if (
                 humidity is not None
                 and humidity != STATE_UNKNOWN
@@ -707,7 +716,9 @@ class PlantDevice(Entity):
         # Check the instant values for illuminance against "max"
         # Ignoring "min" value for illuminance as it would probably trigger every night
         if self.sensor_illuminance is not None:
-            illuminance = getattr(self._hass.states.get(self.sensor_illuminance.entity_id), 'state', None)
+            illuminance = getattr(
+                self._hass.states.get(self.sensor_illuminance.entity_id), "state", None
+            )
             if (
                 illuminance is not None
                 and illuminance != STATE_UNKNOWN

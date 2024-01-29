@@ -1,4 +1,5 @@
 """Max/Min threshold classes for the plant device"""
+
 from __future__ import annotations
 
 import logging

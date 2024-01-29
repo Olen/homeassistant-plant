@@ -1,4 +1,5 @@
 """Describe group states."""
+
 from __future__ import annotations
 
 from homeassistant.components.group import GroupIntegrationRegistry
