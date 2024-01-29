@@ -4,7 +4,7 @@
     "step": {
       "user": {
         "title": "Configurar una planta",
-        "description": "If you can't find the correct sensors in the dropdown menus, sensors can be added after the plant is set up",
+        "description": "Si no puede encontrar los sensores correctos en los menús desplegables, los sensores se pueden añadir después de configurar la planta",
         "data": {
           "name": "Nombre de la planta",
           "species": "Especie",
