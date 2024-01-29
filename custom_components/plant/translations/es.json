@@ -1,0 +1,96 @@
+{
+  "title": "Monitor de planatas",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configurar una planta",
+        "description": "Si no puede encontrar los sensores correctos en los menús desplegables, los sensores se pueden añadir después de configurar la planta",
+        "data": {
+          "name": "Nombre de la planta",
+          "species": "Especie",
+          "temperature_sensor": "Sensor de Temperatura",
+          "moisture_sensor": "Sensor de Humedad del suelo",
+          "conductivity_sensor": "Sensor Conductividad",
+          "illuminance_sensor": "Sensor de Iluminación",
+          "humidity_sensor": "Sensor de humedad ambiente"
+        },
+        "data_description": {
+          "species": "Se usara para buscar en OpenPlantbook"
+        }
+      },
+      "select_species": {
+        "title": "Seleciona la especie en OpenPlantbook",
+        "description": "{desc}",
+        "data": {
+          "species": "Especie"
+        },
+        "menu_options": {
+          "user": "Ir hacia atras"
+        }
+      },
+      "limits": {
+        "title": "Establecer límites",
+        "description": "# {name}\n![Planta]({entity_picture}){br}\n{extra_desc}La unidad de Temperatura es {temperature_unit}",
+        "data": {
+          "right_plant": "Esta es la planta que estaba buscando",
+          "display_pid": "Especies vegetales a exponer",
+          "max_moisture": "Humedad máxima del suelo (%)",
+          "min_moisture": "Humedad mínima del suelo (%)",
+          "max_illuminance": "Iluminación máxima (lx)",
+          "min_illuminance": "Iluminación mínima (lx)",
+          "max_dli": "DLI máximo (mol/d⋅m²)",
+          "min_dli": "DLI mínimo (mol/d⋅m²)",
+          "max_temperature": "Temperatura máxima (véase más arriba)",
+          "min_temperature": "Temperatura mínima (véase más arriba)",
+          "max_conductivity": "Conductividad máxima (uS/cm)",
+          "min_conductivity": "Conductividad mínima (uS/cm)",
+          "max_humidity": "Humedad del aire máxima (%)",
+          "min_humidity": "Humedad del aire mínima (%)",
+          "entity_picture": "URL de la imagen"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opciones",
+        "description": "",
+        "data": {
+          "check_days": "Días de control de la iluminación",
+          "species": "Especie",
+          "force_update": "Forzar la actualización de los datos de OpenPlantbook",
+          "display_pid": "Especies vegetales para mostrar",
+          "temperature_sensor": "Sensor de Temperatura",
+          "moisture_sensor": "Sensor de Humedad del suelo",
+          "conductivity_sensor": "Sensor Conductividad",
+          "illuminance_sensor": "Sensor de Iluminación",
+          "humidity_sensor": "Sensor de humedad ambiente",
+          "entity_picture": "URL de la imagen. Se actualizará automáticamente si la especie se encuentra en OpenPlantbook",
+          "illuminance_trigger": "Utilizar la iluminación como desencadenante de problema",
+          "dli_trigger": "Utilizar la luz diaria integral (dli) como desencadenante de problema",
+          "humidity_trigger": "Utilizar la humedad del aire como desencadenante de problema",
+          "conductivity_trigger": "Utilizar la conductividad como desencadenante de problema",
+          "moisture_trigger": "Utilizar la humedad del suelo como desencadenante de problema",
+          "temperature_trigger": "Utilizar la temperatura como desencadenante de problema"
+        }
+      }
+    }
+  },
+  "services": {
+    "replace_sensor": {
+      "name": "Sustituir sensor",
+      "description": "Sustituye la fuente de un sensor de planta.",
+      "fields": {
+        "meter_entity": {
+          "name": "Entidad de medición",
+          "description": "Sustitución del sensor de medición."
+        },
+        "new_sensor": {
+          "name": "Sensor de entidad",
+          "description": "Id del nuevo sensor. Dejar en blanco para eliminar el sensor."
+        }
+      }
+    }
+  }
+}
