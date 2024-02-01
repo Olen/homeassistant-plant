@@ -588,6 +588,7 @@ class PlantDailyLightIntegral(UtilityMeterSensor):
             tariff_entity=None,
             tariff=None,
             unique_id=f"{config.entry_id}-dli",
+            sensor_always_available=True,
             suggested_entity_id=None,
             periodically_resetting=True,
         )
