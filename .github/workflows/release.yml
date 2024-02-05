@@ -24,7 +24,7 @@ jobs:
         run: echo "COMPONENT_VERSION=$(jq -r .version custom_components/*/manifest.json)" >> $GITHUB_ENV
 
       - name: "🏷️ Check if tag exists already"
-        uses: mukunku/tag-exists-action@v1.5.0
+        uses: mukunku/tag-exists-action@v1.6.0
         id: "check_tag"
         with: 
           tag: "v${{ env.COMPONENT_VERSION }}"
