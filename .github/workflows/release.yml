@@ -64,7 +64,7 @@ jobs:
           stripGeneratorNotice: true
 
       - name: 👍 Create Stable release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           prerelease: false
           body: "${{ steps.changelog.outputs.changelog }}"
@@ -73,7 +73,7 @@ jobs:
         if: contains(env.COMPONENT_VERSION, 'beta') == false
 
       - name: 🤞 Create Beta release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           prerelease: true
           body: "${{ steps.changelog.outputs.changelog }}"
