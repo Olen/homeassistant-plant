@@ -449,7 +449,7 @@ class PlantCurrentPpfd(PlantCurrentStatus):
         self._plant = plantdevice
 
         self._external_sensor = self._plant.sensor_illuminance.entity_id
-        self._attr_icon = "mdi:white-balance-sunny"
+        self._attr_icon = ICON_PPFD
         super().__init__(hass, config, plantdevice)
         self._follow_unit = False
         self.entity_id = async_generate_entity_id(
@@ -538,6 +538,7 @@ class PlantTotalLightIntegral(IntegrationSensor):
             unit_time=UnitOfTime.SECONDS,
         )
         self._unit_of_measurement = UNIT_DLI
+        self._attr_icon = ICON_DLI
         self.entity_id = async_generate_entity_id(
             f"{DOMAIN_SENSOR}.{{}}", self.name, current_ids={}
         )
@@ -597,6 +598,7 @@ class PlantDailyLightIntegral(UtilityMeterSensor):
         )
 
         self._unit_of_measurement = UNIT_DLI
+        self._attr_icon = ICON_DLI
         self._plant = plantdevice
 
     @property
