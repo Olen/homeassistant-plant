@@ -221,7 +221,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
         return
 
     hass.services.async_register(DOMAIN, SERVICE_REPLACE_SENSOR, replace_sensor)
-    hass.components.websocket_api.async_register_command(ws_get_info)
+    websocket_api.async_register_command(hass, ws_get_info)
     plant.async_schedule_update_ha_state(True)
 
     # Lets add the dummy sensors automatically if we are testing stuff
