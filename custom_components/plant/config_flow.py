@@ -136,6 +136,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         data_schema[FLOW_SENSOR_MOISTURE] = selector(
             {
                 ATTR_ENTITY: {
+                    ATTR_DEVICE_CLASS: SensorDeviceClass.MOISTURE,
                     ATTR_DOMAIN: DOMAIN_SENSOR,
                 }
             }
