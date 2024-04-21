@@ -329,9 +329,6 @@ class PlantCurrentIlluminance(PlantCurrentStatus):
         self._external_sensor = config.data[FLOW_PLANT_INFO].get(
             FLOW_SENSOR_ILLUMINANCE
         )
-        _LOGGER.info(
-            "Added external sensor for %s %s", self.entity_id, self._external_sensor
-        )
         self._attr_native_unit_of_measurement = LIGHT_LUX
         super().__init__(hass, config, plantdevice)
 
