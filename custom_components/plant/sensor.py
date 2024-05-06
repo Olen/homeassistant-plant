@@ -221,7 +221,8 @@ class PlantCurrentStatus(RestoreSensor):
         await super().async_added_to_hass()
         state = await self.async_get_last_state()
 
-        # We do not restore the state for these they are read from the external sensor anyway
+        # We do not restore the state for these.
+        # They are read from the external sensor anyway
         self._attr_native_value = None
         if state:
             if "external_sensor" in state.attributes:
@@ -302,8 +303,8 @@ class PlantCurrentStatus(RestoreSensor):
         if (
             self.external_sensor
             and new_state
-            and new_state is not STATE_UNKNOWN
-            and new_state is not STATE_UNAVAILABLE
+            and new_state.state != STATE_UNKNOWN
+            and new_state.state != STATE_UNAVAILABLE
         ):
             self._attr_native_value = new_state.state
             if ATTR_UNIT_OF_MEASUREMENT in new_state.attributes:
