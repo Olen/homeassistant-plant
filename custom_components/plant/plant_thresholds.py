@@ -449,7 +449,7 @@ class PlantMinIlluminance(PlantMinMax):
 
     @property
     def device_class(self):
-        return SensorDeviceClass.ILLUMINANCE
+        return f"{SensorDeviceClass.ILLUMINANCE} threshold"
 
 
 class PlantMaxDli(PlantMinMax):
