@@ -18,13 +18,13 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     ATTR_NAME,
     ATTR_UNIT_OF_MEASUREMENT,
-    CONDUCTIVITY,
     LIGHT_LUX,
     PERCENTAGE,
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
-    UnitOfTime,
+    UnitOfConductivity,
     UnitOfTemperature,
+    UnitOfTime,
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
@@ -204,7 +204,7 @@ class PlantCurrentConductivity(PlantCurrentStatus):
         self._external_sensor = config.data[FLOW_PLANT_INFO].get(
             FLOW_SENSOR_CONDUCTIVITY
         )
-        self._attr_native_unit_of_measurement = CONDUCTIVITY
+        self._attr_native_unit_of_measurement = UnitOfConductivity.MICROSIEMENS
 
         super().__init__(hass, config, plantdevice)
 
