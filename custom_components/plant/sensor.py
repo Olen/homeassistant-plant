@@ -536,6 +536,7 @@ class PlantTotalLightIntegral(IntegrationSensor):
             unique_id=f"{config.entry_id}-ppfd-integral",
             unit_prefix=None,
             unit_time=UnitOfTime.SECONDS,
+            max_sub_interval=None,
         )
         self._unit_of_measurement = UNIT_DLI
         self._attr_icon = ICON_DLI
