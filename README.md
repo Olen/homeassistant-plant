@@ -6,37 +6,18 @@ This integration can automatically fetch data from [OpenPlantBook](https://open.
 
 >**Warning**
 >
-> **This integration is completely rewritten.  Versions >= 2.0.0 is *not* compatible with the original plant integration in HA or with earlier releases of this integration.**
+> **This integration is *not* compatible with the original plant integration in HA.**
 
 > **Note** 
 >
-> Version 2 of this integration will try to convert all `plant:` entries from `configuration.yaml` to the new format.  After migration, you can (and should) remove your `plant:` entries from your YAML-configuration.   
-> If something goes wrong during migration, delete all the plants from the UI, and correct any problems in your yaml config.  Then they will be migrated again at next restart.  Auto migration will not be done if there are existing plants of the new format alread.
+> This integration will try to convert all `plant:` entries from `configuration.yaml` to the new format.  After migration, you can (and should) remove your `plant:` entries from your YAML-configuration.   
+> If something goes wrong during migration, delete all the plants from the UI, and correct any problems in your yaml config.  Then they will be migrated again at next restart.  Auto migration will not be done if there are existing plants of the new format already registered in HA.
 
 > **Warning**
 > 
 > Please notice that the `entity_id` of the plants will **NOT** be preserved during auto-migration.  Also, since the "layout" of the new integration is completely different from the old one, you probably have to update and modify any automations, scripts, blueprints etc. you have made based on the old version.
 >
 > Make sure you check you plant settings after the first restart. You can find the configuration options in the Integrations page under Settings in Home Assistant.
-
-<details>
-  <summary>Version 1</summary>
-  
-
-# Version 1
-
-This is the "old" version.  Requiring `plant`-entries in `configuration.yaml` and manual setup.
-
-This version will no longer be maintained, and I strongly urge everyone to test out the new version and report any issues.
-
-[Read more and see installation instructions](https://github.com/Olen/homeassistant-plant/blob/master/Version%201.md)
-
-The rest of this file will describe the upcoming version - 2.0.0.
-
-</details>
-
-
-# Version 2
 
 Plants are set up in the UI and all configuration of your plants can be managed there or by automations and scripts.
 
