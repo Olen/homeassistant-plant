@@ -139,8 +139,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     plant = PlantDevice(hass, entry)
     hass.data[DOMAIN][entry.entry_id][ATTR_PLANT] = plant
 
-    await hass.config_entries.async_forward_entry_setups(entry, ["number"])
-    await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
+    await hass.config_entries.async_forward_entry_setups(entry, ["number", "sensor"])
 
     plant_entities = [
         plant,
