@@ -89,7 +89,7 @@ USE_DUMMY_SENSORS = False
 # async def async_setup(hass: HomeAssistant, config: dict):
 #     """
 #     Set up the plant component
-# 
+#
 #     Configuration.yaml is no longer used.
 #     This function only tries to migrate the legacy config.
 #     """

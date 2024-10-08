@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 from homeassistant.const import STATE_OK, STATE_PROBLEM
 from homeassistant.core import HomeAssistant, callback
+
 if TYPE_CHECKING:
     from homeassistant.components.group import GroupIntegrationRegistry
 
