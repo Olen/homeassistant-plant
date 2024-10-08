@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from , import group
+from . import group
 
 import logging
 
