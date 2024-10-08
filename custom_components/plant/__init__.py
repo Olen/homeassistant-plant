@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from . import group
+
 import logging
 
 import voluptuous as vol
@@ -81,29 +83,31 @@ PLATFORMS = [Platform.NUMBER, Platform.SENSOR]
 SETUP_DUMMY_SENSORS = False
 USE_DUMMY_SENSORS = False
 
-
-async def async_setup(hass: HomeAssistant, config: dict):
-    """
-    Set up the plant component
-
-    Configuration.yaml is no longer used.
-    This function only tries to migrate the legacy config.
-    """
-    if config.get(DOMAIN):
-        # Only import if we haven't before.
-        config_entry = _async_find_matching_config_entry(hass)
-        if not config_entry:
-            _LOGGER.debug("Old setup - with config: %s", config[DOMAIN])
-            for plant in config[DOMAIN]:
-                if plant != DOMAIN_PLANTBOOK:
-                    _LOGGER.info("Migrating plant: %s", plant)
-                    await async_migrate_plant(hass, plant, config[DOMAIN][plant])
-        else:
-            _LOGGER.warning(
-                "Config already imported. Please delete all your %s related config from configuration.yaml",
-                DOMAIN,
-            )
-    return True
+# Removed.
+# Have not been used for a long time
+#
+# async def async_setup(hass: HomeAssistant, config: dict):
+#     """
+#     Set up the plant component
+#
+#     Configuration.yaml is no longer used.
+#     This function only tries to migrate the legacy config.
+#     """
+#     if config.get(DOMAIN):
+#         # Only import if we haven't before.
+#         config_entry = _async_find_matching_config_entry(hass)
+#         if not config_entry:
+#             _LOGGER.debug("Old setup - with config: %s", config[DOMAIN])
+#             for plant in config[DOMAIN]:
+#                 if plant != DOMAIN_PLANTBOOK:
+#                     _LOGGER.info("Migrating plant: %s", plant)
+#                     await async_migrate_plant(hass, plant, config[DOMAIN][plant])
+#         else:
+#             _LOGGER.warning(
+#                 "Config already imported. Please delete all your %s related config from configuration.yaml",
+#                 DOMAIN,
+#             )
+#     return True
 
 
 @callback
