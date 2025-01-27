@@ -20,7 +20,10 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.network import NoURLAvailableError, get_url
-from homeassistant.helpers.selector import selector
+from homeassistant.helpers.selector import (
+    selector,
+    TemplateSelector,
+)
 
 from .const import (
     ATTR_ENTITY,
@@ -127,7 +130,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             ): cv.string,
             vol.Optional(
                 ATTR_NOTES, default=self.plant_info.get(ATTR_NOTES, "")
-            ): cv.string,
+            ): TemplateSelector(),
         }
 
         data_schema[FLOW_SENSOR_TEMPERATURE] = selector(
@@ -432,7 +435,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 class OptionsFlowHandler(config_entries.OptionsFlow):
-    """Handling opetions for plant"""
+    """Handling options for plant"""
 
     def __init__(
         self,
@@ -524,7 +527,9 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
         # Use .notes if present, else empty
         current_notes = getattr(self.plant, "notes", "")
-        data_schema[vol.Optional(ATTR_NOTES, description={"suggested_value": current_notes})] = cv.string
+        data_schema[vol.Optional(
+            ATTR_NOTES, description={"suggested_value": current_notes}
+        )] = TemplateSelector()
 
         return self.async_show_form(step_id="init", data_schema=vol.Schema(data_schema))
 
