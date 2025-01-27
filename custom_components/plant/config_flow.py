@@ -30,6 +30,7 @@ from .const import (
     ATTR_SELECT,
     ATTR_SENSORS,
     ATTR_SPECIES,
+    ATTR_NOTES,
     CONF_MAX_CONDUCTIVITY,
     CONF_MAX_DLI,
     CONF_MAX_HUMIDITY,
@@ -109,6 +110,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             if valid:
                 # Store info to use in next step
                 self.plant_info = user_input
+                self.plant_info[ATTR_NOTES] = user_input.get(ATTR_NOTES, "")
                 self.plant_info[ATTR_SEARCH_FOR] = user_input[ATTR_SPECIES]
                 _LOGGER.debug("Plant_info: %s", self.plant_info)
 
@@ -122,6 +124,9 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             vol.Required(ATTR_NAME, default=self.plant_info.get(ATTR_NAME)): cv.string,
             vol.Optional(
                 ATTR_SPECIES, default=self.plant_info.get(ATTR_SPECIES, "")
+            ): cv.string,
+            vol.Optional(
+                ATTR_NOTES, default=self.plant_info.get(ATTR_NOTES, "")
             ): cv.string,
         }
 
