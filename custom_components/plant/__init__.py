@@ -340,7 +340,7 @@ class PlantDevice(Entity):
         )
         # Get notes from options or from initial config
         self.notes = self._config.options.get(
-            ATTR_NOTES, self._config.data[FLOW_PLANT_INFO].get(ATTR_NOTES, "")
+            ATTR_NOTES, self._config.data[FLOW_PLANT_INFO].get(ATTR_NOTES)
         )
         # Get display_species from options or from initial config
         self.display_species = (

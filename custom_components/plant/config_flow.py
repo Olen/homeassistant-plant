@@ -463,6 +463,9 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             ):
                 user_input[OPB_DISPLAY_PID] = ""
 
+            notes_val = user_input.get(ATTR_NOTES, "")
+            user_input[ATTR_NOTES] = notes_val
+
             return self.async_create_entry(title="", data=user_input)
 
         self.plant = self.hass.data[DOMAIN][self.entry.entry_id]["plant"]
@@ -519,6 +522,10 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
         # data_schema[vol.Optional(CONF_CHECK_DAYS, default=self.plant.check_days)] = int
 
+        # Use .notes if present, else empty
+        current_notes = getattr(self.plant, "notes", "")
+        data_schema[vol.Optional(ATTR_NOTES, description={"suggested_value": current_notes})] = cv.string
+
         return self.async_show_form(step_id="init", data_schema=vol.Schema(data_schema))
 
     async def update_plant_options(
@@ -564,6 +571,10 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
         new_species = entry.options.get(ATTR_SPECIES)
         force_new_species = entry.options.get(FLOW_FORCE_SPECIES_UPDATE)
+
+        new_notes = entry.options.get(ATTR_NOTES, "")
+        self.plant.notes = new_notes
+
         if new_species is not None and (
             new_species != self.plant.species or force_new_species is True
         ):
@@ -607,7 +618,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 self.plant.species = new_species
 
             # We need to reset the force_update option back to False, or else
-            # this will only be run once (unchanged options are will not trigger the flow)
+            # this will only be run once (unchanged options won't trigger the flow)
             options = dict(entry.options)
             data = dict(entry.data)
             options[FLOW_FORCE_SPECIES_UPDATE] = False
