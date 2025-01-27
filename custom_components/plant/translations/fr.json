@@ -8,6 +8,7 @@
         "data": {
           "name": "Nom de la plante",
           "species": "Espèce",
+          "notes": "Notes sur la plante",
           "temperature_sensor": "Capteur de température",
           "moisture_sensor": "Capteur d'humidité du sol",
           "conductivity_sensor": "Capteur de conductivité",
@@ -59,6 +60,7 @@
         "data": {
           "check_days": "Contrôles des jours d'ensoleillement",
           "species": "Espèce",
+          "notes": "Notes sur la plante",
           "force_update": "Forcer la mise à jour des données depuis OpenPlantbook",
           "display_pid": "Espèce de plante à afficher",
           "temperature_sensor": "Capteur de température",

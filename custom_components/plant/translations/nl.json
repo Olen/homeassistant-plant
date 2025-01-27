@@ -8,6 +8,7 @@
         "data": {
           "name": "Plantnaam",
           "species": "Soort",
+          "notes": "Plantnotities",
           "temperature_sensor": "Temperatuursensor",
           "moisture_sensor": "Bodemvochtsensor",
           "conductivity_sensor": "Geleidbaarheidssensor",
@@ -59,6 +60,7 @@
         "data": {
           "check_days": "Lichtsterktecontroledagen",
           "species": "Soort",
+          "notes": "Plantnotities",
           "force_update": "Forceer ophalen data van OpenPlantbook",
           "display_pid": "Te tonen plantsoort",
           "temperature_sensor": "Temperatuursensor",
