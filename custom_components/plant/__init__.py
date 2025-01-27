@@ -461,7 +461,7 @@ class PlantDevice(Entity):
             f"{ATTR_HUMIDITY}_status": self.humidity_status,
             f"{ATTR_DLI}_status": self.dli_status,
             f"{ATTR_SPECIES}_original": self.species,
-            f"{ATTR_NOTES}_original": self.notes,
+            f"{ATTR_NOTES}": self.notes,
         }
         return attributes
 

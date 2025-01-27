@@ -572,7 +572,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         new_species = entry.options.get(ATTR_SPECIES)
         force_new_species = entry.options.get(FLOW_FORCE_SPECIES_UPDATE)
 
-        new_notes = entry.options.get(ATTR_NOTES, "")
+        new_notes = entry.options.get(ATTR_NOTES)
         self.plant.notes = new_notes
 
         if new_species is not None and (
