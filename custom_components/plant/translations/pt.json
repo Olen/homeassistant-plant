@@ -1,5 +1,6 @@
 {
   "title": "Monitorização de plantas",
+  "plant_notes": "Notas da planta",
   "config": {
     "step": {
       "user": {
@@ -8,7 +9,6 @@
         "data": {
           "name": "Nome da planta",
           "species": "Especie",
-          "notes": "Notas da planta",
           "temperature_sensor": "Sensor de Temperatura",
           "moisture_sensor": "Sensor de húmidade de solo",
           "conductivity_sensor": "Sensor de Condutividade",
@@ -60,7 +60,6 @@
         "data": {
           "check_days": "Verificar por dias",
           "species": "Especies",
-          "notes": "Notas da planta",
           "force_update": "Forçar a atuailização de  OpenPlantbook",
           "display_pid": "Especies de plantas a mostrar",
           "temperature_sensor": "Sensor de Temperatura",

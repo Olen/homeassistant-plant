@@ -45,7 +45,6 @@ from .const import (
     ATTR_METERS,
     ATTR_MIN,
     ATTR_MOISTURE,
-    ATTR_NOTES,
     ATTR_PLANT,
     ATTR_SENSOR,
     ATTR_SENSORS,
@@ -76,7 +75,7 @@ from .const import (
 from .plant_helpers import PlantHelper
 
 _LOGGER = logging.getLogger(__name__)
-PLATFORMS = [Platform.NUMBER, Platform.SENSOR]
+PLATFORMS = [Platform.NUMBER, Platform.SENSOR, Platform.TEXT]
 
 # Use this during testing to generate some dummy-sensors
 # to provide random readings for temperature, moisture etc.
@@ -338,10 +337,6 @@ class PlantDevice(Entity):
         self.species = self._config.options.get(
             ATTR_SPECIES, self._config.data[FLOW_PLANT_INFO].get(ATTR_SPECIES)
         )
-        # Get notes from options or from initial config
-        self.notes = self._config.options.get(
-            ATTR_NOTES, self._config.data[FLOW_PLANT_INFO].get(ATTR_NOTES)
-        )
         # Get display_species from options or from initial config
         self.display_species = (
             self._config.options.get(
@@ -461,7 +456,6 @@ class PlantDevice(Entity):
             f"{ATTR_HUMIDITY}_status": self.humidity_status,
             f"{ATTR_DLI}_status": self.dli_status,
             f"{ATTR_SPECIES}_original": self.species,
-            f"{ATTR_NOTES}": self.notes,
         }
         return attributes
 

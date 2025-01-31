@@ -1,5 +1,6 @@
 {
   "title": "Plant monitor",
+  "plant_notes": "Plantnotities",
   "config": {
     "step": {
       "user": {
@@ -8,7 +9,6 @@
         "data": {
           "name": "Plantnaam",
           "species": "Soort",
-          "notes": "Plantnotities",
           "temperature_sensor": "Temperatuursensor",
           "moisture_sensor": "Bodemvochtsensor",
           "conductivity_sensor": "Geleidbaarheidssensor",
@@ -33,7 +33,7 @@
         "title": "Stel limieten in",
         "description": "# {name}\n![Plant]({entity_picture}){br}\n{extra_desc}Temperatuureenheid is {temperature_unit}",
         "data": {
-          "right_plant": "Dit is de plan waar ik naar op zoek was",
+          "right_plant": "Dit is de plant waar ik naar op zoek was",
           "display_pid": "Te tonen plantsoort",
           "max_moisture": "Maximale bodemvochtigheid (%)",
           "min_moisture": "Minimale bodemvochtigheid (%)",
@@ -60,7 +60,6 @@
         "data": {
           "check_days": "Lichtsterktecontroledagen",
           "species": "Soort",
-          "notes": "Plantnotities",
           "force_update": "Forceer ophalen data van OpenPlantbook",
           "display_pid": "Te tonen plantsoort",
           "temperature_sensor": "Temperatuursensor",

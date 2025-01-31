@@ -1,5 +1,6 @@
 {
   "title": "Plant monitor",
+  "plant_notes": "Pflanzennotizen",
   "config": {
     "step": {
       "user": {
@@ -8,7 +9,6 @@
         "data": {
           "name": "Pflanzenname",
           "species": "Sorte",
-          "notes": "Pflanzennotizen",
           "temperature_sensor": "Temperatursensor",
           "moisture_sensor": "Bodenfeuchtesensor",
           "conductivity_sensor": "Leitfähigkeitssensor",
@@ -31,7 +31,7 @@
       },
       "limits": {
         "title": "Grenzwerte festlegen",
-        "description": "# {name}\n![Plant]({entity_picture}){br}\n{extra_desc}Temperatureinheit ist  {temperature_unit}",
+        "description": "# {name}\n![Plant]({entity_picture}){br}\n{extra_desc}Temperatureinheit ist {temperature_unit}",
         "data": {
           "right_plant": "Das ist die Pflanze, die ich gesucht habe",
           "display_pid": "Anzuzeigende Pflanzenarten",
@@ -60,7 +60,6 @@
         "data": {
           "check_days": "Beleuchtungsstärke-Kontrolltage",
           "species": "Species",
-          "notes": "Pflanzennotizen",
           "force_update": "Aktualisierung der Daten aus OpenPlantbook erzwingen",
           "display_pid": "Anzuzeigende Pflanzenarten",
           "temperature_sensor": "Temperatursensor",

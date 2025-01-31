@@ -1,5 +1,6 @@
 {
   "title": "Növény Figyelő",
+  "plant_notes": "Növény megjegyzések",
   "config": {
     "step": {
       "user": {
@@ -8,7 +9,6 @@
         "data": {
           "name": "Növény neve",
           "species": "Faj",
-          "notes": "Növény megjegyzések",
           "temperature_sensor": "Hőmérséklet érzékelő",
           "moisture_sensor": "Talajnedvesség érzékelő",
           "conductivity_sensor": "Talajvezetőképesség érzékelő",
@@ -60,7 +60,6 @@
         "data": {
           "check_days": "Fényerősség ellenőrzési napok",
           "species": "Faj",
-          "notes": "Növény megjegyzések",
           "force_update": "OpenPlantbookból származó adatok frissítésének kényszerítése",
           "display_pid": "Megjelenítendő növényfaj",
           "temperature_sensor": "Hőmérséklet érzékelő",
@@ -71,7 +70,7 @@
           "entity_picture": "Kép URL. Automatikusan frissül, ha a faj megtalálható az OpenPlantbook-ban.",
           "illuminance_trigger": "Használja a fényerősséget mint probléma kiváltót",
           "dli_trigger": "Használja a napi fény integrált (dli) mint probléma kiváltót",
-          "humidity_trigger": "Használja a levegő páratartalmat  mint probléma kiváltót",
+          "humidity_trigger": "Használja a levegő páratartalmat mint probléma kiváltót",
           "conductivity_trigger": "Használja a talajvezetőképességet mint probléma kiváltót",
           "moisture_trigger": "Használja a talajnedvességet mint probléma kiváltót",
           "temperature_trigger": "Használja a hőmérsékletet mint probléma kiváltót"

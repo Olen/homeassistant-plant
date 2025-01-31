@@ -1,5 +1,6 @@
 {
   "title": "Surveillance de plantes",
+  "plant_notes": "Notes sur la plante",
   "config": {
     "step": {
       "user": {
@@ -8,7 +9,6 @@
         "data": {
           "name": "Nom de la plante",
           "species": "Espèce",
-          "notes": "Notes sur la plante",
           "temperature_sensor": "Capteur de température",
           "moisture_sensor": "Capteur d'humidité du sol",
           "conductivity_sensor": "Capteur de conductivité",
