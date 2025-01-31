@@ -40,15 +40,9 @@ class PlantNotesTextEntity(TextEntity):
     def name(self) -> str:
         """Return the display name of the plant notes entity.
 
-        This combines the plant’s name with the translated label.
+        This combines the plant’s name with the fixed label "Notes".
         """
-        if self.hass:
-            translated = self.hass.helpers.translate(
-                f"component.{DOMAIN}.plant_notes", default="Notes"
-            )
-        else:
-            translated = "Notes"
-        return f"{self.plant.name} {translated}"
+        return f"{self.plant.name} Notes"
 
     async def async_set_value(self, value: str) -> None:
         """Update the plant notes value when changed in the frontend."""
