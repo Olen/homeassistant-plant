@@ -386,6 +386,9 @@ class PlantDevice(Entity):
         self.humidity_status = None
         self.dli_status = None
 
+        # Added notes attribute so that the text entity can be created.
+        self.notes = ""
+
     @property
     def entity_category(self) -> None:
         """The plant device itself does not have a category"""
