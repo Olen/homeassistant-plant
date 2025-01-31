@@ -326,6 +326,7 @@ class PlantDevice(Entity):
         self._hass = hass
         self._attr_name = config.data[FLOW_PLANT_INFO][ATTR_NAME]
         self._config_entries = []
+        # We no longer use "config_entries" in device_info.
         self._data_source = config.data[FLOW_PLANT_INFO].get(DATA_SOURCE)
 
         # Get entity_picture from options or from initial config
@@ -386,9 +387,6 @@ class PlantDevice(Entity):
         self.humidity_status = None
         self.dli_status = None
 
-        # Added notes attribute so that the text entity can be created.
-        self.notes = ""
-
     @property
     def entity_category(self) -> None:
         """The plant device itself does not have a category"""
@@ -409,9 +407,9 @@ class PlantDevice(Entity):
         return {
             "identifiers": {(DOMAIN, self.unique_id)},
             "name": self.name,
-            "config_entries": self._config_entries,
             "model": self.display_species,
-            "manufacturer": self.data_source,
+            "manufacturer": self._data_source,
+            # Do not include "config_entry_id" here since HA already passes it.
         }
 
     @property

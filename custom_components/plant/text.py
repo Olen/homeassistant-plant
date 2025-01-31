@@ -25,8 +25,7 @@ class PlantNotesTextEntity(TextEntity):
 
     _attr_icon = "mdi:note-text-outline"
     _attr_should_poll = False
-    # This translation key tells HA to look up translations under "component.plant.plant_notes"
-    _attr_translation_key = "plant_notes"
+    _attr_mode = "textarea"  # Use a multiline (textarea) input in the frontend
 
     def __init__(self, plant) -> None:
         """Initialize the text entity."""
@@ -34,7 +33,8 @@ class PlantNotesTextEntity(TextEntity):
         # Form a unique ID using the plant device’s unique_id.
         self._attr_unique_id = f"{plant.unique_id}-notes"
         # Initialize with the current notes from the plant device (or an empty string).
-        self._attr_native_value = plant.notes or ""
+        self._attr_native_value = getattr(plant, "notes", "") or ""
+
 
     @property
     def name(self) -> str:
@@ -43,6 +43,18 @@ class PlantNotesTextEntity(TextEntity):
         This combines the plant’s name with the fixed label "Notes".
         """
         return f"{self.plant.name} Notes"
+
+    @property
+    def device_info(self) -> dict:
+        """Return the device info for this text entity.
+        
+        This attaches the text entity to the same device as the plant, but
+        we remove the 'config_entries' key so that the device registry isn’t
+        passed duplicate config_entry_id information.
+        """
+        info = self.plant.device_info.copy()
+        info.pop("config_entries", None)
+        return info
 
     async def async_set_value(self, value: str) -> None:
         """Update the plant notes value when changed in the frontend."""
