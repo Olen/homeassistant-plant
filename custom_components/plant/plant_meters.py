@@ -204,7 +204,7 @@ class PlantCurrentConductivity(PlantCurrentStatus):
         self._external_sensor = config.data[FLOW_PLANT_INFO].get(
             FLOW_SENSOR_CONDUCTIVITY
         )
-        self._attr_native_unit_of_measurement = UnitOfConductivity.MICROSIEMENS
+        self._attr_native_unit_of_measurement = UnitOfConductivity.MICROSIEMENS_PER_CM
 
         super().__init__(hass, config, plantdevice)
 
