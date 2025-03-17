@@ -12,7 +12,8 @@
           "moisture_sensor": "Sensor de húmidade de solo",
           "conductivity_sensor": "Sensor de Condutividade",
           "illuminance_sensor": "Sensor de Iluminação",
-          "humidity_sensor": "Sensor de húmidade do ar"
+          "humidity_sensor": "Sensor de húmidade do ar",
+          "co2_sensor": "Sensor de CO₂"
         },
         "data_description": {
           "species": "Ser usado o site OpenPlantbook para pesquisas"
@@ -46,6 +47,8 @@
           "min_conductivity": "Minimo de condutividade uS/cm)",
           "max_humidity": "Maximo humidade do ar (%)",
           "min_humidity": "Minimo humidade do ar (%)",
+          "max_co2": "Maximo CO₂ (ppm)",
+          "min_co2": "Minimo CO₂ (ppm)",
           "entity_picture": "Link da imagem"
         }
       }
@@ -66,13 +69,15 @@
           "conductivity_sensor": "Condutividade",
           "illuminance_sensor": "Iluminação",
           "humidity_sensor": "Humidade do AR",
+          "co2_sensor": "Sensor de CO₂",
           "entity_picture": "Link da Imagen. Será automativamente atualizada de OpenPlantbook",
           "illuminance_trigger": "Usar a iluminação como um gatilho",
           "dli_trigger": "Usar a iluminação como um gatilho",
           "humidity_trigger": "Usar a humidade como um gatilho",
           "conductivity_trigger": "Usar a condutividade como um gatilho",
           "moisture_trigger": "Usar a húmidade do solo como um gatilho",
-          "temperature_trigger": "Usa a temperatura como gatilho"
+          "temperature_trigger": "Usa a temperatura como gatilho",
+          "co2_trigger": "Usar CO₂ como gatilho"
         }
       }
     }

@@ -12,7 +12,8 @@
           "moisture_sensor": "Bodenfeuchtesensor",
           "conductivity_sensor": "Leitfähigkeitssensor",
           "illuminance_sensor": "Beleuchtungsstärkesensor",
-          "humidity_sensor": "Luftfeuchtigkeitssensor"
+          "humidity_sensor": "Luftfeuchtigkeitssensor",
+          "co2_sensor": "CO2-Sensor"
         },
         "data_description": {
           "species": "Wird für die Suche in OpenPlantbook verwendet"
@@ -46,6 +47,8 @@
           "min_conductivity": "Minimale Leitfähigkeit (uS/cm)",
           "max_humidity": "Maximale Luftfeuchtigkeit (%)",
           "min_humidity": "Minimale Luftfeuchtigkeit (%)",
+          "max_co2": "Maximale CO2 (ppm)",
+          "min_co2": "Minimale CO2 (ppm)",
           "entity_picture": "Bild-URL"
         }
       }
@@ -66,10 +69,12 @@
           "conductivity_sensor": "Leitfähigkeitssensor",
           "illuminance_sensor": "Beleuchtungsstärkesensor",
           "humidity_sensor": "Luftfeuchtigkeitssensor",
+          "co2_sensor": "CO2-Sensor",
           "entity_picture": "Bild-URL. Wird automatisch aktualisiert, wenn die Art in OpenPlantbook gefunden wird",
           "illuminance_trigger": "Beleuchtungsstärke als Problemauslöser verwenden",
           "dli_trigger": "Tägliches Lichtintegral (dli) als Problemauslöser verwenden",
           "humidity_trigger": "Luftfeuchtigkeit als Problemauslöser verwenden",
+          "co2_trigger": "CO2 als Problemauslöser verwenden",
           "conductivity_trigger": "Leitfähigkeit als Problemauslöser verwenden",
           "moisture_trigger": "Bodenfeuchte als Problemauslöser verwenden",
           "temperature_trigger": "Temperatur als Problemauslöser verwenden"
