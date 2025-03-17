@@ -12,7 +12,8 @@
           "moisture_sensor": "Bodemvochtsensor",
           "conductivity_sensor": "Geleidbaarheidssensor",
           "illuminance_sensor": "Lichtsensor",
-          "humidity_sensor": "Luchtvochtigheidssensor"
+          "humidity_sensor": "Luchtvochtigheidssensor",
+          "co2_sensor": "CO₂ sensor"
         },
         "data_description": {
           "species": "Wordt gebruikt voor het zoeken in OpenPlantbook"
@@ -46,6 +47,8 @@
           "min_conductivity": "Minimale geleidbaarheid (uS/cm)",
           "max_humidity": "Maximale luchtvochtigheid (%)",
           "min_humidity": "Minimale luchtvochtigheid (%)",
+          "max_co2": "Maximale CO₂ (%)",
+          "min_co2": "Minimale CO₂ (%)",
           "entity_picture": "Afbeeldings-URL"
         }
       }
@@ -66,13 +69,15 @@
           "conductivity_sensor": "Geleidbaarheidssensor",
           "illuminance_sensor": "Lichtsensor",
           "humidity_sensor": "Luchtvochtigheidssensor",
+          "co2_sensor": "CO₂ sensor",
           "entity_picture": "Afbeeldings-URL. Wordt automatisch ingevuld als soort is gevonden in OpenPlantbook",
           "illuminance_trigger": "Gebruik lichtsterkte als trigger voor probleem",
           "dli_trigger": "Gebruik daily light integral (dli) als trigger voor probleem",
           "humidity_trigger": "Gebruik luchtvochtigheid als trigger voor probleem",
           "conductivity_trigger": "Gebruik geleidbaarheid als trigger voor probleem",
           "moisture_trigger": "Gebruik bodemvochtigheid als trigger voor probleem",
-          "temperature_trigger": "Gebruik temperatuur als trigger voor probleem"
+          "temperature_trigger": "Gebruik temperatuur als trigger voor probleem",
+          "co2_trigger": "Gebruik CO₂ als probleem trigger"
         }
       }
     }

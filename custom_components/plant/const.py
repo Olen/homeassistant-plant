@@ -13,6 +13,7 @@ ATTR_MOISTURE = "moisture"
 ATTR_CONDUCTIVITY = "conductivity"
 ATTR_ILLUMINANCE = "illuminance"
 ATTR_HUMIDITY = "humidity"
+ATTR_CO2 = "co2"
 ATTR_PPFD = "ppfd"
 ATTR_MMOL = "mmol"
 ATTR_MOL = "mol"
@@ -39,6 +40,7 @@ READING_MOISTURE = "soil moisture"
 READING_CONDUCTIVITY = "conductivity"
 READING_ILLUMINANCE = "illuminance"
 READING_HUMIDITY = "air humidity"
+READING_CO2 = "co2"
 READING_PPFD = "ppfd (mol)"
 READING_MMOL = "mmol"
 READING_MOL = "mol"
@@ -63,6 +65,8 @@ DEFAULT_MIN_ILLUMINANCE = 0
 DEFAULT_MAX_ILLUMINANCE = 100000
 DEFAULT_MIN_HUMIDITY = 20
 DEFAULT_MAX_HUMIDITY = 60
+DEFAULT_MIN_CO2 = 400
+DEFAULT_MAX_CO2 = 2000
 DEFAULT_MIN_MMOL = 2000
 DEFAULT_MAX_MMOL = 20000
 DEFAULT_MIN_MOL = 2
@@ -86,6 +90,7 @@ UNIT_MICRO_PPFD = "μmol/s⋅m²"
 UNIT_DLI = "mol/d⋅m²"
 UNIT_MICRO_DLI = "μmol/d⋅m²"
 UNIT_CONDUCTIVITY = "μS/cm"
+UNIT_PPM = "ppm"
 
 FLOW_WRONG_PLANT = "wrong_plant"
 FLOW_RIGHT_PLANT = "right_plant"
@@ -103,10 +108,12 @@ FLOW_SENSOR_MOISTURE = "moisture_sensor"
 FLOW_SENSOR_CONDUCTIVITY = "conductivity_sensor"
 FLOW_SENSOR_ILLUMINANCE = "illuminance_sensor"
 FLOW_SENSOR_HUMIDITY = "humidity_sensor"
+FLOW_SENSOR_CO2 = "co2_sensor"
 
 FLOW_TEMP_UNIT = "temperature_unit"
 FLOW_ILLUMINANCE_TRIGGER = "illuminance_trigger"
 FLOW_HUMIDITY_TRIGGER = "humidity_trigger"
+FLOW_CO2_TRIGGER = "co2_trigger"
 FLOW_TEMPERATURE_TRIGGER = "temperature_trigger"
 FLOW_DLI_TRIGGER = "dli_trigger"
 FLOW_MOISTURE_TRIGGER = "moisture_trigger"
@@ -116,7 +123,8 @@ FLOW_FORCE_SPECIES_UPDATE = "force_update"
 
 ICON_CONDUCTIVITY = "mdi:spa-outline"
 ICON_DLI = "mdi:counter"
-ICON_HUMIDITY = "mdi:water-percent"
+ICON_HUMIDITY = "mdi:molecule-co2"
+ICON_CO2 = "mdi:water-percent"
 ICON_ILLUMINANCE = "mdi:brightness-6"
 ICON_MOISTURE = "mdi:water"
 ICON_PPFD = "mdi:white-balance-sunny"
@@ -154,6 +162,8 @@ CONF_MIN_ILLUMINANCE = f"min_{ATTR_ILLUMINANCE}"
 CONF_MAX_ILLUMINANCE = f"max_{ATTR_ILLUMINANCE}"
 CONF_MIN_HUMIDITY = f"min_{ATTR_HUMIDITY}"
 CONF_MAX_HUMIDITY = f"max_{ATTR_HUMIDITY}"
+CONF_MIN_CO2 = f"min_{ATTR_CO2}"
+CONF_MAX_CO2 = f"max_{ATTR_CO2}"
 CONF_MIN_MMOL = f"min_{ATTR_MMOL}"
 CONF_MAX_MMOL = f"max_{ATTR_MMOL}"
 CONF_MIN_MOL = f"min_{ATTR_MOL}"
@@ -180,6 +190,8 @@ CONF_PLANTBOOK_MAPPING = {
     CONF_MAX_CONDUCTIVITY: "max_soil_ec",
     CONF_MIN_HUMIDITY: "min_env_humid",
     CONF_MAX_HUMIDITY: "max_env_humid",
+    CONF_MIN_CO2: "min_env_co2",
+    CONF_MAX_CO2: "max_env_co2",
     CONF_MIN_MMOL: "min_light_mmol",
     CONF_MAX_MMOL: "max_light_mmol",
 }

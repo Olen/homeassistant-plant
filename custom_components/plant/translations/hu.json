@@ -12,7 +12,8 @@
           "moisture_sensor": "Talajnedvesség érzékelő",
           "conductivity_sensor": "Talajvezetőképesség érzékelő",
           "illuminance_sensor": "Fényerősség érzékelő",
-          "humidity_sensor": "Levegő páratartalom érzékelő"
+          "humidity_sensor": "Levegő páratartalom érzékelő",
+          "co2_sensor": "CO₂ érzékelő"
         },
         "data_description": {
           "species": "OpenPlantbook keresésére lesz felhasználva"
@@ -46,6 +47,8 @@
           "min_conductivity": "Minimális talajvezetőképesség (uS/cm)",
           "max_humidity": "Maximális levegő páratartalom (%)",
           "min_humidity": "Minimális levegő páratartalom (%)",
+          "max_co2": "Maximális CO₂ (ppm)",
+          "min_co2": "Minimális CO₂ (ppm)",
           "entity_picture": "Kép URL"
         }
       }
@@ -66,13 +69,15 @@
           "conductivity_sensor": "Talajvezetőképesség érzékelő",
           "illuminance_sensor": "Fényerősség érzékelő",
           "humidity_sensor": "Levegő páratartalom érzékelő",
+          "co2_sensor": "CO₂ érzékelő",
           "entity_picture": "Kép URL. Automatikusan frissül, ha a faj megtalálható az OpenPlantbook-ban.",
           "illuminance_trigger": "Használja a fényerősséget mint probléma kiváltót",
           "dli_trigger": "Használja a napi fény integrált (dli) mint probléma kiváltót",
           "humidity_trigger": "Használja a levegő páratartalmat  mint probléma kiváltót",
           "conductivity_trigger": "Használja a talajvezetőképességet mint probléma kiváltót",
           "moisture_trigger": "Használja a talajnedvességet mint probléma kiváltót",
-          "temperature_trigger": "Használja a hőmérsékletet mint probléma kiváltót"
+          "temperature_trigger": "Használja a hőmérsékletet mint probléma kiváltót",
+          "co2_trigger": "Használja a CO₂-t mint probléma kiváltót"
         }
       }
     }
