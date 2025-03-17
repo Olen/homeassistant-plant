@@ -30,6 +30,7 @@ from .const import (
     CONF_MAX_CONDUCTIVITY,
     CONF_MAX_DLI,
     CONF_MAX_HUMIDITY,
+    CONF_MAX_CO2,
     CONF_MAX_ILLUMINANCE,
     CONF_MAX_MMOL,
     CONF_MAX_MOISTURE,
@@ -38,6 +39,7 @@ from .const import (
     CONF_MIN_CONDUCTIVITY,
     CONF_MIN_DLI,
     CONF_MIN_HUMIDITY,
+    CONF_MIN_CO2,
     CONF_MIN_ILLUMINANCE,
     CONF_MIN_MMOL,
     CONF_MIN_MOISTURE,
@@ -51,12 +53,14 @@ from .const import (
     DEFAULT_MAX_CONDUCTIVITY,
     DEFAULT_MAX_DLI,
     DEFAULT_MAX_HUMIDITY,
+    DEFAULT_MAX_CO2,
     DEFAULT_MAX_ILLUMINANCE,
     DEFAULT_MAX_MOISTURE,
     DEFAULT_MAX_TEMPERATURE,
     DEFAULT_MIN_CONDUCTIVITY,
     DEFAULT_MIN_DLI,
     DEFAULT_MIN_HUMIDITY,
+    DEFAULT_MIN_CO2,
     DEFAULT_MIN_ILLUMINANCE,
     DEFAULT_MIN_MOISTURE,
     DEFAULT_MIN_TEMPERATURE,
@@ -181,6 +185,8 @@ class PlantHelper:
         min_dli = DEFAULT_MIN_DLI
         max_humidity = DEFAULT_MAX_HUMIDITY
         min_humidity = DEFAULT_MIN_HUMIDITY
+        max_co2 = DEFAULT_MAX_CO2
+        min_co2 = DEFAULT_MIN_CO2
         entity_picture = None
         display_species = None
         data_source = DATA_SOURCE_DEFAULT
@@ -277,6 +283,12 @@ class PlantHelper:
             min_humidity = opb_plant.get(
                 CONF_PLANTBOOK_MAPPING[CONF_MIN_HUMIDITY], DEFAULT_MIN_HUMIDITY
             )
+            max_co2 = opb_plant.get(
+                CONF_PLANTBOOK_MAPPING[CONF_MAX_CO2], DEFAULT_MAX_CO2
+            )
+            min_co2 = opb_plant.get(
+                CONF_PLANTBOOK_MAPPING[CONF_MIN_CO2], DEFAULT_MIN_CO2
+            )
             _LOGGER.info("Picture: %s", entity_picture)
             if (
                 entity_picture is None
@@ -333,6 +345,8 @@ class PlantHelper:
                     CONF_MIN_TEMPERATURE: config.get(CONF_MIN_TEMPERATURE, min_temp),
                     CONF_MAX_HUMIDITY: config.get(CONF_MAX_HUMIDITY, max_humidity),
                     CONF_MIN_HUMIDITY: config.get(CONF_MIN_HUMIDITY, min_humidity),
+                    CONF_MAX_CO2: config.get(CONF_MAX_CO2, max_co2),
+                    CONF_MIN_CO2: config.get(CONF_MIN_CO2, min_co2),
                     CONF_MAX_DLI: config.get(CONF_MAX_DLI, max_dli),
                     CONF_MIN_DLI: config.get(CONF_MIN_DLI, min_dli),
                 },
