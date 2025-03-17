@@ -383,7 +383,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         ] = int
         data_schema[
             vol.Required(
-                CONF_MIN_HUMIDITY,
+                CONF_MIN_CO2,
                 default=plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(
                     CONF_MIN_CO2
                 ),
