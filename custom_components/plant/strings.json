@@ -12,7 +12,8 @@
           "moisture_sensor": "Soil moisture sensor",
           "conductivity_sensor": "Conductivity sensor",
           "illuminance_sensor": "Illuminance sensor",
-          "humidity_sensor": "Air humidity sensor"
+          "humidity_sensor": "Air humidity sensor",
+          "co2_sensor": "CO₂ sensor"
         },
         "data_description": {
           "species": "Will be used for searching OpenPlantbook"
@@ -46,6 +47,8 @@
           "min_conductivity": "Minimum conductivity (uS/cm)",
           "max_humidity": "Maximum air humidity (%)",
           "min_humidity": "Minimum air humidity (%)",
+          "max_co2": "Maximum CO₂ (ppm)",
+          "min_co2": "Minimum CO₂ (ppm)",
           "entity_picture": "Image URL"
         }
       }
@@ -66,10 +69,11 @@
           "conductivity_sensor": "Conductivity sensor",
           "illuminance_sensor": "Illuminance sensor",
           "humidity_sensor": "Air humidity sensor",
+          "co2_sensor": "CO₂ sensor",
           "entity_picture": "Image URL. Will be automatically updated if species is found in OpenPlantbook",
           "illuminance_trigger": "Use illuminance as problem trigger",
           "dli_trigger": "Use daily light integral (dli) as problem trigger",
-          "humidity_trigger": "Use air humidity as problem trigger",
+          "co2_trigger": "Use CO₂ as problem trigger",
           "conductivity_trigger": "Use conductivity as problem trigger",
           "moisture_trigger": "Use soil moisture as problem trigger",
           "temperature_trigger": "Use temperature as problem trigger"

@@ -53,12 +53,14 @@ from .const import (
     FLOW_PLANT_INFO,
     FLOW_SENSOR_CONDUCTIVITY,
     FLOW_SENSOR_HUMIDITY,
+    FLOW_SENSOR_CO2,
     FLOW_SENSOR_ILLUMINANCE,
     FLOW_SENSOR_MOISTURE,
     FLOW_SENSOR_TEMPERATURE,
     ICON_CONDUCTIVITY,
     ICON_DLI,
     ICON_HUMIDITY,
+    ICON_CO2,
     ICON_ILLUMINANCE,
     ICON_MOISTURE,
     ICON_PPFD,
@@ -66,6 +68,7 @@ from .const import (
     READING_CONDUCTIVITY,
     READING_DLI,
     READING_HUMIDITY,
+    READING_CO2,
     READING_ILLUMINANCE,
     READING_MOISTURE,
     READING_PPFD,
@@ -73,6 +76,7 @@ from .const import (
     UNIT_CONDUCTIVITY,
     UNIT_DLI,
     UNIT_PPFD,
+    UNIT_PPM
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -92,6 +96,7 @@ async def async_setup_entry(
             PlantDummyIlluminance(hass, entry, plant),
             PlantDummyConductivity(hass, entry, plant),
             PlantDummyHumidity(hass, entry, plant),
+            PlantDummyCo2(hass, entry, plant),
         ]
         async_add_entities(sensor_entities)
 
@@ -100,12 +105,14 @@ async def async_setup_entry(
     pcurm = PlantCurrentMoisture(hass, entry, plant)
     pcurt = PlantCurrentTemperature(hass, entry, plant)
     pcurh = PlantCurrentHumidity(hass, entry, plant)
+    pcur2 = PlantCurrentCo2(hass, entry, plant)
     plant_sensors = [
         pcurb,
         pcurc,
         pcurm,
         pcurt,
         pcurh,
+        pcur2,
     ]
     async_add_entities(plant_sensors)
     hass.data[DOMAIN][entry.entry_id][ATTR_SENSORS] = plant_sensors
@@ -115,6 +122,7 @@ async def async_setup_entry(
         conductivity=pcurc,
         illuminance=pcurb,
         humidity=pcurh,
+        co2=pcur2,
     )
 
     # Create and add the integral-entities
@@ -431,6 +439,28 @@ class PlantCurrentHumidity(PlantCurrentStatus):
     def device_class(self) -> str:
         """Device class"""
         return SensorDeviceClass.HUMIDITY
+
+
+class PlantCurrentCo2(PlantCurrentStatus):
+    """Entity class for the current CO₂ meter"""
+
+    def __init__(
+        self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
+    ) -> None:
+        """Initialize the sensor"""
+        self._attr_name = (
+            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_CO2}"
+        )
+        self._attr_unique_id = f"{config.entry_id}-current-co2"
+        self._external_sensor = config.data[FLOW_PLANT_INFO].get(FLOW_SENSOR_CO2)
+        self._attr_icon = ICON_CO2
+        self._attr_native_unit_of_measurement = UNIT_PPM
+        super().__init__(hass, config, plantdevice)
+
+    @property
+    def device_class(self) -> str:
+        """Device class"""
+        return SensorDeviceClass.CO2
 
 
 class PlantCurrentPpfd(PlantCurrentStatus):
@@ -779,3 +809,31 @@ class PlantDummyHumidity(PlantDummyStatus):
     def device_class(self) -> str:
         """Device class"""
         return SensorDeviceClass.HUMIDITY
+
+
+class PlantDummyCo2(PlantDummyStatus):
+    """Dummy sensor"""
+
+    def __init__(
+        self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
+    ) -> None:
+        """Init the dummy sensor"""
+        self._attr_name = (
+            f"Dummy {config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_CO2}"
+        )
+        self._attr_unique_id = f"{config.entry_id}-dummy-co2"
+        self._attr_icon = ICON_CO2
+        self._attr_native_unit_of_measurement = UNIT_PPM
+        super().__init__(hass, config, plantdevice)
+        self._attr_native_value = random.randint(400, 2000)
+
+    async def async_update(self) -> int:
+        """Give out a dummy value"""
+        test = random.randint(400, 2000)
+        if test > 1000:
+            self._attr_native_value = random.randint(400, 2000)
+
+    @property
+    def device_class(self) -> str:
+        """Device class"""
+        return SensorDeviceClass.CO2
