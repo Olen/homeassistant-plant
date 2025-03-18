@@ -179,6 +179,7 @@ class PlantMinMax(RestoreNumber):
     async def async_set_native_value(self, value: float) -> None:
         _LOGGER.debug("Setting value of %s to %s", self.entity_id, value)
         self._attr_native_value = value
+        self.async_write_ha_state()
 
     def _state_changed_event(self, event: Event) -> None:
         if event.data.get("old_state") is None or event.data.get("new_state") is None:
