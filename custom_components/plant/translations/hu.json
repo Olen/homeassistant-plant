@@ -1,5 +1,6 @@
 {
   "title": "Növény Figyelő",
+  "plant_notes": "Növény megjegyzések",
   "config": {
     "step": {
       "user": {
@@ -69,7 +70,7 @@
           "entity_picture": "Kép URL. Automatikusan frissül, ha a faj megtalálható az OpenPlantbook-ban.",
           "illuminance_trigger": "Használja a fényerősséget mint probléma kiváltót",
           "dli_trigger": "Használja a napi fény integrált (dli) mint probléma kiváltót",
-          "humidity_trigger": "Használja a levegő páratartalmat  mint probléma kiváltót",
+          "humidity_trigger": "Használja a levegő páratartalmat mint probléma kiváltót",
           "conductivity_trigger": "Használja a talajvezetőképességet mint probléma kiváltót",
           "moisture_trigger": "Használja a talajnedvességet mint probléma kiváltót",
           "temperature_trigger": "Használja a hőmérsékletet mint probléma kiváltót"
