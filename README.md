@@ -56,7 +56,7 @@ This also means that this version is _not_ compatible with earlier releases from
 
 ### Easier to replace sensors
 
-* You can use a service call to replace the different sensors used to monitor the plant
+* You can use an Action (previously "service call") to replace the different sensors used to monitor the plant
 
 ![image](https://user-images.githubusercontent.com/203184/183286188-174dc709-173f-42fb-9d66-678d0c1f62e4.png)
 
@@ -205,6 +205,19 @@ If no species is found in OpenPlantbook, nothing is changed.
 ### I added the wrong sensors, and after removing and adding the plant again with the correct sensor, I can still see the wrong values from the old sensor.
 
 Home Assistant is _very_ good at remembering old configuration of entities if new entities with the same name as the old ones are added again.  This means that if you first create e.g. a moisture-sensor for your plant that reads the data from `sensor.bluetooth_temperature_xxxx`, and the remove the plant and add it back again with the same name, but with moisture-sensor set to `sensor.xiaomi_moisture_yyyy` you might experience that the plant will still show data from the old sensor.  Instead of removing and re-adding a plant, you should just use the `replace_sensor` service call to add the new sensor.
+
+### I can add new plants, but the I can't select the correct sensor (typically "Moisture" or "Humidity") from the list of physical sensors
+
+The dropdowns of available sensors are based on the `Device Class` of the originating (physical) sensor.  Quite some integrations in Home Assistant do NOT report the correct `Device Class` for their sensors.  
+
+E.g. A humidity sensor should have Device Class `SensorDeviceClass.HUMIDITY` and a moisture sensor should use the device class `SensorDeviceClass.MOISTURE`  
+A list of the supported Device Classes is available [here](https://developers.home-assistant.io/docs/core/entity/sensor/#available-device-classes)
+
+If the wrong device class is used for a sensor, it will not show up in the list of available sensors.
+
+So what you need to do is:
+1) Report the issue to the owner of the integration your phsyical sensor belongs to. They are the only ones who can fix this permanently.
+2) You can create the plant without the sensor in question, and then use the Action (Service Call) ["Replace Sensor"](https://github.com/Olen/homeassistant-plant/?tab=readme-ov-file#easier-to-replace-sensors) to add the physical sensor after the plant is set up.  The checks for replacing a sensor are slightly more relaxed than the initial setup.
 
 
 <a href="https://www.buymeacoffee.com/olatho" target="_blank">
