@@ -218,6 +218,17 @@ If the wrong device class is used for a sensor, it will not show up in the list 
 So what you need to do is:
 1) Report the issue to the owner of the integration your phsyical sensor belongs to. They are the only ones who can fix this permanently.
 2) You can create the plant without the sensor in question, and then use the Action (Service Call) ["Replace Sensor"](https://github.com/Olen/homeassistant-plant/?tab=readme-ov-file#easier-to-replace-sensors) to add the physical sensor after the plant is set up.  The checks for replacing a sensor are slightly more relaxed than the initial setup.
+3) Another option is to create template-sensors that incorporate the correct Device Class.  Add something like this to your `configuration.yaml`:
+
+```
+template:
+  - sensor:
+      - name: "Soil Moisture"                                       # Choose your desired friendly name
+        unique_id: "soil_sensor_moisture"                           # Make this unique
+        state: "{{ states('sensor.soil_sensor_soil_moisture') }}"   # Get the state from your zigbee sensor
+        unit_of_measurement: "%"                                    # Or your desired unit
+        device_class: "moisture"                                    # This will give it the appropriate icon and state representation
+```
 
 
 <a href="https://www.buymeacoffee.com/olatho" target="_blank">
