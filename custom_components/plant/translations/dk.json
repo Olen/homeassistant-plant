@@ -1,0 +1,80 @@
+{
+  "title": "Planteovervågning",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Konfigurer en plante",
+        "description": "Hvis du ikke finder de rigtige sensorer i rullemenuerne, kan du tilføje dem efter installationen er fuldført",
+        "data": {
+          "name": "Plantenavn",
+          "species": "Art",
+          "temperature_sensor": "Temperatursensor",
+          "moisture_sensor": "Jordfugtighedssensor",
+          "conductivity_sensor": "Ledningsevnesensor",
+          "illuminance_sensor": "Lysstyrkesensor",
+          "humidity_sensor": "Luftfugtighedssensor"
+        },
+        "data_description": {
+          "species": "Bruges til søgning i OpenPlantbook"
+        }
+      },
+      "select_species": {
+        "title": "Vælg art fra OpenPlantbook",
+        "description": "{desc}",
+        "data": {
+          "species": "Art"
+        },
+        "menu_options": {
+          "user": "Tilbage"
+        }
+      },
+      "limits": {
+        "title": "Angiv grænseværdier",
+        "description": "# {name}\n![Plante]({entity_picture}){br}\n{extra_desc}Temperaturenheden er {temperature_unit}",
+        "data": {
+          "right_plant": "Dette er den plante, jeg ledte efter",
+          "display_pid": "Plantearter der skal vises",
+          "max_moisture": "Maksimal jordfugtighed (%)",
+          "min_moisture": "Minimal jordfugtighed (%)",
+          "max_illuminance": "Maksimal lysstyrke (lx)",
+          "min_illuminance": "Minimal lysstyrke (lx)",
+          "max_dli": "Maksimal DLI (mol/d⋅m²)",
+          "min_dli": "Minimal DLI (mol/d⋅m²)",
+          "max_temperature": "Maksimal temperatur (se ovenfor)",
+          "min_temperature": "Minimal temperatur (se ovenfor)",
+          "max_conductivity": "Maksimal ledningsevne (uS/cm)",
+          "min_conductivity": "Minimal ledningsevne (uS/cm)",
+          "max_humidity": "Maksimal luftfugtighed (%)",
+          "min_humidity": "Minimal luftfugtighed (%)",
+          "entity_picture": "Billed-URL"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Indstillinger",
+        "description": "",
+        "data": {
+          "check_days": "Dage til kontrol af lysstyrke",
+          "species": "Art",
+          "force_update": "Gennemtving opdatering af data fra OpenPlantbook",
+          "display_pid": "Plantearter der skal vises",
+          "temperature_sensor": "Temperatursensor",
+          "moisture_sensor": "Jordfugtighedssensor",
+          "conductivity_sensor": "Ledningsevnesensor",
+          "illuminance_sensor": "Lysstyrkesensor",
+          "humidity_sensor": "Luftfugtighedssensor",
+          "entity_picture": "Billed-URL. Opdateres automatisk, hvis arten findes i OpenPlantbook",
+          "illuminance_trigger": "Brug lysstyrke som problemudløser",
+          "dli_trigger": "Brug dagligt lysintegral (DLI) som problemudløser",
+          "humidity_trigger": "Brug luftfugtighed som problemudløser",
+          "conductivity_trigger": "Brug ledningsevne som problemudløser",
+          "moisture_trigger": "Brug jordfugtighed som problemudløser",
+          "temperature_trigger": "Brug temperatur som problemudløser"
+        }
+      }
+    }
+  }
+}
