@@ -327,7 +327,7 @@ class PlantCurrentIlluminance(PlantCurrentStatus):
         )
         self._attr_unique_id = f"{config.entry_id}-current-illuminance"
         self._attr_icon = ICON_ILLUMINANCE
-        self._attr_suggested_display_precision = 0
+        self._attr_suggested_display_precision = 1
         self._external_sensor = config.data[FLOW_PLANT_INFO].get(
             FLOW_SENSOR_ILLUMINANCE
         )
@@ -352,7 +352,7 @@ class PlantCurrentConductivity(PlantCurrentStatus):
         )
         self._attr_unique_id = f"{config.entry_id}-current-conductivity"
         self._attr_icon = ICON_CONDUCTIVITY
-        self._attr_suggested_display_precision = 0
+        self._attr_suggested_display_precision = 1
         self._external_sensor = config.data[FLOW_PLANT_INFO].get(
             FLOW_SENSOR_CONDUCTIVITY
         )
@@ -380,7 +380,7 @@ class PlantCurrentMoisture(PlantCurrentStatus):
         self._external_sensor = config.data[FLOW_PLANT_INFO].get(FLOW_SENSOR_MOISTURE)
         self._attr_icon = ICON_MOISTURE
         self._attr_native_unit_of_measurement = PERCENTAGE
-        self._attr_suggested_display_precision = 0
+        self._attr_suggested_display_precision = 1
 
         super().__init__(hass, config, plantdevice)
 
@@ -429,7 +429,7 @@ class PlantCurrentHumidity(PlantCurrentStatus):
         self._external_sensor = config.data[FLOW_PLANT_INFO].get(FLOW_SENSOR_HUMIDITY)
         self._attr_icon = ICON_HUMIDITY
         self._attr_native_unit_of_measurement = PERCENTAGE
-        self._attr_suggested_display_precision = 0
+        self._attr_suggested_display_precision = 1
         super().__init__(hass, config, plantdevice)
 
     @property
@@ -606,6 +606,7 @@ class PlantDailyLightIntegral(UtilityMeterSensor):
 
         self._unit_of_measurement = UNIT_DLI
         self._attr_icon = ICON_DLI
+        self._attr_suggested_display_precision = 2
         self._plant = plantdevice
 
     @property
