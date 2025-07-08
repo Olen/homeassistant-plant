@@ -438,7 +438,6 @@ class PlantCurrentHumidity(PlantCurrentStatus):
         return SensorDeviceClass.HUMIDITY
 
 
-
 class PlantCurrentPpfd(PlantCurrentStatus):
     """Entity reporting current PPFD calculated from LX"""
 
