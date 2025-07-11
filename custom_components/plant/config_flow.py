@@ -33,12 +33,14 @@ from .const import (
     CONF_MAX_CONDUCTIVITY,
     CONF_MAX_DLI,
     CONF_MAX_HUMIDITY,
+    CONF_MAX_CO2,
     CONF_MAX_ILLUMINANCE,
     CONF_MAX_MOISTURE,
     CONF_MAX_TEMPERATURE,
     CONF_MIN_CONDUCTIVITY,
     CONF_MIN_DLI,
     CONF_MIN_HUMIDITY,
+    CONF_MIN_CO2,
     CONF_MIN_ILLUMINANCE,
     CONF_MIN_MOISTURE,
     CONF_MIN_TEMPERATURE,
@@ -52,6 +54,7 @@ from .const import (
     FLOW_ERROR_NOTFOUND,
     FLOW_FORCE_SPECIES_UPDATE,
     FLOW_HUMIDITY_TRIGGER,
+    FLOW_CO2_TRIGGER,
     FLOW_ILLUMINANCE_TRIGGER,
     FLOW_MOISTURE_TRIGGER,
     FLOW_PLANT_INFO,
@@ -59,6 +62,7 @@ from .const import (
     FLOW_RIGHT_PLANT,
     FLOW_SENSOR_CONDUCTIVITY,
     FLOW_SENSOR_HUMIDITY,
+    FLOW_SENSOR_CO2,
     FLOW_SENSOR_ILLUMINANCE,
     FLOW_SENSOR_MOISTURE,
     FLOW_SENSOR_TEMPERATURE,
@@ -156,6 +160,14 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             {
                 ATTR_ENTITY: {
                     ATTR_DEVICE_CLASS: SensorDeviceClass.HUMIDITY,
+                    ATTR_DOMAIN: DOMAIN_SENSOR,
+                }
+            }
+        )
+        data_schema[FLOW_SENSOR_CO2] = selector(
+            {
+                ATTR_ENTITY: {
+                    ATTR_DEVICE_CLASS: SensorDeviceClass.CO2,
                     ATTR_DOMAIN: DOMAIN_SENSOR,
                 }
             }
@@ -361,6 +373,22 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 ),
             )
         ] = int
+        data_schema[
+            vol.Required(
+                CONF_MAX_CO2,
+                default=plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(
+                    CONF_MAX_CO2
+                ),
+            )
+        ] = int
+        data_schema[
+            vol.Required(
+                CONF_MIN_CO2,
+                default=plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(
+                    CONF_MIN_CO2
+                ),
+            )
+        ] = int
 
         data_schema[
             vol.Optional(
@@ -498,6 +526,11 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         data_schema[
             vol.Optional(FLOW_HUMIDITY_TRIGGER, default=self.plant.humidity_trigger)
         ] = cv.boolean
+
+        data_schema[
+            vol.Optional(FLOW_CO2_TRIGGER, default=self.plant.CO2_trigger)
+        ] = cv.boolean
+
         data_schema[
             vol.Optional(
                 FLOW_TEMPERATURE_TRIGGER, default=self.plant.temperature_trigger
