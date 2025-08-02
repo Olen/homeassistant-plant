@@ -1,5 +1,5 @@
 {
     "name": "Home Assistant Plant",
     "render_readme": true,
-    "homeassistant": "2024.11.0"
+    "homeassistant": "2025.8.0"
 }
