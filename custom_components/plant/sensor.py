@@ -534,6 +534,7 @@ class PlantTotalLightIntegral(IntegrationSensor):
     ) -> None:
         """Initialize the sensor"""
         super().__init__(
+            hass=hass,
             integration_method=METHOD_TRAPEZOIDAL,
             name=f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Total {READING_PPFD} Integral",
             round_digits=2,
@@ -584,6 +585,7 @@ class PlantDailyLightIntegral(UtilityMeterSensor):
         """Initialize the sensor"""
 
         super().__init__(
+            hass=hass,
             cron_pattern=None,
             delta_values=None,
             meter_offset=timedelta(seconds=0),
