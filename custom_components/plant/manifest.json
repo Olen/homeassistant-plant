@@ -16,5 +16,5 @@
   "requirements": [
     "async-timeout>=4.0.2"
   ],
-  "version": "2024.11.0"
+  "version": "2025.8.0-beta1"
 }
