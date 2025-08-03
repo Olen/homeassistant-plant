@@ -1,0 +1,96 @@
+{
+  "title": "植物监控",
+  "config": {
+    "step": {
+      "user": {
+        "title": "配置植物",
+        "description": "如果在下拉菜单中找不到正确的传感器，可以在植物设置完成后添加传感器",
+        "data": {
+          "name": "植物名称",
+          "species": "植物种类",
+          "temperature_sensor": "温度传感器",
+          "moisture_sensor": "土壤湿度传感器",
+          "conductivity_sensor": "电导率传感器",
+          "illuminance_sensor": "光照传感器",
+          "humidity_sensor": "空气湿度传感器"
+        },
+        "data_description": {
+          "species": "将用于在OpenPlantbook中搜索"
+        }
+      },
+      "select_species": {
+        "title": "从OpenPlantbook选择种类",
+        "description": "{desc}",
+        "data": {
+          "species": "植物种类"
+        },
+        "menu_options": {
+          "user": "返回"
+        }
+      },
+      "limits": {
+        "title": "设置阈值",
+        "description": "# {name}\n![植物图片]({entity_picture}){br}\n{extra_desc}温度单位为 {temperature_unit}",
+        "data": {
+          "right_plant": "这是我寻找的植物",
+          "display_pid": "要显示的植物种类",
+          "max_moisture": "最大土壤湿度(%)",
+          "min_moisture": "最小土壤湿度(%)",
+          "max_illuminance": "最大光照强度(lx)",
+          "min_illuminance": "最小光照强度(lx)",
+          "max_dli": "最大DLI(mol/d⋅m²)",
+          "min_dli": "最小DLI(mol/d⋅m²)",
+          "max_temperature": "最高温度(见上方)",
+          "min_temperature": "最低温度(见上方)",
+          "max_conductivity": "最大电导率(uS/cm)",
+          "min_conductivity": "最小电导率(uS/cm)",
+          "max_humidity": "最大空气湿度(%)",
+          "min_humidity": "最小空气湿度(%)",
+          "entity_picture": "图片URL"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "选项",
+        "description": "",
+        "data": {
+          "check_days": "光照检查天数",
+          "species": "植物种类",
+          "force_update": "强制从OpenPlantbook刷新数据",
+          "display_pid": "要显示的植物种类",
+          "temperature_sensor": "温度传感器",
+          "moisture_sensor": "土壤湿度传感器",
+          "conductivity_sensor": "电导率传感器",
+          "illuminance_sensor": "光照传感器",
+          "humidity_sensor": "空气湿度传感器",
+          "entity_picture": "图片URL。如果在OpenPlantbook中找到种类，将自动更新",
+          "illuminance_trigger": "使用光照作为问题触发器",
+          "dli_trigger": "使用每日光照积分(DLI)作为问题触发器",
+          "humidity_trigger": "使用空气湿度作为问题触发器",
+          "conductivity_trigger": "使用电导率作为问题触发器",
+          "moisture_trigger": "使用土壤湿度作为问题触发器",
+          "temperature_trigger": "使用温度作为问题触发器"
+        }
+      }
+    }
+  },
+  "services": {
+    "replace_sensor": {
+      "name": "更换传感器",
+      "description": "更换植物传感器的数据源。",
+      "fields": {
+        "meter_entity": {
+          "name": "计量实体",
+          "description": "要更换传感器的计量实体。"
+        },
+        "new_sensor": {
+          "name": "新传感器实体",
+          "description": "新传感器的实体ID。留空以移除传感器。"
+        }
+      }
+    }
+  }
+}
