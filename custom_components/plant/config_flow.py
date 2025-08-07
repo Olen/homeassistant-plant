@@ -427,7 +427,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 class OptionsFlowHandler(config_entries.OptionsFlow):
-    """Handling opetions for plant"""
+    """Handling options for plant"""
 
     def __init__(
         self,
@@ -602,7 +602,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 self.plant.species = new_species
 
             # We need to reset the force_update option back to False, or else
-            # this will only be run once (unchanged options are will not trigger the flow)
+            # this will only be run once (unchanged options won't trigger the flow)
             options = dict(entry.options)
             data = dict(entry.data)
             options[FLOW_FORCE_SPECIES_UPDATE] = False
