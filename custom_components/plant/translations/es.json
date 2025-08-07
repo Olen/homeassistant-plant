@@ -12,7 +12,8 @@
           "moisture_sensor": "Sensor de Humedad del suelo",
           "conductivity_sensor": "Sensor Conductividad",
           "illuminance_sensor": "Sensor de Iluminación",
-          "humidity_sensor": "Sensor de humedad ambiente"
+          "humidity_sensor": "Sensor de humedad ambiente",
+          "co2_sensor": "Sensor de CO₂"
         },
         "data_description": {
           "species": "Se usara para buscar en OpenPlantbook"
@@ -46,6 +47,8 @@
           "min_conductivity": "Conductividad mínima (uS/cm)",
           "max_humidity": "Humedad del aire máxima (%)",
           "min_humidity": "Humedad del aire mínima (%)",
+          "max_co2": "CO₂ máximo (ppm)",
+          "min_co2": "CO₂ mínimo (ppm)",
           "entity_picture": "URL de la imagen"
         }
       }
@@ -66,13 +69,15 @@
           "conductivity_sensor": "Sensor Conductividad",
           "illuminance_sensor": "Sensor de Iluminación",
           "humidity_sensor": "Sensor de humedad ambiente",
+          "co2_sensor": "Sensor de CO₂",
           "entity_picture": "URL de la imagen. Se actualizará automáticamente si la especie se encuentra en OpenPlantbook",
           "illuminance_trigger": "Utilizar la iluminación como desencadenante de problema",
           "dli_trigger": "Utilizar la luz diaria integral (dli) como desencadenante de problema",
           "humidity_trigger": "Utilizar la humedad del aire como desencadenante de problema",
           "conductivity_trigger": "Utilizar la conductividad como desencadenante de problema",
           "moisture_trigger": "Utilizar la humedad del suelo como desencadenante de problema",
-          "temperature_trigger": "Utilizar la temperatura como desencadenante de problema"
+          "temperature_trigger": "Utilizar la temperatura como desencadenante de problema",
+          "co2_trigger": "Utilizar el CO₂ como desencadenante de problema"
         }
       }
     }

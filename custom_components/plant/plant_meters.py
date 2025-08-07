@@ -39,18 +39,21 @@ from .const import (
     FLOW_PLANT_INFO,
     FLOW_SENSOR_CONDUCTIVITY,
     FLOW_SENSOR_HUMIDITY,
+    FLOW_SENSOR_CO2,
     FLOW_SENSOR_ILLUMINANCE,
     FLOW_SENSOR_MOISTURE,
     FLOW_SENSOR_TEMPERATURE,
     READING_CONDUCTIVITY,
     READING_DLI,
     READING_HUMIDITY,
+    READING_CO2,
     READING_ILLUMINANCE,
     READING_MOISTURE,
     READING_PPFD,
     READING_TEMPERATURE,
     UNIT_DLI,
     UNIT_PPFD,
+    UNIT_PPM,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -281,6 +284,28 @@ class PlantCurrentHumidity(PlantCurrentStatus):
     def device_class(self) -> str:
         """Device class"""
         return SensorDeviceClass.HUMIDITY
+
+
+class PlantCurrentCo2(PlantCurrentStatus):
+    """Entity class for the current CO₂ meter"""
+
+    def __init__(
+        self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
+    ) -> None:
+        """Initialize the sensor"""
+        self._attr_name = (
+            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_CO2}"
+        )
+        self._attr_unique_id = f"{config.entry_id}-current-co2"
+        self._external_sensor = config.data[FLOW_PLANT_INFO].get(FLOW_SENSOR_CO2)
+        self._attr_icon = "mdi:water-percent"
+        self._attr_native_unit_of_measurement = UNIT_PPM
+        super().__init__(hass, config, plantdevice)
+
+    @property
+    def device_class(self) -> str:
+        """Device class"""
+        return SensorDeviceClass.CO2
 
 
 class PlantCurrentPpfd(PlantCurrentStatus):
