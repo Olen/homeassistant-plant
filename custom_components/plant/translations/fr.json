@@ -51,6 +51,66 @@
       }
     }
   },
+  "entity": {
+    "number": {
+      "max_moisture": {
+        "name": "Humidité du sol maximale"
+      },
+      "min_moisture": {
+        "name": "Humidité du sol minimale"
+      },
+      "max_illuminance": {
+        "name": "Luminosité maximale"
+      },
+      "min_illuminance": {
+        "name": "Luminosité minimale"
+      },
+      "max_dli": {
+        "name": "DLI maximal"
+      },
+      "min_dli": {
+        "name": "DLI minimal"
+      },
+      "max_temperature": {
+        "name": "Température maximale"
+      },
+      "min_temperature": {
+        "name": "Température minimale"
+      },
+      "max_conductivity": {
+        "name": "Conductivité maximale"
+      },
+      "min_conductivity": {
+        "name": "Conductivité minimale"
+      },
+      "max_humidity": {
+        "name": "Humidité de l'air maximale"
+      },
+      "min_humidity": {
+        "name": "Humidité de l'air minimale"
+      }
+    },
+    "sensor": {
+      "moisture": {
+        "name": "Humidité du sol"
+      },
+      "illuminance": {
+        "name": "Luminosité"
+      },
+      "dli": {
+        "name": "Intégrale quotidienne de lumière (DLI)"
+      },
+      "temperature": {
+        "name": "Température"
+      },
+      "conductivity": {
+        "name": "Conductivité"
+      },
+      "humidity": {
+        "name": "Humidité de l'air"
+      }
+    }
+  },
   "options": {
     "step": {
       "init": {

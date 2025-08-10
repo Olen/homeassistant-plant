@@ -51,6 +51,66 @@
       }
     }
   },
+  "entity": {
+    "number": {
+      "max_moisture": {
+        "name": "Maximális talajnedvesség"
+      },
+      "min_moisture": {
+        "name": "Minimális talajnedvesség"
+      },
+      "max_illuminance": {
+        "name": "Maximális fényerősség"
+      },
+      "min_illuminance": {
+        "name": "Minimális fényerősség"
+      },
+      "max_dli": {
+        "name": "Maximális DLI"
+      },
+      "min_dli": {
+        "name": "Minimális DLI"
+      },
+      "max_temperature": {
+        "name": "Maximális hőmérséklet"
+      },
+      "min_temperature": {
+        "name": "Minimális hőmérséklet"
+      },
+      "max_conductivity": {
+        "name": "Maximális talajvezetőképesség"
+      },
+      "min_conductivity": {
+        "name": "Minimális talajvezetőképesség"
+      },
+      "max_humidity": {
+        "name": "Maximális levegő páratartalom"
+      },
+      "min_humidity": {
+        "name": "Minimális levegő páratartalom"
+      }
+    },
+    "sensor": {
+      "moisture": {
+        "name": "Talajnedvesség"
+      },
+      "illuminance": {
+        "name": "Fényerősség"
+      },
+      "dli": {
+        "name": "Napi fény integrált (DLI)"
+      },
+      "temperature": {
+        "name": "Hőmérséklet"
+      },
+      "conductivity": {
+        "name": "Talajvezetőképesség"
+      },
+      "humidity": {
+        "name": "Levegő páratartalom"
+      }
+    }
+  },
   "options": {
     "step": {
       "init": {

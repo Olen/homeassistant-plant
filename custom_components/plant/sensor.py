@@ -315,13 +315,13 @@ class PlantCurrentStatus(RestoreSensor):
 class PlantCurrentIlluminance(PlantCurrentStatus):
     """Entity class for the current illuminance meter"""
 
+    _attr_has_entity_name = True
+    _attr_translation_key = "illuminance"
+
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the sensor"""
-        self._attr_name = (
-            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_ILLUMINANCE}"
-        )
         self._attr_unique_id = f"{config.entry_id}-current-illuminance"
         self._attr_icon = ICON_ILLUMINANCE
         self._attr_suggested_display_precision = 1
@@ -340,13 +340,13 @@ class PlantCurrentIlluminance(PlantCurrentStatus):
 class PlantCurrentConductivity(PlantCurrentStatus):
     """Entity class for the current conductivity meter"""
 
+    _attr_has_entity_name = True
+    _attr_translation_key = "conductivity"
+
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the sensor"""
-        self._attr_name = (
-            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_CONDUCTIVITY}"
-        )
         self._attr_unique_id = f"{config.entry_id}-current-conductivity"
         self._attr_icon = ICON_CONDUCTIVITY
         self._attr_suggested_display_precision = 1
@@ -366,13 +366,13 @@ class PlantCurrentConductivity(PlantCurrentStatus):
 class PlantCurrentMoisture(PlantCurrentStatus):
     """Entity class for the current moisture meter"""
 
+    _attr_has_entity_name = True
+    _attr_translation_key = "moisture"
+
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the sensor"""
-        self._attr_name = (
-            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_MOISTURE}"
-        )
         self._attr_unique_id = f"{config.entry_id}-current-moisture"
         self._external_sensor = config.data[FLOW_PLANT_INFO].get(FLOW_SENSOR_MOISTURE)
         self._attr_icon = ICON_MOISTURE
@@ -390,13 +390,13 @@ class PlantCurrentMoisture(PlantCurrentStatus):
 class PlantCurrentTemperature(PlantCurrentStatus):
     """Entity class for the current temperature meter"""
 
+    _attr_has_entity_name = True
+    _attr_translation_key = "temperature"
+
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the sensor"""
-        self._attr_name = (
-            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_TEMPERATURE}"
-        )
         self._attr_unique_id = f"{config.entry_id}-current-temperature"
         self._external_sensor = config.data[FLOW_PLANT_INFO].get(
             FLOW_SENSOR_TEMPERATURE
@@ -415,13 +415,13 @@ class PlantCurrentTemperature(PlantCurrentStatus):
 class PlantCurrentHumidity(PlantCurrentStatus):
     """Entity class for the current humidity meter"""
 
+    _attr_has_entity_name = True
+    _attr_translation_key = "humidity"
+
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the sensor"""
-        self._attr_name = (
-            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_HUMIDITY}"
-        )
         self._attr_unique_id = f"{config.entry_id}-current-humidity"
         self._external_sensor = config.data[FLOW_PLANT_INFO].get(FLOW_SENSOR_HUMIDITY)
         self._attr_icon = ICON_HUMIDITY
@@ -438,11 +438,13 @@ class PlantCurrentHumidity(PlantCurrentStatus):
 class PlantCurrentPpfd(PlantCurrentStatus):
     """Entity reporting current PPFD calculated from LX"""
 
+    _attr_has_entity_name = True
+    _attr_translation_key = "ppfd"
+
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the sensor"""
-        self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_PPFD}"
 
         self._attr_unique_id = f"{config.entry_id}-current-ppfd"
         self._attr_unit_of_measurement = UNIT_PPFD
@@ -519,6 +521,9 @@ class PlantCurrentPpfd(PlantCurrentStatus):
 class PlantTotalLightIntegral(IntegrationSensor):
     """Entity class to calculate PPFD from LX"""
 
+    _attr_has_entity_name = True
+    _attr_translation_key = "ppfd_integral"
+
     def __init__(
         self,
         hass: HomeAssistant,
@@ -527,10 +532,11 @@ class PlantTotalLightIntegral(IntegrationSensor):
         plantdevice: Entity,
     ) -> None:
         """Initialize the sensor"""
+
         super().__init__(
             hass,
             integration_method=METHOD_TRAPEZOIDAL,
-            name=f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Total {READING_PPFD} Integral",
+            name=None,
             round_digits=2,
             source_entity=illuminance_ppfd_sensor.entity_id,
             unique_id=f"{config.entry_id}-ppfd-integral",
@@ -538,6 +544,11 @@ class PlantTotalLightIntegral(IntegrationSensor):
             unit_time=UnitOfTime.SECONDS,
             max_sub_interval=None,
         )
+
+        # Workaround: Discard the default name generated by IntegrationSensor.__init__
+        # to force translation_key to be used instead.
+        del self._attr_name
+
         self._unit_of_measurement = UNIT_DLI
         self._attr_icon = ICON_DLI
         self._plant = plantdevice
@@ -566,6 +577,9 @@ class PlantTotalLightIntegral(IntegrationSensor):
 class PlantDailyLightIntegral(UtilityMeterSensor):
     """Entity class to calculate Daily Light Integral from PPFD"""
 
+    _attr_has_entity_name = True
+    _attr_translation_key = "dli"
+
     def __init__(
         self,
         hass: HomeAssistant,
@@ -581,7 +595,7 @@ class PlantDailyLightIntegral(UtilityMeterSensor):
             delta_values=None,
             meter_offset=timedelta(seconds=0),
             meter_type=DAILY,
-            name=f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_DLI}",
+            name=None,
             net_consumption=None,
             parent_meter=config.entry_id,
             source_entity=illuminance_integration_sensor.entity_id,
@@ -592,6 +606,10 @@ class PlantDailyLightIntegral(UtilityMeterSensor):
             suggested_entity_id=None,
             periodically_resetting=True,
         )
+
+        # Workaround: Discard the default name generated by UtilityMeterSensor.__init__
+        # to force translation_key to be used instead.
+        del self._attr_name
 
         self._unit_of_measurement = UNIT_DLI
         self._attr_icon = ICON_DLI
@@ -635,13 +653,13 @@ class PlantDummyStatus(SensorEntity):
 class PlantDummyIlluminance(PlantDummyStatus):
     """Dummy sensor"""
 
+    _attr_has_entity_name = True
+    _attr_translation_key = "illuminance"
+
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Init the dummy sensor"""
-        self._attr_name = (
-            f"Dummy {config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_ILLUMINANCE}"
-        )
         self._attr_unique_id = f"{config.entry_id}-dummy-illuminance"
         self._attr_icon = ICON_ILLUMINANCE
         self._attr_native_unit_of_measurement = LIGHT_LUX
@@ -667,13 +685,13 @@ class PlantDummyIlluminance(PlantDummyStatus):
 class PlantDummyConductivity(PlantDummyStatus):
     """Dummy sensor"""
 
+    _attr_has_entity_name = True
+    _attr_translation_key = "conductivity"
+
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Init the dummy sensor"""
-        self._attr_name = (
-            f"Dummy {config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_CONDUCTIVITY}"
-        )
         self._attr_unique_id = f"{config.entry_id}-dummy-conductivity"
         self._attr_icon = ICON_CONDUCTIVITY
         self._attr_native_unit_of_measurement = UNIT_CONDUCTIVITY
@@ -694,13 +712,13 @@ class PlantDummyConductivity(PlantDummyStatus):
 class PlantDummyMoisture(PlantDummyStatus):
     """Dummy sensor"""
 
+    _attr_has_entity_name = True
+    _attr_translation_key = "moisture"
+
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Init the dummy sensor"""
-        self._attr_name = (
-            f"Dummy {config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_MOISTURE}"
-        )
         self._attr_unique_id = f"{config.entry_id}-dummy-moisture"
         self._attr_icon = ICON_MOISTURE
         self._attr_native_unit_of_measurement = PERCENTAGE
@@ -721,14 +739,13 @@ class PlantDummyMoisture(PlantDummyStatus):
 class PlantDummyTemperature(PlantDummyStatus):
     """Dummy sensor"""
 
+    _attr_has_entity_name = True
+    _attr_translation_key = "temperature"
+
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Init the dummy sensor"""
-
-        self._attr_name = (
-            f"Dummy {config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_TEMPERATURE}"
-        )
         self._attr_unique_id = f"{config.entry_id}-dummy-temperature"
         self._attr_icon = ICON_TEMPERATURE
         self._attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
@@ -749,13 +766,13 @@ class PlantDummyTemperature(PlantDummyStatus):
 class PlantDummyHumidity(PlantDummyStatus):
     """Dummy sensor"""
 
+    _attr_has_entity_name = True
+    _attr_translation_key = "humidity"
+
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Init the dummy sensor"""
-        self._attr_name = (
-            f"Dummy {config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_HUMIDITY}"
-        )
         self._attr_unique_id = f"{config.entry_id}-dummy-humidity"
         self._attr_icon = ICON_HUMIDITY
         self._attr_native_unit_of_measurement = PERCENTAGE

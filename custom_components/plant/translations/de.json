@@ -51,6 +51,69 @@
       }
     }
   },
+  "entity": {
+    "number": {
+      "max_moisture": {
+        "name": "Maximale Bodenfeuchtigkeit"
+      },
+      "min_moisture": {
+        "name": "Minimale Bodenfeuchtigkeit"
+      },
+      "max_illuminance": {
+        "name": "Maximale Beleuchtungsstärke"
+      },
+      "min_illuminance": {
+        "name": "Minimale Beleuchtungsstärke"
+      },
+      "max_dli": {
+        "name": "Maximale DLI"
+      },
+      "min_dli": {
+        "name": "Minimale DLI"
+      },
+      "max_temperature": {
+        "name": "Maximale Temperatur"
+      },
+      "min_temperature": {
+        "name": "Minimale Temperatur"
+      },
+      "max_conductivity": {
+        "name": "Maximale Leitfähigkeit"
+      },
+      "min_conductivity": {
+        "name": "Minimale Leitfähigkeit"
+      },
+      "max_humidity": {
+        "name": "Maximale Luftfeuchtigkeit"
+      },
+      "min_humidity": {
+        "name": "Minimale Luftfeuchtigkeit"
+      }
+    },
+    "sensor": {
+      "moisture": {
+        "name": "Bodenfeuchtigkeit"
+      },
+      "illuminance": {
+        "name": "Beleuchtungsstärke"
+      },
+      "dli": {
+        "name": "Tägliches Lichtintegral (DLI)"
+      },
+      "temperature": {
+        "name": "Temperatur"
+      },
+      "conductivity": {
+        "name": "Leitfähigkeit"
+      },
+      "humidity": {
+        "name": "Luftfeuchtigkeit"
+      },
+      "ppfd_integral": {
+        "name": "Aufsummiertes ppfd (mol)-Integral"
+      }
+    }
+  },
   "options": {
     "step": {
       "init": {
@@ -68,7 +131,7 @@
           "humidity_sensor": "Luftfeuchtigkeitssensor",
           "entity_picture": "Bild-URL. Wird automatisch aktualisiert, wenn die Art in OpenPlantbook gefunden wird",
           "illuminance_trigger": "Beleuchtungsstärke als Problemauslöser verwenden",
-          "dli_trigger": "Tägliches Lichtintegral (dli) als Problemauslöser verwenden",
+          "dli_trigger": "Tägliches Lichtintegral (DLI) als Problemauslöser verwenden",
           "humidity_trigger": "Luftfeuchtigkeit als Problemauslöser verwenden",
           "conductivity_trigger": "Leitfähigkeit als Problemauslöser verwenden",
           "moisture_trigger": "Bodenfeuchte als Problemauslöser verwenden",
