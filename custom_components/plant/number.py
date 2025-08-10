@@ -336,7 +336,7 @@ class PlantMaxTemperature(PlantMinMax):
         return NumberDeviceClass.TEMPERATURE
 
     def state_attributes_changed(self, old_attributes, new_attributes):
-        """Calculate C or F"""
+        """Calculate °C or °F"""
         if new_attributes.get(ATTR_UNIT_OF_MEASUREMENT) is None:
             return
         if old_attributes.get(ATTR_UNIT_OF_MEASUREMENT) is None:
@@ -408,7 +408,7 @@ class PlantMinTemperature(PlantMinMax):
         return NumberDeviceClass.TEMPERATURE
 
     def state_attributes_changed(self, old_attributes, new_attributes):
-        """Calculate C or F"""
+        """Calculate °C or °F"""
         if new_attributes.get(ATTR_UNIT_OF_MEASUREMENT) is None:
             return
         if old_attributes.get(ATTR_UNIT_OF_MEASUREMENT) is None:
