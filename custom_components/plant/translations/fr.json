@@ -12,7 +12,8 @@
           "moisture_sensor": "Capteur d'humidité du sol",
           "conductivity_sensor": "Capteur de conductivité",
           "illuminance_sensor": "Capteur de luminosité",
-          "humidity_sensor": "Capteur d'humidité de l'air"
+          "humidity_sensor": "Capteur d'humidité de l'air",
+          "co2_sensor": "Capteur de CO₂"
         },
         "data_description": {
           "species": "Sera utilisé pour la recherche dans OpenPlantbook"
@@ -46,6 +47,8 @@
           "min_conductivity": "Conductivité minimale (uS/cm)",
           "max_humidity": "Humidité de l'air maximale (%)",
           "min_humidity": "Humidité de l'air minimale (%)",
+          "max_co2": "CO₂ maximal (ppm)",
+          "min_co2": "CO₂ minimal (ppm)",
           "entity_picture": "URL de l'image"
         }
       }
@@ -72,7 +75,9 @@
           "humidity_trigger": "Utiliser l'humidité de l'air comme déclencheur de problème",
           "conductivity_trigger": "Utiliser la conductivité comme déclencheur de problème",
           "moisture_trigger": "Utiliser l'humidité du sol comme déclencheur de problème",
-          "temperature_trigger": "Utiliser la température comme déclencheur de problème"
+          "temperature_trigger": "Utiliser la température comme déclencheur de problème",
+          "co2_sensor": "Capteur de CO₂",
+          "co2_trigger": "Utiliser le CO₂ comme déclencheur de problème"
         }
       }
     }
