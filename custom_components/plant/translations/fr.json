@@ -1,5 +1,6 @@
 {
   "title": "Surveillance de plantes",
+  "plant_notes": "Notes sur la plante",
   "config": {
     "step": {
       "user": {
@@ -59,6 +60,7 @@
         "data": {
           "check_days": "Contrôles des jours d'ensoleillement",
           "species": "Espèce",
+          "notes": "Notes sur la plante",
           "force_update": "Forcer la mise à jour des données depuis OpenPlantbook",
           "display_pid": "Espèce de plante à afficher",
           "temperature_sensor": "Capteur de température",
