@@ -43,7 +43,7 @@
           "max_temperature": "Maxima temperatura",
           "min_temperature": "Minimo de temperatura",
           "max_conductivity": "Maximo de condutividade (uS/cm)",
-          "min_conductivity": "Minimo de condutividade uS/cm)",
+          "min_conductivity": "Minimo de condutividade (uS/cm)",
           "max_humidity": "Maximo humidade do ar (%)",
           "min_humidity": "Minimo humidade do ar (%)",
           "entity_picture": "Link da imagem"
