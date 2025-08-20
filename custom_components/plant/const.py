@@ -32,18 +32,6 @@ ATTR_SPECIES = "species"
 ATTR_IMAGE = "image"
 ATTR_SEARCH_FOR = "search_for"
 
-# Readings are used by humans
-READING_BATTERY = "battery"
-READING_TEMPERATURE = "temperature"
-READING_MOISTURE = "soil moisture"
-READING_CONDUCTIVITY = "conductivity"
-READING_ILLUMINANCE = "illuminance"
-READING_HUMIDITY = "air humidity"
-READING_PPFD = "ppfd (mol)"
-READING_MMOL = "mmol"
-READING_MOL = "mol"
-READING_DLI = "dli"
-
 
 ATTR_MAX_ILLUMINANCE_HISTORY = "max_illuminance"
 ATTR_LIMITS = "limits"
