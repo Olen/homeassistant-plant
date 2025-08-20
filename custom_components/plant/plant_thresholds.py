@@ -81,9 +81,6 @@ class PlantMinMax(NumberEntity):
         self._config = config
         self._hass = hass
         self._plant = plantdevice
-        self.entity_id = async_generate_entity_id(
-            f"{DOMAIN}.{{}}", self.name, current_ids={}
-        )
         # pylint: disable=no-member
         if not self._attr_value or self._attr_value == STATE_UNKNOWN:
             self._attr_value = self._default_value

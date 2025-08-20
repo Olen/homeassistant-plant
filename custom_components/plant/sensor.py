@@ -155,9 +155,6 @@ class PlantCurrentStatus(RestoreSensor):
         self._tracker = []
         self._follow_external = True
         # self._conf_check_days = self._plant.check_days
-        self.entity_id = async_generate_entity_id(
-            f"{DOMAIN}.{{}}", self.name, current_ids={}
-        )
         if (
             not self._attr_native_value
             or self._attr_native_value == STATE_UNKNOWN
@@ -457,9 +454,6 @@ class PlantCurrentPpfd(PlantCurrentStatus):
         self._attr_icon = ICON_PPFD
         super().__init__(hass, config, plantdevice)
         self._follow_unit = False
-        self.entity_id = async_generate_entity_id(
-            f"{DOMAIN_SENSOR}.{{}}", self.name, current_ids={}
-        )
 
     @property
     def device_class(self) -> str:
@@ -546,9 +540,6 @@ class PlantTotalLightIntegral(IntegrationSensor):
         )
         self._unit_of_measurement = UNIT_DLI
         self._attr_icon = ICON_DLI
-        self.entity_id = async_generate_entity_id(
-            f"{DOMAIN_SENSOR}.{{}}", self.name, current_ids={}
-        )
         self._plant = plantdevice
 
     @property
@@ -601,9 +592,6 @@ class PlantDailyLightIntegral(UtilityMeterSensor):
             suggested_entity_id=None,
             periodically_resetting=True,
         )
-        self.entity_id = async_generate_entity_id(
-            f"{DOMAIN_SENSOR}.{{}}", self.name, current_ids={}
-        )
 
         self._unit_of_measurement = UNIT_DLI
         self._attr_icon = ICON_DLI
@@ -631,9 +619,6 @@ class PlantDummyStatus(SensorEntity):
         """Initialize the dummy sensor."""
         self._config = config
         self._default_state = STATE_UNKNOWN
-        self.entity_id = async_generate_entity_id(
-            f"{DOMAIN}.{{}}", self.name, current_ids={}
-        )
         self._plant = plantdevice
 
         if not self._attr_native_value or self._attr_native_value == STATE_UNKNOWN:

@@ -68,9 +68,6 @@ class PlantCurrentStatus(RestoreSensor):
         self._default_state = 0
         self._plant = plantdevice
         # self._conf_check_days = self._plant.check_days
-        self.entity_id = async_generate_entity_id(
-            f"{DOMAIN}.{{}}", self.name, current_ids={}
-        )
         if not self._attr_native_value or self._attr_native_value == STATE_UNKNOWN:
             self._attr_native_value = self._default_state
 

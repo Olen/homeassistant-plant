@@ -153,9 +153,6 @@ class PlantMinMax(RestoreNumber):
         self._hass = hass
         self._plant = plantdevice
         self._attr_mode = NumberMode.BOX
-        self.entity_id = async_generate_entity_id(
-            f"{DOMAIN}.{{}}", self.name, current_ids={}
-        )
         # pylint: disable=no-member
         if (
             not hasattr(self, "_attr_native_value")
