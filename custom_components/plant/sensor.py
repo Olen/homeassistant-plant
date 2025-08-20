@@ -573,7 +573,7 @@ class PlantTotalLightIntegral(IntegrationSensor):
 
 
 class PlantDailyLightIntegral(UtilityMeterSensor):
-    """Entity class to calculate Daily Light Integral from PPDF"""
+    """Entity class to calculate Daily Light Integral from PPFD"""
 
     def __init__(
         self,
