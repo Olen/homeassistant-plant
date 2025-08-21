@@ -38,8 +38,8 @@
           "min_moisture": "Minimale Bodenfeuchtigkeit (%)",
           "max_illuminance": "Maximale Beleuchtungsstärke (lx)",
           "min_illuminance": "Minimale Beleuchtungsstärke (lx)",
-          "max_dli": "Maximale DLI (mol/d⋅m²)",
-          "min_dli": "Minimale DLI (mol/d⋅m²)",
+          "max_dli": "Maximales DLI (mol/d⋅m²)",
+          "min_dli": "Minimales DLI (mol/d⋅m²)",
           "max_temperature": "Maximale Temperatur (siehe oben)",
           "min_temperature": "Minimale Temperatur (siehe oben)",
           "max_conductivity": "Maximale Leitfähigkeit (uS/cm)",
@@ -66,10 +66,10 @@
         "name": "Minimale Beleuchtungsstärke"
       },
       "max_dli": {
-        "name": "Maximale DLI"
+        "name": "Maximales DLI"
       },
       "min_dli": {
-        "name": "Minimale DLI"
+        "name": "Minimales DLI"
       },
       "max_temperature": {
         "name": "Maximale Temperatur"
