@@ -38,8 +38,8 @@
           "min_moisture": "Minimale Bodenfeuchtigkeit (%)",
           "max_illuminance": "Maximale Beleuchtungsstärke (lx)",
           "min_illuminance": "Minimale Beleuchtungsstärke (lx)",
-          "max_dli": "Maximale DLI (mol/d⋅m²)",
-          "min_dli": "Minimale DLI (mol/d⋅m²)",
+          "max_dli": "Maximales DLI (mol/d⋅m²)",
+          "min_dli": "Minimales DLI (mol/d⋅m²)",
           "max_temperature": "Maximale Temperatur (siehe oben)",
           "min_temperature": "Minimale Temperatur (siehe oben)",
           "max_conductivity": "Maximale Leitfähigkeit (uS/cm)",
@@ -48,6 +48,69 @@
           "min_humidity": "Minimale Luftfeuchtigkeit (%)",
           "entity_picture": "Bild-URL"
         }
+      }
+    }
+  },
+  "entity": {
+    "number": {
+      "max_moisture": {
+        "name": "Maximale Bodenfeuchtigkeit"
+      },
+      "min_moisture": {
+        "name": "Minimale Bodenfeuchtigkeit"
+      },
+      "max_illuminance": {
+        "name": "Maximale Beleuchtungsstärke"
+      },
+      "min_illuminance": {
+        "name": "Minimale Beleuchtungsstärke"
+      },
+      "max_dli": {
+        "name": "Maximales DLI"
+      },
+      "min_dli": {
+        "name": "Minimales DLI"
+      },
+      "max_temperature": {
+        "name": "Maximale Temperatur"
+      },
+      "min_temperature": {
+        "name": "Minimale Temperatur"
+      },
+      "max_conductivity": {
+        "name": "Maximale Leitfähigkeit"
+      },
+      "min_conductivity": {
+        "name": "Minimale Leitfähigkeit"
+      },
+      "max_humidity": {
+        "name": "Maximale Luftfeuchtigkeit"
+      },
+      "min_humidity": {
+        "name": "Minimale Luftfeuchtigkeit"
+      }
+    },
+    "sensor": {
+      "moisture": {
+        "name": "Bodenfeuchtigkeit"
+      },
+      "illuminance": {
+        "name": "Beleuchtungsstärke"
+      },
+      "dli": {
+        "name": "Tägliches Lichtintegral (DLI)"
+      },
+      "temperature": {
+        "name": "Temperatur"
+      },
+      "conductivity": {
+        "name": "Leitfähigkeit"
+      },
+      "humidity": {
+        "name": "Luftfeuchtigkeit"
+      },
+      "ppfd_integral": {
+        "name": "Aufsummiertes ppfd (mol)-Integral"
       }
     }
   },
@@ -68,7 +131,7 @@
           "humidity_sensor": "Luftfeuchtigkeitssensor",
           "entity_picture": "Bild-URL. Wird automatisch aktualisiert, wenn die Art in OpenPlantbook gefunden wird",
           "illuminance_trigger": "Beleuchtungsstärke als Problemauslöser verwenden",
-          "dli_trigger": "Tägliches Lichtintegral (dli) als Problemauslöser verwenden",
+          "dli_trigger": "Tägliches Lichtintegral (DLI) als Problemauslöser verwenden",
           "humidity_trigger": "Luftfeuchtigkeit als Problemauslöser verwenden",
           "conductivity_trigger": "Leitfähigkeit als Problemauslöser verwenden",
           "moisture_trigger": "Bodenfeuchte als Problemauslöser verwenden",

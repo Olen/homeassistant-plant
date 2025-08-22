@@ -51,6 +51,66 @@
       }
     }
   },
+  "entity": {
+    "number": {
+      "max_moisture": {
+        "name": "Humedad máxima del suelo"
+      },
+      "min_moisture": {
+        "name": "Humedad mínima del suelo"
+      },
+      "max_illuminance": {
+        "name": "Iluminación máxima"
+      },
+      "min_illuminance": {
+        "name": "Iluminación mínima"
+      },
+      "max_dli": {
+        "name": "DLI máximo"
+      },
+      "min_dli": {
+        "name": "DLI mínimo"
+      },
+      "max_temperature": {
+        "name": "Temperatura máxima"
+      },
+      "min_temperature": {
+        "name": "Temperatura mínima"
+      },
+      "max_conductivity": {
+        "name": "Conductividad máxima"
+      },
+      "min_conductivity": {
+        "name": "Conductividad mínima"
+      },
+      "max_humidity": {
+        "name": "Humedad del aire máxima"
+      },
+      "min_humidity": {
+        "name": "Humedad del aire mínima"
+      }
+    },
+    "sensor": {
+      "moisture": {
+        "name": "Humedad del suelo"
+      },
+      "illuminance": {
+        "name": "Iluminación"
+      },
+      "dli": {
+        "name": "Luz diaria integral (dli)"
+      },
+      "temperature": {
+        "name": "Temperatura"
+      },
+      "conductivity": {
+        "name": "Conductividad"
+      },
+      "humidity": {
+        "name": "Humedad del aire"
+      }
+    }
+  },
   "options": {
     "step": {
       "init": {
@@ -68,7 +128,7 @@
           "humidity_sensor": "Sensor de humedad ambiente",
           "entity_picture": "URL de la imagen. Se actualizará automáticamente si la especie se encuentra en OpenPlantbook",
           "illuminance_trigger": "Utilizar la iluminación como desencadenante de problema",
-          "dli_trigger": "Utilizar la luz diaria integral (dli) como desencadenante de problema",
+          "dli_trigger": "Utilizar la luz diaria integral (DLI) como desencadenante de problema",
           "humidity_trigger": "Utilizar la humedad del aire como desencadenante de problema",
           "conductivity_trigger": "Utilizar la conductividad como desencadenante de problema",
           "moisture_trigger": "Utilizar la humedad del suelo como desencadenante de problema",

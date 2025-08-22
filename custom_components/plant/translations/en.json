@@ -51,6 +51,72 @@
       }
     }
   },
+  "entity": {
+    "number": {
+      "max_moisture": {
+        "name": "Maximum soil moisture"
+      },
+      "min_moisture": {
+        "name": "Minimum soil moisture"
+      },
+      "max_illuminance": {
+        "name": "Maximum illuminance"
+      },
+      "min_illuminance": {
+        "name": "Minimum illuminance"
+      },
+      "max_dli": {
+        "name": "Maximum DLI"
+      },
+      "min_dli": {
+        "name": "Minimum DLI"
+      },
+      "max_temperature": {
+        "name": "Maximum temperature"
+      },
+      "min_temperature": {
+        "name": "Minimum temperature"
+      },
+      "max_conductivity": {
+        "name": "Maximum conductivity"
+      },
+      "min_conductivity": {
+        "name": "Minimum conductivity"
+      },
+      "max_humidity": {
+        "name": "Maximum air humidity"
+      },
+      "min_humidity": {
+        "name": "Minimum air humidity"
+      }
+    },
+    "sensor": {
+      "moisture": {
+        "name": "Soil moisture"
+      },
+      "illuminance": {
+        "name": "Illuminance"
+      },
+      "dli": {
+        "name": "Daily light integral (DLI)"
+      },
+      "temperature": {
+        "name": "Temperature"
+      },
+      "conductivity": {
+        "name": "Conductivity"
+      },
+      "humidity": {
+        "name": "Air humidity"
+      },
+      "ppfd": {
+        "name": "ppfd (mol)"
+      },
+      "ppfd_integral": {
+        "name": "Total ppfd (mol) Integral"
+      }
+    }
+  },
   "options": {
     "step": {
       "init": {

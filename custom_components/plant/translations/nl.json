@@ -51,6 +51,66 @@
       }
     }
   },
+  "entity": {
+    "number": {
+      "max_moisture": {
+        "name": "Maximale bodemvochtigheid"
+      },
+      "min_moisture": {
+        "name": "Minimale bodemvochtigheid"
+      },
+      "max_illuminance": {
+        "name": "Maximale lichtsterkte"
+      },
+      "min_illuminance": {
+        "name": "Minimale lichtsterkte"
+      },
+      "max_dli": {
+        "name": "Maximale DLI"
+      },
+      "min_dli": {
+        "name": "Minimale DLI"
+      },
+      "max_temperature": {
+        "name": "Maximale temperatuur"
+      },
+      "min_temperature": {
+        "name": "Minimale temperatuur"
+      },
+      "max_conductivity": {
+        "name": "Maximale geleidbaarheid"
+      },
+      "min_conductivity": {
+        "name": "Minimale geleidbaarheid"
+      },
+      "max_humidity": {
+        "name": "Maximale luchtvochtigheid"
+      },
+      "min_humidity": {
+        "name": "Minimale luchtvochtigheid"
+      }
+    },
+    "sensor": {
+      "moisture": {
+        "name": "Bodemvochtigheid"
+      },
+      "illuminance": {
+        "name": "Lichtsterkte"
+      },
+      "dli": {
+        "name": "Daily light integral (DLI)"
+      },
+      "temperature": {
+        "name": "Temperatuur"
+      },
+      "conductivity": {
+        "name": "Geleidbaarheid"
+      },
+      "humidity": {
+        "name": "Luchtvochtigheid"
+      }
+    }
+  },
   "options": {
     "step": {
       "init": {
@@ -68,7 +128,7 @@
           "humidity_sensor": "Luchtvochtigheidssensor",
           "entity_picture": "Afbeeldings-URL. Wordt automatisch ingevuld als soort is gevonden in OpenPlantbook",
           "illuminance_trigger": "Gebruik lichtsterkte als trigger voor probleem",
-          "dli_trigger": "Gebruik daily light integral (dli) als trigger voor probleem",
+          "dli_trigger": "Gebruik daily light integral (DLI) als trigger voor probleem",
           "humidity_trigger": "Gebruik luchtvochtigheid als trigger voor probleem",
           "conductivity_trigger": "Gebruik geleidbaarheid als trigger voor probleem",
           "moisture_trigger": "Gebruik bodemvochtigheid als trigger voor probleem",

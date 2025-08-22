@@ -51,6 +51,66 @@
       }
     }
   },
+  "entity": {
+    "number": {
+      "max_moisture": {
+        "name": "Maksimal jordfugtighed"
+      },
+      "min_moisture": {
+        "name": "Minimal jordfugtighed"
+      },
+      "max_illuminance": {
+        "name": "Maksimal lysstyrke"
+      },
+      "min_illuminance": {
+        "name": "Minimal lysstyrke"
+      },
+      "max_dli": {
+        "name": "Maksimal DLI"
+      },
+      "min_dli": {
+        "name": "Minimal DLI"
+      },
+      "max_temperature": {
+        "name": "Maksimal temperatur"
+      },
+      "min_temperature": {
+        "name": "Minimal temperatur"
+      },
+      "max_conductivity": {
+        "name": "Maksimal ledningsevne"
+      },
+      "min_conductivity": {
+        "name": "Minimal ledningsevne"
+      },
+      "max_humidity": {
+        "name": "Maksimal luftfugtighed"
+      },
+      "min_humidity": {
+        "name": "Minimal luftfugtighed"
+      }
+    },
+    "sensor": {
+      "moisture": {
+        "name": "Jordfugtighed"
+      },
+      "illuminance": {
+        "name": "Lysstyrke"
+      },
+      "dli": {
+        "name": "Dagligt lysintegral (DLI)"
+      },
+      "temperature": {
+        "name": "Temperatur"
+      },
+      "conductivity": {
+        "name": "Ledningsevne"
+      },
+      "humidity": {
+        "name": "Luftfugtighed"
+      }
+    }
+  },
   "options": {
     "step": {
       "init": {

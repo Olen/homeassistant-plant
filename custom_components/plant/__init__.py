@@ -62,12 +62,6 @@ from .const import (
     FLOW_PLANT_INFO,
     FLOW_TEMPERATURE_TRIGGER,
     OPB_DISPLAY_PID,
-    READING_CONDUCTIVITY,
-    READING_DLI,
-    READING_HUMIDITY,
-    READING_ILLUMINANCE,
-    READING_MOISTURE,
-    READING_TEMPERATURE,
     SERVICE_REPLACE_SENSOR,
     STATE_HIGH,
     STATE_LOW,
@@ -144,8 +138,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     plant = PlantDevice(hass, entry)
     hass.data[DOMAIN][entry.entry_id][ATTR_PLANT] = plant
 
-    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-
     plant_entities = [
         plant,
     ]
@@ -160,6 +152,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     # await _plant_add_to_device_registry(hass, plant.integral_entities, device_id)
     # await _plant_add_to_device_registry(hass, plant.threshold_entities, device_id)
     # await _plant_add_to_device_registry(hass, plant.meter_entities, device_id)
+
+    # Create the sensor and number entities
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     #
     # Set up utility sensor
