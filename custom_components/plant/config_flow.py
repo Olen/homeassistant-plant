@@ -142,7 +142,12 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             }
         )
         data_schema[FLOW_SENSOR_CONDUCTIVITY] = selector(
-            {ATTR_ENTITY: {ATTR_DOMAIN: DOMAIN_SENSOR}}
+            {
+                ATTR_ENTITY: {
+                    ATTR_DEVICE_CLASS: SensorDeviceClass.CONDUCTIVITY,
+                    ATTR_DOMAIN: DOMAIN_SENSOR,
+                }
+            }
         )
         data_schema[FLOW_SENSOR_ILLUMINANCE] = selector(
             {
