@@ -1,5 +1,6 @@
 {
   "title": "Plant monitor",
+  "plant_notes": "Plantnotities",
   "config": {
     "step": {
       "user": {
@@ -32,7 +33,7 @@
         "title": "Stel limieten in",
         "description": "# {name}\n![Plant]({entity_picture}){br}\n{extra_desc}Temperatuureenheid is {temperature_unit}",
         "data": {
-          "right_plant": "Dit is de plan waar ik naar op zoek was",
+          "right_plant": "Dit is de plant waar ik naar op zoek was",
           "display_pid": "Te tonen plantsoort",
           "max_moisture": "Maximale bodemvochtigheid (%)",
           "min_moisture": "Minimale bodemvochtigheid (%)",

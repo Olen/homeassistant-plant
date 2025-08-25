@@ -75,7 +75,7 @@ from .const import (
 from .plant_helpers import PlantHelper
 
 _LOGGER = logging.getLogger(__name__)
-PLATFORMS = [Platform.NUMBER, Platform.SENSOR]
+PLATFORMS = [Platform.NUMBER, Platform.SENSOR, Platform.TEXT]
 
 # Use this during testing to generate some dummy-sensors
 # to provide random readings for temperature, moisture etc.
@@ -326,6 +326,7 @@ class PlantDevice(Entity):
         self._hass = hass
         self._attr_name = config.data[FLOW_PLANT_INFO][ATTR_NAME]
         self._config_entries = []
+        # We no longer use "config_entries" in device_info.
         self._data_source = config.data[FLOW_PLANT_INFO].get(DATA_SOURCE)
 
         # Get entity_picture from options or from initial config
@@ -406,9 +407,9 @@ class PlantDevice(Entity):
         return {
             "identifiers": {(DOMAIN, self.unique_id)},
             "name": self.name,
-            "config_entries": self._config_entries,
             "model": self.display_species,
-            "manufacturer": self.data_source,
+            "manufacturer": self._data_source,
+            # Do not include "config_entry_id" here since HA already passes it.
         }
 
     @property
