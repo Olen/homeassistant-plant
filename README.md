@@ -25,7 +25,7 @@ All existing entries in `configuration.yaml` from version 1 will be migrated to 
 
 ## Plants are now treated as _devices_
 
-This means that the main plant entity references other entities, and they are grouped togheter in the GUI as a single device.
+This means that the main plant entity references other entities, and they are grouped together in the GUI as a single device.
 
 ![image](https://user-images.githubusercontent.com/203184/184302443-9d9fb1f2-4b2a-48bb-a479-1cd3a6e634af.png)
 
