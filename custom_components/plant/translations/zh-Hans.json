@@ -51,6 +51,66 @@
       }
     }
   },
+  "entity": {
+    "number": {
+      "max_moisture": {
+        "name": "最大土壤湿度(%)"
+      },
+      "min_moisture": {
+        "name": "最小土壤湿度(%)"
+      },
+      "max_illuminance": {
+        "name": "最大光照强度(lx)"
+      },
+      "min_illuminance": {
+        "name": "最小光照强度(lx)"
+      },
+      "max_dli": {
+        "name": "最大DLI(mol/d⋅m²)"
+      },
+      "min_dli": {
+        "name": "最小DLI(mol/d⋅m²)"
+      },
+      "max_temperature": {
+        "name": "最高温度(见上方)"
+      },
+      "min_temperature": {
+        "name": "最低温度(见上方)"
+      },
+      "max_conductivity": {
+        "name": "最大电导率(uS/cm)"
+      },
+      "min_conductivity": {
+        "name": "最小电导率(uS/cm)"
+      },
+      "max_humidity": {
+        "name": "最大空气湿度(%)"
+      },
+      "min_humidity": {
+        "name": "最小空气湿度(%)"
+      }
+    },
+    "sensor": {
+      "moisture": {
+        "name": "土壤湿度"
+      },
+      "illuminance": {
+        "name": "光照强度"
+      },
+      "dli": {
+        "name": "每日光照积分(DLI)"
+      },
+      "temperature": {
+        "name": "温度"
+      },
+      "conductivity": {
+        "name": "电导率"
+      },
+      "humidity": {
+        "name": "空气湿度"
+      }
+    }
+  },
   "options": {
     "step": {
       "init": {
