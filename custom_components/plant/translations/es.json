@@ -1,5 +1,6 @@
 {
   "title": "Monitor de plantas",
+  "plant_notes": "Notas de la planta",
   "config": {
     "step": {
       "user": {
