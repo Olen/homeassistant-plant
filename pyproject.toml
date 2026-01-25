@@ -31,6 +31,7 @@ test = [
     "pytest-homeassistant-custom-component>=0.13.0",
     "syrupy>=4.6.0",
     "black>=24.0.0",
+    "cronsim>=2.6",
 ]
 
 [tool.setuptools.packages.find]
