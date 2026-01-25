@@ -16,8 +16,8 @@ from homeassistant.const import (
     UnitOfTemperature,
 )
 from homeassistant.core import Event, HomeAssistant, callback
-from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import (
     Entity,
     EntityCategory,
@@ -166,7 +166,7 @@ class PlantMinMax(RestoreNumber):
             self._attr_native_value = self._default_value
 
     @property
-    def entity_category(self) -> str:
+    def entity_category(self) -> EntityCategory:
         """The entity category"""
         return EntityCategory.CONFIG
 
@@ -352,7 +352,7 @@ class PlantMaxTemperature(PlantMinMax):
             and new_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == "°C"
         ):
             new_state = round(
-                TemperatureConerter.convert(
+                TemperatureConverter.convert(
                     temperature=float(self.state),
                     from_unit=UnitOfTemperature.FAHRENHEIT,
                     to_unit=UnitOfTemperature.CELSIUS,
@@ -369,7 +369,7 @@ class PlantMaxTemperature(PlantMinMax):
             and new_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == "°F"
         ):
             new_state = round(
-                TemperatureConerter.convert(
+                TemperatureConverter.convert(
                     temperature=float(self.state),
                     from_unit=UnitOfTemperature.CELSIUS,
                     to_unit=UnitOfTemperature.FAHRENHEIT,
@@ -424,7 +424,7 @@ class PlantMinTemperature(PlantMinMax):
             and new_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == "°C"
         ):
             new_state = round(
-                TemperatureConerter.convert(
+                TemperatureConverter.convert(
                     temperature=float(self.state),
                     from_unit=UnitOfTemperature.FAHRENHEIT,
                     to_unit=UnitOfTemperature.CELSIUS,
@@ -443,7 +443,7 @@ class PlantMinTemperature(PlantMinMax):
             and new_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == "°F"
         ):
             new_state = round(
-                TemperatureConerter.convert(
+                TemperatureConverter.convert(
                     temperature=float(self.state),
                     from_unit=UnitOfTemperature.CELSIUS,
                     to_unit=UnitOfTemperature.FAHRENHEIT,

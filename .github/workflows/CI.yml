@@ -9,8 +9,8 @@ on:
     - cron: "0 0 15 * *"
 
 jobs:
-  black:
-    name: Code Formatting
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
@@ -24,11 +24,14 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v4
 
-      - name: Install black
-        run: uv pip install black --system
+      - name: Install linters
+        run: uv pip install black ruff --system
 
-      - name: Check formatting
+      - name: Check formatting (black)
         run: black . --check --fast --diff
+
+      - name: Check linting (ruff)
+        run: ruff check .
 
   test:
     name: Tests

@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
 import logging
 import random
+from datetime import datetime, timedelta
 
 from homeassistant.components.integration.const import METHOD_TRAPEZOIDAL
 from homeassistant.components.integration.sensor import IntegrationSensor
@@ -30,8 +30,8 @@ from homeassistant.const import (
     UnitOfTime,
 )
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import (
     Entity,
     EntityCategory,
@@ -468,12 +468,12 @@ class PlantCurrentPpfd(PlantCurrentStatus):
         return None
 
     @property
-    def entity_category(self) -> str:
+    def entity_category(self) -> EntityCategory:
         """The entity category"""
         return EntityCategory.DIAGNOSTIC
 
     @property
-    def entity_registry_visible_default(self) -> str:
+    def entity_registry_visible_default(self) -> bool:
         return False
 
     def ppfd(self, value: float | int | str) -> float | str:
@@ -553,7 +553,7 @@ class PlantTotalLightIntegral(IntegrationSensor):
         self._plant = plantdevice
 
     @property
-    def entity_category(self) -> str:
+    def entity_category(self) -> EntityCategory:
         """The entity category"""
         return EntityCategory.DIAGNOSTIC
 
@@ -565,7 +565,7 @@ class PlantTotalLightIntegral(IntegrationSensor):
         )
 
     @property
-    def entity_registry_visible_default(self) -> str:
+    def entity_registry_visible_default(self) -> bool:
         return False
 
     def _unit(self, source_unit: str) -> str:

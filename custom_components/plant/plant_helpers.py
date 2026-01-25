@@ -5,9 +5,8 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from async_timeout import timeout
 import voluptuous as vol
-
+from async_timeout import timeout
 from homeassistant.components.persistent_notification import (
     create as create_notification,
 )

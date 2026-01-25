@@ -4,14 +4,13 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any
 import urllib.parse
+from typing import Any
 
 import voluptuous as vol
-
 from homeassistant import config_entries
-from homeassistant.config_entries import ConfigFlowResult
 from homeassistant.components.sensor import SensorDeviceClass
+from homeassistant.config_entries import ConfigFlowResult
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
     ATTR_DOMAIN,
@@ -410,7 +409,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Validate step two"""
         _LOGGER.debug("Validating step 2: %s", user_input)
 
-        if not ATTR_SPECIES in user_input:
+        if ATTR_SPECIES not in user_input:
             return False
         if not isinstance(user_input[ATTR_SPECIES], str):
             return False

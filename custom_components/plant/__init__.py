@@ -2,12 +2,9 @@
 
 from __future__ import annotations
 
-from . import group
-
 import logging
 
 import voluptuous as vol
-
 from homeassistant.components import websocket_api
 from homeassistant.components.utility_meter.const import (
     DATA_TARIFF_SENSORS,
@@ -15,7 +12,6 @@ from homeassistant.components.utility_meter.const import (
 )
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
 from homeassistant.const import (
-    Platform,
     ATTR_ENTITY_PICTURE,
     ATTR_ICON,
     ATTR_NAME,
@@ -24,17 +20,16 @@ from homeassistant.const import (
     STATE_PROBLEM,
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
+    Platform,
 )
 from homeassistant.core import HomeAssistant, ServiceCall, callback
-from homeassistant.helpers import (
-    config_validation as cv,
-    device_registry as dr,
-    entity_registry as er,
-)
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity, async_generate_entity_id
 from homeassistant.helpers.entity_component import EntityComponent
 
+from . import group as group  # noqa: F401 - needed for HA group discovery
 from .config_flow import update_plant_options
 from .const import (
     ATTR_CONDUCTIVITY,
@@ -42,9 +37,7 @@ from .const import (
     ATTR_DLI,
     ATTR_HUMIDITY,
     ATTR_ILLUMINANCE,
-    ATTR_LIMITS,
     ATTR_MAX,
-    ATTR_METERS,
     ATTR_MIN,
     ATTR_MOISTURE,
     ATTR_PLANT,
@@ -52,10 +45,8 @@ from .const import (
     ATTR_SENSORS,
     ATTR_SPECIES,
     ATTR_TEMPERATURE,
-    ATTR_THRESHOLDS,
     DATA_SOURCE,
     DOMAIN,
-    DOMAIN_PLANTBOOK,
     FLOW_CONDUCTIVITY_TRIGGER,
     FLOW_DLI_TRIGGER,
     FLOW_HUMIDITY_TRIGGER,
@@ -64,12 +55,6 @@ from .const import (
     FLOW_PLANT_INFO,
     FLOW_TEMPERATURE_TRIGGER,
     OPB_DISPLAY_PID,
-    READING_CONDUCTIVITY,
-    READING_DLI,
-    READING_HUMIDITY,
-    READING_ILLUMINANCE,
-    READING_MOISTURE,
-    READING_TEMPERATURE,
     SERVICE_REPLACE_SENSOR,
     STATE_HIGH,
     STATE_LOW,
@@ -84,6 +69,7 @@ PLATFORMS = [Platform.NUMBER, Platform.SENSOR]
 #
 SETUP_DUMMY_SENSORS = False
 USE_DUMMY_SENSORS = False
+
 
 @callback
 def _async_find_matching_config_entry(hass: HomeAssistant) -> ConfigEntry | None:
