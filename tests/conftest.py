@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Generator
+from collections.abc import AsyncGenerator, Generator
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -305,7 +305,7 @@ async def init_integration(
     hass: HomeAssistant,
     mock_config_entry: MockConfigEntry,
     mock_external_sensors: None,
-) -> MockConfigEntry:
+) -> AsyncGenerator[MockConfigEntry]:
     """Initialize the plant integration for testing."""
     mock_config_entry.add_to_hass(hass)
 
@@ -313,18 +313,26 @@ async def init_integration(
     await hass.config_entries.async_setup(mock_config_entry.entry_id)
     await hass.async_block_till_done()
 
-    return mock_config_entry
+    yield mock_config_entry
+
+    # Cleanup: unload the integration to cancel any lingering timers
+    await hass.config_entries.async_unload(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
 
 
 @pytest.fixture
 async def init_integration_no_sensors(
     hass: HomeAssistant,
     mock_config_entry_no_sensors: MockConfigEntry,
-) -> MockConfigEntry:
+) -> AsyncGenerator[MockConfigEntry]:
     """Initialize the plant integration without external sensors."""
     mock_config_entry_no_sensors.add_to_hass(hass)
 
     await hass.config_entries.async_setup(mock_config_entry_no_sensors.entry_id)
     await hass.async_block_till_done()
 
-    return mock_config_entry_no_sensors
+    yield mock_config_entry_no_sensors
+
+    # Cleanup: unload the integration to cancel any lingering timers
+    await hass.config_entries.async_unload(mock_config_entry_no_sensors.entry_id)
+    await hass.async_block_till_done()

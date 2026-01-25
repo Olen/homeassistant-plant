@@ -38,11 +38,6 @@ test = [
 where = ["."]
 include = ["custom_components*"]
 
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-asyncio_mode = "auto"
-asyncio_default_fixture_loop_scope = "function"
-
 [tool.coverage.run]
 source = ["custom_components/plant"]
 omit = ["tests/*"]
