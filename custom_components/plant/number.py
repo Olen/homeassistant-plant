@@ -17,6 +17,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import (
     Entity,
     EntityCategory,
@@ -83,7 +84,7 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
-):
+) -> bool:
     """Set up Threshold from a config entry."""
     _LOGGER.debug(entry.data)
     plant = hass.data[DOMAIN][entry.entry_id][ATTR_PLANT]
@@ -170,11 +171,11 @@ class PlantMinMax(RestoreNumber):
         return EntityCategory.CONFIG
 
     @property
-    def device_info(self) -> dict:
+    def device_info(self) -> DeviceInfo:
         """Device info for devices"""
-        return {
-            "identifiers": {(DOMAIN, self._plant.unique_id)},
-        }
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._plant.unique_id)},
+        )
 
     async def async_set_native_value(self, value: float) -> None:
         _LOGGER.debug("Setting value of %s to %s", self.entity_id, value)

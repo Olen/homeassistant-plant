@@ -31,6 +31,7 @@ from homeassistant.helpers import (
     device_registry as dr,
     entity_registry as er,
 )
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity, async_generate_entity_id
 from homeassistant.helpers.entity_component import EntityComponent
 
@@ -84,33 +85,6 @@ PLATFORMS = [Platform.NUMBER, Platform.SENSOR]
 SETUP_DUMMY_SENSORS = False
 USE_DUMMY_SENSORS = False
 
-# Removed.
-# Have not been used for a long time
-#
-# async def async_setup(hass: HomeAssistant, config: dict):
-#     """
-#     Set up the plant component
-#
-#     Configuration.yaml is no longer used.
-#     This function only tries to migrate the legacy config.
-#     """
-#     if config.get(DOMAIN):
-#         # Only import if we haven't before.
-#         config_entry = _async_find_matching_config_entry(hass)
-#         if not config_entry:
-#             _LOGGER.debug("Old setup - with config: %s", config[DOMAIN])
-#             for plant in config[DOMAIN]:
-#                 if plant != DOMAIN_PLANTBOOK:
-#                     _LOGGER.info("Migrating plant: %s", plant)
-#                     await async_migrate_plant(hass, plant, config[DOMAIN][plant])
-#         else:
-#             _LOGGER.warning(
-#                 "Config already imported. Please delete all your %s related config from configuration.yaml",
-#                 DOMAIN,
-#             )
-#     return True
-
-
 @callback
 def _async_find_matching_config_entry(hass: HomeAssistant) -> ConfigEntry | None:
     """Check if there are migrated entities"""
@@ -133,7 +107,7 @@ async def async_migrate_plant(hass: HomeAssistant, plant_id: str, config: dict) 
     )
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Plant from a config entry."""
     hass.data.setdefault(DOMAIN, {})
     if FLOW_PLANT_INFO not in entry.data:
@@ -303,7 +277,7 @@ def ws_get_info(
         return
 
     for key in hass.data[DOMAIN]:
-        if not ATTR_PLANT in hass.data[DOMAIN][key]:
+        if ATTR_PLANT not in hass.data[DOMAIN][key]:
             continue
         plant_entity = hass.data[DOMAIN][key][ATTR_PLANT]
         if plant_entity.entity_id == msg["entity_id"]:
@@ -405,15 +379,14 @@ class PlantDevice(Entity):
         return self._device_id
 
     @property
-    def device_info(self) -> dict:
+    def device_info(self) -> DeviceInfo:
         """Device info for devices"""
-        return {
-            "identifiers": {(DOMAIN, self.unique_id)},
-            "name": self.name,
-            "config_entries": self._config_entries,
-            "model": self.display_species,
-            "manufacturer": self.data_source,
-        }
+        return DeviceInfo(
+            identifiers={(DOMAIN, self.unique_id)},
+            name=self.name,
+            model=self.display_species,
+            manufacturer=self.data_source,
+        )
 
     @property
     def illuminance_trigger(self) -> bool:
@@ -555,7 +528,7 @@ class PlantDevice(Entity):
         ]
 
     @property
-    def integral_entities(self) -> list(Entity):
+    def integral_entities(self) -> list[Entity]:
         """List all integral entities"""
         return [
             self.dli,

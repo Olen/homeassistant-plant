@@ -31,6 +31,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import (
     Entity,
     EntityCategory,
@@ -80,7 +81,7 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
-):
+) -> bool:
     """Set up Plant Sensors from a config entry."""
     _LOGGER.debug(entry.data)
     plant = hass.data[DOMAIN][entry.entry_id][ATTR_PLANT]
@@ -175,11 +176,11 @@ class PlantCurrentStatus(RestoreSensor):
         return SensorStateClass.MEASUREMENT
 
     @property
-    def device_info(self) -> dict:
+    def device_info(self) -> DeviceInfo:
         """Device info for devices"""
-        return {
-            "identifiers": {(DOMAIN, self._plant.unique_id)},
-        }
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._plant.unique_id)},
+        )
 
     @property
     def extra_state_attributes(self) -> dict:
@@ -557,11 +558,11 @@ class PlantTotalLightIntegral(IntegrationSensor):
         return EntityCategory.DIAGNOSTIC
 
     @property
-    def device_info(self) -> dict:
+    def device_info(self) -> DeviceInfo:
         """Device info for devices"""
-        return {
-            "identifiers": {(DOMAIN, self._plant.unique_id)},
-        }
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._plant.unique_id)},
+        )
 
     @property
     def entity_registry_visible_default(self) -> str:
@@ -615,11 +616,11 @@ class PlantDailyLightIntegral(UtilityMeterSensor):
         return ATTR_DLI
 
     @property
-    def device_info(self) -> dict:
+    def device_info(self) -> DeviceInfo:
         """Device info for devices"""
-        return {
-            "identifiers": {(DOMAIN, self._plant.unique_id)},
-        }
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._plant.unique_id)},
+        )
 
 
 class PlantDummyStatus(SensorEntity):
