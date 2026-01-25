@@ -14,19 +14,20 @@ This is a custom Home Assistant integration for plant monitoring. It replaces th
 ```bash
 # Setup (one time)
 uv venv
-uv pip install pytest pytest-asyncio pytest-cov pytest-timeout pytest-homeassistant-custom-component syrupy black cronsim
+uv pip install $(python3 -c "import tomllib; print(' '.join(tomllib.load(open('pyproject.toml', 'rb'))['project']['optional-dependencies']['test']))")
+rm -f uv.lock  # Prevent editable install issues
 
 # Format check (used in CI)
-uv run black . --check --fast --diff
+.venv/bin/black . --check --fast --diff
 
 # Format code
-uv run black .
+.venv/bin/black .
 
 # Run tests
-uv run pytest tests/ -v
+.venv/bin/pytest tests/ -v
 
 # Run tests with coverage
-uv run pytest tests/ --cov=custom_components/plant --cov-report=term-missing
+.venv/bin/pytest tests/ --cov=custom_components/plant --cov-report=term-missing
 
 # Validate Home Assistant integration manifest
 # Run via hassfest action or within HA dev container

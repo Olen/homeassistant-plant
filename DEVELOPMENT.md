@@ -28,44 +28,52 @@ Create a virtual environment and install dependencies:
 # Create virtual environment
 uv venv
 
-# Install test dependencies
-uv pip install pytest pytest-asyncio pytest-cov pytest-timeout pytest-homeassistant-custom-component syrupy black cronsim
+# Install test dependencies from pyproject.toml
+uv pip install $(python3 -c "import tomllib; print(' '.join(tomllib.load(open('pyproject.toml', 'rb'))['project']['optional-dependencies']['test']))")
+
+# Remove uv.lock if it exists (it can cause editable install issues)
+rm -f uv.lock
 ```
 
-**Note:** Do not install the package itself (`uv pip install .` or `uv pip install ".[test]"`) as this creates editable install artifacts that conflict with pytest-homeassistant-custom-component's discovery mechanism. The test framework automatically discovers the `custom_components` directory in the project root.
+**Important:**
+- Do not install the package itself (`uv pip install .` or `uv pip install ".[test]"`) as this creates editable install artifacts that conflict with pytest-homeassistant-custom-component's discovery mechanism.
+- The `uv.lock` file can also cause issues if it contains editable install references. Delete it if tests fail.
+- The test framework automatically discovers the `custom_components` directory in the project root.
 
 ## Running Tests
 
 Run all tests:
 
 ```bash
-uv run pytest tests/ -v
+.venv/bin/pytest tests/ -v
 ```
 
 Run tests with coverage report:
 
 ```bash
-uv run pytest tests/ --cov=custom_components/plant --cov-report=term-missing
+.venv/bin/pytest tests/ --cov=custom_components/plant --cov-report=term-missing
 ```
 
 Run a specific test file:
 
 ```bash
-uv run pytest tests/test_init.py -v
+.venv/bin/pytest tests/test_init.py -v
 ```
 
 Run a specific test class or method:
 
 ```bash
-uv run pytest tests/test_init.py::TestIntegrationSetup -v
-uv run pytest tests/test_init.py::TestIntegrationSetup::test_setup_entry -v
+.venv/bin/pytest tests/test_init.py::TestIntegrationSetup -v
+.venv/bin/pytest tests/test_init.py::TestIntegrationSetup::test_setup_entry -v
 ```
 
 Run tests with short output (useful for CI):
 
 ```bash
-uv run pytest tests/ --tb=short
+.venv/bin/pytest tests/ --tb=short
 ```
+
+**Note:** Use `.venv/bin/pytest` directly instead of `uv run pytest` to avoid `uv run` syncing from `uv.lock` which can reinstall editable packages.
 
 ## Linting and Formatting
 
@@ -74,13 +82,13 @@ uv run pytest tests/ --tb=short
 Check formatting without making changes:
 
 ```bash
-uv run black . --check --fast --diff
+.venv/bin/black . --check --fast --diff
 ```
 
 Format all code:
 
 ```bash
-uv run black .
+.venv/bin/black .
 ```
 
 ## Project Structure
@@ -128,19 +136,24 @@ uv pip install pytest-homeassistant-custom-component
 
 ### Tests fail with FileNotFoundError about editable install
 
-If you see errors mentioning `__editable__` paths, remove any leftover editable install artifacts:
+If you see errors mentioning `__editable__` paths, this is caused by editable install artifacts. Fix by:
 
+1. Remove the `uv.lock` file (it may contain editable install references):
 ```bash
-rm -f .venv/lib/python*/site-packages/__editable__*
-rm -rf .venv/lib/python*/site-packages/__pycache__/__editable__*
+rm -f uv.lock
 ```
 
-Or recreate the virtual environment:
+2. Clear the uv cache for this package:
+```bash
+rm -rf ~/.cache/uv/sdists-v9/editable
+find ~/.cache/uv -name "*home_assistant_plant*" -exec rm -rf {} + 2>/dev/null
+```
 
+3. Recreate the virtual environment:
 ```bash
 rm -rf .venv
 uv venv
-uv pip install pytest pytest-asyncio pytest-cov pytest-timeout pytest-homeassistant-custom-component syrupy black cronsim
+uv pip install $(python3 -c "import tomllib; print(' '.join(tomllib.load(open('pyproject.toml', 'rb'))['project']['optional-dependencies']['test']))")
 ```
 
 ### uv command not found
@@ -149,9 +162,8 @@ Ensure uv is installed and in your PATH. See the Prerequisites section above.
 
 ### Slow test runs
 
-Run tests in parallel (if you have pytest-xdist installed):
+Run tests in parallel (pytest-xdist is already included):
 
 ```bash
-uv pip install pytest-xdist
-uv run pytest tests/ -n auto
+.venv/bin/pytest tests/ -n auto
 ```

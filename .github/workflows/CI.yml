@@ -47,14 +47,15 @@ jobs:
 
       - name: Install dependencies
         run: |
+          rm -f uv.lock  # Prevent editable install from lock file
           uv venv
-          uv pip install pytest pytest-asyncio pytest-cov pytest-timeout pytest-homeassistant-custom-component syrupy cronsim
+          uv pip install $(python -c "import tomllib; print(' '.join(tomllib.load(open('pyproject.toml', 'rb'))['project']['optional-dependencies']['test']))")
 
       - name: Run tests
-        run: uv run pytest tests/ -v --tb=short
+        run: .venv/bin/pytest tests/ -v --tb=short
 
       - name: Run tests with coverage
-        run: uv run pytest tests/ --cov=custom_components/plant --cov-report=term-missing --cov-report=xml
+        run: .venv/bin/pytest tests/ --cov=custom_components/plant --cov-report=term-missing --cov-report=xml
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v4
