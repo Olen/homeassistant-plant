@@ -34,6 +34,7 @@ from homeassistant.helpers import (
 from homeassistant.helpers.entity import Entity, async_generate_entity_id
 from homeassistant.helpers.entity_component import EntityComponent
 
+from .config_flow import update_plant_options
 from .const import (
     ATTR_CONDUCTIVITY,
     ATTR_CURRENT,
@@ -143,6 +144,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
     plant = PlantDevice(hass, entry)
     hass.data[DOMAIN][entry.entry_id][ATTR_PLANT] = plant
+
+    # Register update listener for options flow
+    entry.async_on_unload(entry.add_update_listener(update_plant_options))
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 

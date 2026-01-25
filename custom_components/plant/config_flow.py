@@ -9,7 +9,8 @@ import urllib.parse
 
 import voluptuous as vol
 
-from homeassistant import config_entries, data_entry_flow
+from homeassistant import config_entries
+from homeassistant.config_entries import ConfigFlowResult
 from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
@@ -72,7 +73,6 @@ from .plant_helpers import PlantHelper
 _LOGGER = logging.getLogger(__name__)
 
 
-@config_entries.HANDLERS.register(DOMAIN)
 class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Plants."""
 
@@ -86,11 +86,11 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     @callback
     def async_get_options_flow(
         config_entry: config_entries.ConfigEntry,
-    ) -> config_entries.OptionsFlow:
+    ) -> OptionsFlowHandler:
         """Create the options flow."""
-        return OptionsFlowHandler(config_entry)
+        return OptionsFlowHandler()
 
-    async def async_step_import(self, import_input):
+    async def async_step_import(self, import_input) -> ConfigFlowResult:
         """Importing config from configuration.yaml"""
         _LOGGER.debug(import_input)
         # return FlowResultType.ABORT
@@ -99,7 +99,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             data=import_input,
         )
 
-    async def async_step_user(self, user_input=None):
+    async def async_step_user(self, user_input=None) -> ConfigFlowResult:
         """Handle the initial step."""
         errors = {}
         if user_input is not None:
@@ -173,7 +173,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             description_placeholders={"opb_search": self.plant_info.get(ATTR_SPECIES)},
         )
 
-    async def async_step_select_species(self, user_input=None):
+    async def async_step_select_species(self, user_input=None) -> ConfigFlowResult:
         """Search the openplantbook"""
         errors = {}
 
@@ -212,7 +212,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             },
         )
 
-    async def async_step_limits(self, user_input=None):
+    async def async_step_limits(self, user_input=None) -> ConfigFlowResult:
         """Handle max/min values"""
 
         plant_helper = PlantHelper(self.hass)
@@ -394,7 +394,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             },
         )
 
-    async def async_step_limits_done(self, user_input=None):
+    async def async_step_limits_done(self, user_input=None) -> ConfigFlowResult:
         """After limits are set"""
         return self.async_create_entry(
             title=self.plant_info[ATTR_NAME],
@@ -434,20 +434,13 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 class OptionsFlowHandler(config_entries.OptionsFlow):
     """Handling opetions for plant"""
 
-    def __init__(
-        self,
-        entry: config_entries.ConfigEntry,
-    ) -> None:
+    def __init__(self) -> None:
         """Initialize options flow."""
-
-        entry.async_on_unload(entry.add_update_listener(self.update_plant_options))
-
         self.plant = None
-        self.entry = entry
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
-    ) -> data_entry_flow.FlowResult:
+    ) -> ConfigFlowResult:
         """Manage the options."""
         if user_input is not None:
             if ATTR_SPECIES not in user_input or not re.match(
@@ -465,7 +458,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
             return self.async_create_entry(title="", data=user_input)
 
-        self.plant = self.hass.data[DOMAIN][self.entry.entry_id]["plant"]
+        self.plant = self.hass.data[DOMAIN][self.config_entry.entry_id]["plant"]
         plant_helper = PlantHelper(hass=self.hass)
         data_schema = {}
         data_schema[
@@ -521,104 +514,98 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
         return self.async_show_form(step_id="init", data_schema=vol.Schema(data_schema))
 
-    async def update_plant_options(
-        self, hass: HomeAssistant, entry: config_entries.ConfigEntry
+
+async def update_plant_options(
+    hass: HomeAssistant, entry: config_entries.ConfigEntry
+) -> None:
+    """Handle options update."""
+    plant = hass.data[DOMAIN][entry.entry_id]["plant"]
+
+    _LOGGER.debug(
+        "Update plant options begin for %s Data %s, Options: %s",
+        entry.entry_id,
+        entry.options,
+        entry.data,
+    )
+    entity_picture = entry.options.get(ATTR_ENTITY_PICTURE)
+
+    if entity_picture is not None:
+        if entity_picture == "":
+            plant.add_image(entity_picture)
+        else:
+            try:
+                url = cv.url(entity_picture)
+                _LOGGER.debug("Url 1 %s", url)
+            # pylint: disable=broad-except
+            except Exception as exc1:
+                _LOGGER.warning("Not a valid url: %s", entity_picture)
+                if entity_picture.startswith("/local/"):
+                    try:
+                        url = cv.path(entity_picture)
+                        _LOGGER.debug("Url 2 %s", url)
+                    except Exception as exc2:
+                        _LOGGER.warning("Not a valid path: %s", entity_picture)
+                        raise vol.Invalid(f"Invalid URL: {entity_picture}") from exc2
+                else:
+                    raise vol.Invalid(f"Invalid URL: {entity_picture}") from exc1
+            _LOGGER.debug("Update image to %s", entity_picture)
+            plant.add_image(entity_picture)
+
+    new_display_species = entry.options.get(OPB_DISPLAY_PID)
+    if new_display_species is not None:
+        plant.display_species = new_display_species
+
+    new_species = entry.options.get(ATTR_SPECIES)
+    force_new_species = entry.options.get(FLOW_FORCE_SPECIES_UPDATE)
+    if new_species is not None and (
+        new_species != plant.species or force_new_species is True
     ):
-        """Handle options update."""
-
-        _LOGGER.debug(
-            "Update plant options begin for %s Data %s, Options: %s",
-            entry.entry_id,
-            entry.options,
-            entry.data,
+        _LOGGER.debug("Species changed from '%s' to '%s'", plant.species, new_species)
+        plant_helper = PlantHelper(hass=hass)
+        plant_config = await plant_helper.generate_configentry(
+            config={
+                ATTR_SPECIES: new_species,
+                ATTR_ENTITY_PICTURE: entity_picture,
+                OPB_DISPLAY_PID: new_display_species,
+                FLOW_FORCE_SPECIES_UPDATE: force_new_species,
+            }
         )
-        entity_picture = entry.options.get(ATTR_ENTITY_PICTURE)
+        if plant_config[DATA_SOURCE] == DATA_SOURCE_PLANTBOOK:
+            plant.species = new_species
+            plant.add_image(plant_config[FLOW_PLANT_INFO][ATTR_ENTITY_PICTURE])
+            plant.display_species = plant_config[FLOW_PLANT_INFO][OPB_DISPLAY_PID]
+            for key, value in plant_config[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].items():
+                set_entity = getattr(plant, key)
+                _LOGGER.debug("Entity: %s To: %s", set_entity, value)
+                set_entity_id = set_entity.entity_id
+                _LOGGER.debug(
+                    "Setting %s to %s",
+                    set_entity_id,
+                    value,
+                )
 
-        if entity_picture is not None:
-            if entity_picture == "":
-                self.plant.add_image(entity_picture)
-            else:
-                try:
-                    url = cv.url(entity_picture)
-                    _LOGGER.debug("Url 1 %s", url)
-                # pylint: disable=broad-except
-                except Exception as exc1:
-                    _LOGGER.warning("Not a valid url: %s", entity_picture)
-                    if entity_picture.startswith("/local/"):
-                        try:
-                            url = cv.path(entity_picture)
-                            _LOGGER.debug("Url 2 %s", url)
-                        except Exception as exc2:
-                            _LOGGER.warning("Not a valid path: %s", entity_picture)
-                            raise vol.Invalid(
-                                f"Invalid URL: {entity_picture}"
-                            ) from exc2
-                    else:
-                        raise vol.Invalid(f"Invalid URL: {entity_picture}") from exc1
-                _LOGGER.debug("Update image to %s", entity_picture)
-                self.plant.add_image(entity_picture)
+                hass.states.async_set(
+                    set_entity_id,
+                    new_state=value,
+                    attributes=hass.states.get(set_entity_id).attributes,
+                )
 
-        new_display_species = entry.options.get(OPB_DISPLAY_PID)
-        if new_display_species is not None:
-            self.plant.display_species = new_display_species
+        else:
+            plant.species = new_species
 
-        new_species = entry.options.get(ATTR_SPECIES)
-        force_new_species = entry.options.get(FLOW_FORCE_SPECIES_UPDATE)
-        if new_species is not None and (
-            new_species != self.plant.species or force_new_species is True
-        ):
-            _LOGGER.debug(
-                "Species changed from '%s' to '%s'", self.plant.species, new_species
-            )
-            plant_helper = PlantHelper(hass=self.hass)
-            plant_config = await plant_helper.generate_configentry(
-                config={
-                    ATTR_SPECIES: new_species,
-                    ATTR_ENTITY_PICTURE: entity_picture,
-                    OPB_DISPLAY_PID: new_display_species,
-                    FLOW_FORCE_SPECIES_UPDATE: force_new_species,
-                }
-            )
-            if plant_config[DATA_SOURCE] == DATA_SOURCE_PLANTBOOK:
-                self.plant.species = new_species
-                self.plant.add_image(plant_config[FLOW_PLANT_INFO][ATTR_ENTITY_PICTURE])
-                self.plant.display_species = plant_config[FLOW_PLANT_INFO][
-                    OPB_DISPLAY_PID
-                ]
-                for key, value in plant_config[FLOW_PLANT_INFO][
-                    FLOW_PLANT_LIMITS
-                ].items():
-                    set_entity = getattr(self.plant, key)
-                    _LOGGER.debug("Entity: %s To: %s", set_entity, value)
-                    set_entity_id = set_entity.entity_id
-                    _LOGGER.debug(
-                        "Setting %s to %s",
-                        set_entity_id,
-                        value,
-                    )
+        # We need to reset the force_update option back to False, or else
+        # this will only be run once (unchanged options are will not trigger the flow)
+        options = dict(entry.options)
+        data = dict(entry.data)
+        options[FLOW_FORCE_SPECIES_UPDATE] = False
+        options[OPB_DISPLAY_PID] = plant.display_species
+        options[ATTR_ENTITY_PICTURE] = plant.entity_picture
+        _LOGGER.debug(
+            "Doing a refresh to update values: Data: %s Options: %s",
+            data,
+            options,
+        )
 
-                    self.hass.states.async_set(
-                        set_entity_id,
-                        new_state=value,
-                        attributes=self.hass.states.get(set_entity_id).attributes,
-                    )
-
-            else:
-                self.plant.species = new_species
-
-            # We need to reset the force_update option back to False, or else
-            # this will only be run once (unchanged options are will not trigger the flow)
-            options = dict(entry.options)
-            data = dict(entry.data)
-            options[FLOW_FORCE_SPECIES_UPDATE] = False
-            options[OPB_DISPLAY_PID] = self.plant.display_species
-            options[ATTR_ENTITY_PICTURE] = self.plant.entity_picture
-            _LOGGER.debug(
-                "Doing a refresh to update values: Data: %s Options: %s",
-                data,
-                options,
-            )
-
-            hass.config_entries.async_update_entry(entry, data=data, options=options)
-        _LOGGER.debug("Update plant options done for %s", entry.entry_id)
-        self.plant.update_registry()
+        hass.config_entries.async_update_entry(entry, data=data, options=options)
+    _LOGGER.debug("Update plant options done for %s", entry.entry_id)
+    plant.update_registry()
