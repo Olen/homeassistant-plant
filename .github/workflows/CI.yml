@@ -3,27 +3,74 @@ name: CI
 on:
   push:
   pull_request:
+    branches:
+      - master
   schedule:
-    - cron:  '0 0 15 * *'
+    - cron: "0 0 15 * *"
 
 jobs:
-
   black:
-    name: Python Code Format Check
+    name: Code Formatting
     runs-on: ubuntu-latest
     steps:
-      - name: Check out code from GitHub
-        uses: "actions/checkout@main"
-      - name: Black Code Format Check
-        uses: lgeiger/black-action@master
+      - name: Check out code
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          args: ". --check --fast --diff"
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Install black
+        run: uv pip install black --system
+
+      - name: Check formatting
+        run: black . --check --fast --diff
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Install dependencies
+        run: |
+          rm -f uv.lock  # Prevent editable install from lock file
+          uv venv
+          uv pip install $(python -c "import tomllib; print(' '.join(tomllib.load(open('pyproject.toml', 'rb'))['project']['optional-dependencies']['test']))")
+
+      - name: Run tests
+        run: .venv/bin/pytest tests/ -v --tb=short
+
+      - name: Run tests with coverage
+        run: .venv/bin/pytest tests/ --cov=custom_components/plant --cov-report=term-missing --cov-report=xml
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   validate:
-    name: Check hassfest
-    runs-on: "ubuntu-latest"
+    name: Validate Integration
+    runs-on: ubuntu-latest
     steps:
-      - name: Check out code from GitHub
-        uses: "actions/checkout@main"
+      - name: Check out code
+        uses: actions/checkout@v5
+
       - name: Run hassfest
         uses: home-assistant/actions/hassfest@master
