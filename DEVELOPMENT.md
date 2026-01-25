@@ -29,10 +29,10 @@ Create a virtual environment and install dependencies:
 uv venv
 
 # Install test dependencies
-uv pip install ".[test]"
+uv pip install pytest pytest-asyncio pytest-cov pytest-timeout pytest-homeassistant-custom-component syrupy black cronsim
 ```
 
-This installs all test dependencies defined in `pyproject.toml`. The `pytest-homeassistant-custom-component` package automatically discovers the `custom_components` directory in the project root.
+**Note:** Do not install the package itself (`uv pip install .` or `uv pip install ".[test]"`) as this creates editable install artifacts that conflict with pytest-homeassistant-custom-component's discovery mechanism. The test framework automatically discovers the `custom_components` directory in the project root.
 
 ## Running Tests
 
@@ -140,7 +140,7 @@ Or recreate the virtual environment:
 ```bash
 rm -rf .venv
 uv venv
-uv pip install ".[test]"
+uv pip install pytest pytest-asyncio pytest-cov pytest-timeout pytest-homeassistant-custom-component syrupy black cronsim
 ```
 
 ### uv command not found

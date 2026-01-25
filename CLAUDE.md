@@ -14,7 +14,7 @@ This is a custom Home Assistant integration for plant monitoring. It replaces th
 ```bash
 # Setup (one time)
 uv venv
-uv pip install ".[test]"
+uv pip install pytest pytest-asyncio pytest-cov pytest-timeout pytest-homeassistant-custom-component syrupy black cronsim
 
 # Format check (used in CI)
 uv run black . --check --fast --diff
