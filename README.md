@@ -91,11 +91,13 @@ These updates are immediately reflected in HA without restarting anything.
 
 ### Daily Light Integral
 
-* A new Daily Light Integral - DLI - sensor is created for all plants. 
+* A new Daily Light Integral - DLI - sensor is created for all plants.
 
 ![image](https://user-images.githubusercontent.com/203184/183286314-91382bf5-7767-4f50-bf58-673c63282c1c.png)
 
-See https://en.wikipedia.org/wiki/Daily_light_integral for what DLI means
+See https://en.wikipedia.org/wiki/Daily_light_integral for what DLI means.
+
+For technical details on how DLI is calculated in this integration, see [DLI.md](DLI.md).
 
 ### More flexible lovelace card
 
