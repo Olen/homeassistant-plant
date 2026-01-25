@@ -12,17 +12,27 @@ This is a custom Home Assistant integration for plant monitoring. It replaces th
 ## Build & Lint Commands
 
 ```bash
+# Setup (one time)
+uv venv
+uv pip install pytest pytest-asyncio pytest-cov pytest-timeout pytest-homeassistant-custom-component syrupy black
+
 # Format check (used in CI)
-black . --check --fast --diff
+uv run black . --check --fast --diff
 
 # Format code
-black .
+uv run black .
+
+# Run tests
+uv run pytest tests/ -v
+
+# Run tests with coverage
+uv run pytest tests/ --cov=custom_components/plant --cov-report=term-missing
 
 # Validate Home Assistant integration manifest
 # Run via hassfest action or within HA dev container
 ```
 
-There are no tests in this repository currently.
+See DEVELOPMENT.md for full development setup instructions.
 
 ## Architecture
 

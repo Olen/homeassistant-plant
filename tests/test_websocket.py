@@ -126,7 +126,7 @@ class TestWebsocketGetInfo:
         hass_ws_client,
     ) -> None:
         """Test websocket error when domain not loaded."""
-        # Don't initialize the integration
+        # Don't initialize the integration - the websocket command won't be registered
         client = await hass_ws_client(hass)
 
         await client.send_json(
@@ -139,8 +139,10 @@ class TestWebsocketGetInfo:
 
         response = await client.receive_json()
 
+        # When domain is not loaded, the websocket command is not registered
+        # so we get "unknown_command" error
         assert response["success"] is False
-        assert response["error"]["code"] == "domain_not_found"
+        assert response["error"]["code"] == "unknown_command"
 
     async def test_websocket_get_info_plant_not_complete(
         self,
@@ -178,12 +180,25 @@ class TestWebsocketRegistration:
         self,
         hass: HomeAssistant,
         init_integration: MockConfigEntry,
+        hass_ws_client,
     ) -> None:
         """Test that websocket command is registered during setup."""
-        # The websocket command should be registered
-        # We can verify by checking if the command is accessible
-        commands = websocket_api.async_get_command_descriptions(hass)
+        # The websocket command should be registered and accessible
+        # Verify by making a request that gets a valid response (even if error)
+        client = await hass_ws_client(hass)
 
-        # Note: The exact structure depends on HA version
-        # Just verify the integration loaded without errors
+        await client.send_json(
+            {
+                "id": 1,
+                "type": "plant/get_info",
+                "entity_id": "plant.nonexistent",
+            }
+        )
+
+        response = await client.receive_json()
+
+        # If command is registered, we get an error response, not an unknown_command
+        assert "error" in response
+        # The error should be from our handler, not "unknown_command"
+        assert response["error"]["code"] != "unknown_command"
         assert DOMAIN in hass.data

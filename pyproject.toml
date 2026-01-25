@@ -30,6 +30,7 @@ test = [
     "pytest-timeout>=2.2.0",
     "pytest-homeassistant-custom-component>=0.13.0",
     "syrupy>=4.6.0",
+    "black>=24.0.0",
 ]
 
 [tool.setuptools.packages.find]

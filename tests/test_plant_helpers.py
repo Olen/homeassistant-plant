@@ -229,16 +229,31 @@ class TestPlantHelperGenerateConfigentry:
         limits = plant_info[ATTR_LIMITS]
 
         # Values should come from OPB mock data
-        assert limits[CONF_MAX_MOISTURE] == GET_RESULT_MONSTERA_DELICIOSA["max_soil_moist"]
-        assert limits[CONF_MIN_MOISTURE] == GET_RESULT_MONSTERA_DELICIOSA["min_soil_moist"]
-        assert limits[CONF_MAX_ILLUMINANCE] == GET_RESULT_MONSTERA_DELICIOSA["max_light_lux"]
-        assert limits[CONF_MIN_ILLUMINANCE] == GET_RESULT_MONSTERA_DELICIOSA["min_light_lux"]
+        assert (
+            limits[CONF_MAX_MOISTURE] == GET_RESULT_MONSTERA_DELICIOSA["max_soil_moist"]
+        )
+        assert (
+            limits[CONF_MIN_MOISTURE] == GET_RESULT_MONSTERA_DELICIOSA["min_soil_moist"]
+        )
+        assert (
+            limits[CONF_MAX_ILLUMINANCE]
+            == GET_RESULT_MONSTERA_DELICIOSA["max_light_lux"]
+        )
+        assert (
+            limits[CONF_MIN_ILLUMINANCE]
+            == GET_RESULT_MONSTERA_DELICIOSA["min_light_lux"]
+        )
 
         # Image should be from OPB
-        assert plant_info[ATTR_ENTITY_PICTURE] == GET_RESULT_MONSTERA_DELICIOSA["image_url"]
+        assert (
+            plant_info[ATTR_ENTITY_PICTURE]
+            == GET_RESULT_MONSTERA_DELICIOSA["image_url"]
+        )
 
         # Display PID should be set
-        assert plant_info[OPB_DISPLAY_PID] == GET_RESULT_MONSTERA_DELICIOSA["display_pid"]
+        assert (
+            plant_info[OPB_DISPLAY_PID] == GET_RESULT_MONSTERA_DELICIOSA["display_pid"]
+        )
 
     async def test_generate_configentry_preserves_custom_limits(
         self,

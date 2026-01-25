@@ -23,7 +23,6 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.setup import async_setup_component
 
-
 # This fixture ensures our custom component is loaded instead of the built-in one
 pytest_plugins = "pytest_homeassistant_custom_component"
 

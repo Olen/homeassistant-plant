@@ -24,7 +24,7 @@ from custom_components.plant.const import (
     STATE_LOW,
 )
 
-from .common import set_external_sensor_states
+from .common import set_external_sensor_states, update_plant_sensors
 from .conftest import TEST_ENTRY_ID, TEST_PLANT_NAME
 
 
@@ -124,9 +124,9 @@ class TestPlantDevice:
             illuminance=5000.0,  # Within 0-100000
             humidity=40.0,  # Within 20-60
         )
-        await hass.async_block_till_done()
 
-        plant.update()
+        # Update internal sensors and plant state
+        await update_plant_sensors(hass, init_integration.entry_id)
         assert plant.state == STATE_OK
 
     async def test_plant_device_state_problem_moisture_low(
@@ -145,9 +145,8 @@ class TestPlantDevice:
             illuminance=5000.0,
             humidity=40.0,
         )
-        await hass.async_block_till_done()
 
-        plant.update()
+        await update_plant_sensors(hass, init_integration.entry_id)
         assert plant.state == STATE_PROBLEM
         assert plant.moisture_status == STATE_LOW
 
@@ -167,9 +166,8 @@ class TestPlantDevice:
             illuminance=5000.0,
             humidity=40.0,
         )
-        await hass.async_block_till_done()
 
-        plant.update()
+        await update_plant_sensors(hass, init_integration.entry_id)
         assert plant.state == STATE_PROBLEM
         assert plant.moisture_status == STATE_HIGH
 
@@ -189,9 +187,8 @@ class TestPlantDevice:
             illuminance=5000.0,
             humidity=40.0,
         )
-        await hass.async_block_till_done()
 
-        plant.update()
+        await update_plant_sensors(hass, init_integration.entry_id)
         assert plant.state == STATE_PROBLEM
         assert plant.temperature_status == STATE_LOW
 
@@ -211,9 +208,8 @@ class TestPlantDevice:
             illuminance=5000.0,
             humidity=40.0,
         )
-        await hass.async_block_till_done()
 
-        plant.update()
+        await update_plant_sensors(hass, init_integration.entry_id)
         assert plant.state == STATE_PROBLEM
         assert plant.temperature_status == STATE_HIGH
 
@@ -233,9 +229,8 @@ class TestPlantDevice:
             illuminance=150000.0,  # Above max of 100000
             humidity=40.0,
         )
-        await hass.async_block_till_done()
 
-        plant.update()
+        await update_plant_sensors(hass, init_integration.entry_id)
         assert plant.state == STATE_PROBLEM
         assert plant.illuminance_status == STATE_HIGH
 
@@ -294,28 +289,87 @@ class TestPlantDevice:
     async def test_plant_device_trigger_disabled(
         self,
         hass: HomeAssistant,
-        mock_config_entry: MockConfigEntry,
         mock_external_sensors: None,
     ) -> None:
         """Test that disabling triggers prevents problem state."""
-        # Add options to disable moisture trigger
-        mock_config_entry._options = {"moisture_trigger": False}
-        mock_config_entry.add_to_hass(hass)
+        from custom_components.plant.const import (
+            CONF_MAX_CONDUCTIVITY,
+            CONF_MAX_DLI,
+            CONF_MAX_HUMIDITY,
+            CONF_MAX_ILLUMINANCE,
+            CONF_MAX_MOISTURE,
+            CONF_MAX_TEMPERATURE,
+            CONF_MIN_CONDUCTIVITY,
+            CONF_MIN_DLI,
+            CONF_MIN_HUMIDITY,
+            CONF_MIN_ILLUMINANCE,
+            CONF_MIN_MOISTURE,
+            CONF_MIN_TEMPERATURE,
+            DATA_SOURCE,
+            OPB_DISPLAY_PID,
+            FLOW_MOISTURE_TRIGGER,
+        )
+        from homeassistant.const import ATTR_ENTITY_PICTURE, ATTR_NAME
 
-        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        # Create config entry with moisture trigger disabled
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            entry_id="test_entry_trigger_disabled",
+            unique_id="test_entry_trigger_disabled",
+            title="Test Plant",
+            data={
+                DATA_SOURCE: "Default values",
+                FLOW_PLANT_INFO: {
+                    ATTR_NAME: "Test Plant",
+                    "species": "monstera deliciosa",
+                    OPB_DISPLAY_PID: "Monstera deliciosa",
+                    ATTR_ENTITY_PICTURE: "https://example.com/plant.jpg",
+                    "limits": {
+                        CONF_MAX_MOISTURE: 60,
+                        CONF_MIN_MOISTURE: 20,
+                        CONF_MAX_TEMPERATURE: 40,
+                        CONF_MIN_TEMPERATURE: 10,
+                        CONF_MAX_CONDUCTIVITY: 3000,
+                        CONF_MIN_CONDUCTIVITY: 500,
+                        CONF_MAX_ILLUMINANCE: 100000,
+                        CONF_MIN_ILLUMINANCE: 0,
+                        CONF_MAX_HUMIDITY: 60,
+                        CONF_MIN_HUMIDITY: 20,
+                        CONF_MAX_DLI: 30,
+                        CONF_MIN_DLI: 2,
+                    },
+                    "temperature_sensor": "sensor.test_temperature",
+                    "moisture_sensor": "sensor.test_moisture",
+                    "conductivity_sensor": "sensor.test_conductivity",
+                    "illuminance_sensor": "sensor.test_illuminance",
+                    "humidity_sensor": "sensor.test_humidity",
+                },
+            },
+            options={FLOW_MOISTURE_TRIGGER: False},
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
-        plant = hass.data[DOMAIN][mock_config_entry.entry_id][ATTR_PLANT]
+        plant = hass.data[DOMAIN][entry.entry_id][ATTR_PLANT]
 
-        # Set moisture below threshold
-        await set_external_sensor_states(hass, moisture=5.0)
-        await hass.async_block_till_done()
+        # Set all sensors - moisture below threshold, others normal
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=5.0,  # Below threshold
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=40.0,
+        )
 
-        plant.update()
+        await update_plant_sensors(hass, entry.entry_id)
+
         # moisture_status should still be LOW
         assert plant.moisture_status == STATE_LOW
         # But overall state should be OK because trigger is disabled
-        # (Note: state may still be PROBLEM if other sensors are out of range)
+        assert plant.state == STATE_OK
 
     async def test_plant_device_add_image(
         self,

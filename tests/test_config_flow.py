@@ -367,9 +367,7 @@ class TestOptionsFlow:
         init_integration: MockConfigEntry,
     ) -> None:
         """Test initializing the options flow."""
-        result = await hass.config_entries.options.async_init(
-            init_integration.entry_id
-        )
+        result = await hass.config_entries.options.async_init(init_integration.entry_id)
 
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "init"
@@ -381,9 +379,7 @@ class TestOptionsFlow:
         mock_no_openplantbook,
     ) -> None:
         """Test updating species through options flow."""
-        result = await hass.config_entries.options.async_init(
-            init_integration.entry_id
-        )
+        result = await hass.config_entries.options.async_init(init_integration.entry_id)
 
         result = await hass.config_entries.options.async_configure(
             result["flow_id"],
@@ -402,9 +398,7 @@ class TestOptionsFlow:
         init_integration: MockConfigEntry,
     ) -> None:
         """Test toggling problem triggers through options flow."""
-        result = await hass.config_entries.options.async_init(
-            init_integration.entry_id
-        )
+        result = await hass.config_entries.options.async_init(init_integration.entry_id)
 
         result = await hass.config_entries.options.async_configure(
             result["flow_id"],
