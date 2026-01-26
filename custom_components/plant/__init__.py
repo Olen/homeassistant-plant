@@ -245,8 +245,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
     if unload_ok:
-        hass.data[DOMAIN].pop(entry.entry_id)
-        hass.data[DATA_UTILITY].pop(entry.entry_id)
+        hass.data[DOMAIN].pop(entry.entry_id, None)
+        hass.data[DATA_UTILITY].pop(entry.entry_id, None)
         _LOGGER.info(hass.data[DOMAIN])
         for entry_id in list(hass.data[DOMAIN].keys()):
             if len(hass.data[DOMAIN][entry_id]) == 0:
@@ -257,6 +257,29 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             hass.services.async_remove(DOMAIN, SERVICE_REPLACE_SENSOR)
             del hass.data[DOMAIN]
     return unload_ok
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Handle removal of a config entry (permanent deletion).
+
+    This is called when a config entry is permanently removed, not just unloaded.
+    It ensures all entity and device registry entries are cleaned up properly.
+    """
+    _LOGGER.debug("Removing config entry %s permanently", entry.entry_id)
+
+    # Remove all entity registry entries associated with this config entry
+    ent_reg = er.async_get(hass)
+    entities_to_remove = er.async_entries_for_config_entry(ent_reg, entry.entry_id)
+    for entity_entry in entities_to_remove:
+        _LOGGER.debug("Removing entity registry entry: %s", entity_entry.entity_id)
+        ent_reg.async_remove(entity_entry.entity_id)
+
+    # Remove device registry entry
+    dev_reg = dr.async_get(hass)
+    device = dev_reg.async_get_device(identifiers={(DOMAIN, entry.entry_id)})
+    if device:
+        _LOGGER.debug("Removing device registry entry: %s", device.id)
+        dev_reg.async_remove_device(device.id)
 
 
 @websocket_api.websocket_command(

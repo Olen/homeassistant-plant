@@ -80,6 +80,39 @@ class TestIntegrationSetup:
         # Entry should be removed from domain data
         assert init_integration.entry_id not in hass.data.get(DOMAIN, {})
 
+    async def test_remove_entry(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test removing a config entry cleans up entity and device registries."""
+        entry_id = init_integration.entry_id
+
+        # Verify entities and device exist before removal
+        entity_registry = er.async_get(hass)
+        device_registry = dr.async_get(hass)
+
+        entities_before = er.async_entries_for_config_entry(entity_registry, entry_id)
+        device_before = device_registry.async_get_device(
+            identifiers={(DOMAIN, entry_id)}
+        )
+        assert len(entities_before) > 0
+        assert device_before is not None
+
+        # Remove the config entry (this calls async_remove_entry)
+        await hass.config_entries.async_remove(entry_id)
+        await hass.async_block_till_done()
+
+        # Verify entities are removed from registry
+        entities_after = er.async_entries_for_config_entry(entity_registry, entry_id)
+        assert len(entities_after) == 0
+
+        # Verify device is removed from registry
+        device_after = device_registry.async_get_device(
+            identifiers={(DOMAIN, entry_id)}
+        )
+        assert device_after is None
+
     async def test_setup_entry_no_plant_info(
         self,
         hass: HomeAssistant,

@@ -309,8 +309,10 @@ async def init_integration(
     yield mock_config_entry
 
     # Cleanup: unload the integration to cancel any lingering timers
-    await hass.config_entries.async_unload(mock_config_entry.entry_id)
-    await hass.async_block_till_done()
+    # Check if entry still exists (test may have removed it)
+    if hass.config_entries.async_get_entry(mock_config_entry.entry_id):
+        await hass.config_entries.async_unload(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
 
 
 @pytest.fixture
@@ -327,5 +329,7 @@ async def init_integration_no_sensors(
     yield mock_config_entry_no_sensors
 
     # Cleanup: unload the integration to cancel any lingering timers
-    await hass.config_entries.async_unload(mock_config_entry_no_sensors.entry_id)
-    await hass.async_block_till_done()
+    # Check if entry still exists (test may have removed it)
+    if hass.config_entries.async_get_entry(mock_config_entry_no_sensors.entry_id):
+        await hass.config_entries.async_unload(mock_config_entry_no_sensors.entry_id)
+        await hass.async_block_till_done()
