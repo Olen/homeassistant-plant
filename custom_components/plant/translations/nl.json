@@ -1,5 +1,5 @@
 {
-  "title": "Plant monitor",
+  "title": "Plantmonitor",
   "entity": {
     "sensor": {
       "moisture": {
@@ -35,52 +35,52 @@
     },
     "number": {
       "max_moisture": {
-        "name": "Maximale bodemvochtigheid"
+        "name": "Max. bodemvochtigheid"
       },
       "min_moisture": {
-        "name": "Minimale bodemvochtigheid"
+        "name": "Min. bodemvochtigheid"
       },
       "max_temperature": {
-        "name": "Maximale temperatuur"
+        "name": "Max. temperatuur"
       },
       "min_temperature": {
-        "name": "Minimale temperatuur"
+        "name": "Min. temperatuur"
       },
       "max_illuminance": {
-        "name": "Maximale verlichtingssterkte"
+        "name": "Max. verlichtingssterkte"
       },
       "min_illuminance": {
-        "name": "Minimale verlichtingssterkte"
+        "name": "Min. verlichtingssterkte"
       },
       "max_dli": {
-        "name": "Maximale DLI"
+        "name": "Max. DLI"
       },
       "min_dli": {
-        "name": "Minimale DLI"
+        "name": "Min. DLI"
       },
       "max_conductivity": {
-        "name": "Maximale geleidbaarheid"
+        "name": "Max. geleidbaarheid"
       },
       "min_conductivity": {
-        "name": "Minimale geleidbaarheid"
+        "name": "Min. geleidbaarheid"
       },
       "max_humidity": {
-        "name": "Maximale luchtvochtigheid"
+        "name": "Max. luchtvochtigheid"
       },
       "min_humidity": {
-        "name": "Minimale luchtvochtigheid"
+        "name": "Min. luchtvochtigheid"
       },
       "max_co2": {
-        "name": "Maximaal CO2"
+        "name": "Max. CO2"
       },
       "min_co2": {
-        "name": "Minimaal CO2"
+        "name": "Min. CO2"
       },
       "max_soil_temperature": {
-        "name": "Maximale bodemtemperatuur"
+        "name": "Max. bodemtemperatuur"
       },
       "min_soil_temperature": {
-        "name": "Minimale bodemtemperatuur"
+        "name": "Min. bodemtemperatuur"
       },
       "lux_to_ppfd": {
         "name": "Lux naar PPFD factor"
@@ -121,20 +121,20 @@
         "title": "Stel limieten in",
         "description": "# {name}\n![Plant]({entity_picture}){br}\n{extra_desc}Temperatuureenheid is {temperature_unit}",
         "data": {
-          "right_plant": "Dit is de plan waar ik naar op zoek was",
+          "right_plant": "Dit is de plant waar ik naar op zoek was",
           "display_pid": "Te tonen plantsoort",
-          "max_moisture": "Maximale bodemvochtigheid (%)",
-          "min_moisture": "Minimale bodemvochtigheid (%)",
-          "max_illuminance": "Maximale lichtsterkte (lx)",
-          "min_illuminance": "Minimale lichtsterkte (lx)",
-          "max_dli": "Maximale DLI (mol/dm²)",
-          "min_dli": "Minimale DLI (mol/dm²)",
-          "max_temperature": "Maximale temperatuur (zie hierboven)",
-          "min_temperature": "Minimale temperatuur (zie hierboven)",
-          "max_conductivity": "Maximale geleidbaarheid (uS/cm)",
-          "min_conductivity": "Minimale geleidbaarheid (uS/cm)",
-          "max_humidity": "Maximale luchtvochtigheid (%)",
-          "min_humidity": "Minimale luchtvochtigheid (%)",
+          "max_moisture": "Max. bodemvochtigheid (%)",
+          "min_moisture": "Min. bodemvochtigheid (%)",
+          "max_illuminance": "Max. lichtsterkte (lx)",
+          "min_illuminance": "Min. lichtsterkte (lx)",
+          "max_dli": "Max. DLI (mol/d⋅m²)",
+          "min_dli": "Min. DLI (mol/d⋅m²)",
+          "max_temperature": "Max. temperatuur (zie hierboven)",
+          "min_temperature": "Min. temperatuur (zie hierboven)",
+          "max_conductivity": "Max. geleidbaarheid (uS/cm)",
+          "min_conductivity": "Min. geleidbaarheid (uS/cm)",
+          "max_humidity": "Max. luchtvochtigheid (%)",
+          "min_humidity": "Min. luchtvochtigheid (%)",
           "entity_picture": "Afbeeldings-URL"
         }
       }
@@ -157,13 +157,29 @@
           "humidity_sensor": "Luchtvochtigheidssensor",
           "entity_picture": "Afbeeldings-URL. Wordt automatisch ingevuld als soort is gevonden in OpenPlantbook",
           "illuminance_trigger": "Gebruik lichtsterkte als trigger voor probleem",
-          "dli_trigger": "Gebruik daily light integral (dli) als trigger voor probleem",
+          "dli_trigger": "Gebruik dagelijkse lichtintegraal (DLI) als trigger voor probleem",
           "humidity_trigger": "Gebruik luchtvochtigheid als trigger voor probleem",
           "conductivity_trigger": "Gebruik geleidbaarheid als trigger voor probleem",
           "moisture_trigger": "Gebruik bodemvochtigheid als trigger voor probleem",
           "temperature_trigger": "Gebruik temperatuur als trigger voor probleem",
           "co2_trigger": "Gebruik CO2 als trigger voor probleem",
           "soil_temperature_trigger": "Gebruik bodemtemperatuur als trigger voor probleem"
+        }
+      }
+    }
+  },
+  "services": {
+    "replace_sensor": {
+      "name": "Sensor vervangen",
+      "description": "Vervangt de bron voor een plantsensor.",
+      "fields": {
+        "meter_entity": {
+          "name": "Meterentiteit",
+          "description": "De meterentiteit waarvan de sensor vervangen moet worden."
+        },
+        "new_sensor": {
+          "name": "Sensorentiteit",
+          "description": "Entiteits-ID van de nieuwe sensor. Laat leeg om de sensor te verwijderen."
         }
       }
     }

@@ -35,52 +35,52 @@
     },
     "number": {
       "max_moisture": {
-        "name": "Humidité du sol maximale"
+        "name": "Humidité du sol max."
       },
       "min_moisture": {
-        "name": "Humidité du sol minimale"
+        "name": "Humidité du sol min."
       },
       "max_temperature": {
-        "name": "Température maximale"
+        "name": "Température max."
       },
       "min_temperature": {
-        "name": "Température minimale"
+        "name": "Température min."
       },
       "max_illuminance": {
-        "name": "Éclairement maximal"
+        "name": "Éclairement max."
       },
       "min_illuminance": {
-        "name": "Éclairement minimal"
+        "name": "Éclairement min."
       },
       "max_dli": {
-        "name": "DLI maximal"
+        "name": "DLI max."
       },
       "min_dli": {
-        "name": "DLI minimal"
+        "name": "DLI min."
       },
       "max_conductivity": {
-        "name": "Conductivité maximale"
+        "name": "Conductivité max."
       },
       "min_conductivity": {
-        "name": "Conductivité minimale"
+        "name": "Conductivité min."
       },
       "max_humidity": {
-        "name": "Humidité de l'air maximale"
+        "name": "Humidité de l'air max."
       },
       "min_humidity": {
-        "name": "Humidité de l'air minimale"
+        "name": "Humidité de l'air min."
       },
       "max_co2": {
-        "name": "CO2 maximal"
+        "name": "CO2 max."
       },
       "min_co2": {
-        "name": "CO2 minimal"
+        "name": "CO2 min."
       },
       "max_soil_temperature": {
-        "name": "Température du sol maximale"
+        "name": "Température du sol max."
       },
       "min_soil_temperature": {
-        "name": "Température du sol minimale"
+        "name": "Température du sol min."
       },
       "lux_to_ppfd": {
         "name": "Facteur Lux vers PPFD"
@@ -123,18 +123,18 @@
         "data": {
           "right_plant": "C'est la plante que je recherchais",
           "display_pid": "Espèce de plante à afficher",
-          "max_moisture": "Humidité du sol maximale (%)",
-          "min_moisture": "Humidité du sol minimale (%)",
-          "max_illuminance": "Luminosité maximale (lx)",
-          "min_illuminance": "Luminosité minimale (lx)",
-          "max_dli": "DLI maximal (mol/d⋅m²)",
-          "min_dli": "DLI minimal (mol/d⋅m²)",
-          "max_temperature": "Température maximale (voir ci-dessus)",
-          "min_temperature": "Température minimale (voir ci-dessus)",
-          "max_conductivity": "Conductivité maximale (uS/cm)",
-          "min_conductivity": "Conductivité minimale (uS/cm)",
-          "max_humidity": "Humidité de l'air maximale (%)",
-          "min_humidity": "Humidité de l'air minimale (%)",
+          "max_moisture": "Humidité du sol max. (%)",
+          "min_moisture": "Humidité du sol min. (%)",
+          "max_illuminance": "Luminosité max. (lx)",
+          "min_illuminance": "Luminosité min. (lx)",
+          "max_dli": "DLI max. (mol/d⋅m²)",
+          "min_dli": "DLI min. (mol/d⋅m²)",
+          "max_temperature": "Température max. (voir ci-dessus)",
+          "min_temperature": "Température min. (voir ci-dessus)",
+          "max_conductivity": "Conductivité max. (uS/cm)",
+          "min_conductivity": "Conductivité min. (uS/cm)",
+          "max_humidity": "Humidité de l'air max. (%)",
+          "min_humidity": "Humidité de l'air min. (%)",
           "entity_picture": "URL de l'image"
         }
       }
@@ -146,7 +146,7 @@
         "title": "Options",
         "description": "**{plant_name}**",
         "data": {
-          "check_days": "Contrôles des jours d'ensoleillement",
+          "check_days": "Jours de contrôle de luminosité",
           "species": "Espèce",
           "force_update": "Forcer la mise à jour des données depuis OpenPlantbook",
           "display_pid": "Espèce de plante à afficher",
@@ -164,6 +164,22 @@
           "temperature_trigger": "Utiliser la température comme déclencheur de problème",
           "co2_trigger": "Utiliser le CO2 comme déclencheur de problème",
           "soil_temperature_trigger": "Utiliser la température du sol comme déclencheur de problème"
+        }
+      }
+    }
+  },
+  "services": {
+    "replace_sensor": {
+      "name": "Remplacer le capteur",
+      "description": "Remplace la source d'un capteur de plante.",
+      "fields": {
+        "meter_entity": {
+          "name": "Entité de mesure",
+          "description": "L'entité de mesure dont le capteur doit être remplacé."
+        },
+        "new_sensor": {
+          "name": "Entité du capteur",
+          "description": "ID de l'entité du nouveau capteur. Laisser vide pour supprimer le capteur."
         }
       }
     }

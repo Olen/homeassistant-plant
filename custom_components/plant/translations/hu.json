@@ -1,5 +1,5 @@
 {
-  "title": "Növény Figyelő",
+  "title": "Növényfigyelő",
   "entity": {
     "sensor": {
       "moisture": {
@@ -12,10 +12,10 @@
         "name": "Vezetőképesség"
       },
       "illuminance": {
-        "name": "Fényerősség"
+        "name": "Megvilágítás"
       },
       "humidity": {
-        "name": "Levegő páratartalom"
+        "name": "Páratartalom"
       },
       "co2": {
         "name": "CO2"
@@ -35,52 +35,52 @@
     },
     "number": {
       "max_moisture": {
-        "name": "Maximális talajnedvesség"
+        "name": "Max. talajnedvesség"
       },
       "min_moisture": {
-        "name": "Minimális talajnedvesség"
+        "name": "Min. talajnedvesség"
       },
       "max_temperature": {
-        "name": "Maximális hőmérséklet"
+        "name": "Max. hőmérséklet"
       },
       "min_temperature": {
-        "name": "Minimális hőmérséklet"
+        "name": "Min. hőmérséklet"
       },
       "max_illuminance": {
-        "name": "Maximális fényerősség"
+        "name": "Max. megvilágítás"
       },
       "min_illuminance": {
-        "name": "Minimális fényerősség"
+        "name": "Min. megvilágítás"
       },
       "max_dli": {
-        "name": "Maximális DLI"
+        "name": "Max. DLI"
       },
       "min_dli": {
-        "name": "Minimális DLI"
+        "name": "Min. DLI"
       },
       "max_conductivity": {
-        "name": "Maximális vezetőképesség"
+        "name": "Max. vezetőképesség"
       },
       "min_conductivity": {
-        "name": "Minimális vezetőképesség"
+        "name": "Min. vezetőképesség"
       },
       "max_humidity": {
-        "name": "Maximális levegő páratartalom"
+        "name": "Max. páratartalom"
       },
       "min_humidity": {
-        "name": "Minimális levegő páratartalom"
+        "name": "Min. páratartalom"
       },
       "max_co2": {
-        "name": "Maximális CO2"
+        "name": "Max. CO2"
       },
       "min_co2": {
-        "name": "Minimális CO2"
+        "name": "Min. CO2"
       },
       "max_soil_temperature": {
-        "name": "Maximális talajhőmérséklet"
+        "name": "Max. talajhőmérséklet"
       },
       "min_soil_temperature": {
-        "name": "Minimális talajhőmérséklet"
+        "name": "Min. talajhőmérséklet"
       },
       "lux_to_ppfd": {
         "name": "Lux-PPFD átalakítási tényező"
@@ -95,20 +95,20 @@
         "data": {
           "name": "Növény neve",
           "species": "Faj",
-          "temperature_sensor": "Hőmérséklet érzékelő",
-          "moisture_sensor": "Talajnedvesség érzékelő",
-          "conductivity_sensor": "Talajvezetőképesség érzékelő",
-          "illuminance_sensor": "Fényerősség érzékelő",
-          "humidity_sensor": "Levegő páratartalom érzékelő",
-          "co2_sensor": "CO2 érzékelő",
-          "soil_temperature_sensor": "Talajhőmérséklet érzékelő"
+          "temperature_sensor": "Hőmérséklet-érzékelő",
+          "moisture_sensor": "Talajnedvesség-érzékelő",
+          "conductivity_sensor": "Vezetőképesség-érzékelő",
+          "illuminance_sensor": "Fényérzékelő",
+          "humidity_sensor": "Páratartalom-érzékelő",
+          "co2_sensor": "CO2-érzékelő",
+          "soil_temperature_sensor": "Talajhőmérséklet-érzékelő"
         },
         "data_description": {
           "species": "OpenPlantbook keresésére lesz felhasználva"
         }
       },
       "select_species": {
-        "title": "Faj kiválasztása az OpenPlantbook-ról",
+        "title": "Faj kiválasztása az OpenPlantbook-ból",
         "description": "{desc}",
         "data": {
           "species": "Faj"
@@ -118,23 +118,23 @@
         }
       },
       "limits": {
-        "title": "Határértékek",
-        "description": "# {name}\n![Plant]({entity_picture}){br}\n{extra_desc}Hőmérséklet mértékegysége {temperature_unit}",
+        "title": "Határértékek beállítása",
+        "description": "# {name}\n![Plant]({entity_picture}){br}\n{extra_desc}Hőmérséklet mértékegysége: {temperature_unit}",
         "data": {
           "right_plant": "Ez az a növény, amit kerestem",
           "display_pid": "Megjelenítendő növényfaj",
-          "max_moisture": "Maximális talajnedvesség (%)",
-          "min_moisture": "Minimális talajnedvesség (%)",
-          "max_illuminance": "Maximális fényerősség (lx)",
-          "min_illuminance": "Minimális fényerősség (lx)",
-          "max_dli": "Maximális DLI (mol/d⋅m²)",
-          "min_dli": "Minimális DLI (mol/d⋅m²)",
-          "max_temperature": "Maximális hőmérséklet (lásd fent)",
-          "min_temperature": "Minimális hőmérséklet (lásd fent)",
-          "max_conductivity": "Maximális talajvezetőképesség (uS/cm)",
-          "min_conductivity": "Minimális talajvezetőképesség (uS/cm)",
-          "max_humidity": "Maximális levegő páratartalom (%)",
-          "min_humidity": "Minimális levegő páratartalom (%)",
+          "max_moisture": "Max. talajnedvesség (%)",
+          "min_moisture": "Min. talajnedvesség (%)",
+          "max_illuminance": "Max. megvilágítás (lx)",
+          "min_illuminance": "Min. megvilágítás (lx)",
+          "max_dli": "Max. DLI (mol/d⋅m²)",
+          "min_dli": "Min. DLI (mol/d⋅m²)",
+          "max_temperature": "Max. hőmérséklet (lásd fent)",
+          "min_temperature": "Min. hőmérséklet (lásd fent)",
+          "max_conductivity": "Max. vezetőképesség (uS/cm)",
+          "min_conductivity": "Min. vezetőképesség (uS/cm)",
+          "max_humidity": "Max. páratartalom (%)",
+          "min_humidity": "Min. páratartalom (%)",
           "entity_picture": "Kép URL"
         }
       }
@@ -143,27 +143,43 @@
   "options": {
     "step": {
       "init": {
-        "title": "Opciók",
+        "title": "Beállítások",
         "description": "**{plant_name}**",
         "data": {
-          "check_days": "Fényerősség ellenőrzési napok",
+          "check_days": "Megvilágítás ellenőrzési napok",
           "species": "Faj",
-          "force_update": "OpenPlantbookból származó adatok frissítésének kényszerítése",
+          "force_update": "OpenPlantbook adatok frissítésének kényszerítése",
           "display_pid": "Megjelenítendő növényfaj",
-          "temperature_sensor": "Hőmérséklet érzékelő",
-          "moisture_sensor": "Talajnedvesség érzékelő",
-          "conductivity_sensor": "Talajvezetőképesség érzékelő",
-          "illuminance_sensor": "Fényerősség érzékelő",
-          "humidity_sensor": "Levegő páratartalom érzékelő",
-          "entity_picture": "Kép URL. Automatikusan frissül, ha a faj megtalálható az OpenPlantbook-ban.",
-          "illuminance_trigger": "Használja a fényerősséget mint probléma kiváltót",
-          "dli_trigger": "Használja a napi fény integrált (dli) mint probléma kiváltót",
-          "humidity_trigger": "Használja a levegő páratartalmat  mint probléma kiváltót",
-          "conductivity_trigger": "Használja a talajvezetőképességet mint probléma kiváltót",
-          "moisture_trigger": "Használja a talajnedvességet mint probléma kiváltót",
-          "temperature_trigger": "Használja a hőmérsékletet mint probléma kiváltót",
-          "co2_trigger": "Használja a CO2-t mint probléma kiváltót",
-          "soil_temperature_trigger": "Használja a talajhőmérsékletet mint probléma kiváltót"
+          "temperature_sensor": "Hőmérséklet-érzékelő",
+          "moisture_sensor": "Talajnedvesség-érzékelő",
+          "conductivity_sensor": "Vezetőképesség-érzékelő",
+          "illuminance_sensor": "Fényérzékelő",
+          "humidity_sensor": "Páratartalom-érzékelő",
+          "entity_picture": "Kép URL. Automatikusan frissül, ha a faj megtalálható az OpenPlantbook-ban",
+          "illuminance_trigger": "Megvilágítás használata problémajelzőként",
+          "dli_trigger": "Napi fényintegrál (DLI) használata problémajelzőként",
+          "humidity_trigger": "Páratartalom használata problémajelzőként",
+          "conductivity_trigger": "Vezetőképesség használata problémajelzőként",
+          "moisture_trigger": "Talajnedvesség használata problémajelzőként",
+          "temperature_trigger": "Hőmérséklet használata problémajelzőként",
+          "co2_trigger": "CO2 használata problémajelzőként",
+          "soil_temperature_trigger": "Talajhőmérséklet használata problémajelzőként"
+        }
+      }
+    }
+  },
+  "services": {
+    "replace_sensor": {
+      "name": "Érzékelő cseréje",
+      "description": "Kicseréli egy növényérzékelő forrását.",
+      "fields": {
+        "meter_entity": {
+          "name": "Mérő entitás",
+          "description": "A mérő entitás, amelynek érzékelőjét cserélni szeretné."
+        },
+        "new_sensor": {
+          "name": "Érzékelő entitás",
+          "description": "Az új érzékelő entitás azonosítója. Hagyja üresen az érzékelő eltávolításához."
         }
       }
     }
