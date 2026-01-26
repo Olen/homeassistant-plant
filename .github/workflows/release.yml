@@ -2,12 +2,10 @@
 name: "Auto Release"
 
 on:
-  push:
-    branches:
-      - 'main'
-      - 'master'
-    paths:
-      - 'custom_components/*/manifest.json'
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main, master]
 
 permissions:
   contents: write
@@ -16,30 +14,46 @@ jobs:
   auto-release:
     name: "Auto Release"
     runs-on: "ubuntu-latest"
+    # Only run if CI succeeded
+    if: github.event.workflow_run.conclusion == 'success'
     steps:
       - name: "Checkout code"
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: "Check if manifest.json changed"
+        id: check_manifest
+        run: |
+          # Get the commits from the workflow run
+          BEFORE_SHA=$(git rev-parse HEAD~1 2>/dev/null || echo "")
+          if [ -z "$BEFORE_SHA" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            CHANGED=$(git diff --name-only $BEFORE_SHA HEAD -- 'custom_components/*/manifest.json' | wc -l)
+            if [ "$CHANGED" -gt 0 ]; then
+              echo "changed=true" >> $GITHUB_OUTPUT
+            else
+              echo "changed=false" >> $GITHUB_OUTPUT
+            fi
+          fi
 
       - name: "Get version tag"
         id: set_var
         run: echo "COMPONENT_VERSION=$(jq -r .version custom_components/*/manifest.json)" >> $GITHUB_ENV
+        if: steps.check_manifest.outputs.changed == 'true'
 
       - name: "Check if tag exists already"
         uses: mukunku/tag-exists-action@v1.7.0
         id: "check_tag"
         with:
           tag: "v${{ env.COMPONENT_VERSION }}"
+        if: steps.check_manifest.outputs.changed == 'true'
 
-      - name: "Cancel if tag is already present"
-        run: |
-          echo "Tag already present: v${{ env.COMPONENT_VERSION }}. Not creating a new release"
-          gh run cancel ${{ github.run_id }}
-          gh run watch ${{ github.run_id }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        if: steps.check_tag.outputs.exists == 'true'
+      - name: "Skip if no manifest change or tag exists"
+        run: echo "Skipping release - manifest unchanged or tag already exists"
+        if: steps.check_manifest.outputs.changed != 'true' || steps.check_tag.outputs.exists == 'true'
 
       - name: "Get previous release version"
         id: last_release
@@ -48,6 +62,7 @@ jobs:
           echo "tag_name=${LAST_TAG}" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if: steps.check_manifest.outputs.changed == 'true' && steps.check_tag.outputs.exists != 'true'
 
       - name: "Create new tag"
         uses: rickstaa/action-create-tag@v1
@@ -56,6 +71,7 @@ jobs:
           tag: "v${{ env.COMPONENT_VERSION }}"
           tag_exists_error: false
           message: "Version ${{ env.COMPONENT_VERSION }}"
+        if: steps.check_manifest.outputs.changed == 'true' && steps.check_tag.outputs.exists != 'true'
 
       - name: "Generate release changelog"
         id: changelog
@@ -66,6 +82,7 @@ jobs:
           headerLabel: "# Notable changes since ${{ steps.last_release.outputs.tag_name }}"
           stripGeneratorNotice: true
           output: RELEASE_CHANGELOG.md
+        if: steps.check_manifest.outputs.changed == 'true' && steps.check_tag.outputs.exists != 'true'
 
       - name: "Create Stable release"
         uses: softprops/action-gh-release@v2
@@ -74,7 +91,7 @@ jobs:
           body_path: RELEASE_CHANGELOG.md
           name: "Version ${{ env.COMPONENT_VERSION }}"
           tag_name: "v${{ env.COMPONENT_VERSION }}"
-        if: contains(env.COMPONENT_VERSION, 'beta') == false
+        if: steps.check_manifest.outputs.changed == 'true' && steps.check_tag.outputs.exists != 'true' && contains(env.COMPONENT_VERSION, 'beta') == false
 
       - name: "Create Beta release"
         uses: softprops/action-gh-release@v2
@@ -83,4 +100,4 @@ jobs:
           body_path: RELEASE_CHANGELOG.md
           name: "Version ${{ env.COMPONENT_VERSION }}"
           tag_name: "v${{ env.COMPONENT_VERSION }}"
-        if: contains(env.COMPONENT_VERSION, 'beta') == true
+        if: steps.check_manifest.outputs.changed == 'true' && steps.check_tag.outputs.exists != 'true' && contains(env.COMPONENT_VERSION, 'beta') == true
