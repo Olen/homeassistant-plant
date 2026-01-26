@@ -121,7 +121,7 @@
     "step": {
       "init": {
         "title": "Opciók",
-        "description": "",
+        "description": "**{plant_name}**",
         "data": {
           "check_days": "Fényerősség ellenőrzési napok",
           "species": "Faj",

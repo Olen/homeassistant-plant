@@ -121,7 +121,7 @@
     "step": {
       "init": {
         "title": "Opciones",
-        "description": "",
+        "description": "**{plant_name}**",
         "data": {
           "check_days": "Días de control de la iluminación",
           "species": "Especie",
