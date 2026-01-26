@@ -130,9 +130,6 @@ async def async_setup_entry(
         max_dli=pmaxmm,
         min_dli=pminmm,
     )
-    # await _async_number_add_to_device_registry(
-    #     hass, number_entities=number_entities, device_id=plant.device_id
-    # )
     return True
 
 

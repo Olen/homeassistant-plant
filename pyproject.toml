@@ -41,12 +41,7 @@ include = ["custom_components*"]
 
 [tool.coverage.run]
 source = ["custom_components/plant"]
-omit = [
-    "tests/*",
-    # Legacy unused files - duplicate code from sensor.py and number.py
-    "custom_components/plant/plant_meters.py",
-    "custom_components/plant/plant_thresholds.py",
-]
+omit = ["tests/*"]
 
 [tool.coverage.report]
 exclude_lines = [

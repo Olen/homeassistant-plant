@@ -167,10 +167,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             try:
                 test = hass.states.get(new_sensor)
             except AttributeError:
-                _LOGGER.error("New sensor entity %s not found", meter_entity)
+                _LOGGER.error("New sensor entity %s not found", new_sensor)
                 return False
             if test is None:
-                _LOGGER.error("New sensor entity %s not found", meter_entity)
+                _LOGGER.error("New sensor entity %s not found", new_sensor)
                 return False
         else:
             new_sensor = None
@@ -254,8 +254,6 @@ def ws_get_info(
     hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict
 ) -> None:
     """Handle the websocket command."""
-    # _LOGGER.debug("Got websocket request: %s", msg)
-
     if DOMAIN not in hass.data:
         connection.send_error(
             msg["id"], "domain_not_found", f"Domain {DOMAIN} not found"
@@ -267,7 +265,6 @@ def ws_get_info(
             continue
         plant_entity = hass.data[DOMAIN][key][ATTR_PLANT]
         if plant_entity.entity_id == msg["entity_id"]:
-            # _LOGGER.debug("Sending websocket response: %s", plant_entity.websocket_info)
             try:
                 connection.send_result(
                     msg["id"], {"result": plant_entity.websocket_info}

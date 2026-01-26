@@ -139,9 +139,9 @@ class PlantHelper:
                     return_response=True,
                 )
         except TimeoutError:
-            _LOGGER.warning("Openplantook request timed out")
+            _LOGGER.warning("OpenPlantbook request timed out")
         except Exception as ex:
-            _LOGGER.warning("Openplantook does not work, error: %s", ex)
+            _LOGGER.warning("OpenPlantbook does not work, error: %s", ex)
             return None
         if bool(plant_get_result):
             _LOGGER.debug("Result for %s: %s", species, plant_get_result)

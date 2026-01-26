@@ -640,13 +640,6 @@ class PlantDummyStatus(SensorEntity):
         if not self._attr_native_value or self._attr_native_value == STATE_UNKNOWN:
             self._attr_native_value = self._default_state
 
-    # @property
-    # def device_info(self) -> dict:
-    #     """Device info for devices"""
-    #     return {
-    #         "identifiers": {(DOMAIN, self._plant.unique_id)},
-    #     }
-
 
 class PlantDummyIlluminance(PlantDummyStatus):
     """Dummy sensor"""
