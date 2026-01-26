@@ -38,7 +38,13 @@ from homeassistant.helpers.entity import (
     async_generate_entity_id,
 )
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.event import async_track_state_change_event
+from homeassistant.helpers.entity_registry import (
+    EVENT_ENTITY_REGISTRY_UPDATED,
+    EventEntityRegistryUpdatedData,
+)
+from homeassistant.helpers.event import (
+    async_track_state_change_event,
+)
 
 from . import SETUP_DUMMY_SENSORS
 from .const import (
@@ -239,6 +245,34 @@ class PlantCurrentStatus(RestoreSensor):
 
         async_dispatcher_connect(
             self.hass, DATA_UPDATED, self._schedule_immediate_update
+        )
+
+        # Listen for entity registry updates to handle entity_id changes
+        @callback
+        def _handle_entity_registry_update(
+            event: Event[EventEntityRegistryUpdatedData],
+        ) -> None:
+            """Handle entity registry updates."""
+            if event.data["action"] != "update":
+                return
+            # Check if this is our external sensor being renamed
+            if "old_entity_id" not in event.data:
+                return
+            old_entity_id = event.data["old_entity_id"]
+            new_entity_id = event.data["entity_id"]
+            if self._external_sensor and old_entity_id == self._external_sensor:
+                _LOGGER.debug(
+                    "External sensor renamed from %s to %s, updating tracking",
+                    old_entity_id,
+                    new_entity_id,
+                )
+                self.replace_external_sensor(new_entity_id)
+
+        self.async_on_remove(
+            self.hass.bus.async_listen(
+                EVENT_ENTITY_REGISTRY_UPDATED,
+                _handle_entity_registry_update,
+            )
         )
 
     async def async_update(self) -> None:
@@ -515,6 +549,10 @@ class PlantTotalLightIntegral(IntegrationSensor):
     ) -> None:
         """Initialize the sensor"""
         self._plant = plantdevice
+        # Store the source sensor's unique_id for tracking entity_id changes
+        self._source_unique_id = illuminance_ppfd_sensor.unique_id
+        self._state_change_unsub = None
+        self._state_report_unsub = None
         super().__init__(
             hass,
             integration_method=METHOD_TRAPEZOIDAL,
@@ -542,6 +580,52 @@ class PlantTotalLightIntegral(IntegrationSensor):
         """Override unit conversion to use mol instead of source unit."""
         return self._unit_of_measurement
 
+    async def async_added_to_hass(self) -> None:
+        """Handle entity which will be added."""
+        await super().async_added_to_hass()
+
+        # Listen for entity registry updates to handle entity_id changes
+        @callback
+        def _handle_entity_registry_update(
+            event: Event[EventEntityRegistryUpdatedData],
+        ) -> None:
+            """Handle entity registry updates."""
+            if event.data["action"] != "update":
+                return
+            # Check if this is our source entity being renamed
+            if "old_entity_id" not in event.data:
+                return
+            old_entity_id = event.data["old_entity_id"]
+            new_entity_id = event.data["entity_id"]
+            if old_entity_id == self._source_entity:
+                _LOGGER.debug(
+                    "Source entity renamed from %s to %s, updating tracking",
+                    old_entity_id,
+                    new_entity_id,
+                )
+                self._update_source_entity(new_entity_id)
+
+        self.async_on_remove(
+            self.hass.bus.async_listen(
+                EVENT_ENTITY_REGISTRY_UPDATED,
+                _handle_entity_registry_update,
+            )
+        )
+
+    @callback
+    def _update_source_entity(self, new_entity_id: str) -> None:
+        """Update the source entity when its entity_id changes."""
+        self._source_entity = new_entity_id
+        self._sensor_source_id = new_entity_id
+        # Note: The state change tracking was set up by the parent class
+        # and uses the old entity_id. We need to trigger a reload to
+        # properly update the tracking, or the user needs to restart HA.
+        _LOGGER.info(
+            "Updated source entity to %s. A restart may be required for "
+            "state tracking to work correctly.",
+            new_entity_id,
+        )
+
 
 class PlantDailyLightIntegral(UtilityMeterSensor):
     """Entity class to calculate Daily Light Integral from PPFD"""
@@ -562,6 +646,8 @@ class PlantDailyLightIntegral(UtilityMeterSensor):
     ) -> None:
         """Initialize the sensor"""
         self._plant = plantdevice
+        # Store the source sensor's unique_id for tracking entity_id changes
+        self._source_unique_id = illuminance_integration_sensor.unique_id
 
         super().__init__(
             hass,
@@ -590,6 +676,51 @@ class PlantDailyLightIntegral(UtilityMeterSensor):
         """Device info for devices"""
         return DeviceInfo(
             identifiers={(DOMAIN, self._plant.unique_id)},
+        )
+
+    async def async_added_to_hass(self) -> None:
+        """Handle entity which will be added."""
+        await super().async_added_to_hass()
+
+        # Listen for entity registry updates to handle entity_id changes
+        @callback
+        def _handle_entity_registry_update(
+            event: Event[EventEntityRegistryUpdatedData],
+        ) -> None:
+            """Handle entity registry updates."""
+            if event.data["action"] != "update":
+                return
+            # Check if this is our source entity being renamed
+            if "old_entity_id" not in event.data:
+                return
+            old_entity_id = event.data["old_entity_id"]
+            new_entity_id = event.data["entity_id"]
+            if old_entity_id == self._sensor_source_id:
+                _LOGGER.debug(
+                    "Source entity renamed from %s to %s, updating tracking",
+                    old_entity_id,
+                    new_entity_id,
+                )
+                self._update_source_entity(new_entity_id)
+
+        self.async_on_remove(
+            self.hass.bus.async_listen(
+                EVENT_ENTITY_REGISTRY_UPDATED,
+                _handle_entity_registry_update,
+            )
+        )
+
+    @callback
+    def _update_source_entity(self, new_entity_id: str) -> None:
+        """Update the source entity when its entity_id changes."""
+        self._sensor_source_id = new_entity_id
+        # Note: The state change tracking was set up by the parent class
+        # and uses the old entity_id. We need to trigger a reload to
+        # properly update the tracking, or the user needs to restart HA.
+        _LOGGER.info(
+            "Updated source entity to %s. A restart may be required for "
+            "state tracking to work correctly.",
+            new_entity_id,
         )
 
 

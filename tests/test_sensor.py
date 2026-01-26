@@ -9,6 +9,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.entity_registry import EVENT_ENTITY_REGISTRY_UPDATED
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.plant.const import (
@@ -418,3 +419,159 @@ class TestSensorDeviceInfo:
             device_info = sensor.device_info
             assert "identifiers" in device_info
             assert (DOMAIN, plant.unique_id) in device_info["identifiers"]
+
+
+class TestSensorEntityIdRename:
+    """Tests for sensor handling when entity IDs are renamed."""
+
+    async def test_external_sensor_rename_updates_tracking(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test that renaming an external sensor updates the tracking."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        sensor = plant.sensor_temperature
+
+        old_entity_id = "sensor.test_temperature"
+        new_entity_id = "sensor.renamed_temperature"
+
+        # Verify the sensor is tracking the original external sensor
+        assert sensor.external_sensor == old_entity_id
+
+        # Create the new sensor state
+        hass.states.async_set(
+            new_entity_id,
+            "25.0",
+            {"unit_of_measurement": "°C"},
+        )
+        await hass.async_block_till_done()
+
+        # Fire entity registry update event (simulating a rename)
+        hass.bus.async_fire(
+            EVENT_ENTITY_REGISTRY_UPDATED,
+            {
+                "action": "update",
+                "entity_id": new_entity_id,
+                "old_entity_id": old_entity_id,
+                "changes": {"entity_id": new_entity_id},
+            },
+        )
+        await hass.async_block_till_done()
+
+        # Verify the sensor updated its external sensor reference
+        assert sensor.external_sensor == new_entity_id
+
+    async def test_non_rename_update_does_not_change_tracking(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test that non-rename updates don't affect tracking."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        sensor = plant.sensor_temperature
+
+        original_external = sensor.external_sensor
+
+        # Fire entity registry update event without old_entity_id (not a rename)
+        hass.bus.async_fire(
+            EVENT_ENTITY_REGISTRY_UPDATED,
+            {
+                "action": "update",
+                "entity_id": "sensor.some_other_sensor",
+                "changes": {"friendly_name": "New Name"},
+            },
+        )
+        await hass.async_block_till_done()
+
+        # Verify the external sensor reference is unchanged
+        assert sensor.external_sensor == original_external
+
+    async def test_unrelated_entity_rename_does_not_change_tracking(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test that renaming an unrelated entity doesn't affect tracking."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        sensor = plant.sensor_temperature
+
+        original_external = sensor.external_sensor
+
+        # Fire entity registry update event for an unrelated entity
+        hass.bus.async_fire(
+            EVENT_ENTITY_REGISTRY_UPDATED,
+            {
+                "action": "update",
+                "entity_id": "sensor.completely_unrelated",
+                "old_entity_id": "sensor.old_unrelated",
+                "changes": {"entity_id": "sensor.completely_unrelated"},
+            },
+        )
+        await hass.async_block_till_done()
+
+        # Verify the external sensor reference is unchanged
+        assert sensor.external_sensor == original_external
+
+    async def test_total_integral_source_rename_updates_tracking(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test that renaming the PPFD sensor updates the total integral tracking."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        integral_sensor = plant.total_integral
+        ppfd_sensor = plant.ppfd
+
+        old_entity_id = ppfd_sensor.entity_id
+        new_entity_id = "sensor.renamed_ppfd"
+
+        # Verify the integral sensor is tracking the PPFD sensor
+        assert integral_sensor._source_entity == old_entity_id
+
+        # Fire entity registry update event (simulating a rename)
+        hass.bus.async_fire(
+            EVENT_ENTITY_REGISTRY_UPDATED,
+            {
+                "action": "update",
+                "entity_id": new_entity_id,
+                "old_entity_id": old_entity_id,
+                "changes": {"entity_id": new_entity_id},
+            },
+        )
+        await hass.async_block_till_done()
+
+        # Verify the integral sensor updated its source reference
+        assert integral_sensor._source_entity == new_entity_id
+        assert integral_sensor._sensor_source_id == new_entity_id
+
+    async def test_dli_source_rename_updates_tracking(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test that renaming the integral sensor updates the DLI tracking."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        dli_sensor = plant.dli
+        integral_sensor = plant.total_integral
+
+        old_entity_id = integral_sensor.entity_id
+        new_entity_id = "sensor.renamed_integral"
+
+        # Verify the DLI sensor is tracking the integral sensor
+        assert dli_sensor._sensor_source_id == old_entity_id
+
+        # Fire entity registry update event (simulating a rename)
+        hass.bus.async_fire(
+            EVENT_ENTITY_REGISTRY_UPDATED,
+            {
+                "action": "update",
+                "entity_id": new_entity_id,
+                "old_entity_id": old_entity_id,
+                "changes": {"entity_id": new_entity_id},
+            },
+        )
+        await hass.async_block_till_done()
+
+        # Verify the DLI sensor updated its source reference
+        assert dli_sensor._sensor_source_id == new_entity_id
