@@ -215,6 +215,48 @@ class TestPlantCurrentSensors:
             sensor.native_value is None or sensor.native_value == sensor._default_state
         )
 
+    async def test_sensor_handles_non_numeric_external(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test sensor handles non-numeric external sensor state."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        sensor = plant.sensor_temperature
+
+        # Set external sensor to non-numeric value
+        hass.states.async_set(
+            "sensor.test_temperature",
+            "invalid",
+            {"unit_of_measurement": "°C"},
+        )
+        await hass.async_block_till_done()
+
+        await sensor.async_update()
+        # Should have default state when external value is not a valid number
+        assert (
+            sensor.native_value is None or sensor.native_value == sensor._default_state
+        )
+
+    async def test_sensor_handles_missing_external_entity(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test sensor handles missing external sensor entity."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        sensor = plant.sensor_temperature
+
+        # Replace with a sensor that doesn't exist
+        sensor.replace_external_sensor("sensor.nonexistent_sensor")
+        await hass.async_block_till_done()
+
+        await sensor.async_update()
+        # Should have default state when external sensor doesn't exist
+        assert (
+            sensor.native_value is None or sensor.native_value == sensor._default_state
+        )
+
 
 class TestPpfdSensor:
     """Tests for PPFD sensor entity."""

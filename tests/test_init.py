@@ -408,3 +408,392 @@ class TestPlantDevice:
         assert "max" in ws_info["temperature"]
         assert "min" in ws_info["temperature"]
         assert "current" in ws_info["temperature"]
+
+    async def test_plant_device_state_problem_conductivity_low(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test plant device shows problem when conductivity is too low."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=40.0,
+            conductivity=100.0,  # Below min of 500
+            illuminance=5000.0,
+            humidity=40.0,
+        )
+
+        await update_plant_sensors(hass, init_integration.entry_id)
+        assert plant.state == STATE_PROBLEM
+        assert plant.conductivity_status == STATE_LOW
+
+    async def test_plant_device_state_problem_conductivity_high(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test plant device shows problem when conductivity is too high."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=40.0,
+            conductivity=5000.0,  # Above max of 3000
+            illuminance=5000.0,
+            humidity=40.0,
+        )
+
+        await update_plant_sensors(hass, init_integration.entry_id)
+        assert plant.state == STATE_PROBLEM
+        assert plant.conductivity_status == STATE_HIGH
+
+    async def test_plant_device_state_problem_humidity_low(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test plant device shows problem when humidity is too low."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=40.0,
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=10.0,  # Below min of 20
+        )
+
+        await update_plant_sensors(hass, init_integration.entry_id)
+        assert plant.state == STATE_PROBLEM
+        assert plant.humidity_status == STATE_LOW
+
+    async def test_plant_device_state_problem_humidity_high(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test plant device shows problem when humidity is too high."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=40.0,
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=80.0,  # Above max of 60
+        )
+
+        await update_plant_sensors(hass, init_integration.entry_id)
+        assert plant.state == STATE_PROBLEM
+        assert plant.humidity_status == STATE_HIGH
+
+    async def test_plant_device_conductivity_trigger_disabled(
+        self,
+        hass: HomeAssistant,
+        mock_external_sensors: None,
+    ) -> None:
+        """Test that disabling conductivity trigger prevents problem state."""
+        from homeassistant.const import ATTR_ENTITY_PICTURE, ATTR_NAME
+
+        from custom_components.plant.const import (
+            CONF_MAX_CONDUCTIVITY,
+            CONF_MAX_DLI,
+            CONF_MAX_HUMIDITY,
+            CONF_MAX_ILLUMINANCE,
+            CONF_MAX_MOISTURE,
+            CONF_MAX_TEMPERATURE,
+            CONF_MIN_CONDUCTIVITY,
+            CONF_MIN_DLI,
+            CONF_MIN_HUMIDITY,
+            CONF_MIN_ILLUMINANCE,
+            CONF_MIN_MOISTURE,
+            CONF_MIN_TEMPERATURE,
+            DATA_SOURCE,
+            FLOW_CONDUCTIVITY_TRIGGER,
+            OPB_DISPLAY_PID,
+        )
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            entry_id="test_entry_cond_trigger_disabled",
+            unique_id="test_entry_cond_trigger_disabled",
+            title="Test Plant",
+            data={
+                DATA_SOURCE: "Default values",
+                FLOW_PLANT_INFO: {
+                    ATTR_NAME: "Test Plant",
+                    "species": "monstera deliciosa",
+                    OPB_DISPLAY_PID: "Monstera deliciosa",
+                    ATTR_ENTITY_PICTURE: "https://example.com/plant.jpg",
+                    "limits": {
+                        CONF_MAX_MOISTURE: 60,
+                        CONF_MIN_MOISTURE: 20,
+                        CONF_MAX_TEMPERATURE: 40,
+                        CONF_MIN_TEMPERATURE: 10,
+                        CONF_MAX_CONDUCTIVITY: 3000,
+                        CONF_MIN_CONDUCTIVITY: 500,
+                        CONF_MAX_ILLUMINANCE: 100000,
+                        CONF_MIN_ILLUMINANCE: 0,
+                        CONF_MAX_HUMIDITY: 60,
+                        CONF_MIN_HUMIDITY: 20,
+                        CONF_MAX_DLI: 30,
+                        CONF_MIN_DLI: 2,
+                    },
+                    "temperature_sensor": "sensor.test_temperature",
+                    "moisture_sensor": "sensor.test_moisture",
+                    "conductivity_sensor": "sensor.test_conductivity",
+                    "illuminance_sensor": "sensor.test_illuminance",
+                    "humidity_sensor": "sensor.test_humidity",
+                },
+            },
+            options={FLOW_CONDUCTIVITY_TRIGGER: False},
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][entry.entry_id][ATTR_PLANT]
+
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=40.0,
+            conductivity=100.0,  # Below threshold
+            illuminance=5000.0,
+            humidity=40.0,
+        )
+
+        await update_plant_sensors(hass, entry.entry_id)
+
+        assert plant.conductivity_status == STATE_LOW
+        assert plant.state == STATE_OK
+
+    async def test_plant_device_humidity_trigger_disabled(
+        self,
+        hass: HomeAssistant,
+        mock_external_sensors: None,
+    ) -> None:
+        """Test that disabling humidity trigger prevents problem state."""
+        from homeassistant.const import ATTR_ENTITY_PICTURE, ATTR_NAME
+
+        from custom_components.plant.const import (
+            CONF_MAX_CONDUCTIVITY,
+            CONF_MAX_DLI,
+            CONF_MAX_HUMIDITY,
+            CONF_MAX_ILLUMINANCE,
+            CONF_MAX_MOISTURE,
+            CONF_MAX_TEMPERATURE,
+            CONF_MIN_CONDUCTIVITY,
+            CONF_MIN_DLI,
+            CONF_MIN_HUMIDITY,
+            CONF_MIN_ILLUMINANCE,
+            CONF_MIN_MOISTURE,
+            CONF_MIN_TEMPERATURE,
+            DATA_SOURCE,
+            FLOW_HUMIDITY_TRIGGER,
+            OPB_DISPLAY_PID,
+        )
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            entry_id="test_entry_humidity_trigger_disabled",
+            unique_id="test_entry_humidity_trigger_disabled",
+            title="Test Plant",
+            data={
+                DATA_SOURCE: "Default values",
+                FLOW_PLANT_INFO: {
+                    ATTR_NAME: "Test Plant",
+                    "species": "monstera deliciosa",
+                    OPB_DISPLAY_PID: "Monstera deliciosa",
+                    ATTR_ENTITY_PICTURE: "https://example.com/plant.jpg",
+                    "limits": {
+                        CONF_MAX_MOISTURE: 60,
+                        CONF_MIN_MOISTURE: 20,
+                        CONF_MAX_TEMPERATURE: 40,
+                        CONF_MIN_TEMPERATURE: 10,
+                        CONF_MAX_CONDUCTIVITY: 3000,
+                        CONF_MIN_CONDUCTIVITY: 500,
+                        CONF_MAX_ILLUMINANCE: 100000,
+                        CONF_MIN_ILLUMINANCE: 0,
+                        CONF_MAX_HUMIDITY: 60,
+                        CONF_MIN_HUMIDITY: 20,
+                        CONF_MAX_DLI: 30,
+                        CONF_MIN_DLI: 2,
+                    },
+                    "temperature_sensor": "sensor.test_temperature",
+                    "moisture_sensor": "sensor.test_moisture",
+                    "conductivity_sensor": "sensor.test_conductivity",
+                    "illuminance_sensor": "sensor.test_illuminance",
+                    "humidity_sensor": "sensor.test_humidity",
+                },
+            },
+            options={FLOW_HUMIDITY_TRIGGER: False},
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][entry.entry_id][ATTR_PLANT]
+
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=40.0,
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=10.0,  # Below threshold
+        )
+
+        await update_plant_sensors(hass, entry.entry_id)
+
+        assert plant.humidity_status == STATE_LOW
+        assert plant.state == STATE_OK
+
+    async def test_plant_device_dli_status_low(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test plant device shows problem when DLI is too low."""
+        from unittest.mock import PropertyMock, patch
+
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+
+        # Set all normal values first
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=40.0,
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=40.0,
+        )
+        await update_plant_sensors(hass, init_integration.entry_id)
+
+        # Mock DLI sensor to have a low last_period value
+        # min_dli is 2, so set last_period to 1 (below threshold)
+        mock_attrs = {"last_period": 1.0}
+        with patch.object(
+            type(plant.dli),
+            "extra_state_attributes",
+            new_callable=PropertyMock,
+            return_value=mock_attrs,
+        ):
+            with patch.object(
+                type(plant.dli),
+                "native_value",
+                new_callable=PropertyMock,
+                return_value=1.0,
+            ):
+                with patch.object(
+                    type(plant.dli),
+                    "state",
+                    new_callable=PropertyMock,
+                    return_value="1.0",
+                ):
+                    plant.update()
+
+        assert plant.dli_status == STATE_LOW
+        assert plant.state == STATE_PROBLEM
+
+    async def test_plant_device_dli_status_high(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test plant device shows problem when DLI is too high."""
+        from unittest.mock import PropertyMock, patch
+
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+
+        # Set all normal values first
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=40.0,
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=40.0,
+        )
+        await update_plant_sensors(hass, init_integration.entry_id)
+
+        # Mock DLI sensor to have a high last_period value
+        # max_dli is 30, so set last_period to 40 (above threshold)
+        mock_attrs = {"last_period": 40.0}
+        with patch.object(
+            type(plant.dli),
+            "extra_state_attributes",
+            new_callable=PropertyMock,
+            return_value=mock_attrs,
+        ):
+            with patch.object(
+                type(plant.dli),
+                "native_value",
+                new_callable=PropertyMock,
+                return_value=40.0,
+            ):
+                with patch.object(
+                    type(plant.dli),
+                    "state",
+                    new_callable=PropertyMock,
+                    return_value="40.0",
+                ):
+                    plant.update()
+
+        assert plant.dli_status == STATE_HIGH
+        assert plant.state == STATE_PROBLEM
+
+    async def test_plant_device_dli_status_ok(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test plant device shows OK when DLI is within thresholds."""
+        from unittest.mock import PropertyMock, patch
+
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+
+        # Set all normal values first
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=40.0,
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=40.0,
+        )
+        await update_plant_sensors(hass, init_integration.entry_id)
+
+        # Mock DLI sensor to have a normal last_period value
+        # min_dli is 2, max_dli is 30, so set last_period to 15 (within threshold)
+        mock_attrs = {"last_period": 15.0}
+        with patch.object(
+            type(plant.dli),
+            "extra_state_attributes",
+            new_callable=PropertyMock,
+            return_value=mock_attrs,
+        ):
+            with patch.object(
+                type(plant.dli),
+                "native_value",
+                new_callable=PropertyMock,
+                return_value=15.0,
+            ):
+                with patch.object(
+                    type(plant.dli),
+                    "state",
+                    new_callable=PropertyMock,
+                    return_value="15.0",
+                ):
+                    plant.update()
+
+        assert plant.dli_status == STATE_OK
+        assert plant.state == STATE_OK
