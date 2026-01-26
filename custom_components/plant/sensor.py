@@ -145,6 +145,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 class PlantCurrentStatus(RestoreSensor):
     """Parent class for the meter classes below"""
 
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
@@ -155,7 +157,6 @@ class PlantCurrentStatus(RestoreSensor):
         self._plant = plantdevice
         self._tracker = []
         self._follow_external = True
-        # self._conf_check_days = self._plant.check_days
         self.entity_id = async_generate_entity_id(
             f"{DOMAIN}.{{}}", self.name, current_ids={}
         )
@@ -170,10 +171,6 @@ class PlantCurrentStatus(RestoreSensor):
                 self._default_state,
             )
             self._attr_native_value = self._default_state
-
-    @property
-    def state_class(self):
-        return SensorStateClass.MEASUREMENT
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -319,6 +316,8 @@ class PlantCurrentStatus(RestoreSensor):
 class PlantCurrentIlluminance(PlantCurrentStatus):
     """Entity class for the current illuminance meter"""
 
+    _attr_device_class = SensorDeviceClass.ILLUMINANCE
+
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
@@ -335,14 +334,12 @@ class PlantCurrentIlluminance(PlantCurrentStatus):
         self._attr_native_unit_of_measurement = LIGHT_LUX
         super().__init__(hass, config, plantdevice)
 
-    @property
-    def device_class(self) -> str:
-        """Device class"""
-        return SensorDeviceClass.ILLUMINANCE
-
 
 class PlantCurrentConductivity(PlantCurrentStatus):
     """Entity class for the current conductivity meter"""
+
+    # No official device class for conductivity - use custom string for UI
+    _attr_device_class = ATTR_CONDUCTIVITY
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -361,14 +358,12 @@ class PlantCurrentConductivity(PlantCurrentStatus):
 
         super().__init__(hass, config, plantdevice)
 
-    @property
-    def device_class(self) -> None:
-        """Device class - not defined for conductivity"""
-        return ATTR_CONDUCTIVITY
-
 
 class PlantCurrentMoisture(PlantCurrentStatus):
     """Entity class for the current moisture meter"""
+
+    # No official device class for moisture - use custom string for UI
+    _attr_device_class = ATTR_MOISTURE
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -385,14 +380,11 @@ class PlantCurrentMoisture(PlantCurrentStatus):
 
         super().__init__(hass, config, plantdevice)
 
-    @property
-    def device_class(self) -> str:
-        """Device class"""
-        return ATTR_MOISTURE
-
 
 class PlantCurrentTemperature(PlantCurrentStatus):
     """Entity class for the current temperature meter"""
+
+    _attr_device_class = SensorDeviceClass.TEMPERATURE
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -410,14 +402,11 @@ class PlantCurrentTemperature(PlantCurrentStatus):
         self._attr_suggested_display_precision = 1
         super().__init__(hass, config, plantdevice)
 
-    @property
-    def device_class(self) -> str:
-        """Device class"""
-        return SensorDeviceClass.TEMPERATURE
-
 
 class PlantCurrentHumidity(PlantCurrentStatus):
     """Entity class for the current humidity meter"""
+
+    _attr_device_class = SensorDeviceClass.HUMIDITY
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -433,14 +422,13 @@ class PlantCurrentHumidity(PlantCurrentStatus):
         self._attr_suggested_display_precision = 1
         super().__init__(hass, config, plantdevice)
 
-    @property
-    def device_class(self) -> str:
-        """Device class"""
-        return SensorDeviceClass.HUMIDITY
-
 
 class PlantCurrentPpfd(PlantCurrentStatus):
     """Entity reporting current PPFD calculated from LX"""
+
+    _attr_device_class = None
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_entity_registry_visible_default = False
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -461,20 +449,6 @@ class PlantCurrentPpfd(PlantCurrentStatus):
         self.entity_id = async_generate_entity_id(
             f"{DOMAIN_SENSOR}.{{}}", self.name, current_ids={}
         )
-
-    @property
-    def device_class(self) -> str:
-        """Device class"""
-        return None
-
-    @property
-    def entity_category(self) -> EntityCategory:
-        """The entity category"""
-        return EntityCategory.DIAGNOSTIC
-
-    @property
-    def entity_registry_visible_default(self) -> bool:
-        return False
 
     def ppfd(self, value: float | int | str) -> float | str:
         """
@@ -526,6 +500,9 @@ class PlantCurrentPpfd(PlantCurrentStatus):
 class PlantTotalLightIntegral(IntegrationSensor):
     """Entity class to calculate PPFD from LX"""
 
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_entity_registry_visible_default = False
+
     def __init__(
         self,
         hass: HomeAssistant,
@@ -553,20 +530,11 @@ class PlantTotalLightIntegral(IntegrationSensor):
         self._plant = plantdevice
 
     @property
-    def entity_category(self) -> EntityCategory:
-        """The entity category"""
-        return EntityCategory.DIAGNOSTIC
-
-    @property
     def device_info(self) -> DeviceInfo:
         """Device info for devices"""
         return DeviceInfo(
             identifiers={(DOMAIN, self._plant.unique_id)},
         )
-
-    @property
-    def entity_registry_visible_default(self) -> bool:
-        return False
 
     def _unit(self, source_unit: str) -> str:
         """Override unit"""
@@ -575,6 +543,9 @@ class PlantTotalLightIntegral(IntegrationSensor):
 
 class PlantDailyLightIntegral(UtilityMeterSensor):
     """Entity class to calculate Daily Light Integral from PPDF"""
+
+    # Custom device class for DLI (no official HA device class)
+    _attr_device_class = ATTR_DLI
 
     def __init__(
         self,
@@ -612,10 +583,6 @@ class PlantDailyLightIntegral(UtilityMeterSensor):
         self._plant = plantdevice
 
     @property
-    def device_class(self) -> str:
-        return ATTR_DLI
-
-    @property
     def device_info(self) -> DeviceInfo:
         """Device info for devices"""
         return DeviceInfo(
@@ -644,6 +611,8 @@ class PlantDummyStatus(SensorEntity):
 class PlantDummyIlluminance(PlantDummyStatus):
     """Dummy sensor"""
 
+    _attr_device_class = SensorDeviceClass.ILLUMINANCE
+
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
@@ -667,14 +636,11 @@ class PlantDummyIlluminance(PlantDummyStatus):
         else:
             self._attr_native_value = random.randint(1, 10) * 100
 
-    @property
-    def device_class(self) -> str:
-        """Device class"""
-        return SensorDeviceClass.ILLUMINANCE
-
 
 class PlantDummyConductivity(PlantDummyStatus):
     """Dummy sensor"""
+
+    _attr_device_class = ATTR_CONDUCTIVITY
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -694,14 +660,11 @@ class PlantDummyConductivity(PlantDummyStatus):
         """Give out a dummy value"""
         self._attr_native_value = random.randint(40, 200) * 10
 
-    @property
-    def device_class(self) -> str:
-        """Device class"""
-        return ATTR_CONDUCTIVITY
-
 
 class PlantDummyMoisture(PlantDummyStatus):
     """Dummy sensor"""
+
+    _attr_device_class = ATTR_MOISTURE
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -721,14 +684,11 @@ class PlantDummyMoisture(PlantDummyStatus):
         """Give out a dummy value"""
         self._attr_native_value = random.randint(10, 70)
 
-    @property
-    def device_class(self) -> str:
-        """Device class"""
-        return ATTR_MOISTURE
-
 
 class PlantDummyTemperature(PlantDummyStatus):
     """Dummy sensor"""
+
+    _attr_device_class = SensorDeviceClass.TEMPERATURE
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -749,14 +709,11 @@ class PlantDummyTemperature(PlantDummyStatus):
         """Give out a dummy value"""
         self._attr_native_value = random.randint(15, 20)
 
-    @property
-    def device_class(self) -> str:
-        """Device class"""
-        return SensorDeviceClass.TEMPERATURE
-
 
 class PlantDummyHumidity(PlantDummyStatus):
     """Dummy sensor"""
+
+    _attr_device_class = SensorDeviceClass.HUMIDITY
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -776,8 +733,3 @@ class PlantDummyHumidity(PlantDummyStatus):
         test = random.randint(0, 100)
         if test > 50:
             self._attr_native_value = random.randint(25, 90)
-
-    @property
-    def device_class(self) -> str:
-        """Device class"""
-        return SensorDeviceClass.HUMIDITY
