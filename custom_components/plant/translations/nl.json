@@ -17,6 +17,9 @@
       "humidity": {
         "name": "Luchtvochtigheid"
       },
+      "co2": {
+        "name": "CO2"
+      },
       "ppfd": {
         "name": "PPFD"
       },
@@ -64,6 +67,12 @@
       "min_humidity": {
         "name": "Minimale luchtvochtigheid"
       },
+      "max_co2": {
+        "name": "Maximaal CO2"
+      },
+      "min_co2": {
+        "name": "Minimaal CO2"
+      },
       "lux_to_ppfd": {
         "name": "Lux naar PPFD factor"
       }
@@ -81,7 +90,8 @@
           "moisture_sensor": "Bodemvochtsensor",
           "conductivity_sensor": "Geleidbaarheidssensor",
           "illuminance_sensor": "Lichtsensor",
-          "humidity_sensor": "Luchtvochtigheidssensor"
+          "humidity_sensor": "Luchtvochtigheidssensor",
+          "co2_sensor": "CO2-sensor"
         },
         "data_description": {
           "species": "Wordt gebruikt voor het zoeken in OpenPlantbook"
@@ -141,7 +151,8 @@
           "humidity_trigger": "Gebruik luchtvochtigheid als trigger voor probleem",
           "conductivity_trigger": "Gebruik geleidbaarheid als trigger voor probleem",
           "moisture_trigger": "Gebruik bodemvochtigheid als trigger voor probleem",
-          "temperature_trigger": "Gebruik temperatuur als trigger voor probleem"
+          "temperature_trigger": "Gebruik temperatuur als trigger voor probleem",
+          "co2_trigger": "Gebruik CO2 als trigger voor probleem"
         }
       }
     }

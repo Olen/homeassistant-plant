@@ -17,6 +17,9 @@
       "humidity": {
         "name": "空气湿度"
       },
+      "co2": {
+        "name": "二氧化碳"
+      },
       "ppfd": {
         "name": "PPFD"
       },
@@ -64,6 +67,12 @@
       "min_humidity": {
         "name": "最小空气湿度"
       },
+      "max_co2": {
+        "name": "最大二氧化碳"
+      },
+      "min_co2": {
+        "name": "最小二氧化碳"
+      },
       "lux_to_ppfd": {
         "name": "勒克斯转PPFD系数"
       }
@@ -81,7 +90,8 @@
           "moisture_sensor": "土壤湿度传感器",
           "conductivity_sensor": "电导率传感器",
           "illuminance_sensor": "光照传感器",
-          "humidity_sensor": "空气湿度传感器"
+          "humidity_sensor": "空气湿度传感器",
+          "co2_sensor": "二氧化碳传感器"
         },
         "data_description": {
           "species": "将用于在OpenPlantbook中搜索"
@@ -141,7 +151,8 @@
           "humidity_trigger": "使用空气湿度作为问题触发器",
           "conductivity_trigger": "使用电导率作为问题触发器",
           "moisture_trigger": "使用土壤湿度作为问题触发器",
-          "temperature_trigger": "使用温度作为问题触发器"
+          "temperature_trigger": "使用温度作为问题触发器",
+          "co2_trigger": "使用二氧化碳作为问题触发器"
         }
       }
     }

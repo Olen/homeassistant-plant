@@ -17,6 +17,9 @@
       "humidity": {
         "name": "Humedad del aire"
       },
+      "co2": {
+        "name": "CO2"
+      },
       "ppfd": {
         "name": "PPFD"
       },
@@ -64,6 +67,12 @@
       "min_humidity": {
         "name": "Humedad del aire mínima"
       },
+      "max_co2": {
+        "name": "CO2 máximo"
+      },
+      "min_co2": {
+        "name": "CO2 mínimo"
+      },
       "lux_to_ppfd": {
         "name": "Factor Lux a PPFD"
       }
@@ -81,7 +90,8 @@
           "moisture_sensor": "Sensor de Humedad del suelo",
           "conductivity_sensor": "Sensor Conductividad",
           "illuminance_sensor": "Sensor de Iluminación",
-          "humidity_sensor": "Sensor de humedad ambiente"
+          "humidity_sensor": "Sensor de humedad ambiente",
+          "co2_sensor": "Sensor de CO2"
         },
         "data_description": {
           "species": "Se usara para buscar en OpenPlantbook"
@@ -141,7 +151,8 @@
           "humidity_trigger": "Utilizar la humedad del aire como desencadenante de problema",
           "conductivity_trigger": "Utilizar la conductividad como desencadenante de problema",
           "moisture_trigger": "Utilizar la humedad del suelo como desencadenante de problema",
-          "temperature_trigger": "Utilizar la temperatura como desencadenante de problema"
+          "temperature_trigger": "Utilizar la temperatura como desencadenante de problema",
+          "co2_trigger": "Utilizar el CO2 como desencadenante de problema"
         }
       }
     }

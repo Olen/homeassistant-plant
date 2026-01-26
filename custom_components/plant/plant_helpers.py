@@ -19,6 +19,7 @@ from homeassistant.helpers.temperature import display_temp
 
 from .const import (
     ATTR_BRIGHTNESS,
+    ATTR_CO2,
     ATTR_CONDUCTIVITY,
     ATTR_ILLUMINANCE,
     ATTR_IMAGE,
@@ -28,6 +29,7 @@ from .const import (
     ATTR_SPECIES,
     ATTR_TEMPERATURE,
     CONF_MAX_BRIGHTNESS,
+    CONF_MAX_CO2,
     CONF_MAX_CONDUCTIVITY,
     CONF_MAX_DLI,
     CONF_MAX_HUMIDITY,
@@ -36,6 +38,7 @@ from .const import (
     CONF_MAX_MOISTURE,
     CONF_MAX_TEMPERATURE,
     CONF_MIN_BRIGHTNESS,
+    CONF_MIN_CO2,
     CONF_MIN_CONDUCTIVITY,
     CONF_MIN_DLI,
     CONF_MIN_HUMIDITY,
@@ -49,12 +52,14 @@ from .const import (
     DATA_SOURCE_PLANTBOOK,
     DEFAULT_IMAGE_LOCAL_URL,
     DEFAULT_IMAGE_PATH,
+    DEFAULT_MAX_CO2,
     DEFAULT_MAX_CONDUCTIVITY,
     DEFAULT_MAX_DLI,
     DEFAULT_MAX_HUMIDITY,
     DEFAULT_MAX_ILLUMINANCE,
     DEFAULT_MAX_MOISTURE,
     DEFAULT_MAX_TEMPERATURE,
+    DEFAULT_MIN_CO2,
     DEFAULT_MIN_CONDUCTIVITY,
     DEFAULT_MIN_DLI,
     DEFAULT_MIN_HUMIDITY,
@@ -65,6 +70,7 @@ from .const import (
     FLOW_FORCE_SPECIES_UPDATE,
     FLOW_PLANT_IMAGE,
     FLOW_PLANT_INFO,
+    FLOW_SENSOR_CO2,
     FLOW_SENSOR_CONDUCTIVITY,
     FLOW_SENSOR_ILLUMINANCE,
     FLOW_SENSOR_MOISTURE,
@@ -235,6 +241,8 @@ class PlantHelper:
         min_dli = DEFAULT_MIN_DLI
         max_humidity = DEFAULT_MAX_HUMIDITY
         min_humidity = DEFAULT_MIN_HUMIDITY
+        max_co2 = DEFAULT_MAX_CO2
+        min_co2 = DEFAULT_MIN_CO2
         entity_picture = None
         display_species = None
         data_source = DATA_SOURCE_DEFAULT
@@ -400,6 +408,8 @@ class PlantHelper:
                     CONF_MIN_TEMPERATURE: config.get(CONF_MIN_TEMPERATURE, min_temp),
                     CONF_MAX_HUMIDITY: config.get(CONF_MAX_HUMIDITY, max_humidity),
                     CONF_MIN_HUMIDITY: config.get(CONF_MIN_HUMIDITY, min_humidity),
+                    CONF_MAX_CO2: config.get(CONF_MAX_CO2, max_co2),
+                    CONF_MIN_CO2: config.get(CONF_MIN_CO2, min_co2),
                     CONF_MAX_DLI: config.get(CONF_MAX_DLI, max_dli),
                     CONF_MIN_DLI: config.get(CONF_MIN_DLI, min_dli),
                 },
@@ -408,6 +418,7 @@ class PlantHelper:
                 FLOW_SENSOR_CONDUCTIVITY: config[ATTR_SENSORS].get(ATTR_CONDUCTIVITY),
                 FLOW_SENSOR_ILLUMINANCE: config[ATTR_SENSORS].get(ATTR_ILLUMINANCE)
                 or config[ATTR_SENSORS].get(ATTR_BRIGHTNESS),
+                FLOW_SENSOR_CO2: config[ATTR_SENSORS].get(ATTR_CO2),
             },
         }
         _LOGGER.debug("Resulting config: %s", ret)

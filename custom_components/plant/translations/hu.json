@@ -17,6 +17,9 @@
       "humidity": {
         "name": "Levegő páratartalom"
       },
+      "co2": {
+        "name": "CO2"
+      },
       "ppfd": {
         "name": "PPFD"
       },
@@ -64,6 +67,12 @@
       "min_humidity": {
         "name": "Minimális levegő páratartalom"
       },
+      "max_co2": {
+        "name": "Maximális CO2"
+      },
+      "min_co2": {
+        "name": "Minimális CO2"
+      },
       "lux_to_ppfd": {
         "name": "Lux-PPFD átalakítási tényező"
       }
@@ -81,7 +90,8 @@
           "moisture_sensor": "Talajnedvesség érzékelő",
           "conductivity_sensor": "Talajvezetőképesség érzékelő",
           "illuminance_sensor": "Fényerősség érzékelő",
-          "humidity_sensor": "Levegő páratartalom érzékelő"
+          "humidity_sensor": "Levegő páratartalom érzékelő",
+          "co2_sensor": "CO2 érzékelő"
         },
         "data_description": {
           "species": "OpenPlantbook keresésére lesz felhasználva"
@@ -141,7 +151,8 @@
           "humidity_trigger": "Használja a levegő páratartalmat  mint probléma kiváltót",
           "conductivity_trigger": "Használja a talajvezetőképességet mint probléma kiváltót",
           "moisture_trigger": "Használja a talajnedvességet mint probléma kiváltót",
-          "temperature_trigger": "Használja a hőmérsékletet mint probléma kiváltót"
+          "temperature_trigger": "Használja a hőmérsékletet mint probléma kiváltót",
+          "co2_trigger": "Használja a CO2-t mint probléma kiváltót"
         }
       }
     }
