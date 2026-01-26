@@ -121,7 +121,7 @@
     "step": {
       "init": {
         "title": "Opties",
-        "description": "",
+        "description": "**{plant_name}**",
         "data": {
           "check_days": "Lichtsterktecontroledagen",
           "species": "Soort",

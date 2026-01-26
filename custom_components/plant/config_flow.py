@@ -518,7 +518,11 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             )
         ] = cv.boolean
 
-        return self.async_show_form(step_id="init", data_schema=vol.Schema(data_schema))
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(data_schema),
+            description_placeholders={"plant_name": self.plant.name},
+        )
 
 
 async def update_plant_options(

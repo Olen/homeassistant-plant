@@ -121,7 +121,7 @@
     "step": {
       "init": {
         "title": "Indstillinger",
-        "description": "",
+        "description": "**{plant_name}**",
         "data": {
           "check_days": "Dage til kontrol af lysstyrke",
           "species": "Art",

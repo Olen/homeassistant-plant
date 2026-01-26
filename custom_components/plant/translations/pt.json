@@ -121,7 +121,7 @@
     "step": {
       "init": {
         "title": "opcções",
-        "description": "descrição",
+        "description": "**{plant_name}**",
         "data": {
           "check_days": "Verificar por dias",
           "species": "Especies",

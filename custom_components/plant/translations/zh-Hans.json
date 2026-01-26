@@ -121,7 +121,7 @@
     "step": {
       "init": {
         "title": "选项",
-        "description": "",
+        "description": "**{plant_name}**",
         "data": {
           "check_days": "光照检查天数",
           "species": "植物种类",

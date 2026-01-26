@@ -121,7 +121,7 @@
     "step": {
       "init": {
         "title": "Options",
-        "description": "",
+        "description": "Configure options for **{plant_name}**",
         "data": {
           "check_days": "Illuminance check days",
           "species": "Species",
