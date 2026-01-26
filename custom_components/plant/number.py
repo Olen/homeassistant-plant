@@ -74,6 +74,8 @@ from .const import (
     READING_ILLUMINANCE,
     READING_MOISTURE,
     READING_TEMPERATURE,
+    TEMPERATURE_MAX_VALUE,
+    TEMPERATURE_MIN_VALUE,
     TRANSLATION_KEY_MAX_CONDUCTIVITY,
     TRANSLATION_KEY_MAX_DLI,
     TRANSLATION_KEY_MAX_HUMIDITY,
@@ -301,8 +303,8 @@ class PlantMaxTemperature(PlantMinMax):
 
     _attr_device_class = NumberDeviceClass.TEMPERATURE
     _attr_icon = ICON_TEMPERATURE
-    _attr_native_max_value = 100
-    _attr_native_min_value = 0
+    _attr_native_max_value = TEMPERATURE_MAX_VALUE
+    _attr_native_min_value = TEMPERATURE_MIN_VALUE
     _attr_native_step = 1
     _attr_name = f"{ATTR_MAX} {READING_TEMPERATURE}"
     _attr_translation_key = TRANSLATION_KEY_MAX_TEMPERATURE
@@ -375,8 +377,8 @@ class PlantMinTemperature(PlantMinMax):
 
     _attr_device_class = NumberDeviceClass.TEMPERATURE
     _attr_icon = ICON_TEMPERATURE
-    _attr_native_max_value = 100
-    _attr_native_min_value = 0
+    _attr_native_max_value = TEMPERATURE_MAX_VALUE
+    _attr_native_min_value = TEMPERATURE_MIN_VALUE
     _attr_native_step = 1
     _attr_name = f"{ATTR_MIN} {READING_TEMPERATURE}"
     _attr_translation_key = TRANSLATION_KEY_MIN_TEMPERATURE

@@ -137,6 +137,26 @@ class TestTemperatureThresholds:
         assert plant.max_temperature.native_value == 40
         assert plant.min_temperature.native_value == 10
 
+    async def test_temperature_threshold_allows_negative_values(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test that temperature thresholds allow negative values."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        threshold = plant.min_temperature
+
+        # Verify min_value allows negative temperatures
+        assert threshold.native_min_value == -50
+
+        # Set a negative temperature value
+        await threshold.async_set_native_value(-10)
+        assert threshold.native_value == -10
+
+        # Set an extreme negative temperature value
+        await threshold.async_set_native_value(-45)
+        assert threshold.native_value == -45
+
 
 class TestConductivityThresholds:
     """Tests for conductivity threshold entities."""
