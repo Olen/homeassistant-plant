@@ -145,6 +145,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 class PlantCurrentStatus(RestoreSensor):
     """Parent class for the meter classes below"""
 
+    _attr_has_entity_name = True
     _attr_state_class = SensorStateClass.MEASUREMENT
 
     def __init__(
@@ -158,7 +159,7 @@ class PlantCurrentStatus(RestoreSensor):
         self._tracker = []
         self._follow_external = True
         self.entity_id = async_generate_entity_id(
-            f"{DOMAIN}.{{}}", self.name, current_ids={}
+            f"{DOMAIN}.{{}}", self._attr_name, current_ids={}
         )
         if (
             not self._attr_native_value
@@ -317,21 +318,19 @@ class PlantCurrentIlluminance(PlantCurrentStatus):
     """Entity class for the current illuminance meter"""
 
     _attr_device_class = SensorDeviceClass.ILLUMINANCE
+    _attr_icon = ICON_ILLUMINANCE
+    _attr_native_unit_of_measurement = LIGHT_LUX
+    _attr_suggested_display_precision = 1
+    _attr_name = READING_ILLUMINANCE
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the sensor"""
-        self._attr_name = (
-            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_ILLUMINANCE}"
-        )
         self._attr_unique_id = f"{config.entry_id}-current-illuminance"
-        self._attr_icon = ICON_ILLUMINANCE
-        self._attr_suggested_display_precision = 1
         self._external_sensor = config.data[FLOW_PLANT_INFO].get(
             FLOW_SENSOR_ILLUMINANCE
         )
-        self._attr_native_unit_of_measurement = LIGHT_LUX
         super().__init__(hass, config, plantdevice)
 
 
@@ -340,22 +339,19 @@ class PlantCurrentConductivity(PlantCurrentStatus):
 
     # No official device class for conductivity - use custom string for UI
     _attr_device_class = ATTR_CONDUCTIVITY
+    _attr_icon = ICON_CONDUCTIVITY
+    _attr_native_unit_of_measurement = UnitOfConductivity.MICROSIEMENS_PER_CM
+    _attr_suggested_display_precision = 1
+    _attr_name = READING_CONDUCTIVITY
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the sensor"""
-        self._attr_name = (
-            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_CONDUCTIVITY}"
-        )
         self._attr_unique_id = f"{config.entry_id}-current-conductivity"
-        self._attr_icon = ICON_CONDUCTIVITY
-        self._attr_suggested_display_precision = 1
         self._external_sensor = config.data[FLOW_PLANT_INFO].get(
             FLOW_SENSOR_CONDUCTIVITY
         )
-        self._attr_native_unit_of_measurement = UnitOfConductivity.MICROSIEMENS_PER_CM
-
         super().__init__(hass, config, plantdevice)
 
 
@@ -364,20 +360,17 @@ class PlantCurrentMoisture(PlantCurrentStatus):
 
     # No official device class for moisture - use custom string for UI
     _attr_device_class = ATTR_MOISTURE
+    _attr_icon = ICON_MOISTURE
+    _attr_native_unit_of_measurement = PERCENTAGE
+    _attr_suggested_display_precision = 1
+    _attr_name = READING_MOISTURE
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the sensor"""
-        self._attr_name = (
-            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_MOISTURE}"
-        )
         self._attr_unique_id = f"{config.entry_id}-current-moisture"
         self._external_sensor = config.data[FLOW_PLANT_INFO].get(FLOW_SENSOR_MOISTURE)
-        self._attr_icon = ICON_MOISTURE
-        self._attr_native_unit_of_measurement = PERCENTAGE
-        self._attr_suggested_display_precision = 1
-
         super().__init__(hass, config, plantdevice)
 
 
@@ -385,21 +378,19 @@ class PlantCurrentTemperature(PlantCurrentStatus):
     """Entity class for the current temperature meter"""
 
     _attr_device_class = SensorDeviceClass.TEMPERATURE
+    _attr_icon = ICON_TEMPERATURE
+    _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
+    _attr_suggested_display_precision = 1
+    _attr_name = READING_TEMPERATURE
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the sensor"""
-        self._attr_name = (
-            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_TEMPERATURE}"
-        )
         self._attr_unique_id = f"{config.entry_id}-current-temperature"
         self._external_sensor = config.data[FLOW_PLANT_INFO].get(
             FLOW_SENSOR_TEMPERATURE
         )
-        self._attr_icon = ICON_TEMPERATURE
-        self._attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
-        self._attr_suggested_display_precision = 1
         super().__init__(hass, config, plantdevice)
 
 
@@ -407,19 +398,17 @@ class PlantCurrentHumidity(PlantCurrentStatus):
     """Entity class for the current humidity meter"""
 
     _attr_device_class = SensorDeviceClass.HUMIDITY
+    _attr_icon = ICON_HUMIDITY
+    _attr_native_unit_of_measurement = PERCENTAGE
+    _attr_suggested_display_precision = 1
+    _attr_name = READING_HUMIDITY
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the sensor"""
-        self._attr_name = (
-            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_HUMIDITY}"
-        )
         self._attr_unique_id = f"{config.entry_id}-current-humidity"
         self._external_sensor = config.data[FLOW_PLANT_INFO].get(FLOW_SENSOR_HUMIDITY)
-        self._attr_icon = ICON_HUMIDITY
-        self._attr_native_unit_of_measurement = PERCENTAGE
-        self._attr_suggested_display_precision = 1
         super().__init__(hass, config, plantdevice)
 
 
@@ -429,25 +418,22 @@ class PlantCurrentPpfd(PlantCurrentStatus):
     _attr_device_class = None
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_entity_registry_visible_default = False
+    _attr_icon = ICON_PPFD
+    _attr_native_unit_of_measurement = UNIT_PPFD
+    _attr_name = READING_PPFD
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the sensor"""
-        self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_PPFD}"
-
         self._attr_unique_id = f"{config.entry_id}-current-ppfd"
         self._attr_unit_of_measurement = UNIT_PPFD
-        self._attr_native_unit_of_measurement = UNIT_PPFD
-
         self._plant = plantdevice
-
         self._external_sensor = self._plant.sensor_illuminance.entity_id
-        self._attr_icon = ICON_PPFD
         super().__init__(hass, config, plantdevice)
         self._follow_unit = False
         self.entity_id = async_generate_entity_id(
-            f"{DOMAIN_SENSOR}.{{}}", self.name, current_ids={}
+            f"{DOMAIN_SENSOR}.{{}}", self._attr_name, current_ids={}
         )
 
     def ppfd(self, value: float | int | str) -> float | str:
@@ -500,8 +486,10 @@ class PlantCurrentPpfd(PlantCurrentStatus):
 class PlantTotalLightIntegral(IntegrationSensor):
     """Entity class to calculate PPFD from LX"""
 
+    _attr_has_entity_name = True
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_entity_registry_visible_default = False
+    _attr_icon = ICON_DLI
 
     def __init__(
         self,
@@ -511,10 +499,11 @@ class PlantTotalLightIntegral(IntegrationSensor):
         plantdevice: Entity,
     ) -> None:
         """Initialize the sensor"""
+        self._plant = plantdevice
         super().__init__(
             hass,
             integration_method=METHOD_TRAPEZOIDAL,
-            name=f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} Total {READING_PPFD} Integral",
+            name=f"Total {READING_PPFD} Integral",
             round_digits=2,
             source_entity=illuminance_ppfd_sensor.entity_id,
             unique_id=f"{config.entry_id}-ppfd-integral",
@@ -523,11 +512,9 @@ class PlantTotalLightIntegral(IntegrationSensor):
             max_sub_interval=None,
         )
         self._unit_of_measurement = UNIT_DLI
-        self._attr_icon = ICON_DLI
         self.entity_id = async_generate_entity_id(
             f"{DOMAIN_SENSOR}.{{}}", self.name, current_ids={}
         )
-        self._plant = plantdevice
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -544,8 +531,11 @@ class PlantTotalLightIntegral(IntegrationSensor):
 class PlantDailyLightIntegral(UtilityMeterSensor):
     """Entity class to calculate Daily Light Integral from PPDF"""
 
+    _attr_has_entity_name = True
     # Custom device class for DLI (no official HA device class)
     _attr_device_class = ATTR_DLI
+    _attr_icon = ICON_DLI
+    _attr_suggested_display_precision = 2
 
     def __init__(
         self,
@@ -555,6 +545,7 @@ class PlantDailyLightIntegral(UtilityMeterSensor):
         plantdevice: Entity,
     ) -> None:
         """Initialize the sensor"""
+        self._plant = plantdevice
 
         super().__init__(
             hass,
@@ -562,7 +553,7 @@ class PlantDailyLightIntegral(UtilityMeterSensor):
             delta_values=None,
             meter_offset=timedelta(seconds=0),
             meter_type=DAILY,
-            name=f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {READING_DLI}",
+            name=READING_DLI,
             net_consumption=None,
             parent_meter=config.entry_id,
             source_entity=illuminance_integration_sensor.entity_id,
@@ -576,11 +567,7 @@ class PlantDailyLightIntegral(UtilityMeterSensor):
         self.entity_id = async_generate_entity_id(
             f"{DOMAIN_SENSOR}.{{}}", self.name, current_ids={}
         )
-
         self._unit_of_measurement = UNIT_DLI
-        self._attr_icon = ICON_DLI
-        self._attr_suggested_display_precision = 2
-        self._plant = plantdevice
 
     @property
     def device_info(self) -> DeviceInfo:

@@ -8,7 +8,6 @@ from homeassistant.components.number import NumberDeviceClass, NumberMode, Resto
 from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
-    ATTR_NAME,
     ATTR_UNIT_OF_MEASUREMENT,
     LIGHT_LUX,
     PERCENTAGE,
@@ -141,6 +140,10 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 class PlantMinMax(RestoreNumber):
     """Parent class for the min/max classes below"""
 
+    _attr_has_entity_name = True
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_mode = NumberMode.BOX
+
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
@@ -148,9 +151,8 @@ class PlantMinMax(RestoreNumber):
         self._config = config
         self._hass = hass
         self._plant = plantdevice
-        self._attr_mode = NumberMode.BOX
         self.entity_id = async_generate_entity_id(
-            f"{DOMAIN}.{{}}", self.name, current_ids={}
+            f"{DOMAIN}.{{}}", self._attr_name, current_ids={}
         )
         # pylint: disable=no-member
         if (
@@ -159,11 +161,6 @@ class PlantMinMax(RestoreNumber):
             or self._attr_native_value == STATE_UNKNOWN
         ):
             self._attr_native_value = self._default_value
-
-    @property
-    def entity_category(self) -> EntityCategory:
-        """The entity category"""
-        return EntityCategory.CONFIG
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -241,78 +238,67 @@ class PlantMinMax(RestoreNumber):
 class PlantMaxMoisture(PlantMinMax):
     """Entity class for max moisture threshold"""
 
+    _attr_device_class = f"{ATTR_MOISTURE} threshold"
+    _attr_icon = ICON_MOISTURE
+    _attr_native_unit_of_measurement = PERCENTAGE
+    _attr_native_max_value = 100
+    _attr_native_min_value = 0
+    _attr_native_step = 1
+    _attr_name = f"{ATTR_MAX} {READING_MOISTURE}"
+
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the component."""
-        self._attr_name = (
-            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {ATTR_MAX} {READING_MOISTURE}"
-        )
         self._default_value = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
             CONF_MAX_MOISTURE, DEFAULT_MAX_MOISTURE
         )
         self._attr_unique_id = f"{config.entry_id}-max-moisture"
-        self._attr_native_unit_of_measurement = PERCENTAGE
-        self._attr_native_max_value = 100
-        self._attr_native_min_value = 0
-        self._attr_native_step = 1
-        self._attr_icon = ICON_MOISTURE
         super().__init__(hass, config, plantdevice)
-
-    @property
-    def device_class(self):
-        return f"{ATTR_MOISTURE} threshold"
 
 
 class PlantMinMoisture(PlantMinMax):
     """Entity class for min moisture threshold"""
 
+    _attr_device_class = f"{ATTR_MOISTURE} threshold"
+    _attr_icon = ICON_MOISTURE
+    _attr_native_unit_of_measurement = PERCENTAGE
+    _attr_native_max_value = 100
+    _attr_native_min_value = 0
+    _attr_native_step = 1
+    _attr_name = f"{ATTR_MIN} {READING_MOISTURE}"
+
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the Plant component."""
-        self._attr_name = (
-            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {ATTR_MIN} {READING_MOISTURE}"
-        )
         self._default_value = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
             CONF_MIN_MOISTURE, DEFAULT_MIN_MOISTURE
         )
         self._attr_unique_id = f"{config.entry_id}-min-moisture"
         super().__init__(hass, config, plantdevice)
-        self._attr_native_unit_of_measurement = PERCENTAGE
-        self._attr_native_max_value = 100
-        self._attr_native_min_value = 0
-        self._attr_native_step = 1
-        self._attr_icon = ICON_MOISTURE
-
-    @property
-    def device_class(self):
-        return f"{ATTR_MOISTURE} threshold"
 
 
 class PlantMaxTemperature(PlantMinMax):
     """Entity class for max temperature threshold"""
 
+    _attr_device_class = NumberDeviceClass.TEMPERATURE
+    _attr_icon = ICON_TEMPERATURE
+    _attr_native_max_value = 100
+    _attr_native_min_value = 0
+    _attr_native_step = 1
+    _attr_name = f"{ATTR_MAX} {READING_TEMPERATURE}"
+
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the Plant component."""
-        self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {ATTR_MAX} {READING_TEMPERATURE}"
         self._attr_unique_id = f"{config.entry_id}-max-temperature"
-
         self._default_value = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
             CONF_MAX_TEMPERATURE, DEFAULT_MAX_TEMPERATURE
         )
         super().__init__(hass, config, plantdevice)
         self._attr_native_unit_of_measurement = self._hass.config.units.temperature_unit
-        self._attr_native_max_value = 100
-        self._attr_native_min_value = 0
-        self._attr_native_step = 1
-        self._attr_icon = ICON_TEMPERATURE
-
-    @property
-    def device_class(self):
-        return NumberDeviceClass.TEMPERATURE
 
     def state_attributes_changed(self, old_attributes, new_attributes):
         """Calculate C or F"""
@@ -365,26 +351,23 @@ class PlantMaxTemperature(PlantMinMax):
 class PlantMinTemperature(PlantMinMax):
     """Entity class for min temperature threshold"""
 
+    _attr_device_class = NumberDeviceClass.TEMPERATURE
+    _attr_icon = ICON_TEMPERATURE
+    _attr_native_max_value = 100
+    _attr_native_min_value = 0
+    _attr_native_step = 1
+    _attr_name = f"{ATTR_MIN} {READING_TEMPERATURE}"
+
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the component."""
-        self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {ATTR_MIN} {READING_TEMPERATURE}"
         self._default_value = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
             CONF_MIN_TEMPERATURE, DEFAULT_MIN_TEMPERATURE
         )
-
         self._attr_unique_id = f"{config.entry_id}-min-temperature"
         super().__init__(hass, config, plantdevice)
         self._attr_native_unit_of_measurement = self._hass.config.units.temperature_unit
-        self._attr_native_max_value = 100
-        self._attr_native_min_value = 0
-        self._attr_native_step = 1
-        self._attr_icon = ICON_TEMPERATURE
-
-    @property
-    def device_class(self):
-        return NumberDeviceClass.TEMPERATURE
 
     def state_attributes_changed(self, old_attributes, new_attributes):
         """Calculate C or F"""
@@ -439,201 +422,174 @@ class PlantMinTemperature(PlantMinMax):
 class PlantMaxIlluminance(PlantMinMax):
     """Entity class for max illuminance threshold"""
 
+    _attr_device_class = f"{SensorDeviceClass.ILLUMINANCE} threshold"
+    _attr_icon = ICON_ILLUMINANCE
+    _attr_native_unit_of_measurement = LIGHT_LUX
+    _attr_native_max_value = 200000
+    _attr_native_min_value = 0
+    _attr_native_step = 500
+    _attr_name = f"{ATTR_MAX} {READING_ILLUMINANCE}"
+
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the component."""
-        self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {ATTR_MAX} {READING_ILLUMINANCE}"
         self._default_value = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
             CONF_MAX_ILLUMINANCE, DEFAULT_MAX_ILLUMINANCE
         )
         self._attr_unique_id = f"{config.entry_id}-max-illuminance"
-        self._attr_native_unit_of_measurement = LIGHT_LUX
         super().__init__(hass, config, plantdevice)
-        self._attr_native_max_value = 200000
-        self._attr_native_min_value = 0
-        self._attr_native_step = 500
-        self._attr_icon = ICON_ILLUMINANCE
-
-    @property
-    def device_class(self):
-        return f"{SensorDeviceClass.ILLUMINANCE} threshold"
 
 
 class PlantMinIlluminance(PlantMinMax):
     """Entity class for min illuminance threshold"""
 
+    _attr_device_class = SensorDeviceClass.ILLUMINANCE
+    _attr_icon = ICON_ILLUMINANCE
+    _attr_native_unit_of_measurement = LIGHT_LUX
+    _attr_native_max_value = 200000
+    _attr_native_min_value = 0
+    _attr_native_step = 500
+    _attr_name = f"{ATTR_MIN} {READING_ILLUMINANCE}"
+
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the Plant component."""
-        self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {ATTR_MIN} {READING_ILLUMINANCE}"
         self._default_value = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
             CONF_MIN_ILLUMINANCE, DEFAULT_MIN_ILLUMINANCE
         )
         self._attr_unique_id = f"{config.entry_id}-min-illuminance"
-        self._attr_native_unit_of_measurement = LIGHT_LUX
         super().__init__(hass, config, plantdevice)
-        self._attr_native_max_value = 200000
-        self._attr_native_min_value = 0
-        self._attr_native_step = 500
-        self._attr_icon = ICON_ILLUMINANCE
-
-    @property
-    def device_class(self):
-        return SensorDeviceClass.ILLUMINANCE
 
 
 class PlantMaxDli(PlantMinMax):
-    """Entity class for max illuminance threshold"""
+    """Entity class for max DLI threshold"""
+
+    _attr_device_class = f"{ATTR_DLI} threshold"
+    _attr_icon = ICON_DLI
+    _attr_native_unit_of_measurement = UNIT_DLI
+    _attr_native_max_value = 100
+    _attr_native_min_value = 0
+    _attr_native_step = 1
+    _attr_name = f"{ATTR_MAX} {READING_DLI}"
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the component."""
-        self._attr_name = (
-            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {ATTR_MAX} {READING_DLI}"
-        )
         self._default_value = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
             CONF_MAX_DLI, DEFAULT_MAX_DLI
         )
         self._attr_unique_id = f"{config.entry_id}-max-dli"
-        self._attr_native_unit_of_measurement = UNIT_DLI
         super().__init__(hass, config, plantdevice)
-        self._attr_native_max_value = 100
-        self._attr_native_min_value = 0
-        self._attr_native_step = 1
-        self._attr_icon = ICON_DLI
-
-    @property
-    def device_class(self):
-        return f"{ATTR_DLI} threshold"
 
 
 class PlantMinDli(PlantMinMax):
-    """Entity class for min illuminance threshold"""
+    """Entity class for min DLI threshold"""
+
+    _attr_device_class = f"{ATTR_DLI} threshold"
+    _attr_icon = ICON_DLI
+    _attr_native_unit_of_measurement = UNIT_DLI
+    _attr_native_max_value = 100
+    _attr_native_min_value = 0
+    _attr_native_step = 1
+    _attr_name = f"{ATTR_MIN} {READING_DLI}"
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the component."""
-        self._attr_name = (
-            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {ATTR_MIN} {READING_DLI}"
-        )
         self._default_value = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
             CONF_MIN_DLI, DEFAULT_MIN_DLI
         )
         self._attr_unique_id = f"{config.entry_id}-min-dli"
-        self._attr_native_unit_of_measurement = UNIT_DLI
-
         super().__init__(hass, config, plantdevice)
-        self._attr_native_max_value = 100
-        self._attr_native_min_value = 0
-        self._attr_native_step = 1
-        self._attr_icon = ICON_DLI
-
-    @property
-    def device_class(self):
-        return f"{ATTR_DLI} threshold"
 
 
 class PlantMaxConductivity(PlantMinMax):
     """Entity class for max conductivity threshold"""
 
+    _attr_device_class = f"{ATTR_CONDUCTIVITY} threshold"
+    _attr_icon = ICON_CONDUCTIVITY
+    _attr_native_unit_of_measurement = UNIT_CONDUCTIVITY
+    _attr_native_max_value = 3000
+    _attr_native_min_value = 0
+    _attr_native_step = 50
+    _attr_name = f"{ATTR_MAX} {READING_CONDUCTIVITY}"
+
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the component."""
-        self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {ATTR_MAX} {READING_CONDUCTIVITY}"
         self._default_value = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
             CONF_MAX_CONDUCTIVITY, DEFAULT_MAX_CONDUCTIVITY
         )
         self._attr_unique_id = f"{config.entry_id}-max-conductivity"
-        self._attr_native_unit_of_measurement = UNIT_CONDUCTIVITY
         super().__init__(hass, config, plantdevice)
-        self._attr_native_max_value = 3000
-        self._attr_native_min_value = 0
-        self._attr_native_step = 50
-        self._attr_icon = ICON_CONDUCTIVITY
-
-    @property
-    def device_class(self):
-        return f"{ATTR_CONDUCTIVITY} threshold"
 
 
 class PlantMinConductivity(PlantMinMax):
     """Entity class for min conductivity threshold"""
 
+    _attr_device_class = f"{ATTR_CONDUCTIVITY} threshold"
+    _attr_icon = ICON_CONDUCTIVITY
+    _attr_native_unit_of_measurement = UNIT_CONDUCTIVITY
+    _attr_native_max_value = 3000
+    _attr_native_min_value = 0
+    _attr_native_step = 50
+    _attr_name = f"{ATTR_MIN} {READING_CONDUCTIVITY}"
+
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the component."""
-        self._attr_name = f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {ATTR_MIN} {READING_CONDUCTIVITY}"
         self._default_value = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
             CONF_MIN_CONDUCTIVITY, DEFAULT_MIN_CONDUCTIVITY
         )
         self._attr_unique_id = f"{config.entry_id}-min-conductivity"
-        self._attr_native_unit_of_measurement = UNIT_CONDUCTIVITY
-
         super().__init__(hass, config, plantdevice)
-        self._attr_native_max_value = 3000
-        self._attr_native_min_value = 0
-        self._attr_native_step = 50
-        self._attr_icon = ICON_CONDUCTIVITY
-
-    @property
-    def device_class(self):
-        return f"{ATTR_CONDUCTIVITY} threshold"
 
 
 class PlantMaxHumidity(PlantMinMax):
     """Entity class for max humidity threshold"""
 
+    _attr_device_class = f"{SensorDeviceClass.HUMIDITY} threshold"
+    _attr_icon = ICON_HUMIDITY
+    _attr_native_unit_of_measurement = PERCENTAGE
+    _attr_native_max_value = 100
+    _attr_native_min_value = 0
+    _attr_native_step = 1
+    _attr_name = f"{ATTR_MAX} {READING_HUMIDITY}"
+
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the component."""
-        self._attr_name = (
-            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {ATTR_MAX} {READING_HUMIDITY}"
-        )
         self._default_value = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
             CONF_MAX_HUMIDITY, DEFAULT_MAX_HUMIDITY
         )
         self._attr_unique_id = f"{config.entry_id}-max-humidity"
-        self._attr_native_unit_of_measurement = PERCENTAGE
-
         super().__init__(hass, config, plantdevice)
-        self._attr_native_max_value = 100
-        self._attr_native_min_value = 0
-        self._attr_native_step = 1
-        self._attr_icon = ICON_HUMIDITY
-
-    @property
-    def device_class(self):
-        return f"{SensorDeviceClass.HUMIDITY} threshold"
 
 
 class PlantMinHumidity(PlantMinMax):
-    """Entity class for min conductivity threshold"""
+    """Entity class for min humidity threshold"""
+
+    _attr_device_class = f"{SensorDeviceClass.HUMIDITY} threshold"
+    _attr_icon = ICON_HUMIDITY
+    _attr_native_unit_of_measurement = PERCENTAGE
+    _attr_native_max_value = 100
+    _attr_native_min_value = 0
+    _attr_native_step = 1
+    _attr_name = f"{ATTR_MIN} {READING_HUMIDITY}"
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the component."""
-        self._attr_name = (
-            f"{config.data[FLOW_PLANT_INFO][ATTR_NAME]} {ATTR_MIN} {READING_HUMIDITY}"
-        )
         self._default_value = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
             CONF_MIN_HUMIDITY, DEFAULT_MIN_HUMIDITY
         )
         self._attr_unique_id = f"{config.entry_id}-min-humidity"
-        self._attr_native_unit_of_measurement = PERCENTAGE
         super().__init__(hass, config, plantdevice)
-        self._attr_native_max_value = 100
-        self._attr_native_min_value = 0
-        self._attr_native_step = 1
-        self._attr_icon = ICON_HUMIDITY
-
-    @property
-    def device_class(self):
-        return f"{SensorDeviceClass.HUMIDITY} threshold"
