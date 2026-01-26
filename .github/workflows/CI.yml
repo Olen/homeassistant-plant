@@ -64,14 +64,15 @@ jobs:
           rm -f uv.lock  # Prevent editable install from lock file
           uv venv
           # Install test dependencies except pytest-homeassistant-custom-component
-          uv pip install $(python -c "
+          # Use --no-cache to ensure clean dependency resolution
+          uv pip install --no-cache $(python -c "
           import tomllib
           deps = tomllib.load(open('pyproject.toml', 'rb'))['project']['optional-dependencies']['test']
           filtered = [d for d in deps if not d.startswith('pytest-homeassistant-custom-component')]
           print(' '.join(filtered))
           ")
           # Install pytest-homeassistant-custom-component with version constraint
-          uv pip install "pytest-homeassistant-custom-component${{ matrix.pytest-ha-version }}"
+          uv pip install --no-cache "pytest-homeassistant-custom-component${{ matrix.pytest-ha-version }}"
 
       - name: Show installed HA version
         run: |
