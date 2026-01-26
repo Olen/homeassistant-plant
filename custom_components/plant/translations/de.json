@@ -1,5 +1,71 @@
 {
   "title": "Plant monitor",
+  "entity": {
+    "sensor": {
+      "moisture": {
+        "name": "Bodenfeuchtigkeit"
+      },
+      "temperature": {
+        "name": "Temperatur"
+      },
+      "conductivity": {
+        "name": "Leitfähigkeit"
+      },
+      "illuminance": {
+        "name": "Beleuchtungsstärke"
+      },
+      "humidity": {
+        "name": "Luftfeuchtigkeit"
+      },
+      "ppfd": {
+        "name": "PPFD"
+      },
+      "total_light_integral": {
+        "name": "Gesamtlichtintegral"
+      },
+      "daily_light_integral": {
+        "name": "Tägliches Lichtintegral"
+      }
+    },
+    "number": {
+      "max_moisture": {
+        "name": "Maximale Bodenfeuchtigkeit"
+      },
+      "min_moisture": {
+        "name": "Minimale Bodenfeuchtigkeit"
+      },
+      "max_temperature": {
+        "name": "Maximale Temperatur"
+      },
+      "min_temperature": {
+        "name": "Minimale Temperatur"
+      },
+      "max_illuminance": {
+        "name": "Maximale Beleuchtungsstärke"
+      },
+      "min_illuminance": {
+        "name": "Minimale Beleuchtungsstärke"
+      },
+      "max_dli": {
+        "name": "Maximales DLI"
+      },
+      "min_dli": {
+        "name": "Minimales DLI"
+      },
+      "max_conductivity": {
+        "name": "Maximale Leitfähigkeit"
+      },
+      "min_conductivity": {
+        "name": "Minimale Leitfähigkeit"
+      },
+      "max_humidity": {
+        "name": "Maximale Luftfeuchtigkeit"
+      },
+      "min_humidity": {
+        "name": "Minimale Luftfeuchtigkeit"
+      }
+    }
+  },
   "config": {
     "step": {
       "user": {

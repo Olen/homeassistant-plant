@@ -1,5 +1,71 @@
 {
   "title": "Plant monitor",
+  "entity": {
+    "sensor": {
+      "moisture": {
+        "name": "Soil moisture"
+      },
+      "temperature": {
+        "name": "Temperature"
+      },
+      "conductivity": {
+        "name": "Conductivity"
+      },
+      "illuminance": {
+        "name": "Illuminance"
+      },
+      "humidity": {
+        "name": "Air humidity"
+      },
+      "ppfd": {
+        "name": "PPFD"
+      },
+      "total_light_integral": {
+        "name": "Total light integral"
+      },
+      "daily_light_integral": {
+        "name": "Daily light integral"
+      }
+    },
+    "number": {
+      "max_moisture": {
+        "name": "Maximum soil moisture"
+      },
+      "min_moisture": {
+        "name": "Minimum soil moisture"
+      },
+      "max_temperature": {
+        "name": "Maximum temperature"
+      },
+      "min_temperature": {
+        "name": "Minimum temperature"
+      },
+      "max_illuminance": {
+        "name": "Maximum illuminance"
+      },
+      "min_illuminance": {
+        "name": "Minimum illuminance"
+      },
+      "max_dli": {
+        "name": "Maximum DLI"
+      },
+      "min_dli": {
+        "name": "Minimum DLI"
+      },
+      "max_conductivity": {
+        "name": "Maximum conductivity"
+      },
+      "min_conductivity": {
+        "name": "Minimum conductivity"
+      },
+      "max_humidity": {
+        "name": "Maximum air humidity"
+      },
+      "min_humidity": {
+        "name": "Minimum air humidity"
+      }
+    }
+  },
   "config": {
     "step": {
       "user": {

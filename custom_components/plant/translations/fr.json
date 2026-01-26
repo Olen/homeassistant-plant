@@ -1,5 +1,71 @@
 {
   "title": "Surveillance de plantes",
+  "entity": {
+    "sensor": {
+      "moisture": {
+        "name": "Humidité du sol"
+      },
+      "temperature": {
+        "name": "Température"
+      },
+      "conductivity": {
+        "name": "Conductivité"
+      },
+      "illuminance": {
+        "name": "Éclairement"
+      },
+      "humidity": {
+        "name": "Humidité de l'air"
+      },
+      "ppfd": {
+        "name": "PPFD"
+      },
+      "total_light_integral": {
+        "name": "Intégrale de lumière totale"
+      },
+      "daily_light_integral": {
+        "name": "Intégrale de lumière quotidienne"
+      }
+    },
+    "number": {
+      "max_moisture": {
+        "name": "Humidité du sol maximale"
+      },
+      "min_moisture": {
+        "name": "Humidité du sol minimale"
+      },
+      "max_temperature": {
+        "name": "Température maximale"
+      },
+      "min_temperature": {
+        "name": "Température minimale"
+      },
+      "max_illuminance": {
+        "name": "Éclairement maximal"
+      },
+      "min_illuminance": {
+        "name": "Éclairement minimal"
+      },
+      "max_dli": {
+        "name": "DLI maximal"
+      },
+      "min_dli": {
+        "name": "DLI minimal"
+      },
+      "max_conductivity": {
+        "name": "Conductivité maximale"
+      },
+      "min_conductivity": {
+        "name": "Conductivité minimale"
+      },
+      "max_humidity": {
+        "name": "Humidité de l'air maximale"
+      },
+      "min_humidity": {
+        "name": "Humidité de l'air minimale"
+      }
+    }
+  },
   "config": {
     "step": {
       "user": {

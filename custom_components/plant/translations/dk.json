@@ -1,5 +1,71 @@
 {
   "title": "Planteovervågning",
+  "entity": {
+    "sensor": {
+      "moisture": {
+        "name": "Jordfugtighed"
+      },
+      "temperature": {
+        "name": "Temperatur"
+      },
+      "conductivity": {
+        "name": "Ledningsevne"
+      },
+      "illuminance": {
+        "name": "Belysningsstyrke"
+      },
+      "humidity": {
+        "name": "Luftfugtighed"
+      },
+      "ppfd": {
+        "name": "PPFD"
+      },
+      "total_light_integral": {
+        "name": "Total lysintegral"
+      },
+      "daily_light_integral": {
+        "name": "Daglig lysintegral"
+      }
+    },
+    "number": {
+      "max_moisture": {
+        "name": "Maksimal jordfugtighed"
+      },
+      "min_moisture": {
+        "name": "Minimal jordfugtighed"
+      },
+      "max_temperature": {
+        "name": "Maksimal temperatur"
+      },
+      "min_temperature": {
+        "name": "Minimal temperatur"
+      },
+      "max_illuminance": {
+        "name": "Maksimal belysningsstyrke"
+      },
+      "min_illuminance": {
+        "name": "Minimal belysningsstyrke"
+      },
+      "max_dli": {
+        "name": "Maksimal DLI"
+      },
+      "min_dli": {
+        "name": "Minimal DLI"
+      },
+      "max_conductivity": {
+        "name": "Maksimal ledningsevne"
+      },
+      "min_conductivity": {
+        "name": "Minimal ledningsevne"
+      },
+      "max_humidity": {
+        "name": "Maksimal luftfugtighed"
+      },
+      "min_humidity": {
+        "name": "Minimal luftfugtighed"
+      }
+    }
+  },
   "config": {
     "step": {
       "user": {
