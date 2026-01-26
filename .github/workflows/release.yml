@@ -9,25 +9,30 @@ on:
     paths:
       - 'custom_components/*/manifest.json'
 
+permissions:
+  contents: write
+
 jobs:
   auto-release:
     name: "Auto Release"
     runs-on: "ubuntu-latest"
     steps:
-      - name: "✏️ Checkout code"
-        uses: actions/checkout@v5
+      - name: "Checkout code"
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
-      - name: "🏷️ Get version tag"
+      - name: "Get version tag"
         id: set_var
         run: echo "COMPONENT_VERSION=$(jq -r .version custom_components/*/manifest.json)" >> $GITHUB_ENV
 
-      - name: "🏷️ Check if tag exists already"
-        uses: mukunku/tag-exists-action@v1.6.0
+      - name: "Check if tag exists already"
+        uses: mukunku/tag-exists-action@v1.7.0
         id: "check_tag"
-        with: 
+        with:
           tag: "v${{ env.COMPONENT_VERSION }}"
 
-      - name: "❌ Cancel if tag is already present"
+      - name: "Cancel if tag is already present"
         run: |
           echo "Tag already present: v${{ env.COMPONENT_VERSION }}. Not creating a new release"
           gh run cancel ${{ github.run_id }}
@@ -36,32 +41,32 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         if: steps.check_tag.outputs.exists == 'true'
 
-      - name: "🗝️ Get previous release version"
+      - name: "Get previous release version"
         id: last_release
-        uses: InsonusK/get-latest-release@v1.1.0
-        with:
-          myToken: ${{ github.token }}
-          exclude_types: "draft|prerelease"
+        run: |
+          LAST_TAG=$(gh release list --exclude-drafts --exclude-pre-releases --limit 1 --json tagName --jq '.[0].tagName // empty')
+          echo "tag_name=${LAST_TAG}" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: "🏷️ Create new tag"
+      - name: "Create new tag"
         uses: rickstaa/action-create-tag@v1
         id: "tag_create"
         with:
           tag: "v${{ env.COMPONENT_VERSION }}"
           tag_exists_error: false
           message: "Version ${{ env.COMPONENT_VERSION }}"
-      # if: steps.check_tag.outputs.exists == 'false'
 
-      - name: "🗒️ Generate release changelog"
+      - name: "Generate release changelog"
         id: changelog
-        uses: heinrichreimer/github-changelog-generator-action@v2.3
+        uses: heinrichreimer/github-changelog-generator-action@v2.4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }} 
+          token: ${{ secrets.GITHUB_TOKEN }}
           sinceTag: ${{ steps.last_release.outputs.tag_name }}
           headerLabel: "# Notable changes since ${{ steps.last_release.outputs.tag_name }}"
           stripGeneratorNotice: true
 
-      - name: 👍 Create Stable release
+      - name: "Create Stable release"
         uses: softprops/action-gh-release@v2
         with:
           prerelease: false
@@ -70,7 +75,7 @@ jobs:
           tag_name: "v${{ env.COMPONENT_VERSION }}"
         if: contains(env.COMPONENT_VERSION, 'beta') == false
 
-      - name: 🤞 Create Beta release
+      - name: "Create Beta release"
         uses: softprops/action-gh-release@v2
         with:
           prerelease: true
