@@ -160,6 +160,8 @@ class PlantCurrentStatus(RestoreSensor):
 
     _attr_has_entity_name = True
     _attr_state_class = SensorStateClass.MEASUREMENT
+    # Subclasses should override this with their FLOW_SENSOR_* constant
+    _config_key: str | None = None
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -209,14 +211,37 @@ class PlantCurrentStatus(RestoreSensor):
         return self._external_sensor
 
     def replace_external_sensor(self, new_sensor: str | None) -> None:
-        """Modify the external sensor"""
+        """Modify the external sensor and persist to config entry."""
         _LOGGER.info("Setting %s external sensor to %s", self.entity_id, new_sensor)
         # pylint: disable=attribute-defined-outside-init
         self._external_sensor = new_sensor
         self.async_track_entity(self.entity_id)
         self.async_track_entity(self.external_sensor)
 
+        # Persist the change to config entry if we have a config key
+        if self._config_key:
+            self._update_config_entry(new_sensor)
+
         self.async_write_ha_state()
+
+    def _update_config_entry(self, new_sensor: str | None) -> None:
+        """Update the config entry with the new sensor value."""
+        if not self._config_key:
+            return
+
+        # Get current data and update the sensor assignment
+        new_data = dict(self._config.data)
+        new_plant_info = dict(new_data.get(FLOW_PLANT_INFO, {}))
+        new_plant_info[self._config_key] = new_sensor
+        new_data[FLOW_PLANT_INFO] = new_plant_info
+
+        self.hass.config_entries.async_update_entry(self._config, data=new_data)
+        _LOGGER.debug(
+            "Updated config entry %s with %s=%s",
+            self._config.entry_id,
+            self._config_key,
+            new_sensor,
+        )
 
     def async_track_entity(self, entity_id: str) -> None:
         """Track state_changed of certain entities"""
@@ -247,26 +272,35 @@ class PlantCurrentStatus(RestoreSensor):
             self.hass, DATA_UPDATED, self._schedule_immediate_update
         )
 
-        # Listen for entity registry updates to handle entity_id changes
+        # Listen for entity registry updates to handle entity_id changes and deletions
         @callback
         def _handle_entity_registry_update(
             event: Event[EventEntityRegistryUpdatedData],
         ) -> None:
             """Handle entity registry updates."""
-            if event.data["action"] != "update":
-                return
-            # Check if this is our external sensor being renamed
-            if "old_entity_id" not in event.data:
-                return
-            old_entity_id = event.data["old_entity_id"]
-            new_entity_id = event.data["entity_id"]
-            if self._external_sensor and old_entity_id == self._external_sensor:
-                _LOGGER.debug(
-                    "External sensor renamed from %s to %s, updating tracking",
-                    old_entity_id,
-                    new_entity_id,
-                )
-                self.replace_external_sensor(new_entity_id)
+            action = event.data["action"]
+            if action == "update":
+                # Check if this is our external sensor being renamed
+                if "old_entity_id" not in event.data:
+                    return
+                old_entity_id = event.data["old_entity_id"]
+                new_entity_id = event.data["entity_id"]
+                if self._external_sensor and old_entity_id == self._external_sensor:
+                    _LOGGER.debug(
+                        "External sensor renamed from %s to %s, updating tracking",
+                        old_entity_id,
+                        new_entity_id,
+                    )
+                    self.replace_external_sensor(new_entity_id)
+            elif action == "remove":
+                # Check if our external sensor was deleted
+                entity_id = event.data["entity_id"]
+                if self._external_sensor and entity_id == self._external_sensor:
+                    _LOGGER.info(
+                        "External sensor %s was deleted, clearing reference",
+                        entity_id,
+                    )
+                    self.replace_external_sensor(None)
 
         self.async_on_remove(
             self.hass.bus.async_listen(
@@ -365,6 +399,7 @@ class PlantCurrentIlluminance(PlantCurrentStatus):
     _attr_suggested_display_precision = 1
     _attr_name = READING_ILLUMINANCE
     _attr_translation_key = TRANSLATION_KEY_ILLUMINANCE
+    _config_key = FLOW_SENSOR_ILLUMINANCE
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -387,6 +422,7 @@ class PlantCurrentConductivity(PlantCurrentStatus):
     _attr_suggested_display_precision = 1
     _attr_name = READING_CONDUCTIVITY
     _attr_translation_key = TRANSLATION_KEY_CONDUCTIVITY
+    _config_key = FLOW_SENSOR_CONDUCTIVITY
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -409,6 +445,7 @@ class PlantCurrentMoisture(PlantCurrentStatus):
     _attr_suggested_display_precision = 1
     _attr_name = READING_MOISTURE
     _attr_translation_key = TRANSLATION_KEY_MOISTURE
+    _config_key = FLOW_SENSOR_MOISTURE
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -428,6 +465,7 @@ class PlantCurrentTemperature(PlantCurrentStatus):
     _attr_suggested_display_precision = 1
     _attr_name = READING_TEMPERATURE
     _attr_translation_key = TRANSLATION_KEY_TEMPERATURE
+    _config_key = FLOW_SENSOR_TEMPERATURE
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -449,6 +487,7 @@ class PlantCurrentHumidity(PlantCurrentStatus):
     _attr_suggested_display_precision = 1
     _attr_name = READING_HUMIDITY
     _attr_translation_key = TRANSLATION_KEY_HUMIDITY
+    _config_key = FLOW_SENSOR_HUMIDITY
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity

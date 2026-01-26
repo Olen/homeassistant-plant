@@ -575,3 +575,181 @@ class TestSensorEntityIdRename:
 
         # Verify the DLI sensor updated its source reference
         assert dli_sensor._sensor_source_id == new_entity_id
+
+
+class TestSensorRemovalAndConfigPersistence:
+    """Tests for sensor removal handling and config entry persistence."""
+
+    async def test_external_sensor_deletion_clears_reference(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test that deleting an external sensor clears the reference."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        sensor = plant.sensor_temperature
+
+        original_external = "sensor.test_temperature"
+        assert sensor.external_sensor == original_external
+
+        # Fire entity registry remove event (simulating deletion)
+        hass.bus.async_fire(
+            EVENT_ENTITY_REGISTRY_UPDATED,
+            {
+                "action": "remove",
+                "entity_id": original_external,
+            },
+        )
+        await hass.async_block_till_done()
+
+        # Verify the external sensor reference was cleared
+        assert sensor.external_sensor is None
+
+    async def test_unrelated_sensor_deletion_does_not_clear_reference(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test that deleting an unrelated sensor doesn't affect tracking."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        sensor = plant.sensor_temperature
+
+        original_external = sensor.external_sensor
+
+        # Fire entity registry remove event for an unrelated entity
+        hass.bus.async_fire(
+            EVENT_ENTITY_REGISTRY_UPDATED,
+            {
+                "action": "remove",
+                "entity_id": "sensor.completely_unrelated",
+            },
+        )
+        await hass.async_block_till_done()
+
+        # Verify the external sensor reference is unchanged
+        assert sensor.external_sensor == original_external
+
+    async def test_replace_sensor_updates_config_entry(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test that replacing a sensor updates the config entry."""
+        from custom_components.plant.const import (
+            FLOW_PLANT_INFO,
+            FLOW_SENSOR_TEMPERATURE,
+        )
+
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        sensor = plant.sensor_temperature
+
+        original_external = "sensor.test_temperature"
+        new_external = "sensor.new_temperature"
+        assert sensor.external_sensor == original_external
+
+        # Set up the new sensor state
+        hass.states.async_set(
+            new_external,
+            "25.0",
+            {"unit_of_measurement": "°C"},
+        )
+        await hass.async_block_till_done()
+
+        # Replace the external sensor
+        sensor.replace_external_sensor(new_external)
+        await hass.async_block_till_done()
+
+        # Verify the sensor reference was updated
+        assert sensor.external_sensor == new_external
+
+        # Verify the config entry was updated
+        entry = hass.config_entries.async_get_entry(init_integration.entry_id)
+        assert entry is not None
+        assert entry.data[FLOW_PLANT_INFO][FLOW_SENSOR_TEMPERATURE] == new_external
+
+    async def test_remove_sensor_updates_config_entry(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test that removing a sensor (setting to None) updates the config entry."""
+        from custom_components.plant.const import (
+            FLOW_PLANT_INFO,
+            FLOW_SENSOR_MOISTURE,
+        )
+
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        sensor = plant.sensor_moisture
+
+        original_external = "sensor.test_moisture"
+        assert sensor.external_sensor == original_external
+
+        # Remove the external sensor
+        sensor.replace_external_sensor(None)
+        await hass.async_block_till_done()
+
+        # Verify the sensor reference was cleared
+        assert sensor.external_sensor is None
+
+        # Verify the config entry was updated
+        entry = hass.config_entries.async_get_entry(init_integration.entry_id)
+        assert entry is not None
+        assert entry.data[FLOW_PLANT_INFO][FLOW_SENSOR_MOISTURE] is None
+
+    async def test_external_sensor_deletion_updates_config_entry(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test that deleting an external sensor also updates the config entry."""
+        from custom_components.plant.const import (
+            FLOW_PLANT_INFO,
+            FLOW_SENSOR_ILLUMINANCE,
+        )
+
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        sensor = plant.sensor_illuminance
+
+        original_external = "sensor.test_illuminance"
+        assert sensor.external_sensor == original_external
+
+        # Fire entity registry remove event (simulating deletion)
+        hass.bus.async_fire(
+            EVENT_ENTITY_REGISTRY_UPDATED,
+            {
+                "action": "remove",
+                "entity_id": original_external,
+            },
+        )
+        await hass.async_block_till_done()
+
+        # Verify the external sensor reference was cleared
+        assert sensor.external_sensor is None
+
+        # Verify the config entry was updated
+        entry = hass.config_entries.async_get_entry(init_integration.entry_id)
+        assert entry is not None
+        assert entry.data[FLOW_PLANT_INFO][FLOW_SENSOR_ILLUMINANCE] is None
+
+    async def test_all_sensors_have_config_keys(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test that all current status sensors have config keys defined."""
+        from custom_components.plant.const import (
+            FLOW_SENSOR_CONDUCTIVITY,
+            FLOW_SENSOR_HUMIDITY,
+            FLOW_SENSOR_ILLUMINANCE,
+            FLOW_SENSOR_MOISTURE,
+            FLOW_SENSOR_TEMPERATURE,
+        )
+
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+
+        # Verify all sensors have the expected config keys
+        assert plant.sensor_temperature._config_key == FLOW_SENSOR_TEMPERATURE
+        assert plant.sensor_moisture._config_key == FLOW_SENSOR_MOISTURE
+        assert plant.sensor_conductivity._config_key == FLOW_SENSOR_CONDUCTIVITY
+        assert plant.sensor_illuminance._config_key == FLOW_SENSOR_ILLUMINANCE
+        assert plant.sensor_humidity._config_key == FLOW_SENSOR_HUMIDITY
