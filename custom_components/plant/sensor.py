@@ -525,7 +525,7 @@ class PlantTotalLightIntegral(IntegrationSensor):
         )
 
     def _unit(self, source_unit: str) -> str:
-        """Override unit"""
+        """Override unit conversion to use mol instead of source unit."""
         return self._unit_of_measurement
 
 

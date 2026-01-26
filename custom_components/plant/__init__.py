@@ -373,7 +373,8 @@ class PlantDevice(Entity):
         return None
 
     @property
-    def device_class(self):
+    def device_class(self) -> str:
+        """Return the device class for the plant entity."""
         return DOMAIN
 
     @property
