@@ -38,14 +38,32 @@ This produces PPFD in mol/m²/s.
 
 #### Conversion Factor
 
-The conversion factor of `0.0185` is an approximation that works well for natural sunlight. The actual conversion varies by light source:
+The default conversion factor of `0.0185` is an approximation that works well for natural sunlight. The actual conversion varies by light source:
 
 | Light Source | Conversion Factor (μmol/m²/s per lux) |
 |--------------|---------------------------------------|
 | Sunlight     | ~0.0185                               |
 | Metal Halide | ~0.014                                |
+| HPS          | ~0.013                                |
 | Fluorescent  | ~0.013-0.014                          |
-| LED          | Varies by spectrum                    |
+| LED          | ~0.014-0.020 (varies by spectrum)     |
+
+#### Configuring the Conversion Factor
+
+Since the conversion factor varies significantly depending on your light source, you can adjust it per plant using the **Lux to PPFD factor** entity. This is particularly useful for:
+
+- Indoor plants under grow lights
+- Plants in greenhouses with artificial supplemental lighting
+- Any situation where the default sunlight factor doesn't match your light source
+
+To adjust the factor:
+1. Go to your plant's device page
+2. Find the "Lux to PPFD factor" number entity under Configuration
+3. Adjust the value based on your light source (see table above)
+
+The factor can be set between 0.001 and 0.1, with a default of 0.0185.
+
+**Example:** If you're using LED grow lights with a conversion factor of 0.017, set the "Lux to PPFD factor" to `0.017` for more accurate DLI readings.
 
 References:
 - https://www.apogeeinstruments.com/conversion-ppfd-to-lux/
@@ -126,7 +144,7 @@ This value (33.3 mol/m²/d) represents a bright sunny day, which is appropriate 
 
 ## Limitations
 
-1. **Light Source Dependency:** The conversion factor is optimized for sunlight. Indoor plants under artificial lighting may have less accurate DLI readings depending on the light spectrum.
+1. **Light Source Dependency:** The default conversion factor is optimized for sunlight. Indoor plants under artificial lighting may have less accurate DLI readings depending on the light spectrum. You can adjust the "Lux to PPFD factor" per plant to compensate for different light sources (see [Configuring the Conversion Factor](#configuring-the-conversion-factor)).
 
 2. **Sensor Accuracy:** The accuracy of the DLI calculation depends on the accuracy of the illuminance sensor being used.
 
