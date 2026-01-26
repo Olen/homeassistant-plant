@@ -72,7 +72,7 @@ jobs:
           print(' '.join(filtered))
           ")
           # Install pytest-homeassistant-custom-component with optional version constraint
-          .venv/bin/pip install "pytest-homeassistant-custom-component${{ matrix.pytest-ha-version }}"
+          uv pip install "pytest-homeassistant-custom-component${{ matrix.pytest-ha-version }}"
 
       - name: Show installed HA version
         run: |

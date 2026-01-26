@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 from homeassistant.components.number import NumberDeviceClass, NumberMode, RestoreNumber
 from homeassistant.components.sensor import SensorDeviceClass
@@ -188,8 +189,8 @@ class PlantMinMax(RestoreNumber):
             new_state=event.data.get("new_state").state,
         )
 
-    def state_changed(self, old_state, new_state):
-        """Ensure that we store the state if changed from the UI"""
+    def state_changed(self, old_state: str | None, new_state: str | None) -> None:
+        """Store the state if changed from the UI."""
         _LOGGER.debug(
             "State of %s changed from %s to %s, native_value = %s",
             self.entity_id,
@@ -199,8 +200,10 @@ class PlantMinMax(RestoreNumber):
         )
         self._attr_native_value = new_state
 
-    def state_attributes_changed(self, old_attributes, new_attributes):
-        """Placeholder"""
+    def state_attributes_changed(
+        self, old_attributes: dict[str, Any], new_attributes: dict[str, Any]
+    ) -> None:
+        """Handle attribute changes (placeholder for subclasses)."""
 
     def self_updated(self) -> None:
         """Allow the state to be changed from the UI and saved in restore_state."""
@@ -300,8 +303,10 @@ class PlantMaxTemperature(PlantMinMax):
         super().__init__(hass, config, plantdevice)
         self._attr_native_unit_of_measurement = self.hass.config.units.temperature_unit
 
-    def state_attributes_changed(self, old_attributes, new_attributes):
-        """Calculate C or F"""
+    def state_attributes_changed(
+        self, old_attributes: dict[str, Any], new_attributes: dict[str, Any]
+    ) -> None:
+        """Convert temperature between Celsius and Fahrenheit."""
         if new_attributes.get(ATTR_UNIT_OF_MEASUREMENT) is None:
             return
         if old_attributes.get(ATTR_UNIT_OF_MEASUREMENT) is None:
@@ -369,8 +374,10 @@ class PlantMinTemperature(PlantMinMax):
         super().__init__(hass, config, plantdevice)
         self._attr_native_unit_of_measurement = self.hass.config.units.temperature_unit
 
-    def state_attributes_changed(self, old_attributes, new_attributes):
-        """Calculate C or F"""
+    def state_attributes_changed(
+        self, old_attributes: dict[str, Any], new_attributes: dict[str, Any]
+    ) -> None:
+        """Convert temperature between Celsius and Fahrenheit."""
         if new_attributes.get(ATTR_UNIT_OF_MEASUREMENT) is None:
             return
         if old_attributes.get(ATTR_UNIT_OF_MEASUREMENT) is None:
@@ -396,8 +403,6 @@ class PlantMinTemperature(PlantMinMax):
                 self.state,
                 new_state,
             )
-
-            # new_state = int(round((int(self.state) - 32) * 0.5556, 0))
 
         if (
             old_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == "°C"

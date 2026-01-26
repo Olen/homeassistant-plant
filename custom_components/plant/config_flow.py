@@ -77,9 +77,10 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
 
-    def __init__(self):
-        self.plant_info = {}
-        self.error = None
+    def __init__(self) -> None:
+        """Initialize the config flow."""
+        self.plant_info: dict[str, Any] = {}
+        self.error: str | None = None
 
     @staticmethod
     @callback
@@ -89,8 +90,8 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Create the options flow."""
         return OptionsFlowHandler()
 
-    async def async_step_import(self, import_input) -> ConfigFlowResult:
-        """Importing config from configuration.yaml"""
+    async def async_step_import(self, import_input: dict[str, Any]) -> ConfigFlowResult:
+        """Import config from configuration.yaml."""
         _LOGGER.debug(import_input)
         # return FlowResultType.ABORT
         return self.async_create_entry(
@@ -98,7 +99,9 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             data=import_input,
         )
 
-    async def async_step_user(self, user_input=None) -> ConfigFlowResult:
+    async def async_step_user(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
         """Handle the initial step."""
         errors = {}
         if user_input is not None:
@@ -172,8 +175,10 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             description_placeholders={"opb_search": self.plant_info.get(ATTR_SPECIES)},
         )
 
-    async def async_step_select_species(self, user_input=None) -> ConfigFlowResult:
-        """Search the openplantbook"""
+    async def async_step_select_species(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Search the OpenPlantbook."""
         errors = {}
 
         if user_input is not None:
@@ -211,8 +216,10 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             },
         )
 
-    async def async_step_limits(self, user_input=None) -> ConfigFlowResult:
-        """Handle max/min values"""
+    async def async_step_limits(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Handle max/min values."""
 
         plant_helper = PlantHelper(self.hass)
         if user_input is not None:
@@ -393,20 +400,22 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             },
         )
 
-    async def async_step_limits_done(self, user_input=None) -> ConfigFlowResult:
-        """After limits are set"""
+    async def async_step_limits_done(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Create entry after limits are set."""
         return self.async_create_entry(
             title=self.plant_info[ATTR_NAME],
             data={FLOW_PLANT_INFO: self.plant_info},
         )
 
-    async def validate_step_1(self, user_input):
-        """Validate step one"""
+    async def validate_step_1(self, user_input: dict[str, Any]) -> bool:
+        """Validate step one."""
         _LOGGER.debug("Validating step 1: %s", user_input)
         return True
 
-    async def validate_step_2(self, user_input):
-        """Validate step two"""
+    async def validate_step_2(self, user_input: dict[str, Any]) -> bool:
+        """Validate step two."""
         _LOGGER.debug("Validating step 2: %s", user_input)
 
         if ATTR_SPECIES not in user_input:
@@ -419,14 +428,14 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         return True
 
-    async def validate_step_3(self, user_input):
-        """Validate step three"""
+    async def validate_step_3(self, user_input: dict[str, Any]) -> bool:
+        """Validate step three."""
         _LOGGER.debug("Validating step 3: %s", user_input)
 
         return True
 
-    async def validate_step_4(self, user_input):
-        """Validate step four"""
+    async def validate_step_4(self, user_input: dict[str, Any]) -> bool:
+        """Validate step four."""
         return True
 
 

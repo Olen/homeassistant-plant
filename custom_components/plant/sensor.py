@@ -29,7 +29,7 @@ from homeassistant.const import (
     UnitOfTemperature,
     UnitOfTime,
 )
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import Event, HomeAssistant, State, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import (
@@ -275,17 +275,18 @@ class PlantCurrentStatus(RestoreSensor):
             self._attr_native_value = self._default_state
 
     @callback
-    def _schedule_immediate_update(self):
+    def _schedule_immediate_update(self) -> None:
+        """Schedule an immediate state update."""
         self.async_schedule_update_ha_state(True)
 
     @callback
-    def _state_changed_event(self, event):
-        """Sensor state change event."""
+    def _state_changed_event(self, event: Event) -> None:
+        """Handle sensor state change event."""
         self.state_changed(event.data.get("entity_id"), event.data.get("new_state"))
 
     @callback
-    def state_changed(self, entity_id, new_state):
-        """Run on every update to allow for changes from the GUI and service call"""
+    def state_changed(self, entity_id: str | None, new_state: State | None) -> None:
+        """Handle state changes from GUI and service calls."""
         if not self.hass.states.get(self.entity_id):
             return
         if entity_id == self.entity_id:
@@ -467,8 +468,8 @@ class PlantCurrentPpfd(PlantCurrentStatus):
             self._attr_native_value = None
 
     @callback
-    def state_changed(self, entity_id: str, new_state: str) -> None:
-        """Run on every update to allow for changes from the GUI and service call"""
+    def state_changed(self, entity_id: str | None, new_state: State | None) -> None:
+        """Handle state changes from GUI and service calls."""
         if not self.hass.states.get(self.entity_id):
             return
         if self._external_sensor != self._plant.sensor_illuminance.entity_id:
