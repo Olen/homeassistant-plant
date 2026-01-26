@@ -2,33 +2,24 @@
 
 from __future__ import annotations
 
-from unittest.mock import patch
-
 import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry
-
 from homeassistant.const import (
-    LIGHT_LUX,
-    PERCENTAGE,
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
-    UnitOfTemperature,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.plant.const import (
     ATTR_PLANT,
-    ATTR_SENSORS,
     DEFAULT_LUX_TO_PPFD,
     DOMAIN,
     UNIT_DLI,
     UNIT_PPFD,
 )
-from custom_components.plant.sensor import PlantCurrentPpfd
 
-from .common import set_external_sensor_states, set_sensor_state
-from .conftest import TEST_ENTRY_ID, TEST_PLANT_NAME
+from .common import set_sensor_state
 
 
 class TestPlantCurrentSensors:
@@ -220,6 +211,48 @@ class TestPlantCurrentSensors:
 
         await sensor.async_update()
         # Should have default/None value
+        assert (
+            sensor.native_value is None or sensor.native_value == sensor._default_state
+        )
+
+    async def test_sensor_handles_non_numeric_external(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test sensor handles non-numeric external sensor state."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        sensor = plant.sensor_temperature
+
+        # Set external sensor to non-numeric value
+        hass.states.async_set(
+            "sensor.test_temperature",
+            "invalid",
+            {"unit_of_measurement": "°C"},
+        )
+        await hass.async_block_till_done()
+
+        await sensor.async_update()
+        # Should have default state when external value is not a valid number
+        assert (
+            sensor.native_value is None or sensor.native_value == sensor._default_state
+        )
+
+    async def test_sensor_handles_missing_external_entity(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test sensor handles missing external sensor entity."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        sensor = plant.sensor_temperature
+
+        # Replace with a sensor that doesn't exist
+        sensor.replace_external_sensor("sensor.nonexistent_sensor")
+        await hass.async_block_till_done()
+
+        await sensor.async_update()
+        # Should have default state when external sensor doesn't exist
         assert (
             sensor.native_value is None or sensor.native_value == sensor._default_state
         )

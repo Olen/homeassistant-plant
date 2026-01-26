@@ -2,12 +2,9 @@
 
 from __future__ import annotations
 
-from . import group
-
 import logging
 
 import voluptuous as vol
-
 from homeassistant.components import websocket_api
 from homeassistant.components.utility_meter.const import (
     DATA_TARIFF_SENSORS,
@@ -15,7 +12,6 @@ from homeassistant.components.utility_meter.const import (
 )
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
 from homeassistant.const import (
-    Platform,
     ATTR_ENTITY_PICTURE,
     ATTR_ICON,
     ATTR_NAME,
@@ -24,36 +20,37 @@ from homeassistant.const import (
     STATE_PROBLEM,
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
+    Platform,
 )
 from homeassistant.core import HomeAssistant, ServiceCall, callback
-from homeassistant.helpers import (
-    config_validation as cv,
-    device_registry as dr,
-    entity_registry as er,
-)
+from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity, async_generate_entity_id
 from homeassistant.helpers.entity_component import EntityComponent
 
+from . import group as group  # noqa: F401 - needed for HA group discovery
+from .config_flow import update_plant_options
 from .const import (
     ATTR_CONDUCTIVITY,
     ATTR_CURRENT,
     ATTR_DLI,
     ATTR_HUMIDITY,
     ATTR_ILLUMINANCE,
-    ATTR_LIMITS,
     ATTR_MAX,
-    ATTR_METERS,
+    ATTR_METER_ENTITY,
     ATTR_MIN,
     ATTR_MOISTURE,
+    ATTR_NEW_SENSOR,
     ATTR_PLANT,
     ATTR_SENSOR,
     ATTR_SENSORS,
     ATTR_SPECIES,
     ATTR_TEMPERATURE,
-    ATTR_THRESHOLDS,
     DATA_SOURCE,
     DOMAIN,
-    DOMAIN_PLANTBOOK,
+    ENTITY_ID_PREFIX_SENSOR,
     FLOW_CONDUCTIVITY_TRIGGER,
     FLOW_DLI_TRIGGER,
     FLOW_HUMIDITY_TRIGGER,
@@ -62,12 +59,6 @@ from .const import (
     FLOW_PLANT_INFO,
     FLOW_TEMPERATURE_TRIGGER,
     OPB_DISPLAY_PID,
-    READING_CONDUCTIVITY,
-    READING_DLI,
-    READING_HUMIDITY,
-    READING_ILLUMINANCE,
-    READING_MOISTURE,
-    READING_TEMPERATURE,
     SERVICE_REPLACE_SENSOR,
     STATE_HIGH,
     STATE_LOW,
@@ -77,37 +68,18 @@ from .plant_helpers import PlantHelper
 _LOGGER = logging.getLogger(__name__)
 PLATFORMS = [Platform.NUMBER, Platform.SENSOR]
 
+SERVICE_REPLACE_SENSOR_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_METER_ENTITY): cv.entity_id,
+        vol.Optional(ATTR_NEW_SENSOR): vol.Any(cv.entity_id, None, ""),
+    }
+)
+
 # Use this during testing to generate some dummy-sensors
 # to provide random readings for temperature, moisture etc.
 #
 SETUP_DUMMY_SENSORS = False
 USE_DUMMY_SENSORS = False
-
-# Removed.
-# Have not been used for a long time
-#
-# async def async_setup(hass: HomeAssistant, config: dict):
-#     """
-#     Set up the plant component
-#
-#     Configuration.yaml is no longer used.
-#     This function only tries to migrate the legacy config.
-#     """
-#     if config.get(DOMAIN):
-#         # Only import if we haven't before.
-#         config_entry = _async_find_matching_config_entry(hass)
-#         if not config_entry:
-#             _LOGGER.debug("Old setup - with config: %s", config[DOMAIN])
-#             for plant in config[DOMAIN]:
-#                 if plant != DOMAIN_PLANTBOOK:
-#                     _LOGGER.info("Migrating plant: %s", plant)
-#                     await async_migrate_plant(hass, plant, config[DOMAIN][plant])
-#         else:
-#             _LOGGER.warning(
-#                 "Config already imported. Please delete all your %s related config from configuration.yaml",
-#                 DOMAIN,
-#             )
-#     return True
 
 
 @callback
@@ -132,7 +104,7 @@ async def async_migrate_plant(hass: HomeAssistant, plant_id: str, config: dict) 
     )
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Plant from a config entry."""
     hass.data.setdefault(DOMAIN, {})
     if FLOW_PLANT_INFO not in entry.data:
@@ -144,6 +116,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     plant = PlantDevice(hass, entry)
     hass.data[DOMAIN][entry.entry_id][ATTR_PLANT] = plant
 
+    # Register update listener for options flow
+    entry.async_on_unload(entry.add_update_listener(update_plant_options))
+
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     plant_entities = [
@@ -154,14 +129,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     component = EntityComponent(_LOGGER, DOMAIN, hass)
     await component.async_add_entities(plant_entities)
 
-    # Add the rest of the entities to device registry together with plant
+    # Add the entities to device registry together with plant
     device_id = plant.device_id
     await _plant_add_to_device_registry(hass, plant_entities, device_id)
-    # await _plant_add_to_device_registry(hass, plant.integral_entities, device_id)
-    # await _plant_add_to_device_registry(hass, plant.threshold_entities, device_id)
-    # await _plant_add_to_device_registry(hass, plant.meter_entities, device_id)
 
-    #
     # Set up utility sensor
     hass.data.setdefault(DATA_UTILITY, {})
     hass.data[DATA_UTILITY].setdefault(entry.entry_id, {})
@@ -171,9 +142,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     #
     # Service call to replace sensors
     async def replace_sensor(call: ServiceCall) -> None:
-        """Replace a sensor entity within a plant device"""
-        meter_entity = call.data.get("meter_entity")
-        new_sensor = call.data.get("new_sensor")
+        """Replace a sensor entity within a plant device."""
+        meter_entity = call.data[ATTR_METER_ENTITY]
+        new_sensor = call.data.get(ATTR_NEW_SENSOR)
         found = False
         for entry_id in hass.data[DOMAIN]:
             if ATTR_SENSORS in hass.data[DOMAIN][entry_id]:
@@ -186,7 +157,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
                 "Refuse to update non-%s entities: %s", DOMAIN, meter_entity
             )
             return False
-        if new_sensor and new_sensor != "" and not new_sensor.startswith("sensor."):
+        if (
+            new_sensor
+            and new_sensor != ""
+            and not new_sensor.startswith(ENTITY_ID_PREFIX_SENSOR)
+        ):
             _LOGGER.warning("%s is not a sensor", new_sensor)
             return False
 
@@ -203,10 +178,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
             try:
                 test = hass.states.get(new_sensor)
             except AttributeError:
-                _LOGGER.error("New sensor entity %s not found", meter_entity)
+                _LOGGER.error("New sensor entity %s not found", new_sensor)
                 return False
             if test is None:
-                _LOGGER.error("New sensor entity %s not found", meter_entity)
+                _LOGGER.error("New sensor entity %s not found", new_sensor)
                 return False
         else:
             new_sensor = None
@@ -224,7 +199,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
                         meter.replace_external_sensor(new_sensor)
         return
 
-    hass.services.async_register(DOMAIN, SERVICE_REPLACE_SENSOR, replace_sensor)
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_REPLACE_SENSOR,
+        replace_sensor,
+        schema=SERVICE_REPLACE_SENSOR_SCHEMA,
+    )
     websocket_api.async_register_command(hass, ws_get_info)
     plant.async_schedule_update_ha_state(True)
 
@@ -290,8 +270,6 @@ def ws_get_info(
     hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict
 ) -> None:
     """Handle the websocket command."""
-    # _LOGGER.debug("Got websocket request: %s", msg)
-
     if DOMAIN not in hass.data:
         connection.send_error(
             msg["id"], "domain_not_found", f"Domain {DOMAIN} not found"
@@ -299,11 +277,10 @@ def ws_get_info(
         return
 
     for key in hass.data[DOMAIN]:
-        if not ATTR_PLANT in hass.data[DOMAIN][key]:
+        if ATTR_PLANT not in hass.data[DOMAIN][key]:
             continue
         plant_entity = hass.data[DOMAIN][key][ATTR_PLANT]
         if plant_entity.entity_id == msg["entity_id"]:
-            # _LOGGER.debug("Sending websocket response: %s", plant_entity.websocket_info)
             try:
                 connection.send_result(
                     msg["id"], {"result": plant_entity.websocket_info}
@@ -323,7 +300,7 @@ class PlantDevice(Entity):
     def __init__(self, hass: HomeAssistant, config: ConfigEntry) -> None:
         """Initialize the Plant component."""
         self._config = config
-        self._hass = hass
+        self.hass = hass
         self._attr_name = config.data[FLOW_PLANT_INFO][ATTR_NAME]
         self._config_entries = []
         self._data_source = config.data[FLOW_PLANT_INFO].get(DATA_SOURCE)
@@ -392,7 +369,8 @@ class PlantDevice(Entity):
         return None
 
     @property
-    def device_class(self):
+    def device_class(self) -> str:
+        """Return the device class for the plant entity."""
         return DOMAIN
 
     @property
@@ -401,15 +379,14 @@ class PlantDevice(Entity):
         return self._device_id
 
     @property
-    def device_info(self) -> dict:
+    def device_info(self) -> DeviceInfo:
         """Device info for devices"""
-        return {
-            "identifiers": {(DOMAIN, self.unique_id)},
-            "name": self.name,
-            "config_entries": self._config_entries,
-            "model": self.display_species,
-            "manufacturer": self.data_source,
-        }
+        return DeviceInfo(
+            identifiers={(DOMAIN, self.unique_id)},
+            name=self.name,
+            model=self.display_species,
+            manufacturer=self.data_source,
+        )
 
     @property
     def illuminance_trigger(self) -> bool:
@@ -461,7 +438,7 @@ class PlantDevice(Entity):
 
     @property
     def websocket_info(self) -> dict:
-        """Wesocket response"""
+        """Websocket response"""
         if not self.plant_complete:
             # We are not fully set up, so we just return an empty dict for now
             return {}
@@ -551,7 +528,7 @@ class PlantDevice(Entity):
         ]
 
     @property
-    def integral_entities(self) -> list(Entity):
+    def integral_entities(self) -> list[Entity]:
         """List all integral entities"""
         return [
             self.dli,
@@ -564,7 +541,7 @@ class PlantDevice(Entity):
         self._attr_entity_picture = image_url
         options = self._config.options.copy()
         options[ATTR_ENTITY_PICTURE] = image_url
-        self._hass.config_entries.async_update_entry(self._config, options=options)
+        self.hass.config_entries.async_update_entry(self._config, options=options)
 
     def add_species(self, species: Entity | None) -> None:
         """Set new species"""
@@ -635,7 +612,7 @@ class PlantDevice(Entity):
 
         if self.sensor_moisture is not None:
             moisture = getattr(
-                self._hass.states.get(self.sensor_moisture.entity_id), "state", None
+                self.hass.states.get(self.sensor_moisture.entity_id), "state", None
             )
             if (
                 moisture is not None
@@ -656,7 +633,7 @@ class PlantDevice(Entity):
 
         if self.sensor_conductivity is not None:
             conductivity = getattr(
-                self._hass.states.get(self.sensor_conductivity.entity_id), "state", None
+                self.hass.states.get(self.sensor_conductivity.entity_id), "state", None
             )
             if (
                 conductivity is not None
@@ -677,7 +654,7 @@ class PlantDevice(Entity):
 
         if self.sensor_temperature is not None:
             temperature = getattr(
-                self._hass.states.get(self.sensor_temperature.entity_id), "state", None
+                self.hass.states.get(self.sensor_temperature.entity_id), "state", None
             )
             if (
                 temperature is not None
@@ -698,7 +675,7 @@ class PlantDevice(Entity):
 
         if self.sensor_humidity is not None:
             humidity = getattr(
-                self._hass.states.get(self.sensor_humidity.entity_id), "state", None
+                self.hass.states.get(self.sensor_humidity.entity_id), "state", None
             )
             if (
                 humidity is not None
@@ -721,7 +698,7 @@ class PlantDevice(Entity):
         # Ignoring "min" value for illuminance as it would probably trigger every night
         if self.sensor_illuminance is not None:
             illuminance = getattr(
-                self._hass.states.get(self.sensor_illuminance.entity_id), "state", None
+                self.hass.states.get(self.sensor_illuminance.entity_id), "state", None
             )
             if (
                 illuminance is not None
@@ -775,7 +752,7 @@ class PlantDevice(Entity):
         """Update registry with correct data"""
         # Is there a better way to add an entity to the device registry?
 
-        device_registry = dr.async_get(self._hass)
+        device_registry = dr.async_get(self.hass)
         device_registry.async_get_or_create(
             config_entry_id=self._config.entry_id,
             identifiers={(DOMAIN, self.unique_id)},

@@ -4,24 +4,17 @@ from __future__ import annotations
 
 from collections.abc import AsyncGenerator, Generator
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
-from pytest_homeassistant_custom_component.common import (
-    MockConfigEntry,
-    async_fire_time_changed,
-)
-
 from homeassistant.const import (
     ATTR_ENTITY_PICTURE,
     ATTR_NAME,
-    CONF_NAME,
-    STATE_OK,
-    UnitOfTemperature,
 )
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import entity_registry as er
-from homeassistant.setup import async_setup_component
+from pytest_homeassistant_custom_component.common import (
+    MockConfigEntry,
+)
 
 # This fixture ensures our custom component is loaded instead of the built-in one
 pytest_plugins = "pytest_homeassistant_custom_component"

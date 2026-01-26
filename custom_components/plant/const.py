@@ -4,6 +4,13 @@ DOMAIN = "plant"
 DOMAIN_SENSOR = "sensor"
 DOMAIN_PLANTBOOK = "openplantbook"
 
+# Entity ID prefixes
+ENTITY_ID_PREFIX_SENSOR = f"{DOMAIN_SENSOR}."
+
+# URL patterns
+URL_SCHEME_HTTP = "http"
+PLANTBOOK_DOMAIN = "plantbook.io"
+
 REQUEST_TIMEOUT = 30
 
 # ATTRs are used by machines
@@ -136,6 +143,8 @@ DEFAULT_LUX_TO_PPFD = 0.0185
 
 
 SERVICE_REPLACE_SENSOR = "replace_sensor"
+ATTR_METER_ENTITY = "meter_entity"
+ATTR_NEW_SENSOR = "new_sensor"
 
 STATE_LOW = "Low"
 STATE_HIGH = "High"

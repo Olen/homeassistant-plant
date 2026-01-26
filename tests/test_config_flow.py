@@ -2,18 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any
-from unittest.mock import AsyncMock, patch
-
-import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry
-
 from homeassistant import config_entries
 from homeassistant.const import ATTR_ENTITY_PICTURE, ATTR_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.plant.config_flow import PlantConfigFlow
 from custom_components.plant.const import (
     ATTR_SPECIES,
     CONF_MAX_CONDUCTIVITY,
@@ -31,9 +25,6 @@ from custom_components.plant.const import (
     DOMAIN,
     FLOW_PLANT_INFO,
     FLOW_RIGHT_PLANT,
-    FLOW_SENSOR_CONDUCTIVITY,
-    FLOW_SENSOR_HUMIDITY,
-    FLOW_SENSOR_ILLUMINANCE,
     FLOW_SENSOR_MOISTURE,
     FLOW_SENSOR_TEMPERATURE,
     OPB_DISPLAY_PID,
@@ -41,7 +32,6 @@ from custom_components.plant.const import (
 
 from .fixtures.openplantbook_responses import (
     GET_RESULT_MONSTERA_DELICIOSA,
-    SEARCH_RESULT_MONSTERA,
 )
 
 
@@ -413,3 +403,38 @@ class TestOptionsFlow:
         )
 
         assert result["type"] == FlowResultType.CREATE_ENTRY
+
+    async def test_options_flow_updates_plant_entity(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+        mock_no_openplantbook,
+    ) -> None:
+        """Test that options flow actually updates the plant entity."""
+        # Get the plant entity before making changes
+        plant = hass.data[DOMAIN][init_integration.entry_id]["plant"]
+        original_display_species = plant.display_species
+        original_entity_picture = plant.entity_picture
+
+        # Run the options flow with new values
+        new_display_species = "Updated Display Name"
+        new_entity_picture = "https://example.com/updated.jpg"
+
+        result = await hass.config_entries.options.async_init(init_integration.entry_id)
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            {
+                ATTR_SPECIES: "updated species",
+                OPB_DISPLAY_PID: new_display_species,
+                ATTR_ENTITY_PICTURE: new_entity_picture,
+            },
+        )
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        await hass.async_block_till_done()
+
+        # Verify the plant entity was actually updated
+        assert plant.display_species == new_display_species
+        assert plant.entity_picture == new_entity_picture
+        assert plant.display_species != original_display_species
+        assert plant.entity_picture != original_entity_picture

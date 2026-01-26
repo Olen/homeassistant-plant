@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: HACS Action
-        uses: hacs/action@main
+        uses: hacs/action@22.5.0
         with:
           category: integration
           ignore: brands

@@ -2,13 +2,8 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock
-
-import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry
-
-from homeassistant.components import websocket_api
 from homeassistant.core import HomeAssistant
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.plant.const import (
     ATTR_CONDUCTIVITY,
@@ -24,8 +19,6 @@ from custom_components.plant.const import (
     ATTR_TEMPERATURE,
     DOMAIN,
 )
-
-from .conftest import TEST_ENTRY_ID, TEST_PLANT_NAME
 
 
 class TestWebsocketGetInfo:

@@ -2,21 +2,14 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
-
-import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry
-
 from homeassistant.core import HomeAssistant
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.plant.const import (
     ATTR_PLANT,
-    ATTR_SENSORS,
     DOMAIN,
     SERVICE_REPLACE_SENSOR,
 )
-
-from .conftest import TEST_ENTRY_ID
 
 
 class TestReplaceSensorService:
@@ -98,7 +91,7 @@ class TestReplaceSensorService:
         await hass.async_block_till_done()
 
         # Call the service with non-plant meter entity
-        result = await hass.services.async_call(
+        await hass.services.async_call(
             DOMAIN,
             SERVICE_REPLACE_SENSOR,
             {
@@ -126,7 +119,7 @@ class TestReplaceSensorService:
         await hass.async_block_till_done()
 
         # Call the service with non-sensor entity
-        result = await hass.services.async_call(
+        await hass.services.async_call(
             DOMAIN,
             SERVICE_REPLACE_SENSOR,
             {
@@ -150,7 +143,7 @@ class TestReplaceSensorService:
         meter_entity = plant.sensor_temperature.entity_id
 
         # Call the service with nonexistent sensor
-        result = await hass.services.async_call(
+        await hass.services.async_call(
             DOMAIN,
             SERVICE_REPLACE_SENSOR,
             {
@@ -171,7 +164,7 @@ class TestReplaceSensorService:
     ) -> None:
         """Test replace sensor with nonexistent meter entity."""
         # Call the service with nonexistent meter entity
-        result = await hass.services.async_call(
+        await hass.services.async_call(
             DOMAIN,
             SERVICE_REPLACE_SENSOR,
             {

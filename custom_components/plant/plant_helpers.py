@@ -5,9 +5,8 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from async_timeout import timeout
 import voluptuous as vol
-
+from async_timeout import timeout
 from homeassistant.components.persistent_notification import (
     create as create_notification,
 )
@@ -71,6 +70,7 @@ from .const import (
     OPB_DISPLAY_PID,
     OPB_GET,
     OPB_SEARCH,
+    PLANTBOOK_DOMAIN,
     PPFD_DLI_FACTOR,
     REQUEST_TIMEOUT,
 )
@@ -94,7 +94,7 @@ class PlantHelper:
         )
         return DOMAIN_PLANTBOOK in self.hass.services.async_services()
 
-    async def openplantbook_search(self, species: str) -> dict[str:Any] | None:
+    async def openplantbook_search(self, species: str) -> dict[str, Any] | None:
         """Search OPB and return list of result"""
 
         if not self.has_openplantbook:
@@ -123,7 +123,7 @@ class PlantHelper:
             return plant_search_result
         return None
 
-    async def openplantbook_get(self, species: str) -> dict[str:Any] | None:
+    async def openplantbook_get(self, species: str) -> dict[str, Any] | None:
         """Get information about a plant species from OpenPlantbook"""
         if not self.has_openplantbook:
             return None
@@ -140,9 +140,9 @@ class PlantHelper:
                     return_response=True,
                 )
         except TimeoutError:
-            _LOGGER.warning("Openplantook request timed out")
+            _LOGGER.warning("OpenPlantbook request timed out")
         except Exception as ex:
-            _LOGGER.warning("Openplantook does not work, error: %s", ex)
+            _LOGGER.warning("OpenPlantbook does not work, error: %s", ex)
             return None
         if bool(plant_get_result):
             _LOGGER.debug("Result for %s: %s", species, plant_get_result)
@@ -156,7 +156,7 @@ class PlantHelper:
         )
         return None
 
-    async def generate_configentry(self, config: dict) -> dict[str:Any]:
+    async def generate_configentry(self, config: dict[str, Any]) -> dict[str, Any]:
         """Generates a config-entry dict from current data and/or OPB"""
 
         max_moisture = DEFAULT_MAX_MOISTURE
@@ -281,7 +281,7 @@ class PlantHelper:
             if (
                 entity_picture is None
                 or entity_picture == ""
-                or "plantbook.io" in entity_picture
+                or PLANTBOOK_DOMAIN in entity_picture
                 or (
                     FLOW_FORCE_SPECIES_UPDATE in config
                     and config[FLOW_FORCE_SPECIES_UPDATE] is True

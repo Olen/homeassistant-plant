@@ -2,46 +2,26 @@
 
 from __future__ import annotations
 
-from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
-
-import pytest
-
-from homeassistant.const import ATTR_ENTITY_PICTURE, ATTR_NAME, UnitOfTemperature
+from homeassistant.const import ATTR_ENTITY_PICTURE, ATTR_NAME
 from homeassistant.core import HomeAssistant
 
 from custom_components.plant.const import (
     ATTR_LIMITS,
     ATTR_SENSORS,
     ATTR_SPECIES,
-    CONF_MAX_CONDUCTIVITY,
     CONF_MAX_DLI,
-    CONF_MAX_HUMIDITY,
     CONF_MAX_ILLUMINANCE,
     CONF_MAX_MOISTURE,
-    CONF_MAX_TEMPERATURE,
-    CONF_MIN_CONDUCTIVITY,
     CONF_MIN_DLI,
-    CONF_MIN_HUMIDITY,
     CONF_MIN_ILLUMINANCE,
     CONF_MIN_MOISTURE,
-    CONF_MIN_TEMPERATURE,
     DATA_SOURCE,
     DATA_SOURCE_DEFAULT,
     DATA_SOURCE_PLANTBOOK,
-    DEFAULT_MAX_CONDUCTIVITY,
-    DEFAULT_MAX_DLI,
-    DEFAULT_MAX_HUMIDITY,
     DEFAULT_MAX_ILLUMINANCE,
     DEFAULT_MAX_MOISTURE,
-    DEFAULT_MAX_TEMPERATURE,
-    DEFAULT_MIN_CONDUCTIVITY,
-    DEFAULT_MIN_DLI,
-    DEFAULT_MIN_HUMIDITY,
     DEFAULT_MIN_ILLUMINANCE,
     DEFAULT_MIN_MOISTURE,
-    DEFAULT_MIN_TEMPERATURE,
-    DOMAIN_PLANTBOOK,
     FLOW_PLANT_INFO,
     OPB_DISPLAY_PID,
 )
@@ -49,7 +29,6 @@ from custom_components.plant.plant_helpers import PlantHelper
 
 from .fixtures.openplantbook_responses import (
     GET_RESULT_MONSTERA_DELICIOSA,
-    SEARCH_RESULT_MONSTERA,
 )
 
 

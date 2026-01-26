@@ -9,47 +9,77 @@ on:
     - cron: "0 0 15 * *"
 
 jobs:
-  black:
-    name: Code Formatting
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.13"
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v7
 
-      - name: Install black
-        run: uv pip install black --system
+      - name: Install linters
+        run: uv pip install black ruff --system
 
-      - name: Check formatting
+      - name: Check formatting (black)
         run: black . --check --fast --diff
 
+      - name: Check linting (ruff)
+        run: ruff check .
+
   test:
-    name: Tests
+    name: Tests (HA ${{ matrix.ha-version }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Latest HA version - uses current pytest-homeassistant-custom-component
+          - ha-version: "latest"
+            pytest-ha-version: ""
+          # Minimum HA version from hacs.json (2025.8.0)
+          # pytest-homeassistant-custom-component 0.13.270 supports HA 2025.8.x
+          - ha-version: "2025.8"
+            pytest-ha-version: "==0.13.270"
     steps:
       - name: Check out code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.13"
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v7
 
       - name: Install dependencies
         run: |
           rm -f uv.lock  # Prevent editable install from lock file
           uv venv
-          uv pip install $(python -c "import tomllib; print(' '.join(tomllib.load(open('pyproject.toml', 'rb'))['project']['optional-dependencies']['test']))")
+          # Install test dependencies except pytest-homeassistant-custom-component
+          # Use --no-cache to ensure clean dependency resolution
+          uv pip install --no-cache $(python -c "
+          import tomllib
+          deps = tomllib.load(open('pyproject.toml', 'rb'))['project']['optional-dependencies']['test']
+          filtered = [d for d in deps if not d.startswith('pytest-homeassistant-custom-component')]
+          print(' '.join(filtered))
+          ")
+          # Install pytest-homeassistant-custom-component with version constraint
+          uv pip install --no-cache "pytest-homeassistant-custom-component${{ matrix.pytest-ha-version }}"
+          # Pin aiodns/pycares to known working versions to avoid compatibility issues
+          uv pip install --no-cache "aiodns==3.5.0" "pycares==4.11.0"
+
+      - name: Show installed versions
+        run: |
+          .venv/bin/python -c "from homeassistant.const import __version__; print(f'Home Assistant version: {__version__}')"
+          .venv/bin/pip show pycares aiodns | grep -E "^(Name|Version)"
 
       - name: Run tests
         run: .venv/bin/pytest tests/ -v --tb=short
@@ -58,9 +88,9 @@ jobs:
         run: .venv/bin/pytest tests/ --cov=custom_components/plant --cov-report=term-missing --cov-report=xml
 
       - name: Upload coverage reports
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
-          file: ./coverage.xml
+          files: ./coverage.xml
           fail_ci_if_error: false
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
@@ -70,7 +100,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Run hassfest
         uses: home-assistant/actions/hassfest@master
