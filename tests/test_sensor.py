@@ -753,3 +753,82 @@ class TestSensorRemovalAndConfigPersistence:
         assert plant.sensor_conductivity._config_key == FLOW_SENSOR_CONDUCTIVITY
         assert plant.sensor_illuminance._config_key == FLOW_SENSOR_ILLUMINANCE
         assert plant.sensor_humidity._config_key == FLOW_SENSOR_HUMIDITY
+
+
+class TestDliSensorsWhenIlluminanceRemoved:
+    """Tests for DLI-related sensors when illuminance sensor is removed."""
+
+    async def test_ppfd_becomes_none_when_illuminance_external_removed(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test that PPFD becomes None when illuminance external sensor is removed."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        illuminance_sensor = plant.sensor_illuminance
+        ppfd_sensor = plant.ppfd
+
+        # Update illuminance sensor to get value from external sensor
+        illuminance_sensor.async_schedule_update_ha_state(True)
+        await hass.async_block_till_done()
+
+        # Verify illuminance has a value from the external sensor
+        assert illuminance_sensor.native_value is not None
+
+        # Update PPFD to get calculated value
+        ppfd_sensor.async_schedule_update_ha_state(True)
+        await hass.async_block_till_done()
+
+        # PPFD should have a value when illuminance is available
+        assert ppfd_sensor.native_value is not None
+
+        # Remove the external sensor from the illuminance sensor
+        illuminance_sensor.replace_external_sensor(None)
+        await hass.async_block_till_done()
+
+        # Trigger full update of illuminance sensor to update HA state
+        illuminance_sensor.async_schedule_update_ha_state(True)
+        await hass.async_block_till_done()
+
+        # Illuminance sensor's value should now be None (default)
+        assert illuminance_sensor.native_value is None
+
+        # Update PPFD to reflect the change (it reads from illuminance sensor's state)
+        ppfd_sensor.async_schedule_update_ha_state(True)
+        await hass.async_block_till_done()
+
+        # PPFD should become None when illuminance has no value
+        assert ppfd_sensor.native_value is None
+
+    async def test_illuminance_sensor_deletion_affects_ppfd(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test that deleting the illuminance external sensor affects PPFD."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        illuminance_sensor = plant.sensor_illuminance
+        ppfd_sensor = plant.ppfd
+
+        original_external = "sensor.test_illuminance"
+        assert illuminance_sensor.external_sensor == original_external
+
+        # Fire entity registry remove event (simulating deletion)
+        hass.bus.async_fire(
+            EVENT_ENTITY_REGISTRY_UPDATED,
+            {
+                "action": "remove",
+                "entity_id": original_external,
+            },
+        )
+        await hass.async_block_till_done()
+
+        # Verify illuminance external sensor was cleared
+        assert illuminance_sensor.external_sensor is None
+
+        # Update PPFD to reflect the change
+        ppfd_sensor.async_schedule_update_ha_state(True)
+        await hass.async_block_till_done()
+
+        # PPFD should become None
+        assert ppfd_sensor.native_value is None
