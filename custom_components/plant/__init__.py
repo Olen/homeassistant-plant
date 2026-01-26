@@ -653,6 +653,12 @@ class PlantDevice(Entity):
                         new_state = STATE_PROBLEM
                 else:
                     self.moisture_status = STATE_OK
+            else:
+                # Reset status when sensor is unavailable
+                self.moisture_status = None
+        else:
+            # Reset status when sensor is removed
+            self.moisture_status = None
 
         if self.sensor_conductivity is not None:
             conductivity = getattr(
@@ -674,6 +680,12 @@ class PlantDevice(Entity):
                         new_state = STATE_PROBLEM
                 else:
                     self.conductivity_status = STATE_OK
+            else:
+                # Reset status when sensor is unavailable
+                self.conductivity_status = None
+        else:
+            # Reset status when sensor is removed
+            self.conductivity_status = None
 
         if self.sensor_temperature is not None:
             temperature = getattr(
@@ -695,6 +707,12 @@ class PlantDevice(Entity):
                         new_state = STATE_PROBLEM
                 else:
                     self.temperature_status = STATE_OK
+            else:
+                # Reset status when sensor is unavailable
+                self.temperature_status = None
+        else:
+            # Reset status when sensor is removed
+            self.temperature_status = None
 
         if self.sensor_humidity is not None:
             humidity = getattr(
@@ -716,6 +734,12 @@ class PlantDevice(Entity):
                         new_state = STATE_PROBLEM
                 else:
                     self.humidity_status = STATE_OK
+            else:
+                # Reset status when sensor is unavailable
+                self.humidity_status = None
+        else:
+            # Reset status when sensor is removed
+            self.humidity_status = None
 
         # Check the instant values for illuminance against "max"
         # Ignoring "min" value for illuminance as it would probably trigger every night
@@ -735,6 +759,12 @@ class PlantDevice(Entity):
                         new_state = STATE_PROBLEM
                 else:
                     self.illuminance_status = STATE_OK
+            else:
+                # Reset status when sensor is unavailable
+                self.illuminance_status = None
+        else:
+            # Reset status when sensor is removed
+            self.illuminance_status = None
 
         # - Checking Low values would create "problem" every night...
         # Check DLI from the previous day against max/min DLI
@@ -759,6 +789,9 @@ class PlantDevice(Entity):
                     new_state = STATE_PROBLEM
             else:
                 self.dli_status = STATE_OK
+        else:
+            # Reset DLI status when sensor is unavailable or removed
+            self.dli_status = None
 
         if not known_state:
             new_state = STATE_UNKNOWN
