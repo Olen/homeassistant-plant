@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+import aiohttp
 import voluptuous as vol
 from async_timeout import timeout
 from homeassistant.components.persistent_notification import (
@@ -13,6 +14,7 @@ from homeassistant.components.persistent_notification import (
 from homeassistant.const import ATTR_ENTITY_PICTURE, ATTR_NAME, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.temperature import display_temp
 
 from .const import (
@@ -76,6 +78,33 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+# Timeout for image URL validation (seconds)
+IMAGE_VALIDATION_TIMEOUT = 5
+
+
+def _to_int(value: Any, default: int) -> int:
+    """Safely convert a value to int, returning default on failure.
+
+    OpenPlantbook API may return values as strings, so we need to handle
+    both int and string types gracefully. Float strings like "42.5" are
+    converted via float() first, then rounded to int.
+    """
+    if value is None:
+        return default
+    try:
+        # Try direct int conversion first
+        return int(value)
+    except (ValueError, TypeError):
+        pass
+    try:
+        # Try float conversion for strings like "42.5"
+        return round(float(value))
+    except (ValueError, TypeError):
+        _LOGGER.warning(
+            "Could not convert '%s' to int, using default %s", value, default
+        )
+        return default
 
 
 class PlantHelper:
@@ -156,6 +185,31 @@ class PlantHelper:
         )
         return None
 
+    async def validate_image_url(self, url: str | None) -> bool:
+        """Validate that an image URL is accessible (returns HTTP 200).
+
+        Returns True if the URL is valid and accessible, False otherwise.
+        """
+        if not url or url == "":
+            return False
+
+        try:
+            session = async_get_clientsession(self.hass)
+            async with timeout(IMAGE_VALIDATION_TIMEOUT):
+                async with session.head(url, allow_redirects=True) as response:
+                    if response.status == 200:
+                        return True
+                    _LOGGER.warning(
+                        "Image URL %s returned status %s", url, response.status
+                    )
+                    return False
+        except TimeoutError:
+            _LOGGER.warning("Image URL validation timed out for %s", url)
+            return False
+        except aiohttp.ClientError as ex:
+            _LOGGER.warning("Image URL validation failed for %s: %s", url, ex)
+            return False
+
     async def generate_configentry(self, config: dict[str, Any]) -> dict[str, Any]:
         """Generates a config-entry dict from current data and/or OPB"""
 
@@ -221,24 +275,27 @@ class PlantHelper:
         opb_plant = await self.openplantbook_get(config.get(ATTR_SPECIES))
         if opb_plant:
             data_source = DATA_SOURCE_PLANTBOOK
-            max_moisture = opb_plant.get(
-                CONF_PLANTBOOK_MAPPING[CONF_MAX_MOISTURE], DEFAULT_MAX_MOISTURE
+            # Cast all OPB values to int to handle string responses from API
+            max_moisture = _to_int(
+                opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MAX_MOISTURE]),
+                DEFAULT_MAX_MOISTURE,
             )
-            min_moisture = opb_plant.get(
-                CONF_PLANTBOOK_MAPPING[CONF_MIN_MOISTURE], DEFAULT_MIN_MOISTURE
+            min_moisture = _to_int(
+                opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MIN_MOISTURE]),
+                DEFAULT_MIN_MOISTURE,
             )
-            max_light_lx = opb_plant.get(
-                CONF_PLANTBOOK_MAPPING[CONF_MAX_ILLUMINANCE],
+            max_light_lx = _to_int(
+                opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MAX_ILLUMINANCE]),
                 DEFAULT_MAX_ILLUMINANCE,
             )
-            min_light_lx = opb_plant.get(
-                CONF_PLANTBOOK_MAPPING[CONF_MIN_ILLUMINANCE],
+            min_light_lx = _to_int(
+                opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MIN_ILLUMINANCE]),
                 DEFAULT_MIN_ILLUMINANCE,
             )
             max_temp = display_temp(
                 self.hass,
-                opb_plant.get(
-                    CONF_PLANTBOOK_MAPPING[CONF_MAX_TEMPERATURE],
+                _to_int(
+                    opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MAX_TEMPERATURE]),
                     DEFAULT_MAX_TEMPERATURE,
                 ),
                 UnitOfTemperature.CELSIUS,
@@ -246,8 +303,8 @@ class PlantHelper:
             )
             min_temp = display_temp(
                 self.hass,
-                opb_plant.get(
-                    CONF_PLANTBOOK_MAPPING[CONF_MIN_TEMPERATURE],
+                _to_int(
+                    opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MIN_TEMPERATURE]),
                     DEFAULT_MIN_TEMPERATURE,
                 ),
                 UnitOfTemperature.CELSIUS,
@@ -255,27 +312,29 @@ class PlantHelper:
             )
             opb_mmol = opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MAX_MMOL])
             if opb_mmol:
-                max_dli = round(opb_mmol * PPFD_DLI_FACTOR)
+                max_dli = round(float(opb_mmol) * PPFD_DLI_FACTOR)
             else:
                 max_dli = DEFAULT_MAX_DLI
             opb_mmol = opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MIN_MMOL])
             if opb_mmol:
-                min_dli = round(opb_mmol * PPFD_DLI_FACTOR)
+                min_dli = round(float(opb_mmol) * PPFD_DLI_FACTOR)
             else:
                 min_dli = DEFAULT_MIN_DLI
-            max_conductivity = opb_plant.get(
-                CONF_PLANTBOOK_MAPPING[CONF_MAX_CONDUCTIVITY],
+            max_conductivity = _to_int(
+                opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MAX_CONDUCTIVITY]),
                 DEFAULT_MAX_CONDUCTIVITY,
             )
-            min_conductivity = opb_plant.get(
-                CONF_PLANTBOOK_MAPPING[CONF_MIN_CONDUCTIVITY],
+            min_conductivity = _to_int(
+                opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MIN_CONDUCTIVITY]),
                 DEFAULT_MIN_CONDUCTIVITY,
             )
-            max_humidity = opb_plant.get(
-                CONF_PLANTBOOK_MAPPING[CONF_MAX_HUMIDITY], DEFAULT_MAX_HUMIDITY
+            max_humidity = _to_int(
+                opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MAX_HUMIDITY]),
+                DEFAULT_MAX_HUMIDITY,
             )
-            min_humidity = opb_plant.get(
-                CONF_PLANTBOOK_MAPPING[CONF_MIN_HUMIDITY], DEFAULT_MIN_HUMIDITY
+            min_humidity = _to_int(
+                opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MIN_HUMIDITY]),
+                DEFAULT_MIN_HUMIDITY,
             )
             _LOGGER.info("Picture: %s", entity_picture)
             if (
@@ -287,7 +346,15 @@ class PlantHelper:
                     and config[FLOW_FORCE_SPECIES_UPDATE] is True
                 )
             ):
-                entity_picture = opb_plant.get(FLOW_PLANT_IMAGE)
+                opb_image_url = opb_plant.get(FLOW_PLANT_IMAGE)
+                # Validate the OPB image URL before using it
+                if opb_image_url and await self.validate_image_url(opb_image_url):
+                    entity_picture = opb_image_url
+                else:
+                    _LOGGER.warning(
+                        "OpenPlantbook image URL not accessible, using empty image"
+                    )
+                    entity_picture = ""
             if (
                 FLOW_FORCE_SPECIES_UPDATE in config
                 and config[FLOW_FORCE_SPECIES_UPDATE] is True
