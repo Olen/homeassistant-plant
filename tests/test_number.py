@@ -25,26 +25,27 @@ class TestThresholdEntitiesCreation:
         hass: HomeAssistant,
         init_integration: MockConfigEntry,
     ) -> None:
-        """Test that all 12 threshold entities are created."""
+        """Test that all 13 number entities are created (12 thresholds + lux_to_ppfd)."""
         assert ATTR_THRESHOLDS in hass.data[DOMAIN][init_integration.entry_id]
         thresholds = hass.data[DOMAIN][init_integration.entry_id][ATTR_THRESHOLDS]
 
-        # Should have 12 threshold entities
-        assert len(thresholds) == 12
+        # Should have 13 number entities: 12 thresholds + 1 lux_to_ppfd
+        assert len(thresholds) == 13
 
     async def test_threshold_entities_in_registry(
         self,
         hass: HomeAssistant,
         init_integration: MockConfigEntry,
     ) -> None:
-        """Test threshold entities are registered in entity registry."""
+        """Test number entities are registered in entity registry."""
         entity_registry = er.async_get(hass)
         entities = er.async_entries_for_config_entry(
             entity_registry, init_integration.entry_id
         )
 
         number_entities = [e for e in entities if e.domain == "number"]
-        assert len(number_entities) == 12
+        # 12 thresholds + 1 lux_to_ppfd conversion factor
+        assert len(number_entities) == 13
 
 
 class TestMoistureThresholds:
@@ -547,3 +548,65 @@ class TestTemperatureUnitConversion:
         # Value should remain unchanged
         state = hass.states.get(threshold.entity_id)
         assert state.state == initial_value
+
+
+class TestLuxToPpfdEntity:
+    """Tests for lux to PPFD conversion factor entity."""
+
+    async def test_lux_to_ppfd_entity_created(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test lux_to_ppfd entity is created and added to plant."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+
+        assert plant.lux_to_ppfd is not None
+        assert "lux" in plant.lux_to_ppfd.name.lower()
+        assert "ppfd" in plant.lux_to_ppfd.name.lower()
+
+    async def test_lux_to_ppfd_default_value(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test lux_to_ppfd has correct default value for sunlight."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+
+        # Default value is 0.0185 for sunlight
+        assert plant.lux_to_ppfd.native_value == 0.0185
+
+    async def test_lux_to_ppfd_entity_properties(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test lux_to_ppfd entity has correct properties."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        lux_to_ppfd = plant.lux_to_ppfd
+
+        # Check min/max range is reasonable for different light sources
+        assert lux_to_ppfd.native_min_value == 0.001
+        assert lux_to_ppfd.native_max_value == 0.1
+        assert lux_to_ppfd.native_step == 0.0001
+
+        # Should be a config entity
+        assert lux_to_ppfd.entity_category == EntityCategory.CONFIG
+
+        # Should have display precision hint for GUI (4 decimal places)
+        assert lux_to_ppfd._attr_suggested_display_precision == 4
+
+    async def test_lux_to_ppfd_can_be_changed(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test lux_to_ppfd value can be changed for grow lights."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        lux_to_ppfd = plant.lux_to_ppfd
+
+        # Simulate changing to LED grow light value
+        await lux_to_ppfd.async_set_native_value(0.014)
+        await hass.async_block_till_done()
+
+        assert lux_to_ppfd.native_value == 0.014

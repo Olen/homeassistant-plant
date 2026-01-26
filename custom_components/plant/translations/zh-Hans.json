@@ -63,6 +63,9 @@
       },
       "min_humidity": {
         "name": "最小空气湿度"
+      },
+      "lux_to_ppfd": {
+        "name": "勒克斯转PPFD系数"
       }
     }
   },

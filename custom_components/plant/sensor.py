@@ -530,9 +530,19 @@ class PlantCurrentPpfd(PlantCurrentStatus):
         See https://community.home-assistant.io/t/light-accumulation-for-xiaomi-flower-sensor/111180/3
         https://www.apogeeinstruments.com/conversion-ppfd-to-lux/
         μmol/m²/s
+
+        The conversion factor is configurable per plant to account for different
+        light sources (sunlight ~0.0185, LED grow lights ~0.014-0.020, HPS ~0.013).
         """
         if value is not None and value != STATE_UNAVAILABLE and value != STATE_UNKNOWN:
-            value = float(value) * DEFAULT_LUX_TO_PPFD / 1000000
+            # Use plant's configurable conversion factor, fallback to default
+            lux_to_ppfd = DEFAULT_LUX_TO_PPFD
+            if (
+                self._plant.lux_to_ppfd is not None
+                and self._plant.lux_to_ppfd.native_value is not None
+            ):
+                lux_to_ppfd = float(self._plant.lux_to_ppfd.native_value)
+            value = float(value) * lux_to_ppfd / 1000000
         else:
             value = None
 

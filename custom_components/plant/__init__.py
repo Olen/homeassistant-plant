@@ -449,6 +449,7 @@ class PlantDevice(Entity):
         self.micro_dli = None
         self.ppfd = None
         self.total_integral = None
+        self.lux_to_ppfd = None
 
         self.conductivity_status = None
         self.illuminance_status = None
@@ -697,6 +698,10 @@ class PlantDevice(Entity):
         """Add the intermediate calculation entities"""
         self.ppfd = ppfd
         self.total_integral = total_integral
+
+    def add_lux_to_ppfd(self, lux_to_ppfd: Entity) -> None:
+        """Add the lux to PPFD conversion factor entity"""
+        self.lux_to_ppfd = lux_to_ppfd
 
     def update(self) -> None:
         """Run on every update of the entities"""
