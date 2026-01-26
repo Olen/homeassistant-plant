@@ -545,14 +545,13 @@ async def update_plant_options(
             try:
                 url = cv.url(entity_picture)
                 _LOGGER.debug("Url 1 %s", url)
-            # pylint: disable=broad-except
-            except Exception as exc1:
+            except vol.Invalid as exc1:
                 _LOGGER.warning("Not a valid url: %s", entity_picture)
                 if entity_picture.startswith("/local/"):
                     try:
                         url = cv.path(entity_picture)
                         _LOGGER.debug("Url 2 %s", url)
-                    except Exception as exc2:
+                    except vol.Invalid as exc2:
                         _LOGGER.warning("Not a valid path: %s", entity_picture)
                         raise vol.Invalid(f"Invalid URL: {entity_picture}") from exc2
                 else:
