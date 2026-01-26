@@ -65,12 +65,13 @@ jobs:
           sinceTag: ${{ steps.last_release.outputs.tag_name }}
           headerLabel: "# Notable changes since ${{ steps.last_release.outputs.tag_name }}"
           stripGeneratorNotice: true
+          output: RELEASE_CHANGELOG.md
 
       - name: "Create Stable release"
         uses: softprops/action-gh-release@v2
         with:
           prerelease: false
-          body: "${{ steps.changelog.outputs.changelog }}"
+          body_path: RELEASE_CHANGELOG.md
           name: "Version ${{ env.COMPONENT_VERSION }}"
           tag_name: "v${{ env.COMPONENT_VERSION }}"
         if: contains(env.COMPONENT_VERSION, 'beta') == false
@@ -79,7 +80,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           prerelease: true
-          body: "${{ steps.changelog.outputs.changelog }}"
+          body_path: RELEASE_CHANGELOG.md
           name: "Version ${{ env.COMPONENT_VERSION }}"
           tag_name: "v${{ env.COMPONENT_VERSION }}"
         if: contains(env.COMPONENT_VERSION, 'beta') == true
