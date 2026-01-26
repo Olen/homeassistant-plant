@@ -35,6 +35,7 @@ from .const import (
     ATTR_MOISTURE,
     ATTR_PLANT,
     ATTR_THRESHOLDS,
+    CONF_LUX_TO_PPFD,
     CONF_MAX_CONDUCTIVITY,
     CONF_MAX_DLI,
     CONF_MAX_HUMIDITY,
@@ -47,6 +48,7 @@ from .const import (
     CONF_MIN_ILLUMINANCE,
     CONF_MIN_MOISTURE,
     CONF_MIN_TEMPERATURE,
+    DEFAULT_LUX_TO_PPFD,
     DEFAULT_MAX_CONDUCTIVITY,
     DEFAULT_MAX_DLI,
     DEFAULT_MAX_HUMIDITY,
@@ -67,6 +69,7 @@ from .const import (
     ICON_HUMIDITY,
     ICON_ILLUMINANCE,
     ICON_MOISTURE,
+    ICON_PPFD,
     ICON_TEMPERATURE,
     READING_CONDUCTIVITY,
     READING_DLI,
@@ -76,6 +79,7 @@ from .const import (
     READING_TEMPERATURE,
     TEMPERATURE_MAX_VALUE,
     TEMPERATURE_MIN_VALUE,
+    TRANSLATION_KEY_LUX_TO_PPFD,
     TRANSLATION_KEY_MAX_CONDUCTIVITY,
     TRANSLATION_KEY_MAX_DLI,
     TRANSLATION_KEY_MAX_HUMIDITY,
@@ -112,6 +116,7 @@ async def async_setup_entry(
     pminh = PlantMinHumidity(hass, entry, plant)
     pmaxmm = PlantMaxDli(hass, entry, plant)
     pminmm = PlantMinDli(hass, entry, plant)
+    plux_ppfd = PlantLuxToPpfd(hass, entry, plant)
 
     number_entities = [
         pmaxm,
@@ -126,10 +131,12 @@ async def async_setup_entry(
         pminh,
         pmaxmm,
         pminmm,
+        plux_ppfd,
     ]
     async_add_entities(number_entities)
 
     hass.data[DOMAIN][entry.entry_id][ATTR_THRESHOLDS] = number_entities
+    plant.add_lux_to_ppfd(plux_ppfd)
     plant.add_thresholds(
         max_moisture=pmaxm,
         min_moisture=pminm,
@@ -627,4 +634,37 @@ class PlantMinHumidity(PlantMinMax):
             CONF_MIN_HUMIDITY, DEFAULT_MIN_HUMIDITY
         )
         self._attr_unique_id = f"{config.entry_id}-min-humidity"
+        super().__init__(hass, config, plantdevice)
+
+
+class PlantLuxToPpfd(PlantMinMax):
+    """Entity class for lux to PPFD conversion factor.
+
+    The conversion factor varies based on light source:
+    - Sunlight: ~0.0185 (default)
+    - LED grow lights: ~0.014-0.020 depending on spectrum
+    - HPS lights: ~0.013
+    - Fluorescent: ~0.013-0.014
+
+    See https://www.apogeeinstruments.com/conversion-ppfd-to-lux/
+    """
+
+    _attr_device_class = None
+    _attr_icon = ICON_PPFD
+    _attr_native_unit_of_measurement = None
+    _attr_native_max_value = 0.1
+    _attr_native_min_value = 0.001
+    _attr_native_step = 0.0001
+    _attr_suggested_display_precision = 4
+    _attr_name = "lux to ppfd"
+    _attr_translation_key = TRANSLATION_KEY_LUX_TO_PPFD
+
+    def __init__(
+        self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
+    ) -> None:
+        """Initialize the component."""
+        self._default_value = config.data[FLOW_PLANT_INFO].get(
+            CONF_LUX_TO_PPFD, DEFAULT_LUX_TO_PPFD
+        )
+        self._attr_unique_id = f"{config.entry_id}-lux-to-ppfd"
         super().__init__(hass, config, plantdevice)

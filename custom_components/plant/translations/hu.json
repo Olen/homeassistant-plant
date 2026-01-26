@@ -63,6 +63,9 @@
       },
       "min_humidity": {
         "name": "Minimális levegő páratartalom"
+      },
+      "lux_to_ppfd": {
+        "name": "Lux-PPFD átalakítási tényező"
       }
     }
   },

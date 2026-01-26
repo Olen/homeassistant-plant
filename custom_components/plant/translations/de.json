@@ -63,6 +63,9 @@
       },
       "min_humidity": {
         "name": "Minimale Luftfeuchtigkeit"
+      },
+      "lux_to_ppfd": {
+        "name": "Lux-zu-PPFD-Faktor"
       }
     }
   },

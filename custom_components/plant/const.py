@@ -72,6 +72,7 @@ TRANSLATION_KEY_MAX_CONDUCTIVITY = "max_conductivity"
 TRANSLATION_KEY_MIN_CONDUCTIVITY = "min_conductivity"
 TRANSLATION_KEY_MAX_HUMIDITY = "max_humidity"
 TRANSLATION_KEY_MIN_HUMIDITY = "min_humidity"
+TRANSLATION_KEY_LUX_TO_PPFD = "lux_to_ppfd"
 
 
 ATTR_MAX_ILLUMINANCE_HISTORY = "max_illuminance"
@@ -163,8 +164,9 @@ OPB_DISPLAY_PID = "display_pid"
 # PPFD to DLI: /1000000 * 3600 to get from microseconds to hours
 PPFD_DLI_FACTOR = 0.0036
 # See https://www.apogeeinstruments.com/conversion-ppfd-to-lux/
-# This equals normal sunlight
+# This equals normal sunlight. Grow lights may need different values.
 DEFAULT_LUX_TO_PPFD = 0.0185
+CONF_LUX_TO_PPFD = "lux_to_ppfd"
 
 
 SERVICE_REPLACE_SENSOR = "replace_sensor"
