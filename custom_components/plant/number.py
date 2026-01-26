@@ -193,6 +193,8 @@ class PlantMinMax(RestoreNumber):
     _attr_has_entity_name = True
     _attr_entity_category = EntityCategory.CONFIG
     _attr_mode = NumberMode.BOX
+    # Subclasses should override this for entity_id generation
+    _entity_id_key: str | None = None
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -202,7 +204,7 @@ class PlantMinMax(RestoreNumber):
         self.hass = hass
         self._plant = plantdevice
         self.entity_id = async_generate_entity_id(
-            f"{DOMAIN}.{{}}", self._attr_name, current_ids={}
+            f"{DOMAIN}.{{}}", self._entity_id_key, current_ids={}
         )
         # pylint: disable=no-member
         if (
@@ -296,8 +298,8 @@ class PlantMaxMoisture(PlantMinMax):
     _attr_native_max_value = 100
     _attr_native_min_value = 0
     _attr_native_step = 1
-    _attr_name = f"{ATTR_MAX} {READING_MOISTURE}"
     _attr_translation_key = TRANSLATION_KEY_MAX_MOISTURE
+    _entity_id_key = f"{ATTR_MAX} {READING_MOISTURE}"
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -319,8 +321,8 @@ class PlantMinMoisture(PlantMinMax):
     _attr_native_max_value = 100
     _attr_native_min_value = 0
     _attr_native_step = 1
-    _attr_name = f"{ATTR_MIN} {READING_MOISTURE}"
     _attr_translation_key = TRANSLATION_KEY_MIN_MOISTURE
+    _entity_id_key = f"{ATTR_MIN} {READING_MOISTURE}"
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -341,8 +343,8 @@ class PlantMaxTemperature(PlantMinMax):
     _attr_native_max_value = TEMPERATURE_MAX_VALUE
     _attr_native_min_value = TEMPERATURE_MIN_VALUE
     _attr_native_step = 1
-    _attr_name = f"{ATTR_MAX} {READING_TEMPERATURE}"
     _attr_translation_key = TRANSLATION_KEY_MAX_TEMPERATURE
+    _entity_id_key = f"{ATTR_MAX} {READING_TEMPERATURE}"
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -415,8 +417,8 @@ class PlantMinTemperature(PlantMinMax):
     _attr_native_max_value = TEMPERATURE_MAX_VALUE
     _attr_native_min_value = TEMPERATURE_MIN_VALUE
     _attr_native_step = 1
-    _attr_name = f"{ATTR_MIN} {READING_TEMPERATURE}"
     _attr_translation_key = TRANSLATION_KEY_MIN_TEMPERATURE
+    _entity_id_key = f"{ATTR_MIN} {READING_TEMPERATURE}"
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -490,8 +492,8 @@ class PlantMaxIlluminance(PlantMinMax):
     _attr_native_max_value = 200000
     _attr_native_min_value = 0
     _attr_native_step = 500
-    _attr_name = f"{ATTR_MAX} {READING_ILLUMINANCE}"
     _attr_translation_key = TRANSLATION_KEY_MAX_ILLUMINANCE
+    _entity_id_key = f"{ATTR_MAX} {READING_ILLUMINANCE}"
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -513,8 +515,8 @@ class PlantMinIlluminance(PlantMinMax):
     _attr_native_max_value = 200000
     _attr_native_min_value = 0
     _attr_native_step = 500
-    _attr_name = f"{ATTR_MIN} {READING_ILLUMINANCE}"
     _attr_translation_key = TRANSLATION_KEY_MIN_ILLUMINANCE
+    _entity_id_key = f"{ATTR_MIN} {READING_ILLUMINANCE}"
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -536,8 +538,8 @@ class PlantMaxDli(PlantMinMax):
     _attr_native_max_value = 100
     _attr_native_min_value = 0
     _attr_native_step = 1
-    _attr_name = f"{ATTR_MAX} {READING_DLI}"
     _attr_translation_key = TRANSLATION_KEY_MAX_DLI
+    _entity_id_key = f"{ATTR_MAX} {READING_DLI}"
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -559,8 +561,8 @@ class PlantMinDli(PlantMinMax):
     _attr_native_max_value = 100
     _attr_native_min_value = 0
     _attr_native_step = 1
-    _attr_name = f"{ATTR_MIN} {READING_DLI}"
     _attr_translation_key = TRANSLATION_KEY_MIN_DLI
+    _entity_id_key = f"{ATTR_MIN} {READING_DLI}"
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -582,8 +584,8 @@ class PlantMaxConductivity(PlantMinMax):
     _attr_native_max_value = 3000
     _attr_native_min_value = 0
     _attr_native_step = 50
-    _attr_name = f"{ATTR_MAX} {READING_CONDUCTIVITY}"
     _attr_translation_key = TRANSLATION_KEY_MAX_CONDUCTIVITY
+    _entity_id_key = f"{ATTR_MAX} {READING_CONDUCTIVITY}"
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -605,8 +607,8 @@ class PlantMinConductivity(PlantMinMax):
     _attr_native_max_value = 3000
     _attr_native_min_value = 0
     _attr_native_step = 50
-    _attr_name = f"{ATTR_MIN} {READING_CONDUCTIVITY}"
     _attr_translation_key = TRANSLATION_KEY_MIN_CONDUCTIVITY
+    _entity_id_key = f"{ATTR_MIN} {READING_CONDUCTIVITY}"
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -628,8 +630,8 @@ class PlantMaxHumidity(PlantMinMax):
     _attr_native_max_value = 100
     _attr_native_min_value = 0
     _attr_native_step = 1
-    _attr_name = f"{ATTR_MAX} {READING_HUMIDITY}"
     _attr_translation_key = TRANSLATION_KEY_MAX_HUMIDITY
+    _entity_id_key = f"{ATTR_MAX} {READING_HUMIDITY}"
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -651,8 +653,8 @@ class PlantMinHumidity(PlantMinMax):
     _attr_native_max_value = 100
     _attr_native_min_value = 0
     _attr_native_step = 1
-    _attr_name = f"{ATTR_MIN} {READING_HUMIDITY}"
     _attr_translation_key = TRANSLATION_KEY_MIN_HUMIDITY
+    _entity_id_key = f"{ATTR_MIN} {READING_HUMIDITY}"
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -674,8 +676,8 @@ class PlantMaxCo2(PlantMinMax):
     _attr_native_max_value = 5000
     _attr_native_min_value = 0
     _attr_native_step = 50
-    _attr_name = f"{ATTR_MAX} {READING_CO2}"
     _attr_translation_key = TRANSLATION_KEY_MAX_CO2
+    _entity_id_key = f"{ATTR_MAX} {READING_CO2}"
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -697,8 +699,8 @@ class PlantMinCo2(PlantMinMax):
     _attr_native_max_value = 5000
     _attr_native_min_value = 0
     _attr_native_step = 50
-    _attr_name = f"{ATTR_MIN} {READING_CO2}"
     _attr_translation_key = TRANSLATION_KEY_MIN_CO2
+    _entity_id_key = f"{ATTR_MIN} {READING_CO2}"
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -719,8 +721,8 @@ class PlantMaxSoilTemperature(PlantMinMax):
     _attr_native_max_value = TEMPERATURE_MAX_VALUE
     _attr_native_min_value = TEMPERATURE_MIN_VALUE
     _attr_native_step = 1
-    _attr_name = f"{ATTR_MAX} {READING_SOIL_TEMPERATURE}"
     _attr_translation_key = TRANSLATION_KEY_MAX_SOIL_TEMPERATURE
+    _entity_id_key = f"{ATTR_MAX} {READING_SOIL_TEMPERATURE}"
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -786,8 +788,8 @@ class PlantMinSoilTemperature(PlantMinMax):
     _attr_native_max_value = TEMPERATURE_MAX_VALUE
     _attr_native_min_value = TEMPERATURE_MIN_VALUE
     _attr_native_step = 1
-    _attr_name = f"{ATTR_MIN} {READING_SOIL_TEMPERATURE}"
     _attr_translation_key = TRANSLATION_KEY_MIN_SOIL_TEMPERATURE
+    _entity_id_key = f"{ATTR_MIN} {READING_SOIL_TEMPERATURE}"
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -864,8 +866,8 @@ class PlantLuxToPpfd(PlantMinMax):
     _attr_native_min_value = 0.001
     _attr_native_step = 0.0001
     _attr_suggested_display_precision = 4
-    _attr_name = "lux to ppfd"
     _attr_translation_key = TRANSLATION_KEY_LUX_TO_PPFD
+    _entity_id_key = "lux to ppfd"
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
