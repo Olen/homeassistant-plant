@@ -36,12 +36,14 @@ from .const import (
     ATTR_PLANT,
     ATTR_THRESHOLDS,
     CONF_LUX_TO_PPFD,
+    CONF_MAX_CO2,
     CONF_MAX_CONDUCTIVITY,
     CONF_MAX_DLI,
     CONF_MAX_HUMIDITY,
     CONF_MAX_ILLUMINANCE,
     CONF_MAX_MOISTURE,
     CONF_MAX_TEMPERATURE,
+    CONF_MIN_CO2,
     CONF_MIN_CONDUCTIVITY,
     CONF_MIN_DLI,
     CONF_MIN_HUMIDITY,
@@ -49,12 +51,14 @@ from .const import (
     CONF_MIN_MOISTURE,
     CONF_MIN_TEMPERATURE,
     DEFAULT_LUX_TO_PPFD,
+    DEFAULT_MAX_CO2,
     DEFAULT_MAX_CONDUCTIVITY,
     DEFAULT_MAX_DLI,
     DEFAULT_MAX_HUMIDITY,
     DEFAULT_MAX_ILLUMINANCE,
     DEFAULT_MAX_MOISTURE,
     DEFAULT_MAX_TEMPERATURE,
+    DEFAULT_MIN_CO2,
     DEFAULT_MIN_CONDUCTIVITY,
     DEFAULT_MIN_DLI,
     DEFAULT_MIN_HUMIDITY,
@@ -64,6 +68,7 @@ from .const import (
     DOMAIN,
     FLOW_PLANT_INFO,
     FLOW_PLANT_LIMITS,
+    ICON_CO2,
     ICON_CONDUCTIVITY,
     ICON_DLI,
     ICON_HUMIDITY,
@@ -71,6 +76,7 @@ from .const import (
     ICON_MOISTURE,
     ICON_PPFD,
     ICON_TEMPERATURE,
+    READING_CO2,
     READING_CONDUCTIVITY,
     READING_DLI,
     READING_HUMIDITY,
@@ -80,12 +86,14 @@ from .const import (
     TEMPERATURE_MAX_VALUE,
     TEMPERATURE_MIN_VALUE,
     TRANSLATION_KEY_LUX_TO_PPFD,
+    TRANSLATION_KEY_MAX_CO2,
     TRANSLATION_KEY_MAX_CONDUCTIVITY,
     TRANSLATION_KEY_MAX_DLI,
     TRANSLATION_KEY_MAX_HUMIDITY,
     TRANSLATION_KEY_MAX_ILLUMINANCE,
     TRANSLATION_KEY_MAX_MOISTURE,
     TRANSLATION_KEY_MAX_TEMPERATURE,
+    TRANSLATION_KEY_MIN_CO2,
     TRANSLATION_KEY_MIN_CONDUCTIVITY,
     TRANSLATION_KEY_MIN_DLI,
     TRANSLATION_KEY_MIN_HUMIDITY,
@@ -114,6 +122,8 @@ async def async_setup_entry(
     pminc = PlantMinConductivity(hass, entry, plant)
     pmaxh = PlantMaxHumidity(hass, entry, plant)
     pminh = PlantMinHumidity(hass, entry, plant)
+    pmaxco2 = PlantMaxCo2(hass, entry, plant)
+    pminco2 = PlantMinCo2(hass, entry, plant)
     pmaxmm = PlantMaxDli(hass, entry, plant)
     pminmm = PlantMinDli(hass, entry, plant)
     plux_ppfd = PlantLuxToPpfd(hass, entry, plant)
@@ -129,6 +139,8 @@ async def async_setup_entry(
         pminc,
         pmaxh,
         pminh,
+        pmaxco2,
+        pminco2,
         pmaxmm,
         pminmm,
         plux_ppfd,
@@ -148,6 +160,8 @@ async def async_setup_entry(
         min_conductivity=pminc,
         max_humidity=pmaxh,
         min_humidity=pminh,
+        max_co2=pmaxco2,
+        min_co2=pminco2,
         max_dli=pmaxmm,
         min_dli=pminmm,
     )
@@ -634,6 +648,52 @@ class PlantMinHumidity(PlantMinMax):
             CONF_MIN_HUMIDITY, DEFAULT_MIN_HUMIDITY
         )
         self._attr_unique_id = f"{config.entry_id}-min-humidity"
+        super().__init__(hass, config, plantdevice)
+
+
+class PlantMaxCo2(PlantMinMax):
+    """Entity class for max CO2 threshold"""
+
+    _attr_device_class = f"{SensorDeviceClass.CO2} threshold"
+    _attr_icon = ICON_CO2
+    _attr_native_unit_of_measurement = "ppm"
+    _attr_native_max_value = 5000
+    _attr_native_min_value = 0
+    _attr_native_step = 50
+    _attr_name = f"{ATTR_MAX} {READING_CO2}"
+    _attr_translation_key = TRANSLATION_KEY_MAX_CO2
+
+    def __init__(
+        self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
+    ) -> None:
+        """Initialize the component."""
+        self._default_value = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
+            CONF_MAX_CO2, DEFAULT_MAX_CO2
+        )
+        self._attr_unique_id = f"{config.entry_id}-max-co2"
+        super().__init__(hass, config, plantdevice)
+
+
+class PlantMinCo2(PlantMinMax):
+    """Entity class for min CO2 threshold"""
+
+    _attr_device_class = f"{SensorDeviceClass.CO2} threshold"
+    _attr_icon = ICON_CO2
+    _attr_native_unit_of_measurement = "ppm"
+    _attr_native_max_value = 5000
+    _attr_native_min_value = 0
+    _attr_native_step = 50
+    _attr_name = f"{ATTR_MIN} {READING_CO2}"
+    _attr_translation_key = TRANSLATION_KEY_MIN_CO2
+
+    def __init__(
+        self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
+    ) -> None:
+        """Initialize the component."""
+        self._default_value = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
+            CONF_MIN_CO2, DEFAULT_MIN_CO2
+        )
+        self._attr_unique_id = f"{config.entry_id}-min-co2"
         super().__init__(hass, config, plantdevice)
 
 

@@ -47,6 +47,7 @@ from .const import (
     DOMAIN,
     DOMAIN_PLANTBOOK,
     DOMAIN_SENSOR,
+    FLOW_CO2_TRIGGER,
     FLOW_CONDUCTIVITY_TRIGGER,
     FLOW_DLI_TRIGGER,
     FLOW_ERROR_NOTFOUND,
@@ -57,6 +58,7 @@ from .const import (
     FLOW_PLANT_INFO,
     FLOW_PLANT_LIMITS,
     FLOW_RIGHT_PLANT,
+    FLOW_SENSOR_CO2,
     FLOW_SENSOR_CONDUCTIVITY,
     FLOW_SENSOR_HUMIDITY,
     FLOW_SENSOR_ILLUMINANCE,
@@ -163,6 +165,14 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             {
                 ATTR_ENTITY: {
                     ATTR_DEVICE_CLASS: SensorDeviceClass.HUMIDITY,
+                    ATTR_DOMAIN: DOMAIN_SENSOR,
+                }
+            }
+        )
+        data_schema[FLOW_SENSOR_CO2] = selector(
+            {
+                ATTR_ENTITY: {
+                    ATTR_DEVICE_CLASS: SensorDeviceClass.CO2,
                     ATTR_DOMAIN: DOMAIN_SENSOR,
                 }
             }
@@ -517,6 +527,9 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 FLOW_CONDUCTIVITY_TRIGGER, default=self.plant.conductivity_trigger
             )
         ] = cv.boolean
+        data_schema[vol.Optional(FLOW_CO2_TRIGGER, default=self.plant.co2_trigger)] = (
+            cv.boolean
+        )
 
         return self.async_show_form(
             step_id="init",

@@ -17,6 +17,9 @@
       "humidity": {
         "name": "Luftfeuchtigkeit"
       },
+      "co2": {
+        "name": "CO2"
+      },
       "ppfd": {
         "name": "PPFD"
       },
@@ -64,6 +67,12 @@
       "min_humidity": {
         "name": "Minimale Luftfeuchtigkeit"
       },
+      "max_co2": {
+        "name": "Maximaler CO2-Wert"
+      },
+      "min_co2": {
+        "name": "Minimaler CO2-Wert"
+      },
       "lux_to_ppfd": {
         "name": "Lux-zu-PPFD-Faktor"
       }
@@ -81,7 +90,8 @@
           "moisture_sensor": "Bodenfeuchtesensor",
           "conductivity_sensor": "Leitfähigkeitssensor",
           "illuminance_sensor": "Beleuchtungsstärkesensor",
-          "humidity_sensor": "Luftfeuchtigkeitssensor"
+          "humidity_sensor": "Luftfeuchtigkeitssensor",
+          "co2_sensor": "CO2-Sensor"
         },
         "data_description": {
           "species": "Wird für die Suche in OpenPlantbook verwendet"
@@ -141,7 +151,8 @@
           "humidity_trigger": "Luftfeuchtigkeit als Problemauslöser verwenden",
           "conductivity_trigger": "Leitfähigkeit als Problemauslöser verwenden",
           "moisture_trigger": "Bodenfeuchte als Problemauslöser verwenden",
-          "temperature_trigger": "Temperatur als Problemauslöser verwenden"
+          "temperature_trigger": "Temperatur als Problemauslöser verwenden",
+          "co2_trigger": "CO2 als Problemauslöser verwenden"
         }
       }
     }

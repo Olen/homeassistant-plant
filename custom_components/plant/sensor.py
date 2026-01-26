@@ -21,6 +21,7 @@ from homeassistant.const import (
     ATTR_ICON,
     ATTR_NAME,
     ATTR_UNIT_OF_MEASUREMENT,
+    CONCENTRATION_PARTS_PER_MILLION,
     LIGHT_LUX,
     PERCENTAGE,
     STATE_UNAVAILABLE,
@@ -58,11 +59,13 @@ from .const import (
     DOMAIN,
     DOMAIN_SENSOR,
     FLOW_PLANT_INFO,
+    FLOW_SENSOR_CO2,
     FLOW_SENSOR_CONDUCTIVITY,
     FLOW_SENSOR_HUMIDITY,
     FLOW_SENSOR_ILLUMINANCE,
     FLOW_SENSOR_MOISTURE,
     FLOW_SENSOR_TEMPERATURE,
+    ICON_CO2,
     ICON_CONDUCTIVITY,
     ICON_DLI,
     ICON_HUMIDITY,
@@ -70,6 +73,7 @@ from .const import (
     ICON_MOISTURE,
     ICON_PPFD,
     ICON_TEMPERATURE,
+    READING_CO2,
     READING_CONDUCTIVITY,
     READING_DLI,
     READING_HUMIDITY,
@@ -77,6 +81,7 @@ from .const import (
     READING_MOISTURE,
     READING_PPFD,
     READING_TEMPERATURE,
+    TRANSLATION_KEY_CO2,
     TRANSLATION_KEY_CONDUCTIVITY,
     TRANSLATION_KEY_DAILY_LIGHT_INTEGRAL,
     TRANSLATION_KEY_HUMIDITY,
@@ -114,12 +119,14 @@ async def async_setup_entry(
     pcurm = PlantCurrentMoisture(hass, entry, plant)
     pcurt = PlantCurrentTemperature(hass, entry, plant)
     pcurh = PlantCurrentHumidity(hass, entry, plant)
+    pcurco2 = PlantCurrentCo2(hass, entry, plant)
     plant_sensors = [
         pcurb,
         pcurc,
         pcurm,
         pcurt,
         pcurh,
+        pcurco2,
     ]
     async_add_entities(plant_sensors)
     hass.data[DOMAIN][entry.entry_id][ATTR_SENSORS] = plant_sensors
@@ -129,6 +136,7 @@ async def async_setup_entry(
         conductivity=pcurc,
         illuminance=pcurb,
         humidity=pcurh,
+        co2=pcurco2,
     )
 
     # Create and add the integral-entities
@@ -495,6 +503,26 @@ class PlantCurrentHumidity(PlantCurrentStatus):
         """Initialize the sensor"""
         self._attr_unique_id = f"{config.entry_id}-current-humidity"
         self._external_sensor = config.data[FLOW_PLANT_INFO].get(FLOW_SENSOR_HUMIDITY)
+        super().__init__(hass, config, plantdevice)
+
+
+class PlantCurrentCo2(PlantCurrentStatus):
+    """Entity class for the current CO2 meter"""
+
+    _attr_device_class = SensorDeviceClass.CO2
+    _attr_icon = ICON_CO2
+    _attr_native_unit_of_measurement = CONCENTRATION_PARTS_PER_MILLION
+    _attr_suggested_display_precision = 0
+    _attr_name = READING_CO2
+    _attr_translation_key = TRANSLATION_KEY_CO2
+    _config_key = FLOW_SENSOR_CO2
+
+    def __init__(
+        self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
+    ) -> None:
+        """Initialize the sensor"""
+        self._attr_unique_id = f"{config.entry_id}-current-co2"
+        self._external_sensor = config.data[FLOW_PLANT_INFO].get(FLOW_SENSOR_CO2)
         super().__init__(hass, config, plantdevice)
 
 
