@@ -34,8 +34,14 @@ jobs:
         run: ruff check .
 
   test:
-    name: Tests
+    name: Tests (HA ${{ matrix.ha-version }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ha-version:
+          - "minimum"
+          - "latest"
     steps:
       - name: Check out code
         uses: actions/checkout@v5
@@ -48,11 +54,27 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v4
 
+      - name: Get minimum HA version from hacs.json
+        id: ha-version
+        run: |
+          MIN_VERSION=$(python -c "import json; print(json.load(open('hacs.json'))['homeassistant'])")
+          echo "minimum=$MIN_VERSION" >> $GITHUB_OUTPUT
+
       - name: Install dependencies
         run: |
           rm -f uv.lock  # Prevent editable install from lock file
           uv venv
           uv pip install $(python -c "import tomllib; print(' '.join(tomllib.load(open('pyproject.toml', 'rb'))['project']['optional-dependencies']['test']))")
+
+      - name: Pin HA to minimum version
+        if: matrix.ha-version == 'minimum'
+        run: |
+          uv pip install homeassistant==${{ steps.ha-version.outputs.minimum }} --system --reinstall-package homeassistant
+          .venv/bin/pip install homeassistant==${{ steps.ha-version.outputs.minimum }}
+
+      - name: Show installed HA version
+        run: |
+          .venv/bin/python -c "import homeassistant; print(f'Home Assistant version: {homeassistant.__version__}')"
 
       - name: Run tests
         run: .venv/bin/pytest tests/ -v --tb=short
