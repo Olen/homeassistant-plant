@@ -66,9 +66,9 @@ class TestIntegrationSetup:
             entity_registry, init_integration.entry_id
         )
 
-        # Should have: 5 sensors + 12 thresholds + 3 calculated sensors = 20
+        # Should have: 7 sensors + 17 thresholds + 3 calculated sensors = 27
         # Plus potentially the main plant entity
-        assert len(entities) >= 17  # At minimum sensors + thresholds
+        assert len(entities) >= 24  # At minimum sensors + thresholds
 
     async def test_unload_entry(
         self,
@@ -294,6 +294,8 @@ class TestPlantDevice:
             conductivity=1000.0,
             illuminance=5000.0,
             humidity=40.0,
+            co2=800.0,
+            soil_temperature=22.0,
         )
         await hass.async_block_till_done()
         plant.update()
@@ -306,6 +308,8 @@ class TestPlantDevice:
         assert "illuminance_status" in attrs
         assert "humidity_status" in attrs
         assert "dli_status" in attrs
+        assert "co2_status" in attrs
+        assert "soil_temperature_status" in attrs
 
     async def test_plant_device_device_info(
         self,
@@ -441,6 +445,8 @@ class TestPlantDevice:
         assert "conductivity" in ws_info
         assert "humidity" in ws_info
         assert "dli" in ws_info
+        assert "co2" in ws_info
+        assert "soil_temperature" in ws_info
 
         # Each should have max, min, current, icon, etc.
         assert "max" in ws_info["temperature"]
@@ -530,6 +536,94 @@ class TestPlantDevice:
         await update_plant_sensors(hass, init_integration.entry_id)
         assert plant.state == STATE_PROBLEM
         assert plant.humidity_status == STATE_HIGH
+
+    async def test_plant_device_state_problem_co2_low(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test plant device shows problem when CO2 is too low."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=40.0,
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=40.0,
+            co2=200.0,  # Below min of 400
+        )
+
+        await update_plant_sensors(hass, init_integration.entry_id)
+        assert plant.state == STATE_PROBLEM
+        assert plant.co2_status == STATE_LOW
+
+    async def test_plant_device_state_problem_co2_high(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test plant device shows problem when CO2 is too high."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=40.0,
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=40.0,
+            co2=3000.0,  # Above max of 2000
+        )
+
+        await update_plant_sensors(hass, init_integration.entry_id)
+        assert plant.state == STATE_PROBLEM
+        assert plant.co2_status == STATE_HIGH
+
+    async def test_plant_device_state_problem_soil_temperature_low(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test plant device shows problem when soil temperature is too low."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=40.0,
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=40.0,
+            soil_temperature=5.0,  # Below min of 10
+        )
+
+        await update_plant_sensors(hass, init_integration.entry_id)
+        assert plant.state == STATE_PROBLEM
+        assert plant.soil_temperature_status == STATE_LOW
+
+    async def test_plant_device_state_problem_soil_temperature_high(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test plant device shows problem when soil temperature is too high."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=40.0,
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=40.0,
+            soil_temperature=50.0,  # Above max of 40
+        )
+
+        await update_plant_sensors(hass, init_integration.entry_id)
+        assert plant.state == STATE_PROBLEM
+        assert plant.soil_temperature_status == STATE_HIGH
 
     async def test_plant_device_conductivity_trigger_disabled(
         self,
@@ -693,6 +787,192 @@ class TestPlantDevice:
         await update_plant_sensors(hass, entry.entry_id)
 
         assert plant.humidity_status == STATE_LOW
+        assert plant.state == STATE_OK
+
+    async def test_plant_device_co2_trigger_disabled(
+        self,
+        hass: HomeAssistant,
+        mock_external_sensors: None,
+    ) -> None:
+        """Test that disabling CO2 trigger prevents problem state."""
+        from homeassistant.const import ATTR_ENTITY_PICTURE, ATTR_NAME
+
+        from custom_components.plant.const import (
+            CONF_MAX_CO2,
+            CONF_MAX_CONDUCTIVITY,
+            CONF_MAX_DLI,
+            CONF_MAX_HUMIDITY,
+            CONF_MAX_ILLUMINANCE,
+            CONF_MAX_MOISTURE,
+            CONF_MAX_SOIL_TEMPERATURE,
+            CONF_MAX_TEMPERATURE,
+            CONF_MIN_CO2,
+            CONF_MIN_CONDUCTIVITY,
+            CONF_MIN_DLI,
+            CONF_MIN_HUMIDITY,
+            CONF_MIN_ILLUMINANCE,
+            CONF_MIN_MOISTURE,
+            CONF_MIN_SOIL_TEMPERATURE,
+            CONF_MIN_TEMPERATURE,
+            DATA_SOURCE,
+            FLOW_CO2_TRIGGER,
+            OPB_DISPLAY_PID,
+        )
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            entry_id="test_entry_co2_trigger_disabled",
+            unique_id="test_entry_co2_trigger_disabled",
+            title="Test Plant",
+            data={
+                DATA_SOURCE: "Default values",
+                FLOW_PLANT_INFO: {
+                    ATTR_NAME: "Test Plant",
+                    "species": "monstera deliciosa",
+                    OPB_DISPLAY_PID: "Monstera deliciosa",
+                    ATTR_ENTITY_PICTURE: "https://example.com/plant.jpg",
+                    "limits": {
+                        CONF_MAX_MOISTURE: 60,
+                        CONF_MIN_MOISTURE: 20,
+                        CONF_MAX_TEMPERATURE: 40,
+                        CONF_MIN_TEMPERATURE: 10,
+                        CONF_MAX_CONDUCTIVITY: 3000,
+                        CONF_MIN_CONDUCTIVITY: 500,
+                        CONF_MAX_ILLUMINANCE: 100000,
+                        CONF_MIN_ILLUMINANCE: 0,
+                        CONF_MAX_HUMIDITY: 60,
+                        CONF_MIN_HUMIDITY: 20,
+                        CONF_MAX_DLI: 30,
+                        CONF_MIN_DLI: 2,
+                        CONF_MAX_CO2: 2000,
+                        CONF_MIN_CO2: 400,
+                        CONF_MAX_SOIL_TEMPERATURE: 40,
+                        CONF_MIN_SOIL_TEMPERATURE: 10,
+                    },
+                    "temperature_sensor": "sensor.test_temperature",
+                    "moisture_sensor": "sensor.test_moisture",
+                    "conductivity_sensor": "sensor.test_conductivity",
+                    "illuminance_sensor": "sensor.test_illuminance",
+                    "humidity_sensor": "sensor.test_humidity",
+                    "co2_sensor": "sensor.test_co2",
+                    "soil_temperature_sensor": "sensor.test_soil_temperature",
+                },
+            },
+            options={FLOW_CO2_TRIGGER: False},
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][entry.entry_id][ATTR_PLANT]
+
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=40.0,
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=40.0,
+            co2=200.0,  # Below threshold
+        )
+
+        await update_plant_sensors(hass, entry.entry_id)
+
+        assert plant.co2_status == STATE_LOW
+        assert plant.state == STATE_OK
+
+    async def test_plant_device_soil_temperature_trigger_disabled(
+        self,
+        hass: HomeAssistant,
+        mock_external_sensors: None,
+    ) -> None:
+        """Test that disabling soil temperature trigger prevents problem state."""
+        from homeassistant.const import ATTR_ENTITY_PICTURE, ATTR_NAME
+
+        from custom_components.plant.const import (
+            CONF_MAX_CO2,
+            CONF_MAX_CONDUCTIVITY,
+            CONF_MAX_DLI,
+            CONF_MAX_HUMIDITY,
+            CONF_MAX_ILLUMINANCE,
+            CONF_MAX_MOISTURE,
+            CONF_MAX_SOIL_TEMPERATURE,
+            CONF_MAX_TEMPERATURE,
+            CONF_MIN_CO2,
+            CONF_MIN_CONDUCTIVITY,
+            CONF_MIN_DLI,
+            CONF_MIN_HUMIDITY,
+            CONF_MIN_ILLUMINANCE,
+            CONF_MIN_MOISTURE,
+            CONF_MIN_SOIL_TEMPERATURE,
+            CONF_MIN_TEMPERATURE,
+            DATA_SOURCE,
+            FLOW_SOIL_TEMPERATURE_TRIGGER,
+            OPB_DISPLAY_PID,
+        )
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            entry_id="test_entry_soil_temp_trigger_disabled",
+            unique_id="test_entry_soil_temp_trigger_disabled",
+            title="Test Plant",
+            data={
+                DATA_SOURCE: "Default values",
+                FLOW_PLANT_INFO: {
+                    ATTR_NAME: "Test Plant",
+                    "species": "monstera deliciosa",
+                    OPB_DISPLAY_PID: "Monstera deliciosa",
+                    ATTR_ENTITY_PICTURE: "https://example.com/plant.jpg",
+                    "limits": {
+                        CONF_MAX_MOISTURE: 60,
+                        CONF_MIN_MOISTURE: 20,
+                        CONF_MAX_TEMPERATURE: 40,
+                        CONF_MIN_TEMPERATURE: 10,
+                        CONF_MAX_CONDUCTIVITY: 3000,
+                        CONF_MIN_CONDUCTIVITY: 500,
+                        CONF_MAX_ILLUMINANCE: 100000,
+                        CONF_MIN_ILLUMINANCE: 0,
+                        CONF_MAX_HUMIDITY: 60,
+                        CONF_MIN_HUMIDITY: 20,
+                        CONF_MAX_DLI: 30,
+                        CONF_MIN_DLI: 2,
+                        CONF_MAX_CO2: 2000,
+                        CONF_MIN_CO2: 400,
+                        CONF_MAX_SOIL_TEMPERATURE: 40,
+                        CONF_MIN_SOIL_TEMPERATURE: 10,
+                    },
+                    "temperature_sensor": "sensor.test_temperature",
+                    "moisture_sensor": "sensor.test_moisture",
+                    "conductivity_sensor": "sensor.test_conductivity",
+                    "illuminance_sensor": "sensor.test_illuminance",
+                    "humidity_sensor": "sensor.test_humidity",
+                    "co2_sensor": "sensor.test_co2",
+                    "soil_temperature_sensor": "sensor.test_soil_temperature",
+                },
+            },
+            options={FLOW_SOIL_TEMPERATURE_TRIGGER: False},
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][entry.entry_id][ATTR_PLANT]
+
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=40.0,
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=40.0,
+            soil_temperature=5.0,  # Below threshold
+        )
+
+        await update_plant_sensors(hass, entry.entry_id)
+
+        assert plant.soil_temperature_status == STATE_LOW
         assert plant.state == STATE_OK
 
     async def test_plant_device_dli_status_low(

@@ -42,6 +42,7 @@ from .const import (
     CONF_MAX_HUMIDITY,
     CONF_MAX_ILLUMINANCE,
     CONF_MAX_MOISTURE,
+    CONF_MAX_SOIL_TEMPERATURE,
     CONF_MAX_TEMPERATURE,
     CONF_MIN_CO2,
     CONF_MIN_CONDUCTIVITY,
@@ -49,6 +50,7 @@ from .const import (
     CONF_MIN_HUMIDITY,
     CONF_MIN_ILLUMINANCE,
     CONF_MIN_MOISTURE,
+    CONF_MIN_SOIL_TEMPERATURE,
     CONF_MIN_TEMPERATURE,
     DEFAULT_LUX_TO_PPFD,
     DEFAULT_MAX_CO2,
@@ -57,6 +59,7 @@ from .const import (
     DEFAULT_MAX_HUMIDITY,
     DEFAULT_MAX_ILLUMINANCE,
     DEFAULT_MAX_MOISTURE,
+    DEFAULT_MAX_SOIL_TEMPERATURE,
     DEFAULT_MAX_TEMPERATURE,
     DEFAULT_MIN_CO2,
     DEFAULT_MIN_CONDUCTIVITY,
@@ -64,6 +67,7 @@ from .const import (
     DEFAULT_MIN_HUMIDITY,
     DEFAULT_MIN_ILLUMINANCE,
     DEFAULT_MIN_MOISTURE,
+    DEFAULT_MIN_SOIL_TEMPERATURE,
     DEFAULT_MIN_TEMPERATURE,
     DOMAIN,
     FLOW_PLANT_INFO,
@@ -75,6 +79,7 @@ from .const import (
     ICON_ILLUMINANCE,
     ICON_MOISTURE,
     ICON_PPFD,
+    ICON_SOIL_TEMPERATURE,
     ICON_TEMPERATURE,
     READING_CO2,
     READING_CONDUCTIVITY,
@@ -82,6 +87,7 @@ from .const import (
     READING_HUMIDITY,
     READING_ILLUMINANCE,
     READING_MOISTURE,
+    READING_SOIL_TEMPERATURE,
     READING_TEMPERATURE,
     TEMPERATURE_MAX_VALUE,
     TEMPERATURE_MIN_VALUE,
@@ -92,6 +98,7 @@ from .const import (
     TRANSLATION_KEY_MAX_HUMIDITY,
     TRANSLATION_KEY_MAX_ILLUMINANCE,
     TRANSLATION_KEY_MAX_MOISTURE,
+    TRANSLATION_KEY_MAX_SOIL_TEMPERATURE,
     TRANSLATION_KEY_MAX_TEMPERATURE,
     TRANSLATION_KEY_MIN_CO2,
     TRANSLATION_KEY_MIN_CONDUCTIVITY,
@@ -99,6 +106,7 @@ from .const import (
     TRANSLATION_KEY_MIN_HUMIDITY,
     TRANSLATION_KEY_MIN_ILLUMINANCE,
     TRANSLATION_KEY_MIN_MOISTURE,
+    TRANSLATION_KEY_MIN_SOIL_TEMPERATURE,
     TRANSLATION_KEY_MIN_TEMPERATURE,
     UNIT_DLI,
 )
@@ -124,6 +132,8 @@ async def async_setup_entry(
     pminh = PlantMinHumidity(hass, entry, plant)
     pmaxco2 = PlantMaxCo2(hass, entry, plant)
     pminco2 = PlantMinCo2(hass, entry, plant)
+    pmaxst = PlantMaxSoilTemperature(hass, entry, plant)
+    pminst = PlantMinSoilTemperature(hass, entry, plant)
     pmaxmm = PlantMaxDli(hass, entry, plant)
     pminmm = PlantMinDli(hass, entry, plant)
     plux_ppfd = PlantLuxToPpfd(hass, entry, plant)
@@ -141,6 +151,8 @@ async def async_setup_entry(
         pminh,
         pmaxco2,
         pminco2,
+        pmaxst,
+        pminst,
         pmaxmm,
         pminmm,
         plux_ppfd,
@@ -162,6 +174,8 @@ async def async_setup_entry(
         min_humidity=pminh,
         max_co2=pmaxco2,
         min_co2=pminco2,
+        max_soil_temperature=pmaxst,
+        min_soil_temperature=pminst,
         max_dli=pmaxmm,
         min_dli=pminmm,
     )
@@ -695,6 +709,140 @@ class PlantMinCo2(PlantMinMax):
         )
         self._attr_unique_id = f"{config.entry_id}-min-co2"
         super().__init__(hass, config, plantdevice)
+
+
+class PlantMaxSoilTemperature(PlantMinMax):
+    """Entity class for max soil temperature threshold"""
+
+    _attr_device_class = NumberDeviceClass.TEMPERATURE
+    _attr_icon = ICON_SOIL_TEMPERATURE
+    _attr_native_max_value = TEMPERATURE_MAX_VALUE
+    _attr_native_min_value = TEMPERATURE_MIN_VALUE
+    _attr_native_step = 1
+    _attr_name = f"{ATTR_MAX} {READING_SOIL_TEMPERATURE}"
+    _attr_translation_key = TRANSLATION_KEY_MAX_SOIL_TEMPERATURE
+
+    def __init__(
+        self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
+    ) -> None:
+        """Initialize the Plant component."""
+        self._attr_unique_id = f"{config.entry_id}-max-soil-temperature"
+        self._default_value = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
+            CONF_MAX_SOIL_TEMPERATURE, DEFAULT_MAX_SOIL_TEMPERATURE
+        )
+        super().__init__(hass, config, plantdevice)
+        self._attr_native_unit_of_measurement = self.hass.config.units.temperature_unit
+
+    def state_attributes_changed(
+        self, old_attributes: dict[str, Any], new_attributes: dict[str, Any]
+    ) -> None:
+        """Convert temperature between Celsius and Fahrenheit."""
+        if new_attributes.get(ATTR_UNIT_OF_MEASUREMENT) is None:
+            return
+        if old_attributes.get(ATTR_UNIT_OF_MEASUREMENT) is None:
+            return
+        if new_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == old_attributes.get(
+            ATTR_UNIT_OF_MEASUREMENT
+        ):
+            return
+        new_state = self._attr_state
+        if (
+            old_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == UnitOfTemperature.FAHRENHEIT
+            and new_attributes.get(ATTR_UNIT_OF_MEASUREMENT)
+            == UnitOfTemperature.CELSIUS
+        ):
+            new_state = round(
+                TemperatureConverter.convert(
+                    float(self.state),
+                    UnitOfTemperature.FAHRENHEIT,
+                    UnitOfTemperature.CELSIUS,
+                )
+            )
+
+        if (
+            old_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == UnitOfTemperature.CELSIUS
+            and new_attributes.get(ATTR_UNIT_OF_MEASUREMENT)
+            == UnitOfTemperature.FAHRENHEIT
+        ):
+            new_state = round(
+                TemperatureConverter.convert(
+                    float(self.state),
+                    UnitOfTemperature.CELSIUS,
+                    UnitOfTemperature.FAHRENHEIT,
+                )
+            )
+
+        self._attr_native_value = new_state
+        self._attr_native_unit_of_measurement = new_attributes.get(
+            ATTR_UNIT_OF_MEASUREMENT
+        )
+
+
+class PlantMinSoilTemperature(PlantMinMax):
+    """Entity class for min soil temperature threshold"""
+
+    _attr_device_class = NumberDeviceClass.TEMPERATURE
+    _attr_icon = ICON_SOIL_TEMPERATURE
+    _attr_native_max_value = TEMPERATURE_MAX_VALUE
+    _attr_native_min_value = TEMPERATURE_MIN_VALUE
+    _attr_native_step = 1
+    _attr_name = f"{ATTR_MIN} {READING_SOIL_TEMPERATURE}"
+    _attr_translation_key = TRANSLATION_KEY_MIN_SOIL_TEMPERATURE
+
+    def __init__(
+        self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
+    ) -> None:
+        """Initialize the component."""
+        self._default_value = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
+            CONF_MIN_SOIL_TEMPERATURE, DEFAULT_MIN_SOIL_TEMPERATURE
+        )
+        self._attr_unique_id = f"{config.entry_id}-min-soil-temperature"
+        super().__init__(hass, config, plantdevice)
+        self._attr_native_unit_of_measurement = self.hass.config.units.temperature_unit
+
+    def state_attributes_changed(
+        self, old_attributes: dict[str, Any], new_attributes: dict[str, Any]
+    ) -> None:
+        """Convert temperature between Celsius and Fahrenheit."""
+        if new_attributes.get(ATTR_UNIT_OF_MEASUREMENT) is None:
+            return
+        if old_attributes.get(ATTR_UNIT_OF_MEASUREMENT) is None:
+            return
+        if new_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == old_attributes.get(
+            ATTR_UNIT_OF_MEASUREMENT
+        ):
+            return
+        new_state = self._attr_state
+        if (
+            old_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == UnitOfTemperature.FAHRENHEIT
+            and new_attributes.get(ATTR_UNIT_OF_MEASUREMENT)
+            == UnitOfTemperature.CELSIUS
+        ):
+            new_state = round(
+                TemperatureConverter.convert(
+                    float(self.state),
+                    UnitOfTemperature.FAHRENHEIT,
+                    UnitOfTemperature.CELSIUS,
+                )
+            )
+
+        if (
+            old_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == UnitOfTemperature.CELSIUS
+            and new_attributes.get(ATTR_UNIT_OF_MEASUREMENT)
+            == UnitOfTemperature.FAHRENHEIT
+        ):
+            new_state = round(
+                TemperatureConverter.convert(
+                    float(self.state),
+                    UnitOfTemperature.CELSIUS,
+                    UnitOfTemperature.FAHRENHEIT,
+                )
+            )
+
+        self._attr_native_value = new_state
+        self._attr_native_unit_of_measurement = new_attributes.get(
+            ATTR_UNIT_OF_MEASUREMENT
+        )
 
 
 class PlantLuxToPpfd(PlantMinMax):

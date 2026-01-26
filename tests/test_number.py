@@ -25,12 +25,12 @@ class TestThresholdEntitiesCreation:
         hass: HomeAssistant,
         init_integration: MockConfigEntry,
     ) -> None:
-        """Test that all 15 number entities are created (14 thresholds + lux_to_ppfd)."""
+        """Test that all 17 number entities are created (16 thresholds + lux_to_ppfd)."""
         assert ATTR_THRESHOLDS in hass.data[DOMAIN][init_integration.entry_id]
         thresholds = hass.data[DOMAIN][init_integration.entry_id][ATTR_THRESHOLDS]
 
-        # Should have 15 number entities: 14 thresholds + 1 lux_to_ppfd
-        assert len(thresholds) == 15
+        # Should have 17 number entities: 16 thresholds + 1 lux_to_ppfd
+        assert len(thresholds) == 17
 
     async def test_threshold_entities_in_registry(
         self,
@@ -44,8 +44,8 @@ class TestThresholdEntitiesCreation:
         )
 
         number_entities = [e for e in entities if e.domain == "number"]
-        # 14 thresholds + 1 lux_to_ppfd conversion factor
-        assert len(number_entities) == 15
+        # 16 thresholds + 1 lux_to_ppfd conversion factor
+        assert len(number_entities) == 17
 
 
 class TestMoistureThresholds:

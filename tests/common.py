@@ -52,6 +52,8 @@ async def set_external_sensor_states(
     conductivity: float | None = None,
     illuminance: float | None = None,
     humidity: float | None = None,
+    co2: float | None = None,
+    soil_temperature: float | None = None,
 ) -> None:
     """Set external sensor states for testing."""
     if temperature is not None:
@@ -88,6 +90,20 @@ async def set_external_sensor_states(
             "sensor.test_humidity",
             humidity,
             {"unit_of_measurement": "%", "device_class": "humidity"},
+        )
+    if co2 is not None:
+        await set_sensor_state(
+            hass,
+            "sensor.test_co2",
+            co2,
+            {"unit_of_measurement": "ppm", "device_class": "carbon_dioxide"},
+        )
+    if soil_temperature is not None:
+        await set_sensor_state(
+            hass,
+            "sensor.test_soil_temperature",
+            soil_temperature,
+            {"unit_of_measurement": "°C", "device_class": "temperature"},
         )
 
 

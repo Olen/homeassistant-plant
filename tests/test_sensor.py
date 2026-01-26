@@ -106,6 +106,32 @@ class TestPlantCurrentSensors:
         assert "humidity" in sensor.name.lower()
         assert sensor.device_class == "humidity"
 
+    async def test_co2_sensor(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test CO2 sensor entity."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        sensor = plant.sensor_co2
+
+        assert sensor is not None
+        assert "co2" in sensor.name.lower()
+        assert sensor.device_class == "carbon_dioxide"
+
+    async def test_soil_temperature_sensor(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test soil temperature sensor entity."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        sensor = plant.sensor_soil_temperature
+
+        assert sensor is not None
+        assert "soil" in sensor.name.lower() and "temperature" in sensor.name.lower()
+        assert sensor.device_class == "temperature"
+
     async def test_sensor_tracks_external_sensor(
         self,
         hass: HomeAssistant,
@@ -738,10 +764,12 @@ class TestSensorRemovalAndConfigPersistence:
     ) -> None:
         """Test that all current status sensors have config keys defined."""
         from custom_components.plant.const import (
+            FLOW_SENSOR_CO2,
             FLOW_SENSOR_CONDUCTIVITY,
             FLOW_SENSOR_HUMIDITY,
             FLOW_SENSOR_ILLUMINANCE,
             FLOW_SENSOR_MOISTURE,
+            FLOW_SENSOR_SOIL_TEMPERATURE,
             FLOW_SENSOR_TEMPERATURE,
         )
 
@@ -753,6 +781,8 @@ class TestSensorRemovalAndConfigPersistence:
         assert plant.sensor_conductivity._config_key == FLOW_SENSOR_CONDUCTIVITY
         assert plant.sensor_illuminance._config_key == FLOW_SENSOR_ILLUMINANCE
         assert plant.sensor_humidity._config_key == FLOW_SENSOR_HUMIDITY
+        assert plant.sensor_co2._config_key == FLOW_SENSOR_CO2
+        assert plant.sensor_soil_temperature._config_key == FLOW_SENSOR_SOIL_TEMPERATURE
 
 
 class TestDliSensorsWhenIlluminanceRemoved:

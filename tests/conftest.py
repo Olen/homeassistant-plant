@@ -23,17 +23,21 @@ pytest_plugins = "pytest_homeassistant_custom_component"
 from custom_components.plant.const import (
     ATTR_LIMITS,
     ATTR_SPECIES,
+    CONF_MAX_CO2,
     CONF_MAX_CONDUCTIVITY,
     CONF_MAX_DLI,
     CONF_MAX_HUMIDITY,
     CONF_MAX_ILLUMINANCE,
     CONF_MAX_MOISTURE,
+    CONF_MAX_SOIL_TEMPERATURE,
     CONF_MAX_TEMPERATURE,
+    CONF_MIN_CO2,
     CONF_MIN_CONDUCTIVITY,
     CONF_MIN_DLI,
     CONF_MIN_HUMIDITY,
     CONF_MIN_ILLUMINANCE,
     CONF_MIN_MOISTURE,
+    CONF_MIN_SOIL_TEMPERATURE,
     CONF_MIN_TEMPERATURE,
     DATA_SOURCE,
     DATA_SOURCE_DEFAULT,
@@ -41,10 +45,12 @@ from custom_components.plant.const import (
     DOMAIN,
     DOMAIN_PLANTBOOK,
     FLOW_PLANT_INFO,
+    FLOW_SENSOR_CO2,
     FLOW_SENSOR_CONDUCTIVITY,
     FLOW_SENSOR_HUMIDITY,
     FLOW_SENSOR_ILLUMINANCE,
     FLOW_SENSOR_MOISTURE,
+    FLOW_SENSOR_SOIL_TEMPERATURE,
     FLOW_SENSOR_TEMPERATURE,
     OPB_DISPLAY_PID,
 )
@@ -79,6 +85,8 @@ def create_plant_config_data(
     conductivity_sensor: str | None = "sensor.test_conductivity",
     illuminance_sensor: str | None = "sensor.test_illuminance",
     humidity_sensor: str | None = "sensor.test_humidity",
+    co2_sensor: str | None = "sensor.test_co2",
+    soil_temperature_sensor: str | None = "sensor.test_soil_temperature",
     data_source: str = DATA_SOURCE_DEFAULT,
     limits: dict | None = None,
 ) -> dict[str, Any]:
@@ -97,6 +105,10 @@ def create_plant_config_data(
             CONF_MIN_HUMIDITY: 20,
             CONF_MAX_DLI: 30,
             CONF_MIN_DLI: 2,
+            CONF_MAX_CO2: 2000,
+            CONF_MIN_CO2: 400,
+            CONF_MAX_SOIL_TEMPERATURE: 40,
+            CONF_MIN_SOIL_TEMPERATURE: 10,
         }
 
     return {
@@ -112,6 +124,8 @@ def create_plant_config_data(
             FLOW_SENSOR_CONDUCTIVITY: conductivity_sensor,
             FLOW_SENSOR_ILLUMINANCE: illuminance_sensor,
             FLOW_SENSOR_HUMIDITY: humidity_sensor,
+            FLOW_SENSOR_CO2: co2_sensor,
+            FLOW_SENSOR_SOIL_TEMPERATURE: soil_temperature_sensor,
         },
     }
 
@@ -131,6 +145,8 @@ def plant_config_data_no_sensors() -> dict[str, Any]:
         conductivity_sensor=None,
         illuminance_sensor=None,
         humidity_sensor=None,
+        co2_sensor=None,
+        soil_temperature_sensor=None,
     )
 
 
@@ -152,6 +168,10 @@ def plant_config_data_with_opb() -> dict[str, Any]:
             CONF_MIN_HUMIDITY: 50,
             CONF_MAX_DLI: 22,  # Calculated from max_light_mmol
             CONF_MIN_DLI: 5,  # Calculated from min_light_mmol
+            CONF_MAX_CO2: 2000,
+            CONF_MIN_CO2: 400,
+            CONF_MAX_SOIL_TEMPERATURE: 30,
+            CONF_MIN_SOIL_TEMPERATURE: 15,
         },
         entity_picture=GET_RESULT_MONSTERA_DELICIOSA["image_url"],
     )
@@ -266,6 +286,8 @@ async def setup_mock_external_sensors(
     conductivity: float = 800.0,
     illuminance: float = 5000.0,
     humidity: float = 55.0,
+    co2: float = 800.0,
+    soil_temperature: float = 22.0,
 ) -> None:
     """Set up mock external sensor states."""
     hass.states.async_set(
@@ -292,6 +314,16 @@ async def setup_mock_external_sensors(
         "sensor.test_humidity",
         str(humidity),
         {"unit_of_measurement": "%", "device_class": "humidity"},
+    )
+    hass.states.async_set(
+        "sensor.test_co2",
+        str(co2),
+        {"unit_of_measurement": "ppm", "device_class": "carbon_dioxide"},
+    )
+    hass.states.async_set(
+        "sensor.test_soil_temperature",
+        str(soil_temperature),
+        {"unit_of_measurement": "°C", "device_class": "temperature"},
     )
 
 

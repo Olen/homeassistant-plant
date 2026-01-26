@@ -64,6 +64,7 @@ from .const import (
     FLOW_SENSOR_HUMIDITY,
     FLOW_SENSOR_ILLUMINANCE,
     FLOW_SENSOR_MOISTURE,
+    FLOW_SENSOR_SOIL_TEMPERATURE,
     FLOW_SENSOR_TEMPERATURE,
     ICON_CO2,
     ICON_CONDUCTIVITY,
@@ -72,6 +73,7 @@ from .const import (
     ICON_ILLUMINANCE,
     ICON_MOISTURE,
     ICON_PPFD,
+    ICON_SOIL_TEMPERATURE,
     ICON_TEMPERATURE,
     READING_CO2,
     READING_CONDUCTIVITY,
@@ -80,6 +82,7 @@ from .const import (
     READING_ILLUMINANCE,
     READING_MOISTURE,
     READING_PPFD,
+    READING_SOIL_TEMPERATURE,
     READING_TEMPERATURE,
     TRANSLATION_KEY_CO2,
     TRANSLATION_KEY_CONDUCTIVITY,
@@ -88,6 +91,7 @@ from .const import (
     TRANSLATION_KEY_ILLUMINANCE,
     TRANSLATION_KEY_MOISTURE,
     TRANSLATION_KEY_PPFD,
+    TRANSLATION_KEY_SOIL_TEMPERATURE,
     TRANSLATION_KEY_TEMPERATURE,
     TRANSLATION_KEY_TOTAL_LIGHT_INTEGRAL,
     UNIT_DLI,
@@ -120,6 +124,7 @@ async def async_setup_entry(
     pcurt = PlantCurrentTemperature(hass, entry, plant)
     pcurh = PlantCurrentHumidity(hass, entry, plant)
     pcurco2 = PlantCurrentCo2(hass, entry, plant)
+    pcurst = PlantCurrentSoilTemperature(hass, entry, plant)
     plant_sensors = [
         pcurb,
         pcurc,
@@ -127,6 +132,7 @@ async def async_setup_entry(
         pcurt,
         pcurh,
         pcurco2,
+        pcurst,
     ]
     async_add_entities(plant_sensors)
     hass.data[DOMAIN][entry.entry_id][ATTR_SENSORS] = plant_sensors
@@ -137,6 +143,7 @@ async def async_setup_entry(
         illuminance=pcurb,
         humidity=pcurh,
         co2=pcurco2,
+        soil_temperature=pcurst,
     )
 
     # Create and add the integral-entities
@@ -523,6 +530,28 @@ class PlantCurrentCo2(PlantCurrentStatus):
         """Initialize the sensor"""
         self._attr_unique_id = f"{config.entry_id}-current-co2"
         self._external_sensor = config.data[FLOW_PLANT_INFO].get(FLOW_SENSOR_CO2)
+        super().__init__(hass, config, plantdevice)
+
+
+class PlantCurrentSoilTemperature(PlantCurrentStatus):
+    """Entity class for the current soil temperature meter"""
+
+    _attr_device_class = SensorDeviceClass.TEMPERATURE
+    _attr_icon = ICON_SOIL_TEMPERATURE
+    _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
+    _attr_suggested_display_precision = 1
+    _attr_name = READING_SOIL_TEMPERATURE
+    _attr_translation_key = TRANSLATION_KEY_SOIL_TEMPERATURE
+    _config_key = FLOW_SENSOR_SOIL_TEMPERATURE
+
+    def __init__(
+        self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
+    ) -> None:
+        """Initialize the sensor"""
+        self._attr_unique_id = f"{config.entry_id}-current-soil-temperature"
+        self._external_sensor = config.data[FLOW_PLANT_INFO].get(
+            FLOW_SENSOR_SOIL_TEMPERATURE
+        )
         super().__init__(hass, config, plantdevice)
 
 

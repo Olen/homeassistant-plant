@@ -48,6 +48,7 @@ from .const import (
     ATTR_PLANT,
     ATTR_SENSOR,
     ATTR_SENSORS,
+    ATTR_SOIL_TEMPERATURE,
     ATTR_SPECIES,
     ATTR_TEMPERATURE,
     CONF_MAX_BRIGHTNESS,
@@ -69,6 +70,7 @@ from .const import (
     FLOW_ILLUMINANCE_TRIGGER,
     FLOW_MOISTURE_TRIGGER,
     FLOW_PLANT_INFO,
+    FLOW_SOIL_TEMPERATURE_TRIGGER,
     FLOW_TEMPERATURE_TRIGGER,
     OPB_DISPLAY_PID,
     SERVICE_REPLACE_SENSOR,
@@ -440,6 +442,8 @@ class PlantDevice(Entity):
         self.min_humidity = None
         self.max_co2 = None
         self.min_co2 = None
+        self.max_soil_temperature = None
+        self.min_soil_temperature = None
         self.max_dli = None
         self.min_dli = None
 
@@ -449,6 +453,7 @@ class PlantDevice(Entity):
         self.sensor_illuminance = None
         self.sensor_humidity = None
         self.sensor_co2 = None
+        self.sensor_soil_temperature = None
 
         self.dli = None
         self.micro_dli = None
@@ -462,6 +467,7 @@ class PlantDevice(Entity):
         self.temperature_status = None
         self.humidity_status = None
         self.co2_status = None
+        self.soil_temperature_status = None
         self.dli_status = None
 
     @property
@@ -505,6 +511,11 @@ class PlantDevice(Entity):
         return self._config.options.get(FLOW_CO2_TRIGGER, True)
 
     @property
+    def soil_temperature_trigger(self) -> bool:
+        """Whether we will generate alarms based on soil temperature"""
+        return self._config.options.get(FLOW_SOIL_TEMPERATURE_TRIGGER, True)
+
+    @property
     def temperature_trigger(self) -> bool:
         """Whether we will generate alarms based on temperature"""
         return self._config.options.get(FLOW_TEMPERATURE_TRIGGER, True)
@@ -538,6 +549,7 @@ class PlantDevice(Entity):
             f"{ATTR_ILLUMINANCE}_status": self.illuminance_status,
             f"{ATTR_HUMIDITY}_status": self.humidity_status,
             f"{ATTR_CO2}_status": self.co2_status,
+            f"{ATTR_SOIL_TEMPERATURE}_status": self.soil_temperature_status,
             f"{ATTR_DLI}_status": self.dli_status,
             f"{ATTR_SPECIES}_original": self.species,
         }
@@ -599,6 +611,14 @@ class PlantDevice(Entity):
                 ATTR_UNIT_OF_MEASUREMENT: self.sensor_co2.unit_of_measurement,
                 ATTR_SENSOR: self.sensor_co2.entity_id,
             },
+            ATTR_SOIL_TEMPERATURE: {
+                ATTR_MAX: self.max_soil_temperature.state,
+                ATTR_MIN: self.min_soil_temperature.state,
+                ATTR_CURRENT: self.sensor_soil_temperature.state or STATE_UNAVAILABLE,
+                ATTR_ICON: self.sensor_soil_temperature.icon,
+                ATTR_UNIT_OF_MEASUREMENT: self.sensor_soil_temperature.unit_of_measurement,
+                ATTR_SENSOR: self.sensor_soil_temperature.entity_id,
+            },
             ATTR_DLI: {
                 ATTR_MAX: self.max_dli.state,
                 ATTR_MIN: self.min_dli.state,
@@ -623,6 +643,7 @@ class PlantDevice(Entity):
             self.max_humidity,
             self.max_illuminance,
             self.max_moisture,
+            self.max_soil_temperature,
             self.max_temperature,
             self.min_co2,
             self.min_conductivity,
@@ -630,6 +651,7 @@ class PlantDevice(Entity):
             self.min_humidity,
             self.min_illuminance,
             self.min_moisture,
+            self.min_soil_temperature,
             self.min_temperature,
         ]
 
@@ -642,6 +664,7 @@ class PlantDevice(Entity):
             self.sensor_humidity,
             self.sensor_illuminance,
             self.sensor_moisture,
+            self.sensor_soil_temperature,
             self.sensor_temperature,
         ]
 
@@ -679,6 +702,8 @@ class PlantDevice(Entity):
         min_humidity: Entity | None,
         max_co2: Entity | None,
         min_co2: Entity | None,
+        max_soil_temperature: Entity | None,
+        min_soil_temperature: Entity | None,
         max_dli: Entity | None,
         min_dli: Entity | None,
     ) -> None:
@@ -695,6 +720,8 @@ class PlantDevice(Entity):
         self.min_humidity = min_humidity
         self.max_co2 = max_co2
         self.min_co2 = min_co2
+        self.max_soil_temperature = max_soil_temperature
+        self.min_soil_temperature = min_soil_temperature
         self.max_dli = max_dli
         self.min_dli = min_dli
 
@@ -706,6 +733,7 @@ class PlantDevice(Entity):
         illuminance: Entity | None,
         humidity: Entity | None,
         co2: Entity | None,
+        soil_temperature: Entity | None,
     ) -> None:
         """Add the sensor entities"""
         self.sensor_moisture = moisture
@@ -714,6 +742,7 @@ class PlantDevice(Entity):
         self.sensor_illuminance = illuminance
         self.sensor_humidity = humidity
         self.sensor_co2 = co2
+        self.sensor_soil_temperature = soil_temperature
 
     def add_dli(
         self,
@@ -868,6 +897,35 @@ class PlantDevice(Entity):
         else:
             # Reset status when sensor is removed
             self.co2_status = None
+
+        if self.sensor_soil_temperature is not None:
+            soil_temp = getattr(
+                self.hass.states.get(self.sensor_soil_temperature.entity_id),
+                "state",
+                None,
+            )
+            if (
+                soil_temp is not None
+                and soil_temp != STATE_UNKNOWN
+                and soil_temp != STATE_UNAVAILABLE
+            ):
+                known_state = True
+                if float(soil_temp) < float(self.min_soil_temperature.state):
+                    self.soil_temperature_status = STATE_LOW
+                    if self.soil_temperature_trigger:
+                        new_state = STATE_PROBLEM
+                elif float(soil_temp) > float(self.max_soil_temperature.state):
+                    self.soil_temperature_status = STATE_HIGH
+                    if self.soil_temperature_trigger:
+                        new_state = STATE_PROBLEM
+                else:
+                    self.soil_temperature_status = STATE_OK
+            else:
+                # Reset status when sensor is unavailable
+                self.soil_temperature_status = None
+        else:
+            # Reset status when sensor is removed
+            self.soil_temperature_status = None
 
         # Check the instant values for illuminance against "max"
         # Ignoring "min" value for illuminance as it would probably trigger every night
