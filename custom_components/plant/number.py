@@ -149,7 +149,7 @@ class PlantMinMax(RestoreNumber):
     ) -> None:
         """Initialize the Plant component."""
         self._config = config
-        self._hass = hass
+        self.hass = hass
         self._plant = plantdevice
         self.entity_id = async_generate_entity_id(
             f"{DOMAIN}.{{}}", self._attr_name, current_ids={}
@@ -225,7 +225,7 @@ class PlantMinMax(RestoreNumber):
         # We track changes to our own state so we can update ourselves if state is changed
         # from the UI or by other means
         async_track_state_change_event(
-            self._hass,
+            self.hass,
             [self.entity_id],
             self._state_changed_event,
         )
@@ -298,7 +298,7 @@ class PlantMaxTemperature(PlantMinMax):
             CONF_MAX_TEMPERATURE, DEFAULT_MAX_TEMPERATURE
         )
         super().__init__(hass, config, plantdevice)
-        self._attr_native_unit_of_measurement = self._hass.config.units.temperature_unit
+        self._attr_native_unit_of_measurement = self.hass.config.units.temperature_unit
 
     def state_attributes_changed(self, old_attributes, new_attributes):
         """Calculate C or F"""
@@ -345,7 +345,7 @@ class PlantMaxTemperature(PlantMinMax):
                 new_state,
             )
 
-        self._hass.states.async_set(self.entity_id, new_state, new_attributes)
+        self.hass.states.async_set(self.entity_id, new_state, new_attributes)
 
 
 class PlantMinTemperature(PlantMinMax):
@@ -367,7 +367,7 @@ class PlantMinTemperature(PlantMinMax):
         )
         self._attr_unique_id = f"{config.entry_id}-min-temperature"
         super().__init__(hass, config, plantdevice)
-        self._attr_native_unit_of_measurement = self._hass.config.units.temperature_unit
+        self._attr_native_unit_of_measurement = self.hass.config.units.temperature_unit
 
     def state_attributes_changed(self, old_attributes, new_attributes):
         """Calculate C or F"""
@@ -416,7 +416,7 @@ class PlantMinTemperature(PlantMinMax):
                 new_state,
             )
 
-        self._hass.states.async_set(self.entity_id, new_state, new_attributes)
+        self.hass.states.async_set(self.entity_id, new_state, new_attributes)
 
 
 class PlantMaxIlluminance(PlantMinMax):

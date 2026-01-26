@@ -284,7 +284,7 @@ class PlantDevice(Entity):
     def __init__(self, hass: HomeAssistant, config: ConfigEntry) -> None:
         """Initialize the Plant component."""
         self._config = config
-        self._hass = hass
+        self.hass = hass
         self._attr_name = config.data[FLOW_PLANT_INFO][ATTR_NAME]
         self._config_entries = []
         self._data_source = config.data[FLOW_PLANT_INFO].get(DATA_SOURCE)
@@ -524,7 +524,7 @@ class PlantDevice(Entity):
         self._attr_entity_picture = image_url
         options = self._config.options.copy()
         options[ATTR_ENTITY_PICTURE] = image_url
-        self._hass.config_entries.async_update_entry(self._config, options=options)
+        self.hass.config_entries.async_update_entry(self._config, options=options)
 
     def add_species(self, species: Entity | None) -> None:
         """Set new species"""
@@ -595,7 +595,7 @@ class PlantDevice(Entity):
 
         if self.sensor_moisture is not None:
             moisture = getattr(
-                self._hass.states.get(self.sensor_moisture.entity_id), "state", None
+                self.hass.states.get(self.sensor_moisture.entity_id), "state", None
             )
             if (
                 moisture is not None
@@ -616,7 +616,7 @@ class PlantDevice(Entity):
 
         if self.sensor_conductivity is not None:
             conductivity = getattr(
-                self._hass.states.get(self.sensor_conductivity.entity_id), "state", None
+                self.hass.states.get(self.sensor_conductivity.entity_id), "state", None
             )
             if (
                 conductivity is not None
@@ -637,7 +637,7 @@ class PlantDevice(Entity):
 
         if self.sensor_temperature is not None:
             temperature = getattr(
-                self._hass.states.get(self.sensor_temperature.entity_id), "state", None
+                self.hass.states.get(self.sensor_temperature.entity_id), "state", None
             )
             if (
                 temperature is not None
@@ -658,7 +658,7 @@ class PlantDevice(Entity):
 
         if self.sensor_humidity is not None:
             humidity = getattr(
-                self._hass.states.get(self.sensor_humidity.entity_id), "state", None
+                self.hass.states.get(self.sensor_humidity.entity_id), "state", None
             )
             if (
                 humidity is not None
@@ -681,7 +681,7 @@ class PlantDevice(Entity):
         # Ignoring "min" value for illuminance as it would probably trigger every night
         if self.sensor_illuminance is not None:
             illuminance = getattr(
-                self._hass.states.get(self.sensor_illuminance.entity_id), "state", None
+                self.hass.states.get(self.sensor_illuminance.entity_id), "state", None
             )
             if (
                 illuminance is not None
@@ -735,7 +735,7 @@ class PlantDevice(Entity):
         """Update registry with correct data"""
         # Is there a better way to add an entity to the device registry?
 
-        device_registry = dr.async_get(self._hass)
+        device_registry = dr.async_get(self.hass)
         device_registry.async_get_or_create(
             config_entry_id=self._config.entry_id,
             identifiers={(DOMAIN, self.unique_id)},

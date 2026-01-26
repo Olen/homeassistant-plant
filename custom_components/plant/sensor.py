@@ -152,7 +152,7 @@ class PlantCurrentStatus(RestoreSensor):
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the Plant component."""
-        self._hass = hass
+        self.hass = hass
         self._config = config
         self._default_state = None
         self._plant = plantdevice
@@ -209,7 +209,7 @@ class PlantCurrentStatus(RestoreSensor):
         """Track state_changed of certain entities"""
         if entity_id and entity_id not in self._tracker:
             async_track_state_change_event(
-                self._hass,
+                self.hass,
                 [entity_id],
                 self._state_changed_event,
             )
@@ -231,7 +231,7 @@ class PlantCurrentStatus(RestoreSensor):
             self.async_track_entity(self.external_sensor)
 
         async_dispatcher_connect(
-            self._hass, DATA_UPDATED, self._schedule_immediate_update
+            self.hass, DATA_UPDATED, self._schedule_immediate_update
         )
 
     async def async_update(self) -> None:
@@ -239,13 +239,13 @@ class PlantCurrentStatus(RestoreSensor):
         if self.external_sensor:
             try:
                 self._attr_native_value = float(
-                    self._hass.states.get(self.external_sensor).state
+                    self.hass.states.get(self.external_sensor).state
                 )
                 if (
                     ATTR_UNIT_OF_MEASUREMENT
-                    in self._hass.states.get(self.external_sensor).attributes
+                    in self.hass.states.get(self.external_sensor).attributes
                 ):
-                    self._attr_native_unit_of_measurement = self._hass.states.get(
+                    self._attr_native_unit_of_measurement = self.hass.states.get(
                         self.external_sensor
                     ).attributes[ATTR_UNIT_OF_MEASUREMENT]
             except AttributeError:
@@ -261,7 +261,7 @@ class PlantCurrentStatus(RestoreSensor):
                     "Unknown external value for %s: %s = %s, setting to default: %s",
                     self.entity_id,
                     self.external_sensor,
-                    self._hass.states.get(self.external_sensor).state,
+                    self.hass.states.get(self.external_sensor).state,
                     self._default_state,
                 )
                 self._attr_native_value = self._default_state
