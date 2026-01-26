@@ -1,5 +1,71 @@
 {
   "title": "Monitorização de plantas",
+  "entity": {
+    "sensor": {
+      "moisture": {
+        "name": "Humidade do solo"
+      },
+      "temperature": {
+        "name": "Temperatura"
+      },
+      "conductivity": {
+        "name": "Condutividade"
+      },
+      "illuminance": {
+        "name": "Iluminância"
+      },
+      "humidity": {
+        "name": "Humidade do ar"
+      },
+      "ppfd": {
+        "name": "PPFD"
+      },
+      "total_light_integral": {
+        "name": "Integral de luz total"
+      },
+      "daily_light_integral": {
+        "name": "Integral de luz diária"
+      }
+    },
+    "number": {
+      "max_moisture": {
+        "name": "Humidade do solo máxima"
+      },
+      "min_moisture": {
+        "name": "Humidade do solo mínima"
+      },
+      "max_temperature": {
+        "name": "Temperatura máxima"
+      },
+      "min_temperature": {
+        "name": "Temperatura mínima"
+      },
+      "max_illuminance": {
+        "name": "Iluminância máxima"
+      },
+      "min_illuminance": {
+        "name": "Iluminância mínima"
+      },
+      "max_dli": {
+        "name": "DLI máximo"
+      },
+      "min_dli": {
+        "name": "DLI mínimo"
+      },
+      "max_conductivity": {
+        "name": "Condutividade máxima"
+      },
+      "min_conductivity": {
+        "name": "Condutividade mínima"
+      },
+      "max_humidity": {
+        "name": "Humidade do ar máxima"
+      },
+      "min_humidity": {
+        "name": "Humidade do ar mínima"
+      }
+    }
+  },
   "config": {
     "step": {
       "user": {

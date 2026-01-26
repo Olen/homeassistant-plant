@@ -1,5 +1,71 @@
 {
   "title": "Növény Figyelő",
+  "entity": {
+    "sensor": {
+      "moisture": {
+        "name": "Talajnedvesség"
+      },
+      "temperature": {
+        "name": "Hőmérséklet"
+      },
+      "conductivity": {
+        "name": "Vezetőképesség"
+      },
+      "illuminance": {
+        "name": "Fényerősség"
+      },
+      "humidity": {
+        "name": "Levegő páratartalom"
+      },
+      "ppfd": {
+        "name": "PPFD"
+      },
+      "total_light_integral": {
+        "name": "Teljes fényintegrál"
+      },
+      "daily_light_integral": {
+        "name": "Napi fényintegrál"
+      }
+    },
+    "number": {
+      "max_moisture": {
+        "name": "Maximális talajnedvesség"
+      },
+      "min_moisture": {
+        "name": "Minimális talajnedvesség"
+      },
+      "max_temperature": {
+        "name": "Maximális hőmérséklet"
+      },
+      "min_temperature": {
+        "name": "Minimális hőmérséklet"
+      },
+      "max_illuminance": {
+        "name": "Maximális fényerősség"
+      },
+      "min_illuminance": {
+        "name": "Minimális fényerősség"
+      },
+      "max_dli": {
+        "name": "Maximális DLI"
+      },
+      "min_dli": {
+        "name": "Minimális DLI"
+      },
+      "max_conductivity": {
+        "name": "Maximális vezetőképesség"
+      },
+      "min_conductivity": {
+        "name": "Minimális vezetőképesség"
+      },
+      "max_humidity": {
+        "name": "Maximális levegő páratartalom"
+      },
+      "min_humidity": {
+        "name": "Minimális levegő páratartalom"
+      }
+    }
+  },
   "config": {
     "step": {
       "user": {

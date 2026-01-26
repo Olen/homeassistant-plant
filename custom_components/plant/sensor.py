@@ -71,6 +71,14 @@ from .const import (
     READING_MOISTURE,
     READING_PPFD,
     READING_TEMPERATURE,
+    TRANSLATION_KEY_CONDUCTIVITY,
+    TRANSLATION_KEY_DAILY_LIGHT_INTEGRAL,
+    TRANSLATION_KEY_HUMIDITY,
+    TRANSLATION_KEY_ILLUMINANCE,
+    TRANSLATION_KEY_MOISTURE,
+    TRANSLATION_KEY_PPFD,
+    TRANSLATION_KEY_TEMPERATURE,
+    TRANSLATION_KEY_TOTAL_LIGHT_INTEGRAL,
     UNIT_CONDUCTIVITY,
     UNIT_DLI,
     UNIT_PPFD,
@@ -323,6 +331,7 @@ class PlantCurrentIlluminance(PlantCurrentStatus):
     _attr_native_unit_of_measurement = LIGHT_LUX
     _attr_suggested_display_precision = 1
     _attr_name = READING_ILLUMINANCE
+    _attr_translation_key = TRANSLATION_KEY_ILLUMINANCE
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -344,6 +353,7 @@ class PlantCurrentConductivity(PlantCurrentStatus):
     _attr_native_unit_of_measurement = UnitOfConductivity.MICROSIEMENS_PER_CM
     _attr_suggested_display_precision = 1
     _attr_name = READING_CONDUCTIVITY
+    _attr_translation_key = TRANSLATION_KEY_CONDUCTIVITY
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -365,6 +375,7 @@ class PlantCurrentMoisture(PlantCurrentStatus):
     _attr_native_unit_of_measurement = PERCENTAGE
     _attr_suggested_display_precision = 1
     _attr_name = READING_MOISTURE
+    _attr_translation_key = TRANSLATION_KEY_MOISTURE
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -383,6 +394,7 @@ class PlantCurrentTemperature(PlantCurrentStatus):
     _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
     _attr_suggested_display_precision = 1
     _attr_name = READING_TEMPERATURE
+    _attr_translation_key = TRANSLATION_KEY_TEMPERATURE
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -403,6 +415,7 @@ class PlantCurrentHumidity(PlantCurrentStatus):
     _attr_native_unit_of_measurement = PERCENTAGE
     _attr_suggested_display_precision = 1
     _attr_name = READING_HUMIDITY
+    _attr_translation_key = TRANSLATION_KEY_HUMIDITY
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -422,6 +435,7 @@ class PlantCurrentPpfd(PlantCurrentStatus):
     _attr_icon = ICON_PPFD
     _attr_native_unit_of_measurement = UNIT_PPFD
     _attr_name = READING_PPFD
+    _attr_translation_key = TRANSLATION_KEY_PPFD
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -491,6 +505,7 @@ class PlantTotalLightIntegral(IntegrationSensor):
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_entity_registry_visible_default = False
     _attr_icon = ICON_DLI
+    _attr_translation_key = TRANSLATION_KEY_TOTAL_LIGHT_INTEGRAL
 
     def __init__(
         self,
@@ -530,13 +545,14 @@ class PlantTotalLightIntegral(IntegrationSensor):
 
 
 class PlantDailyLightIntegral(UtilityMeterSensor):
-    """Entity class to calculate Daily Light Integral from PPDF"""
+    """Entity class to calculate Daily Light Integral from PPFD"""
 
     _attr_has_entity_name = True
     # Custom device class for DLI (no official HA device class)
     _attr_device_class = ATTR_DLI
     _attr_icon = ICON_DLI
     _attr_suggested_display_precision = 2
+    _attr_translation_key = TRANSLATION_KEY_DAILY_LIGHT_INTEGRAL
 
     def __init__(
         self,

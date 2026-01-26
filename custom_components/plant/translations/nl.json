@@ -1,5 +1,71 @@
 {
   "title": "Plant monitor",
+  "entity": {
+    "sensor": {
+      "moisture": {
+        "name": "Bodemvochtigheid"
+      },
+      "temperature": {
+        "name": "Temperatuur"
+      },
+      "conductivity": {
+        "name": "Geleidbaarheid"
+      },
+      "illuminance": {
+        "name": "Verlichtingssterkte"
+      },
+      "humidity": {
+        "name": "Luchtvochtigheid"
+      },
+      "ppfd": {
+        "name": "PPFD"
+      },
+      "total_light_integral": {
+        "name": "Totale lichtintegraal"
+      },
+      "daily_light_integral": {
+        "name": "Dagelijkse lichtintegraal"
+      }
+    },
+    "number": {
+      "max_moisture": {
+        "name": "Maximale bodemvochtigheid"
+      },
+      "min_moisture": {
+        "name": "Minimale bodemvochtigheid"
+      },
+      "max_temperature": {
+        "name": "Maximale temperatuur"
+      },
+      "min_temperature": {
+        "name": "Minimale temperatuur"
+      },
+      "max_illuminance": {
+        "name": "Maximale verlichtingssterkte"
+      },
+      "min_illuminance": {
+        "name": "Minimale verlichtingssterkte"
+      },
+      "max_dli": {
+        "name": "Maximale DLI"
+      },
+      "min_dli": {
+        "name": "Minimale DLI"
+      },
+      "max_conductivity": {
+        "name": "Maximale geleidbaarheid"
+      },
+      "min_conductivity": {
+        "name": "Minimale geleidbaarheid"
+      },
+      "max_humidity": {
+        "name": "Maximale luchtvochtigheid"
+      },
+      "min_humidity": {
+        "name": "Minimale luchtvochtigheid"
+      }
+    }
+  },
   "config": {
     "step": {
       "user": {
