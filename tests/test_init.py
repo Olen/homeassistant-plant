@@ -2,19 +2,15 @@
 
 from __future__ import annotations
 
-from unittest.mock import patch
-
-import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry
-
 from homeassistant.const import (
     STATE_OK,
     STATE_PROBLEM,
-    STATE_UNAVAILABLE,
     STATE_UNKNOWN,
 )
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import device_registry as dr, entity_registry as er
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.plant.const import (
     ATTR_PLANT,
@@ -25,7 +21,7 @@ from custom_components.plant.const import (
 )
 
 from .common import set_external_sensor_states, update_plant_sensors
-from .conftest import TEST_ENTRY_ID, TEST_PLANT_NAME
+from .conftest import TEST_PLANT_NAME
 
 
 class TestIntegrationSetup:
@@ -292,6 +288,8 @@ class TestPlantDevice:
         mock_external_sensors: None,
     ) -> None:
         """Test that disabling triggers prevents problem state."""
+        from homeassistant.const import ATTR_ENTITY_PICTURE, ATTR_NAME
+
         from custom_components.plant.const import (
             CONF_MAX_CONDUCTIVITY,
             CONF_MAX_DLI,
@@ -306,10 +304,9 @@ class TestPlantDevice:
             CONF_MIN_MOISTURE,
             CONF_MIN_TEMPERATURE,
             DATA_SOURCE,
-            OPB_DISPLAY_PID,
             FLOW_MOISTURE_TRIGGER,
+            OPB_DISPLAY_PID,
         )
-        from homeassistant.const import ATTR_ENTITY_PICTURE, ATTR_NAME
 
         # Create config entry with moisture trigger disabled
         entry = MockConfigEntry(

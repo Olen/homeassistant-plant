@@ -2,18 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any
-from unittest.mock import AsyncMock, patch
-
-import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry
-
 from homeassistant import config_entries
 from homeassistant.const import ATTR_ENTITY_PICTURE, ATTR_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.plant.config_flow import PlantConfigFlow
 from custom_components.plant.const import (
     ATTR_SPECIES,
     CONF_MAX_CONDUCTIVITY,
@@ -31,9 +25,6 @@ from custom_components.plant.const import (
     DOMAIN,
     FLOW_PLANT_INFO,
     FLOW_RIGHT_PLANT,
-    FLOW_SENSOR_CONDUCTIVITY,
-    FLOW_SENSOR_HUMIDITY,
-    FLOW_SENSOR_ILLUMINANCE,
     FLOW_SENSOR_MOISTURE,
     FLOW_SENSOR_TEMPERATURE,
     OPB_DISPLAY_PID,
@@ -41,7 +32,6 @@ from custom_components.plant.const import (
 
 from .fixtures.openplantbook_responses import (
     GET_RESULT_MONSTERA_DELICIOSA,
-    SEARCH_RESULT_MONSTERA,
 )
 
 

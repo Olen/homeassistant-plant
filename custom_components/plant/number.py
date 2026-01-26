@@ -353,9 +353,9 @@ class PlantMaxTemperature(PlantMinMax):
         ):
             new_state = round(
                 TemperatureConverter.convert(
-                    temperature=float(self.state),
-                    from_unit=UnitOfTemperature.FAHRENHEIT,
-                    to_unit=UnitOfTemperature.CELSIUS,
+                    float(self.state),
+                    UnitOfTemperature.FAHRENHEIT,
+                    UnitOfTemperature.CELSIUS,
                 )
             )
             _LOGGER.debug(
@@ -370,9 +370,9 @@ class PlantMaxTemperature(PlantMinMax):
         ):
             new_state = round(
                 TemperatureConverter.convert(
-                    temperature=float(self.state),
-                    from_unit=UnitOfTemperature.CELSIUS,
-                    to_unit=UnitOfTemperature.FAHRENHEIT,
+                    float(self.state),
+                    UnitOfTemperature.CELSIUS,
+                    UnitOfTemperature.FAHRENHEIT,
                 )
             )
             _LOGGER.debug(
@@ -381,7 +381,7 @@ class PlantMaxTemperature(PlantMinMax):
                 new_state,
             )
 
-        self._hass.states.set(self.entity_id, new_state, new_attributes)
+        self._hass.states.async_set(self.entity_id, new_state, new_attributes)
 
 
 class PlantMinTemperature(PlantMinMax):
@@ -425,9 +425,9 @@ class PlantMinTemperature(PlantMinMax):
         ):
             new_state = round(
                 TemperatureConverter.convert(
-                    temperature=float(self.state),
-                    from_unit=UnitOfTemperature.FAHRENHEIT,
-                    to_unit=UnitOfTemperature.CELSIUS,
+                    float(self.state),
+                    UnitOfTemperature.FAHRENHEIT,
+                    UnitOfTemperature.CELSIUS,
                 )
             )
             _LOGGER.debug(
@@ -444,9 +444,9 @@ class PlantMinTemperature(PlantMinMax):
         ):
             new_state = round(
                 TemperatureConverter.convert(
-                    temperature=float(self.state),
-                    from_unit=UnitOfTemperature.CELSIUS,
-                    to_unit=UnitOfTemperature.FAHRENHEIT,
+                    float(self.state),
+                    UnitOfTemperature.CELSIUS,
+                    UnitOfTemperature.FAHRENHEIT,
                 )
             )
             _LOGGER.debug(
@@ -455,7 +455,7 @@ class PlantMinTemperature(PlantMinMax):
                 new_state,
             )
 
-        self._hass.states.set(self.entity_id, new_state, new_attributes)
+        self._hass.states.async_set(self.entity_id, new_state, new_attributes)
 
 
 class PlantMaxIlluminance(PlantMinMax):

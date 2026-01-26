@@ -2,33 +2,24 @@
 
 from __future__ import annotations
 
-from unittest.mock import patch
-
 import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry
-
 from homeassistant.const import (
-    LIGHT_LUX,
-    PERCENTAGE,
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
-    UnitOfTemperature,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.plant.const import (
     ATTR_PLANT,
-    ATTR_SENSORS,
     DEFAULT_LUX_TO_PPFD,
     DOMAIN,
     UNIT_DLI,
     UNIT_PPFD,
 )
-from custom_components.plant.sensor import PlantCurrentPpfd
 
-from .common import set_external_sensor_states, set_sensor_state
-from .conftest import TEST_ENTRY_ID, TEST_PLANT_NAME
+from .common import set_sensor_state
 
 
 class TestPlantCurrentSensors:

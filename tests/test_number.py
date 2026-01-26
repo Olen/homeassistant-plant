@@ -2,14 +2,12 @@
 
 from __future__ import annotations
 
-import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry
-
 from homeassistant.components.number import NumberMode
 from homeassistant.const import LIGHT_LUX, PERCENTAGE
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity import EntityCategory
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.plant.const import (
     ATTR_PLANT,
@@ -18,8 +16,6 @@ from custom_components.plant.const import (
     UNIT_CONDUCTIVITY,
     UNIT_DLI,
 )
-
-from .conftest import TEST_ENTRY_ID
 
 
 class TestThresholdEntitiesCreation:
@@ -360,3 +356,172 @@ class TestThresholdStateChanges:
         # Simulate state change
         threshold.state_changed(old_state="60", new_state="70")
         assert threshold.native_value == "70"
+
+
+class TestTemperatureUnitConversion:
+    """Tests for temperature unit conversion when unit of measurement changes."""
+
+    async def test_max_temperature_converts_fahrenheit_to_celsius(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test max temperature converts from °F to °C."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        threshold = plant.max_temperature
+
+        # Set initial value to 68°F using the entity's method
+        await threshold.async_set_native_value(68)
+        await hass.async_block_till_done()
+
+        old_attributes = {"unit_of_measurement": "°F"}
+        new_attributes = {"unit_of_measurement": "°C"}
+
+        threshold.state_attributes_changed(old_attributes, new_attributes)
+        await hass.async_block_till_done()
+
+        # Check that state was updated (68°F -> 20°C)
+        state = hass.states.get(threshold.entity_id)
+        assert state is not None
+        assert int(state.state) == 20
+
+    async def test_max_temperature_converts_celsius_to_fahrenheit(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test max temperature converts from °C to °F."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        threshold = plant.max_temperature
+
+        # Set initial value to 20°C using the entity's method
+        await threshold.async_set_native_value(20)
+        await hass.async_block_till_done()
+
+        old_attributes = {"unit_of_measurement": "°C"}
+        new_attributes = {"unit_of_measurement": "°F"}
+
+        threshold.state_attributes_changed(old_attributes, new_attributes)
+        await hass.async_block_till_done()
+
+        # Check that state was updated (20°C -> 68°F)
+        state = hass.states.get(threshold.entity_id)
+        assert state is not None
+        assert int(state.state) == 68
+
+    async def test_min_temperature_converts_fahrenheit_to_celsius(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test min temperature converts from °F to °C."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        threshold = plant.min_temperature
+
+        # Set initial value to 50°F using the entity's method
+        await threshold.async_set_native_value(50)
+        await hass.async_block_till_done()
+
+        old_attributes = {"unit_of_measurement": "°F"}
+        new_attributes = {"unit_of_measurement": "°C"}
+
+        threshold.state_attributes_changed(old_attributes, new_attributes)
+        await hass.async_block_till_done()
+
+        # Check that state was updated (50°F -> 10°C)
+        state = hass.states.get(threshold.entity_id)
+        assert state is not None
+        assert int(state.state) == 10
+
+    async def test_min_temperature_converts_celsius_to_fahrenheit(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test min temperature converts from °C to °F."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        threshold = plant.min_temperature
+
+        # Set initial value to 10°C using the entity's method
+        await threshold.async_set_native_value(10)
+        await hass.async_block_till_done()
+
+        old_attributes = {"unit_of_measurement": "°C"}
+        new_attributes = {"unit_of_measurement": "°F"}
+
+        threshold.state_attributes_changed(old_attributes, new_attributes)
+        await hass.async_block_till_done()
+
+        # Check that state was updated (10°C -> 50°F)
+        state = hass.states.get(threshold.entity_id)
+        assert state is not None
+        assert int(state.state) == 50
+
+    async def test_temperature_no_conversion_when_units_same(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test no conversion happens when unit stays the same."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        threshold = plant.max_temperature
+
+        # Get initial state
+        initial_state = hass.states.get(threshold.entity_id)
+        initial_value = initial_state.state
+
+        old_attributes = {"unit_of_measurement": "°C"}
+        new_attributes = {"unit_of_measurement": "°C"}
+
+        threshold.state_attributes_changed(old_attributes, new_attributes)
+        await hass.async_block_till_done()
+
+        # Value should remain unchanged
+        state = hass.states.get(threshold.entity_id)
+        assert state.state == initial_value
+
+    async def test_temperature_no_conversion_when_old_unit_none(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test no conversion when old unit is None."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        threshold = plant.max_temperature
+
+        # Get initial state
+        initial_state = hass.states.get(threshold.entity_id)
+        initial_value = initial_state.state
+
+        old_attributes = {"unit_of_measurement": None}
+        new_attributes = {"unit_of_measurement": "°C"}
+
+        threshold.state_attributes_changed(old_attributes, new_attributes)
+        await hass.async_block_till_done()
+
+        # Value should remain unchanged
+        state = hass.states.get(threshold.entity_id)
+        assert state.state == initial_value
+
+    async def test_temperature_no_conversion_when_new_unit_none(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test no conversion when new unit is None."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        threshold = plant.max_temperature
+
+        # Get initial state
+        initial_state = hass.states.get(threshold.entity_id)
+        initial_value = initial_state.state
+
+        old_attributes = {"unit_of_measurement": "°C"}
+        new_attributes = {"unit_of_measurement": None}
+
+        threshold.state_attributes_changed(old_attributes, new_attributes)
+        await hass.async_block_till_done()
+
+        # Value should remain unchanged
+        state = hass.states.get(threshold.entity_id)
+        assert state.state == initial_value
