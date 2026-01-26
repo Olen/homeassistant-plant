@@ -50,6 +50,7 @@ from .const import (
     ATTR_TEMPERATURE,
     DATA_SOURCE,
     DOMAIN,
+    ENTITY_ID_PREFIX_SENSOR,
     FLOW_CONDUCTIVITY_TRIGGER,
     FLOW_DLI_TRIGGER,
     FLOW_HUMIDITY_TRIGGER,
@@ -160,7 +161,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 "Refuse to update non-%s entities: %s", DOMAIN, meter_entity
             )
             return False
-        if new_sensor and new_sensor != "" and not new_sensor.startswith("sensor."):
+        if (
+            new_sensor
+            and new_sensor != ""
+            and not new_sensor.startswith(ENTITY_ID_PREFIX_SENSOR)
+        ):
             _LOGGER.warning("%s is not a sensor", new_sensor)
             return False
 

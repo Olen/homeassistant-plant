@@ -4,6 +4,13 @@ DOMAIN = "plant"
 DOMAIN_SENSOR = "sensor"
 DOMAIN_PLANTBOOK = "openplantbook"
 
+# Entity ID prefixes
+ENTITY_ID_PREFIX_SENSOR = f"{DOMAIN_SENSOR}."
+
+# URL patterns
+URL_SCHEME_HTTP = "http"
+PLANTBOOK_DOMAIN = "plantbook.io"
+
 REQUEST_TIMEOUT = 30
 
 # ATTRs are used by machines

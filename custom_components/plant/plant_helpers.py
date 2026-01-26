@@ -70,6 +70,7 @@ from .const import (
     OPB_DISPLAY_PID,
     OPB_GET,
     OPB_SEARCH,
+    PLANTBOOK_DOMAIN,
     PPFD_DLI_FACTOR,
     REQUEST_TIMEOUT,
 )
@@ -280,7 +281,7 @@ class PlantHelper:
             if (
                 entity_picture is None
                 or entity_picture == ""
-                or "plantbook.io" in entity_picture
+                or PLANTBOOK_DOMAIN in entity_picture
                 or (
                     FLOW_FORCE_SPECIES_UPDATE in config
                     and config[FLOW_FORCE_SPECIES_UPDATE] is True

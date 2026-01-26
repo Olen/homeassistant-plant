@@ -66,6 +66,7 @@ from .const import (
     FLOW_TEMP_UNIT,
     FLOW_TEMPERATURE_TRIGGER,
     OPB_DISPLAY_PID,
+    URL_SCHEME_HTTP,
 )
 from .plant_helpers import PlantHelper
 
@@ -380,7 +381,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             )
         ] = str
         entity_picture = plant_config[FLOW_PLANT_INFO].get(ATTR_ENTITY_PICTURE)
-        if not entity_picture.startswith("http"):
+        if not entity_picture.startswith(URL_SCHEME_HTTP):
             try:
                 entity_picture = f"{get_url(self.hass, require_current_request=True)}{urllib.parse.quote(entity_picture)}"
             except NoURLAvailableError:

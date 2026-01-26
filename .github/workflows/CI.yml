@@ -43,13 +43,10 @@ jobs:
           # Latest HA version - uses current pytest-homeassistant-custom-component
           - ha-version: "latest"
             pytest-ha-version: ""
-            python-version: "3.13"
           # Minimum HA version from hacs.json (2025.8.0)
           # pytest-homeassistant-custom-component 0.13.270 supports HA 2025.8.x
-          # Use Python 3.12 to avoid pycares compatibility issues
           - ha-version: "2025.8"
             pytest-ha-version: "==0.13.270"
-            python-version: "3.12"
     steps:
       - name: Check out code
         uses: actions/checkout@v5
@@ -57,7 +54,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.13"
 
       - name: Install uv
         uses: astral-sh/setup-uv@v4
@@ -66,15 +63,14 @@ jobs:
         run: |
           rm -f uv.lock  # Prevent editable install from lock file
           uv venv
-          # Install test dependencies, but handle pytest-homeassistant-custom-component separately
+          # Install test dependencies except pytest-homeassistant-custom-component
           uv pip install $(python -c "
           import tomllib
           deps = tomllib.load(open('pyproject.toml', 'rb'))['project']['optional-dependencies']['test']
-          # Filter out pytest-homeassistant-custom-component to install it separately with version constraint
           filtered = [d for d in deps if not d.startswith('pytest-homeassistant-custom-component')]
           print(' '.join(filtered))
           ")
-          # Install pytest-homeassistant-custom-component with optional version constraint
+          # Install pytest-homeassistant-custom-component with version constraint
           uv pip install "pytest-homeassistant-custom-component${{ matrix.pytest-ha-version }}"
 
       - name: Show installed HA version
