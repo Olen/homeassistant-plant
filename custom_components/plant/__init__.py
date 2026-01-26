@@ -516,8 +516,8 @@ class PlantDevice(Entity):
                 ATTR_SENSOR: self.dli.entity_id,
             },
         }
-        if self.dli.state and self.dli.state != STATE_UNKNOWN:
-            response[ATTR_DLI][ATTR_CURRENT] = float(self.dli.state)
+        if self.dli.native_value is not None and self.dli.native_value != STATE_UNKNOWN:
+            response[ATTR_DLI][ATTR_CURRENT] = float(self.dli.native_value)
 
         return response
 
@@ -770,9 +770,9 @@ class PlantDevice(Entity):
         # Check DLI from the previous day against max/min DLI
         if (
             self.dli is not None
+            and self.dli.native_value is not None
             and self.dli.native_value != STATE_UNKNOWN
             and self.dli.native_value != STATE_UNAVAILABLE
-            and self.dli.state is not None
         ):
             known_state = True
             if float(self.dli.extra_state_attributes["last_period"]) > 0 and float(
