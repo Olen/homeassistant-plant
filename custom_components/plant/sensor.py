@@ -212,7 +212,7 @@ class PlantCurrentStatus(RestoreSensor):
         if entity_id and entity_id not in self._tracker:
             async_track_state_change_event(
                 self._hass,
-                list([entity_id]),
+                [entity_id],
                 self._state_changed_event,
             )
             self._tracker.append(entity_id)
@@ -665,7 +665,7 @@ class PlantDummyIlluminance(PlantDummyStatus):
 
         super().__init__(hass, config, plantdevice)
 
-    async def async_update(self) -> int:
+    async def async_update(self) -> None:
         """Give out a dummy value"""
         if datetime.now().hour < 5:
             self._attr_native_value = random.randint(1, 10) * 100
@@ -697,7 +697,7 @@ class PlantDummyConductivity(PlantDummyStatus):
 
         super().__init__(hass, config, plantdevice)
 
-    async def async_update(self) -> int:
+    async def async_update(self) -> None:
         """Give out a dummy value"""
         self._attr_native_value = random.randint(40, 200) * 10
 
@@ -752,7 +752,7 @@ class PlantDummyTemperature(PlantDummyStatus):
 
         super().__init__(hass, config, plantdevice)
 
-    async def async_update(self) -> int:
+    async def async_update(self) -> None:
         """Give out a dummy value"""
         self._attr_native_value = random.randint(15, 20)
 
@@ -778,7 +778,7 @@ class PlantDummyHumidity(PlantDummyStatus):
         super().__init__(hass, config, plantdevice)
         self._attr_native_value = random.randint(25, 90)
 
-    async def async_update(self) -> int:
+    async def async_update(self) -> None:
         """Give out a dummy value"""
         test = random.randint(0, 100)
         if test > 50:

@@ -424,7 +424,7 @@ class PlantDevice(Entity):
 
     @property
     def websocket_info(self) -> dict:
-        """Wesocket response"""
+        """Websocket response"""
         if not self.plant_complete:
             # We are not fully set up, so we just return an empty dict for now
             return {}

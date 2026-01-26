@@ -431,7 +431,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 class OptionsFlowHandler(config_entries.OptionsFlow):
-    """Handling opetions for plant"""
+    """Handling options for plant."""
 
     def __init__(self) -> None:
         """Initialize options flow."""

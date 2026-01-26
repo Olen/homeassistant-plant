@@ -17,7 +17,6 @@ from homeassistant.const import (
 )
 from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
-from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import (
     Entity,
     EntityCategory,
@@ -47,7 +46,6 @@ from .const import (
     CONF_MIN_ILLUMINANCE,
     CONF_MIN_MOISTURE,
     CONF_MIN_TEMPERATURE,
-    DATA_UPDATED,
     DEFAULT_MAX_CONDUCTIVITY,
     DEFAULT_MAX_DLI,
     DEFAULT_MAX_HUMIDITY,
@@ -230,29 +228,12 @@ class PlantMinMax(RestoreNumber):
             return
         self._attr_native_value = state.native_value
         self._attr_native_unit_of_measurement = state.native_unit_of_measurement
-        # We track changes to our own state so we can update ourselves if state si changed
+        # We track changes to our own state so we can update ourselves if state is changed
         # from the UI or by other means
         async_track_state_change_event(
             self._hass,
-            list([self.entity_id]),
+            [self.entity_id],
             self._state_changed_event,
-        )
-
-    async def not_async_added_to_hass(self) -> None:
-        """Restore state of thresholds on startup."""
-        await super().async_added_to_hass()
-
-        # Restore state and attributes from DB
-        state = await self.async_get_last_state()
-        if not state:
-            return
-        self._attr_state = state.state
-        self._attr_native_unit_of_measurement = state.attributes.get(
-            ATTR_UNIT_OF_MEASUREMENT
-        )
-
-        async_dispatcher_connect(
-            self.hass, DATA_UPDATED, self._schedule_immediate_update
         )
 
     @callback
