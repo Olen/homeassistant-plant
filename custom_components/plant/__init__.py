@@ -129,14 +129,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     component = EntityComponent(_LOGGER, DOMAIN, hass)
     await component.async_add_entities(plant_entities)
 
-    # Add the rest of the entities to device registry together with plant
+    # Add the entities to device registry together with plant
     device_id = plant.device_id
     await _plant_add_to_device_registry(hass, plant_entities, device_id)
-    # await _plant_add_to_device_registry(hass, plant.integral_entities, device_id)
-    # await _plant_add_to_device_registry(hass, plant.threshold_entities, device_id)
-    # await _plant_add_to_device_registry(hass, plant.meter_entities, device_id)
 
-    #
     # Set up utility sensor
     hass.data.setdefault(DATA_UTILITY, {})
     hass.data[DATA_UTILITY].setdefault(entry.entry_id, {})

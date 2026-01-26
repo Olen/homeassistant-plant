@@ -94,7 +94,6 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_import(self, import_input: dict[str, Any]) -> ConfigFlowResult:
         """Import config from configuration.yaml."""
         _LOGGER.debug(import_input)
-        # return FlowResultType.ABORT
         return self.async_create_entry(
             title=import_input[FLOW_PLANT_INFO][ATTR_NAME],
             data=import_input,
@@ -518,8 +517,6 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 FLOW_CONDUCTIVITY_TRIGGER, default=self.plant.conductivity_trigger
             )
         ] = cv.boolean
-
-        # data_schema[vol.Optional(CONF_CHECK_DAYS, default=self.plant.check_days)] = int
 
         return self.async_show_form(step_id="init", data_schema=vol.Schema(data_schema))
 
