@@ -58,7 +58,7 @@ jobs:
         run: .venv/bin/pytest tests/ --cov=custom_components/plant --cov-report=term-missing --cov-report=xml
 
       - name: Upload coverage reports
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           file: ./coverage.xml
           fail_ci_if_error: false
