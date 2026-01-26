@@ -363,3 +363,66 @@ class TestPlantHelperEdgeCases:
         # Empty string should be converted to None/empty
         plant_info = result[FLOW_PLANT_INFO]
         assert plant_info[OPB_DISPLAY_PID] == "" or plant_info[OPB_DISPLAY_PID] is None
+
+
+class TestToIntHelper:
+    """Tests for the _to_int helper function."""
+
+    def test_to_int_with_int(self) -> None:
+        """Test _to_int with integer input."""
+        from custom_components.plant.plant_helpers import _to_int
+
+        assert _to_int(42, 0) == 42
+        assert _to_int(0, 10) == 0
+        assert _to_int(-5, 0) == -5
+
+    def test_to_int_with_string(self) -> None:
+        """Test _to_int with string input (common from OPB API)."""
+        from custom_components.plant.plant_helpers import _to_int
+
+        assert _to_int("42", 0) == 42
+        assert _to_int("100", 0) == 100
+        assert _to_int("-10", 0) == -10
+
+    def test_to_int_with_none(self) -> None:
+        """Test _to_int with None returns default."""
+        from custom_components.plant.plant_helpers import _to_int
+
+        assert _to_int(None, 50) == 50
+        assert _to_int(None, 0) == 0
+
+    def test_to_int_with_invalid_string(self) -> None:
+        """Test _to_int with invalid string returns default."""
+        from custom_components.plant.plant_helpers import _to_int
+
+        assert _to_int("not a number", 25) == 25
+        assert _to_int("", 10) == 10
+
+    def test_to_int_with_float_string(self) -> None:
+        """Test _to_int with float string converts via float and rounds."""
+        from custom_components.plant.plant_helpers import _to_int
+
+        # Float strings should be converted via float() then rounded
+        assert _to_int("42.5", 0) == 42  # rounds to nearest even (banker's rounding)
+        assert _to_int("42.6", 0) == 43
+        assert _to_int("42.4", 0) == 42
+
+    def test_to_int_with_float(self) -> None:
+        """Test _to_int with actual float values."""
+        from custom_components.plant.plant_helpers import _to_int
+
+        assert _to_int(42.5, 0) == 42
+        assert _to_int(42.9, 0) == 42  # int() truncates, doesn't round
+
+
+class TestImageValidation:
+    """Tests for image URL validation."""
+
+    async def test_validate_image_url_empty(
+        self,
+        hass: HomeAssistant,
+    ) -> None:
+        """Test that empty URL returns False."""
+        helper = PlantHelper(hass)
+        assert await helper.validate_image_url("") is False
+        assert await helper.validate_image_url(None) is False
