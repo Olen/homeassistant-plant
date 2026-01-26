@@ -13,6 +13,7 @@ from homeassistant.const import (
     LIGHT_LUX,
     PERCENTAGE,
     STATE_UNKNOWN,
+    UnitOfConductivity,
     UnitOfTemperature,
 )
 from homeassistant.core import Event, HomeAssistant, callback
@@ -85,7 +86,6 @@ from .const import (
     TRANSLATION_KEY_MIN_ILLUMINANCE,
     TRANSLATION_KEY_MIN_MOISTURE,
     TRANSLATION_KEY_MIN_TEMPERATURE,
-    UNIT_CONDUCTIVITY,
     UNIT_DLI,
 )
 
@@ -332,8 +332,9 @@ class PlantMaxTemperature(PlantMinMax):
             return
         new_state = self._attr_state
         if (
-            old_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == "°F"
-            and new_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == "°C"
+            old_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == UnitOfTemperature.FAHRENHEIT
+            and new_attributes.get(ATTR_UNIT_OF_MEASUREMENT)
+            == UnitOfTemperature.CELSIUS
         ):
             new_state = round(
                 TemperatureConverter.convert(
@@ -349,8 +350,9 @@ class PlantMaxTemperature(PlantMinMax):
             )
 
         if (
-            old_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == "°C"
-            and new_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == "°F"
+            old_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == UnitOfTemperature.CELSIUS
+            and new_attributes.get(ATTR_UNIT_OF_MEASUREMENT)
+            == UnitOfTemperature.FAHRENHEIT
         ):
             new_state = round(
                 TemperatureConverter.convert(
@@ -404,8 +406,9 @@ class PlantMinTemperature(PlantMinMax):
             return
         new_state = self._attr_state
         if (
-            old_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == "°F"
-            and new_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == "°C"
+            old_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == UnitOfTemperature.FAHRENHEIT
+            and new_attributes.get(ATTR_UNIT_OF_MEASUREMENT)
+            == UnitOfTemperature.CELSIUS
         ):
             new_state = round(
                 TemperatureConverter.convert(
@@ -421,8 +424,9 @@ class PlantMinTemperature(PlantMinMax):
             )
 
         if (
-            old_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == "°C"
-            and new_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == "°F"
+            old_attributes.get(ATTR_UNIT_OF_MEASUREMENT) == UnitOfTemperature.CELSIUS
+            and new_attributes.get(ATTR_UNIT_OF_MEASUREMENT)
+            == UnitOfTemperature.FAHRENHEIT
         ):
             new_state = round(
                 TemperatureConverter.convert(
@@ -537,7 +541,7 @@ class PlantMaxConductivity(PlantMinMax):
 
     _attr_device_class = f"{ATTR_CONDUCTIVITY} threshold"
     _attr_icon = ICON_CONDUCTIVITY
-    _attr_native_unit_of_measurement = UNIT_CONDUCTIVITY
+    _attr_native_unit_of_measurement = UnitOfConductivity.MICROSIEMENS_PER_CM
     _attr_native_max_value = 3000
     _attr_native_min_value = 0
     _attr_native_step = 50
@@ -560,7 +564,7 @@ class PlantMinConductivity(PlantMinMax):
 
     _attr_device_class = f"{ATTR_CONDUCTIVITY} threshold"
     _attr_icon = ICON_CONDUCTIVITY
-    _attr_native_unit_of_measurement = UNIT_CONDUCTIVITY
+    _attr_native_unit_of_measurement = UnitOfConductivity.MICROSIEMENS_PER_CM
     _attr_native_max_value = 3000
     _attr_native_min_value = 0
     _attr_native_step = 50
