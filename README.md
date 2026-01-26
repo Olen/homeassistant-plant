@@ -72,6 +72,15 @@ These updates are immediately reflected in HA without restarting anything.
 
 See https://en.wikipedia.org/wiki/Daily_light_integral for what DLI means.
 
+#### Configurable Lux to PPFD Conversion
+
+The DLI calculation converts illuminance (lux) to PPFD using a conversion factor. The default factor (0.0185) is optimized for sunlight, but different light sources have different conversion factors. You can now adjust this per plant using the **"Lux to PPFD factor"** configuration entity.
+
+This is useful for:
+- Indoor plants under LED grow lights
+- Greenhouses with supplemental lighting
+- Any situation where the default sunlight factor doesn't match your light source
+
 For technical details on how DLI is calculated in this integration, see [DLI.md](DLI.md).
 
 ### More flexible lovelace card
