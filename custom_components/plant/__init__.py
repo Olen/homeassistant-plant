@@ -33,6 +33,7 @@ from homeassistant.helpers.entity_component import EntityComponent
 from . import group as group  # noqa: F401 - needed for HA group discovery
 from .config_flow import update_plant_options
 from .const import (
+    ATTR_BRIGHTNESS,
     ATTR_CONDUCTIVITY,
     ATTR_CURRENT,
     ATTR_DLI,
@@ -48,8 +49,17 @@ from .const import (
     ATTR_SENSORS,
     ATTR_SPECIES,
     ATTR_TEMPERATURE,
+    CONF_MAX_BRIGHTNESS,
+    CONF_MAX_CONDUCTIVITY,
+    CONF_MAX_MOISTURE,
+    CONF_MAX_TEMPERATURE,
+    CONF_MIN_BRIGHTNESS,
+    CONF_MIN_CONDUCTIVITY,
+    CONF_MIN_MOISTURE,
+    CONF_MIN_TEMPERATURE,
     DATA_SOURCE,
     DOMAIN,
+    DOMAIN_PLANTBOOK,
     ENTITY_ID_PREFIX_SENSOR,
     FLOW_CONDUCTIVITY_TRIGGER,
     FLOW_DLI_TRIGGER,
@@ -67,6 +77,43 @@ from .plant_helpers import PlantHelper
 
 _LOGGER = logging.getLogger(__name__)
 PLATFORMS = [Platform.NUMBER, Platform.SENSOR]
+
+# Schema for native HA plant YAML configuration import
+# Matches format from https://www.home-assistant.io/integrations/plant/
+PLANT_SENSOR_SCHEMA = vol.Schema(
+    {
+        vol.Optional(ATTR_MOISTURE): cv.entity_id,
+        vol.Optional(ATTR_TEMPERATURE): cv.entity_id,
+        vol.Optional(ATTR_CONDUCTIVITY): cv.entity_id,
+        vol.Optional(ATTR_BRIGHTNESS): cv.entity_id,
+        vol.Optional(ATTR_HUMIDITY): cv.entity_id,
+        vol.Optional("battery"): cv.entity_id,  # Native HA has battery, we ignore it
+    }
+)
+
+PLANT_CONFIG_SCHEMA = vol.Schema(
+    {
+        vol.Optional(ATTR_SENSORS): PLANT_SENSOR_SCHEMA,
+        vol.Optional(CONF_MIN_MOISTURE): cv.positive_int,
+        vol.Optional(CONF_MAX_MOISTURE): cv.positive_int,
+        vol.Optional(CONF_MIN_TEMPERATURE): vol.Coerce(float),
+        vol.Optional(CONF_MAX_TEMPERATURE): vol.Coerce(float),
+        vol.Optional(CONF_MIN_CONDUCTIVITY): cv.positive_int,
+        vol.Optional(CONF_MAX_CONDUCTIVITY): cv.positive_int,
+        vol.Optional(CONF_MIN_BRIGHTNESS): cv.positive_int,
+        vol.Optional(CONF_MAX_BRIGHTNESS): cv.positive_int,
+        vol.Optional("check_days"): cv.positive_int,  # Native HA option, we ignore it
+    }
+)
+
+CONFIG_SCHEMA = vol.Schema(
+    {
+        DOMAIN: vol.Schema(
+            {cv.slug: vol.Any(PLANT_CONFIG_SCHEMA, None)},
+        )
+    },
+    extra=vol.ALLOW_EXTRA,
+)
 
 SERVICE_REPLACE_SENSOR_SCHEMA = vol.Schema(
     {
@@ -102,6 +149,30 @@ async def async_migrate_plant(hass: HomeAssistant, plant_id: str, config: dict) 
             DOMAIN, context={"source": SOURCE_IMPORT}, data=plant_config
         )
     )
+
+
+async def async_setup(hass: HomeAssistant, config: dict) -> bool:
+    """Set up the plant integration from YAML configuration.
+
+    This function handles importing plants from the native Home Assistant
+    plant integration's YAML configuration format.
+    """
+    if config.get(DOMAIN):
+        # Only import if we haven't already imported
+        config_entry = _async_find_matching_config_entry(hass)
+        if not config_entry:
+            _LOGGER.debug("Found YAML config: %s", config[DOMAIN])
+            for plant_id in config[DOMAIN]:
+                if plant_id != DOMAIN_PLANTBOOK:
+                    _LOGGER.info("Importing plant from YAML: %s", plant_id)
+                    await async_migrate_plant(hass, plant_id, config[DOMAIN][plant_id])
+        else:
+            _LOGGER.warning(
+                "Plants have already been imported. "
+                "Please remove the '%s:' section from configuration.yaml",
+                DOMAIN,
+            )
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from unittest.mock import AsyncMock, patch
+
+from homeassistant.config_entries import SOURCE_IMPORT
 from homeassistant.const import (
     STATE_OK,
     STATE_PROBLEM,
@@ -13,6 +16,7 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.plant import async_setup
 from custom_components.plant.const import (
     ATTR_PLANT,
     DOMAIN,
@@ -958,3 +962,121 @@ class TestPlantDevice:
         assert plant.dli_status is None
         # Plant should recover to OK
         assert plant.state == STATE_OK
+
+
+class TestYamlImport:
+    """Tests for YAML configuration import (async_setup)."""
+
+    async def test_async_setup_no_yaml_config(
+        self,
+        hass: HomeAssistant,
+    ) -> None:
+        """Test async_setup returns True when no YAML config present."""
+        result = await async_setup(hass, {})
+        assert result is True
+
+    async def test_async_setup_triggers_import(
+        self,
+        hass: HomeAssistant,
+        mock_openplantbook_services: None,
+    ) -> None:
+        """Test async_setup triggers import for YAML plants."""
+        yaml_config = {
+            DOMAIN: {
+                "my_plant": {
+                    "sensors": {
+                        "moisture": "sensor.moisture",
+                        "temperature": "sensor.temperature",
+                        "brightness": "sensor.brightness",  # Native HA uses brightness
+                        "conductivity": "sensor.conductivity",
+                    },
+                    "min_moisture": 20,
+                    "max_moisture": 60,
+                    "min_brightness": 4000,
+                    "max_brightness": 60000,
+                    "min_temperature": 15,
+                    "max_temperature": 35,
+                    "min_conductivity": 500,
+                    "max_conductivity": 3000,
+                }
+            }
+        }
+
+        with patch(
+            "custom_components.plant.async_migrate_plant",
+            new_callable=AsyncMock,
+        ) as mock_migrate:
+            result = await async_setup(hass, yaml_config)
+
+            assert result is True
+            # async_migrate_plant should be called for the plant
+            assert mock_migrate.called
+            assert mock_migrate.call_count == 1
+            # Check it was called with the plant_id and config
+            call_args = mock_migrate.call_args
+            assert call_args[0][1] == "my_plant"  # plant_id
+
+    async def test_async_setup_skips_already_imported(
+        self,
+        hass: HomeAssistant,
+    ) -> None:
+        """Test async_setup skips import when plants already imported."""
+        # Add an existing config entry with SOURCE_IMPORT
+        existing_entry = MockConfigEntry(
+            domain=DOMAIN,
+            source=SOURCE_IMPORT,
+            title="Already Imported Plant",
+            data={},
+            entry_id="existing_import_entry",
+        )
+        existing_entry.add_to_hass(hass)
+
+        yaml_config = {
+            DOMAIN: {
+                "my_plant": {
+                    "sensors": {
+                        "moisture": "sensor.moisture",
+                    },
+                }
+            }
+        }
+
+        with patch(
+            "custom_components.plant.async_migrate_plant",
+            new_callable=AsyncMock,
+        ) as mock_migrate:
+            result = await async_setup(hass, yaml_config)
+
+            assert result is True
+            # async_migrate_plant should NOT be called since already imported
+            assert not mock_migrate.called
+
+    async def test_async_setup_skips_openplantbook_key(
+        self,
+        hass: HomeAssistant,
+        mock_openplantbook_services: None,
+    ) -> None:
+        """Test async_setup skips the openplantbook key in YAML config."""
+        yaml_config = {
+            DOMAIN: {
+                "openplantbook": {
+                    "client_id": "xxx",
+                    "secret": "yyy",
+                },
+                "my_plant": {
+                    "sensors": {
+                        "moisture": "sensor.moisture",
+                    },
+                },
+            }
+        }
+
+        with patch(
+            "custom_components.plant.async_migrate_plant",
+            new_callable=AsyncMock,
+        ) as mock_migrate:
+            result = await async_setup(hass, yaml_config)
+
+            assert result is True
+            # Should be called once for my_plant, not for openplantbook
+            assert mock_migrate.call_count == 1
