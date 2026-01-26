@@ -93,7 +93,7 @@ class PlantHelper:
         )
         return DOMAIN_PLANTBOOK in self.hass.services.async_services()
 
-    async def openplantbook_search(self, species: str) -> dict[str:Any] | None:
+    async def openplantbook_search(self, species: str) -> dict[str, Any] | None:
         """Search OPB and return list of result"""
 
         if not self.has_openplantbook:
@@ -122,7 +122,7 @@ class PlantHelper:
             return plant_search_result
         return None
 
-    async def openplantbook_get(self, species: str) -> dict[str:Any] | None:
+    async def openplantbook_get(self, species: str) -> dict[str, Any] | None:
         """Get information about a plant species from OpenPlantbook"""
         if not self.has_openplantbook:
             return None
@@ -155,7 +155,7 @@ class PlantHelper:
         )
         return None
 
-    async def generate_configentry(self, config: dict) -> dict[str:Any]:
+    async def generate_configentry(self, config: dict[str, Any]) -> dict[str, Any]:
         """Generates a config-entry dict from current data and/or OPB"""
 
         max_moisture = DEFAULT_MAX_MOISTURE

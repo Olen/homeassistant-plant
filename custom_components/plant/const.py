@@ -136,6 +136,8 @@ DEFAULT_LUX_TO_PPFD = 0.0185
 
 
 SERVICE_REPLACE_SENSOR = "replace_sensor"
+ATTR_METER_ENTITY = "meter_entity"
+ATTR_NEW_SENSOR = "new_sensor"
 
 STATE_LOW = "Low"
 STATE_HIGH = "High"

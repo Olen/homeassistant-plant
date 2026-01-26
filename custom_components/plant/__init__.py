@@ -23,6 +23,7 @@ from homeassistant.const import (
     Platform,
 )
 from homeassistant.core import HomeAssistant, ServiceCall, callback
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
@@ -38,8 +39,10 @@ from .const import (
     ATTR_HUMIDITY,
     ATTR_ILLUMINANCE,
     ATTR_MAX,
+    ATTR_METER_ENTITY,
     ATTR_MIN,
     ATTR_MOISTURE,
+    ATTR_NEW_SENSOR,
     ATTR_PLANT,
     ATTR_SENSOR,
     ATTR_SENSORS,
@@ -63,6 +66,13 @@ from .plant_helpers import PlantHelper
 
 _LOGGER = logging.getLogger(__name__)
 PLATFORMS = [Platform.NUMBER, Platform.SENSOR]
+
+SERVICE_REPLACE_SENSOR_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_METER_ENTITY): cv.entity_id,
+        vol.Optional(ATTR_NEW_SENSOR): vol.Any(cv.entity_id, None, ""),
+    }
+)
 
 # Use this during testing to generate some dummy-sensors
 # to provide random readings for temperature, moisture etc.
@@ -135,9 +145,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     #
     # Service call to replace sensors
     async def replace_sensor(call: ServiceCall) -> None:
-        """Replace a sensor entity within a plant device"""
-        meter_entity = call.data.get("meter_entity")
-        new_sensor = call.data.get("new_sensor")
+        """Replace a sensor entity within a plant device."""
+        meter_entity = call.data[ATTR_METER_ENTITY]
+        new_sensor = call.data.get(ATTR_NEW_SENSOR)
         found = False
         for entry_id in hass.data[DOMAIN]:
             if ATTR_SENSORS in hass.data[DOMAIN][entry_id]:
@@ -188,7 +198,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                         meter.replace_external_sensor(new_sensor)
         return
 
-    hass.services.async_register(DOMAIN, SERVICE_REPLACE_SENSOR, replace_sensor)
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_REPLACE_SENSOR,
+        replace_sensor,
+        schema=SERVICE_REPLACE_SENSOR_SCHEMA,
+    )
     websocket_api.async_register_command(hass, ws_get_info)
     plant.async_schedule_update_ha_state(True)
 
