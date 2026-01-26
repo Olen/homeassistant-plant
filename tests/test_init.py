@@ -5,6 +5,7 @@ from __future__ import annotations
 from homeassistant.const import (
     STATE_OK,
     STATE_PROBLEM,
+    STATE_UNAVAILABLE,
     STATE_UNKNOWN,
 )
 from homeassistant.core import HomeAssistant
@@ -829,4 +830,131 @@ class TestPlantDevice:
                     plant.update()
 
         assert plant.dli_status == STATE_OK
+        assert plant.state == STATE_OK
+
+    async def test_plant_status_reset_when_sensor_unavailable(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test that sensor status is reset when sensor becomes unavailable."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+
+        # First set moisture to trigger problem state
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=5.0,  # Below min of 20
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=40.0,
+        )
+        await update_plant_sensors(hass, init_integration.entry_id)
+
+        # Verify problem state
+        assert plant.moisture_status == STATE_LOW
+        assert plant.state == STATE_PROBLEM
+
+        # Now set moisture sensor to unavailable
+        hass.states.async_set("sensor.test_moisture", STATE_UNAVAILABLE)
+        await hass.async_block_till_done()
+        await update_plant_sensors(hass, init_integration.entry_id)
+
+        # Moisture status should be reset
+        assert plant.moisture_status is None
+        # Plant should be OK since other sensors are in range
+        assert plant.state == STATE_OK
+
+    async def test_plant_status_reset_when_external_sensor_removed(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test that sensor status is reset when external sensor is removed."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+
+        # First set temperature to trigger problem state
+        await set_external_sensor_states(
+            hass,
+            temperature=50.0,  # Above max of 40
+            moisture=40.0,
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=40.0,
+        )
+        await update_plant_sensors(hass, init_integration.entry_id)
+
+        # Verify problem state
+        assert plant.temperature_status == STATE_HIGH
+        assert plant.state == STATE_PROBLEM
+
+        # Remove the external sensor from the plant sensor
+        plant.sensor_temperature.replace_external_sensor(None)
+        await hass.async_block_till_done()
+        await update_plant_sensors(hass, init_integration.entry_id)
+
+        # Temperature status should be reset
+        assert plant.temperature_status is None
+        # Plant should be OK since other sensors are in range
+        assert plant.state == STATE_OK
+
+    async def test_plant_recovers_from_problem_when_dli_sensor_unavailable(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test plant recovers from problem state when DLI sensor becomes unavailable."""
+        from unittest.mock import PropertyMock, patch
+
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+
+        # Set normal sensor values
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=40.0,
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=40.0,
+        )
+        await update_plant_sensors(hass, init_integration.entry_id)
+
+        # Mock DLI sensor to trigger problem
+        mock_attrs = {"last_period": 1.0}  # Below min_dli of 2
+        with patch.object(
+            type(plant.dli),
+            "extra_state_attributes",
+            new_callable=PropertyMock,
+            return_value=mock_attrs,
+        ):
+            with patch.object(
+                type(plant.dli),
+                "native_value",
+                new_callable=PropertyMock,
+                return_value=1.0,
+            ):
+                with patch.object(
+                    type(plant.dli),
+                    "state",
+                    new_callable=PropertyMock,
+                    return_value="1.0",
+                ):
+                    plant.update()
+
+        # Verify problem state
+        assert plant.dli_status == STATE_LOW
+        assert plant.state == STATE_PROBLEM
+
+        # Now make DLI unavailable
+        with patch.object(
+            type(plant.dli),
+            "native_value",
+            new_callable=PropertyMock,
+            return_value=STATE_UNAVAILABLE,
+        ):
+            plant.update()
+
+        # DLI status should be reset
+        assert plant.dli_status is None
+        # Plant should recover to OK
         assert plant.state == STATE_OK
