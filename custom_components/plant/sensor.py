@@ -79,7 +79,6 @@ from .const import (
     TRANSLATION_KEY_PPFD,
     TRANSLATION_KEY_TEMPERATURE,
     TRANSLATION_KEY_TOTAL_LIGHT_INTEGRAL,
-    UNIT_CONDUCTIVITY,
     UNIT_DLI,
     UNIT_PPFD,
 )
@@ -655,7 +654,7 @@ class PlantDummyConductivity(PlantDummyStatus):
         )
         self._attr_unique_id = f"{config.entry_id}-dummy-conductivity"
         self._attr_icon = ICON_CONDUCTIVITY
-        self._attr_native_unit_of_measurement = UNIT_CONDUCTIVITY
+        self._attr_native_unit_of_measurement = UnitOfConductivity.MICROSIEMENS_PER_CM
         self._attr_native_value = random.randint(40, 200) * 10
 
         super().__init__(hass, config, plantdevice)

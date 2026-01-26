@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from homeassistant.components.number import NumberMode
-from homeassistant.const import LIGHT_LUX, PERCENTAGE
+from homeassistant.const import LIGHT_LUX, PERCENTAGE, UnitOfConductivity
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity import EntityCategory
@@ -13,7 +13,6 @@ from custom_components.plant.const import (
     ATTR_PLANT,
     ATTR_THRESHOLDS,
     DOMAIN,
-    UNIT_CONDUCTIVITY,
     UNIT_DLI,
 )
 
@@ -154,7 +153,10 @@ class TestConductivityThresholds:
         assert threshold is not None
         assert "max" in threshold.name.lower()
         assert "conductivity" in threshold.name.lower()
-        assert threshold.native_unit_of_measurement == UNIT_CONDUCTIVITY
+        assert (
+            threshold.native_unit_of_measurement
+            == UnitOfConductivity.MICROSIEMENS_PER_CM
+        )
         assert threshold.native_step == 50
 
     async def test_min_conductivity_threshold(
