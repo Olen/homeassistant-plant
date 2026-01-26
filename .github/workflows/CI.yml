@@ -73,10 +73,13 @@ jobs:
           ")
           # Install pytest-homeassistant-custom-component with version constraint
           uv pip install --no-cache "pytest-homeassistant-custom-component${{ matrix.pytest-ha-version }}"
+          # Pin aiodns/pycares to known working versions to avoid compatibility issues
+          uv pip install --no-cache "aiodns==3.5.0" "pycares==4.11.0"
 
-      - name: Show installed HA version
+      - name: Show installed versions
         run: |
           .venv/bin/python -c "from homeassistant.const import __version__; print(f'Home Assistant version: {__version__}')"
+          .venv/bin/pip show pycares aiodns | grep -E "^(Name|Version)"
 
       - name: Run tests
         run: .venv/bin/pytest tests/ -v --tb=short
