@@ -20,6 +20,9 @@
       "co2": {
         "name": "CO2"
       },
+      "soil_temperature": {
+        "name": "Temperatura do solo"
+      },
       "ppfd": {
         "name": "PPFD"
       },
@@ -73,6 +76,12 @@
       "min_co2": {
         "name": "CO2 mínimo"
       },
+      "max_soil_temperature": {
+        "name": "Temperatura do solo máxima"
+      },
+      "min_soil_temperature": {
+        "name": "Temperatura do solo mínima"
+      },
       "lux_to_ppfd": {
         "name": "Fator Lux para PPFD"
       }
@@ -91,7 +100,8 @@
           "conductivity_sensor": "Sensor de Condutividade",
           "illuminance_sensor": "Sensor de Iluminação",
           "humidity_sensor": "Sensor de húmidade do ar",
-          "co2_sensor": "Sensor de CO2"
+          "co2_sensor": "Sensor de CO2",
+          "soil_temperature_sensor": "Sensor de temperatura do solo"
         },
         "data_description": {
           "species": "Ser usado o site OpenPlantbook para pesquisas"
@@ -152,7 +162,8 @@
           "conductivity_trigger": "Usar a condutividade como um gatilho",
           "moisture_trigger": "Usar a húmidade do solo como um gatilho",
           "temperature_trigger": "Usa a temperatura como gatilho",
-          "co2_trigger": "Usar CO2 como gatilho"
+          "co2_trigger": "Usar CO2 como gatilho",
+          "soil_temperature_trigger": "Usar a temperatura do solo como gatilho"
         }
       }
     }

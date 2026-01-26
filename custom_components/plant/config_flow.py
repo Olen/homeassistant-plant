@@ -63,7 +63,9 @@ from .const import (
     FLOW_SENSOR_HUMIDITY,
     FLOW_SENSOR_ILLUMINANCE,
     FLOW_SENSOR_MOISTURE,
+    FLOW_SENSOR_SOIL_TEMPERATURE,
     FLOW_SENSOR_TEMPERATURE,
+    FLOW_SOIL_TEMPERATURE_TRIGGER,
     FLOW_STRING_DESCRIPTION,
     FLOW_TEMP_UNIT,
     FLOW_TEMPERATURE_TRIGGER,
@@ -173,6 +175,14 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             {
                 ATTR_ENTITY: {
                     ATTR_DEVICE_CLASS: SensorDeviceClass.CO2,
+                    ATTR_DOMAIN: DOMAIN_SENSOR,
+                }
+            }
+        )
+        data_schema[FLOW_SENSOR_SOIL_TEMPERATURE] = selector(
+            {
+                ATTR_ENTITY: {
+                    ATTR_DEVICE_CLASS: SensorDeviceClass.TEMPERATURE,
                     ATTR_DOMAIN: DOMAIN_SENSOR,
                 }
             }
@@ -530,6 +540,12 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         data_schema[vol.Optional(FLOW_CO2_TRIGGER, default=self.plant.co2_trigger)] = (
             cv.boolean
         )
+        data_schema[
+            vol.Optional(
+                FLOW_SOIL_TEMPERATURE_TRIGGER,
+                default=self.plant.soil_temperature_trigger,
+            )
+        ] = cv.boolean
 
         return self.async_show_form(
             step_id="init",

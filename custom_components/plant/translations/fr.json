@@ -20,6 +20,9 @@
       "co2": {
         "name": "CO2"
       },
+      "soil_temperature": {
+        "name": "Température du sol"
+      },
       "ppfd": {
         "name": "PPFD"
       },
@@ -73,6 +76,12 @@
       "min_co2": {
         "name": "CO2 minimal"
       },
+      "max_soil_temperature": {
+        "name": "Température du sol maximale"
+      },
+      "min_soil_temperature": {
+        "name": "Température du sol minimale"
+      },
       "lux_to_ppfd": {
         "name": "Facteur Lux vers PPFD"
       }
@@ -91,7 +100,8 @@
           "conductivity_sensor": "Capteur de conductivité",
           "illuminance_sensor": "Capteur de luminosité",
           "humidity_sensor": "Capteur d'humidité de l'air",
-          "co2_sensor": "Capteur de CO2"
+          "co2_sensor": "Capteur de CO2",
+          "soil_temperature_sensor": "Capteur de température du sol"
         },
         "data_description": {
           "species": "Sera utilisé pour la recherche dans OpenPlantbook"
@@ -152,7 +162,8 @@
           "conductivity_trigger": "Utiliser la conductivité comme déclencheur de problème",
           "moisture_trigger": "Utiliser l'humidité du sol comme déclencheur de problème",
           "temperature_trigger": "Utiliser la température comme déclencheur de problème",
-          "co2_trigger": "Utiliser le CO2 comme déclencheur de problème"
+          "co2_trigger": "Utiliser le CO2 comme déclencheur de problème",
+          "soil_temperature_trigger": "Utiliser la température du sol comme déclencheur de problème"
         }
       }
     }

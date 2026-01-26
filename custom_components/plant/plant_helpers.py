@@ -26,6 +26,7 @@ from .const import (
     ATTR_LIMITS,
     ATTR_MOISTURE,
     ATTR_SENSORS,
+    ATTR_SOIL_TEMPERATURE,
     ATTR_SPECIES,
     ATTR_TEMPERATURE,
     CONF_MAX_BRIGHTNESS,
@@ -36,6 +37,7 @@ from .const import (
     CONF_MAX_ILLUMINANCE,
     CONF_MAX_MMOL,
     CONF_MAX_MOISTURE,
+    CONF_MAX_SOIL_TEMPERATURE,
     CONF_MAX_TEMPERATURE,
     CONF_MIN_BRIGHTNESS,
     CONF_MIN_CO2,
@@ -45,6 +47,7 @@ from .const import (
     CONF_MIN_ILLUMINANCE,
     CONF_MIN_MMOL,
     CONF_MIN_MOISTURE,
+    CONF_MIN_SOIL_TEMPERATURE,
     CONF_MIN_TEMPERATURE,
     CONF_PLANTBOOK_MAPPING,
     DATA_SOURCE,
@@ -58,6 +61,7 @@ from .const import (
     DEFAULT_MAX_HUMIDITY,
     DEFAULT_MAX_ILLUMINANCE,
     DEFAULT_MAX_MOISTURE,
+    DEFAULT_MAX_SOIL_TEMPERATURE,
     DEFAULT_MAX_TEMPERATURE,
     DEFAULT_MIN_CO2,
     DEFAULT_MIN_CONDUCTIVITY,
@@ -65,6 +69,7 @@ from .const import (
     DEFAULT_MIN_HUMIDITY,
     DEFAULT_MIN_ILLUMINANCE,
     DEFAULT_MIN_MOISTURE,
+    DEFAULT_MIN_SOIL_TEMPERATURE,
     DEFAULT_MIN_TEMPERATURE,
     DOMAIN_PLANTBOOK,
     FLOW_FORCE_SPECIES_UPDATE,
@@ -74,6 +79,7 @@ from .const import (
     FLOW_SENSOR_CONDUCTIVITY,
     FLOW_SENSOR_ILLUMINANCE,
     FLOW_SENSOR_MOISTURE,
+    FLOW_SENSOR_SOIL_TEMPERATURE,
     FLOW_SENSOR_TEMPERATURE,
     OPB_DISPLAY_PID,
     OPB_GET,
@@ -243,6 +249,18 @@ class PlantHelper:
         min_humidity = DEFAULT_MIN_HUMIDITY
         max_co2 = DEFAULT_MAX_CO2
         min_co2 = DEFAULT_MIN_CO2
+        max_soil_temperature = display_temp(
+            self.hass,
+            DEFAULT_MAX_SOIL_TEMPERATURE,
+            UnitOfTemperature.CELSIUS,
+            0,
+        )
+        min_soil_temperature = display_temp(
+            self.hass,
+            DEFAULT_MIN_SOIL_TEMPERATURE,
+            UnitOfTemperature.CELSIUS,
+            0,
+        )
         entity_picture = None
         display_species = None
         data_source = DATA_SOURCE_DEFAULT
@@ -410,6 +428,12 @@ class PlantHelper:
                     CONF_MIN_HUMIDITY: config.get(CONF_MIN_HUMIDITY, min_humidity),
                     CONF_MAX_CO2: config.get(CONF_MAX_CO2, max_co2),
                     CONF_MIN_CO2: config.get(CONF_MIN_CO2, min_co2),
+                    CONF_MAX_SOIL_TEMPERATURE: config.get(
+                        CONF_MAX_SOIL_TEMPERATURE, max_soil_temperature
+                    ),
+                    CONF_MIN_SOIL_TEMPERATURE: config.get(
+                        CONF_MIN_SOIL_TEMPERATURE, min_soil_temperature
+                    ),
                     CONF_MAX_DLI: config.get(CONF_MAX_DLI, max_dli),
                     CONF_MIN_DLI: config.get(CONF_MIN_DLI, min_dli),
                 },
@@ -419,6 +443,9 @@ class PlantHelper:
                 FLOW_SENSOR_ILLUMINANCE: config[ATTR_SENSORS].get(ATTR_ILLUMINANCE)
                 or config[ATTR_SENSORS].get(ATTR_BRIGHTNESS),
                 FLOW_SENSOR_CO2: config[ATTR_SENSORS].get(ATTR_CO2),
+                FLOW_SENSOR_SOIL_TEMPERATURE: config[ATTR_SENSORS].get(
+                    ATTR_SOIL_TEMPERATURE
+                ),
             },
         }
         _LOGGER.debug("Resulting config: %s", ret)

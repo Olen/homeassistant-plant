@@ -20,6 +20,9 @@
       "co2": {
         "name": "二氧化碳"
       },
+      "soil_temperature": {
+        "name": "土壤温度"
+      },
       "ppfd": {
         "name": "PPFD"
       },
@@ -73,6 +76,12 @@
       "min_co2": {
         "name": "最小二氧化碳"
       },
+      "max_soil_temperature": {
+        "name": "最高土壤温度"
+      },
+      "min_soil_temperature": {
+        "name": "最低土壤温度"
+      },
       "lux_to_ppfd": {
         "name": "勒克斯转PPFD系数"
       }
@@ -91,7 +100,8 @@
           "conductivity_sensor": "电导率传感器",
           "illuminance_sensor": "光照传感器",
           "humidity_sensor": "空气湿度传感器",
-          "co2_sensor": "二氧化碳传感器"
+          "co2_sensor": "二氧化碳传感器",
+          "soil_temperature_sensor": "土壤温度传感器"
         },
         "data_description": {
           "species": "将用于在OpenPlantbook中搜索"
@@ -152,7 +162,8 @@
           "conductivity_trigger": "使用电导率作为问题触发器",
           "moisture_trigger": "使用土壤湿度作为问题触发器",
           "temperature_trigger": "使用温度作为问题触发器",
-          "co2_trigger": "使用二氧化碳作为问题触发器"
+          "co2_trigger": "使用二氧化碳作为问题触发器",
+          "soil_temperature_trigger": "使用土壤温度作为问题触发器"
         }
       }
     }

@@ -20,6 +20,9 @@
       "co2": {
         "name": "CO2"
       },
+      "soil_temperature": {
+        "name": "Soil temperature"
+      },
       "ppfd": {
         "name": "PPFD"
       },
@@ -73,6 +76,12 @@
       "min_co2": {
         "name": "Minimum CO2"
       },
+      "max_soil_temperature": {
+        "name": "Maximum soil temperature"
+      },
+      "min_soil_temperature": {
+        "name": "Minimum soil temperature"
+      },
       "lux_to_ppfd": {
         "name": "Lux to PPFD factor"
       }
@@ -91,7 +100,8 @@
           "conductivity_sensor": "Conductivity sensor",
           "illuminance_sensor": "Illuminance sensor",
           "humidity_sensor": "Air humidity sensor",
-          "co2_sensor": "CO2 sensor"
+          "co2_sensor": "CO2 sensor",
+          "soil_temperature_sensor": "Soil temperature sensor"
         },
         "data_description": {
           "species": "Will be used for searching OpenPlantbook"
@@ -152,7 +162,8 @@
           "conductivity_trigger": "Use conductivity as problem trigger",
           "moisture_trigger": "Use soil moisture as problem trigger",
           "temperature_trigger": "Use temperature as problem trigger",
-          "co2_trigger": "Use CO2 as problem trigger"
+          "co2_trigger": "Use CO2 as problem trigger",
+          "soil_temperature_trigger": "Use soil temperature as problem trigger"
         }
       }
     }
