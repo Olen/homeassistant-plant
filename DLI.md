@@ -142,13 +142,83 @@ For a plant receiving 50,000 lux of sunlight for 10 hours:
 
 This value (33.3 mol/m²/d) represents a bright sunny day, which is appropriate for high-light plants.
 
+## Troubleshooting Low DLI Values
+
+Many users report DLI values that seem too low compared to their expectations. Before assuming there's a calculation error, consider these common causes:
+
+### 1. Sensor Placement
+
+The most common issue. Light sensors placed at soil level or under the plant canopy receive significantly less light than the top of the plant. A sensor in the shade of leaves might read 500-2,000 lux while the top of the plant receives 10,000+ lux.
+
+**Tip:** Temporarily move the sensor to the top of the plant to compare readings.
+
+### 2. Sensor Accuracy and Range
+
+Many inexpensive plant sensors (Xiaomi Mi Flora, etc.) have limited accuracy and range:
+- May max out at 10,000 lux (but full sunlight is 50,000-100,000+ lux)
+- May underreport, especially at high light levels
+- Calibration varies between individual sensors
+
+If your sensor reports 10,000 lux as a maximum, it may be clipping the actual light level.
+
+### 3. Indoor Light Levels Are Lower Than Expected
+
+This surprises many users. Even a "bright" indoor location receives far less light than outdoors:
+
+| Location | Typical Lux |
+|----------|-------------|
+| Direct summer sunlight | 50,000 - 100,000+ |
+| Overcast day outdoors | 10,000 - 25,000 |
+| Bright window (direct sun) | 10,000 - 25,000 |
+| Bright window (indirect) | 2,000 - 5,000 |
+| Well-lit room | 300 - 500 |
+| Typical indoor ambient | 50 - 200 |
+
+**Example calculation:** A plant receiving 5,000 lux for 10 hours:
+```
+DLI = 5,000 × 0.0185 / 1,000,000 × 10 × 3600 = 3.33 mol/m²/d
+```
+
+This is far below what most plants need, yet 5,000 lux feels "bright" to humans.
+
+### 4. Windows Filter Light
+
+Glass windows block a significant portion of light (20-50% depending on type). UV-filtering or tinted windows block even more. Plants on windowsills receive less light than the outdoor reading would suggest.
+
+### 5. Day Length and Weather
+
+- Winter days are shorter and the sun is lower
+- Cloudy periods significantly reduce light, even if some sunny periods feel bright
+- The sensor integrates the *actual* light received, including all the low-light periods
+
+### 6. Lux-to-PPFD Conversion Factor
+
+The default factor (0.0185) is for sunlight. If your plant is under LED grow lights, the factor might be different (typically 0.014-0.020). Adjust the "Lux to PPFD factor" entity if needed.
+
+### Debugging Steps
+
+1. **Check the illuminance sensor history** - Is it reporting values throughout the day, or are there gaps?
+2. **Check the PPFD sensor** - Enable the hidden `PPFD` sensor and verify it shows reasonable values
+3. **Check the Total Light Integral sensor** - Is it accumulating throughout the day?
+4. **Compare sensor placement** - Move the sensor to where the plant actually receives light
+5. **Verify sensor range** - If your sensor maxes out at 10,000 lux, that's a sensor limitation, not a calculation error
+
+### Reality Check
+
+Most indoor plants without dedicated grow lights receive 1-5 DLI, even in "bright" locations. This is often below the plant's optimal range (many houseplants need 4-12 DLI). This is why:
+- Plants grow slowly indoors
+- Plants lean toward windows
+- Supplemental grow lights make a significant difference
+
+If your DLI seems low, it may simply be accurate - indoor light levels are genuinely much lower than outdoor levels.
+
 ## Limitations
 
 1. **Light Source Dependency:** The default conversion factor is optimized for sunlight. Indoor plants under artificial lighting may have less accurate DLI readings depending on the light spectrum. You can adjust the "Lux to PPFD factor" per plant to compensate for different light sources (see [Configuring the Conversion Factor](#configuring-the-conversion-factor)).
 
-2. **Sensor Accuracy:** The accuracy of the DLI calculation depends on the accuracy of the illuminance sensor being used.
+2. **Sensor Accuracy:** The accuracy of the DLI calculation depends on the accuracy of the illuminance sensor being used. Many consumer-grade sensors have limited range or accuracy.
 
-3. **Sampling Rate:** The trapezoidal integration method assumes linear changes between samples. Rapidly changing light conditions with slow sensor updates may introduce small errors.
+3. **Sampling Rate:** The trapezoidal integration method assumes linear changes between samples. Rapidly changing light conditions with slow sensor updates may introduce small errors. However, for typical plant sensors reporting every 10-15 minutes, this is negligible.
 
 ## Entity Visibility
 
