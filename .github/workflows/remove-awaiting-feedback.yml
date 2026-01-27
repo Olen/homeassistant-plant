@@ -1,0 +1,32 @@
+name: Remove Awaiting Feedback Label
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  remove-label:
+    runs-on: ubuntu-latest
+    if: ${{ !github.event.issue.pull_request }}
+    steps:
+      - name: Remove awaiting feedback label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labelName = 'awaiting feedback';
+            const issue = context.payload.issue;
+
+            // Check if the label exists on the issue
+            const hasLabel = issue.labels.some(label => label.name === labelName);
+
+            if (hasLabel) {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                name: labelName
+              });
+              console.log(`Removed '${labelName}' label from issue #${issue.number}`);
+            } else {
+              console.log(`Issue #${issue.number} does not have '${labelName}' label`);
+            }
