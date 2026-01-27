@@ -555,6 +555,14 @@ class PlantDevice(Entity):
         }
         return attributes
 
+    def _get_entity_icon(self, entity: Entity) -> str | None:
+        """Get icon for entity, preferring user customization from entity registry."""
+        entity_registry = er.async_get(self.hass)
+        entry = entity_registry.async_get(entity.entity_id)
+        if entry and entry.icon:
+            return entry.icon
+        return entity.icon
+
     @property
     def websocket_info(self) -> dict:
         """Websocket response"""
@@ -567,7 +575,7 @@ class PlantDevice(Entity):
                 ATTR_MAX: self.max_temperature.state,
                 ATTR_MIN: self.min_temperature.state,
                 ATTR_CURRENT: self.sensor_temperature.state or STATE_UNAVAILABLE,
-                ATTR_ICON: self.sensor_temperature.icon,
+                ATTR_ICON: self._get_entity_icon(self.sensor_temperature),
                 ATTR_UNIT_OF_MEASUREMENT: self.sensor_temperature.unit_of_measurement,
                 ATTR_SENSOR: self.sensor_temperature.entity_id,
             },
@@ -575,7 +583,7 @@ class PlantDevice(Entity):
                 ATTR_MAX: self.max_illuminance.state,
                 ATTR_MIN: self.min_illuminance.state,
                 ATTR_CURRENT: self.sensor_illuminance.state or STATE_UNAVAILABLE,
-                ATTR_ICON: self.sensor_illuminance.icon,
+                ATTR_ICON: self._get_entity_icon(self.sensor_illuminance),
                 ATTR_UNIT_OF_MEASUREMENT: self.sensor_illuminance.unit_of_measurement,
                 ATTR_SENSOR: self.sensor_illuminance.entity_id,
             },
@@ -583,7 +591,7 @@ class PlantDevice(Entity):
                 ATTR_MAX: self.max_moisture.state,
                 ATTR_MIN: self.min_moisture.state,
                 ATTR_CURRENT: self.sensor_moisture.state or STATE_UNAVAILABLE,
-                ATTR_ICON: self.sensor_moisture.icon,
+                ATTR_ICON: self._get_entity_icon(self.sensor_moisture),
                 ATTR_UNIT_OF_MEASUREMENT: self.sensor_moisture.unit_of_measurement,
                 ATTR_SENSOR: self.sensor_moisture.entity_id,
             },
@@ -591,7 +599,7 @@ class PlantDevice(Entity):
                 ATTR_MAX: self.max_conductivity.state,
                 ATTR_MIN: self.min_conductivity.state,
                 ATTR_CURRENT: self.sensor_conductivity.state or STATE_UNAVAILABLE,
-                ATTR_ICON: self.sensor_conductivity.icon,
+                ATTR_ICON: self._get_entity_icon(self.sensor_conductivity),
                 ATTR_UNIT_OF_MEASUREMENT: self.sensor_conductivity.unit_of_measurement,
                 ATTR_SENSOR: self.sensor_conductivity.entity_id,
             },
@@ -599,7 +607,7 @@ class PlantDevice(Entity):
                 ATTR_MAX: self.max_humidity.state,
                 ATTR_MIN: self.min_humidity.state,
                 ATTR_CURRENT: self.sensor_humidity.state or STATE_UNAVAILABLE,
-                ATTR_ICON: self.sensor_humidity.icon,
+                ATTR_ICON: self._get_entity_icon(self.sensor_humidity),
                 ATTR_UNIT_OF_MEASUREMENT: self.sensor_humidity.unit_of_measurement,
                 ATTR_SENSOR: self.sensor_humidity.entity_id,
             },
@@ -607,7 +615,7 @@ class PlantDevice(Entity):
                 ATTR_MAX: self.max_co2.state,
                 ATTR_MIN: self.min_co2.state,
                 ATTR_CURRENT: self.sensor_co2.state or STATE_UNAVAILABLE,
-                ATTR_ICON: self.sensor_co2.icon,
+                ATTR_ICON: self._get_entity_icon(self.sensor_co2),
                 ATTR_UNIT_OF_MEASUREMENT: self.sensor_co2.unit_of_measurement,
                 ATTR_SENSOR: self.sensor_co2.entity_id,
             },
@@ -615,7 +623,7 @@ class PlantDevice(Entity):
                 ATTR_MAX: self.max_soil_temperature.state,
                 ATTR_MIN: self.min_soil_temperature.state,
                 ATTR_CURRENT: self.sensor_soil_temperature.state or STATE_UNAVAILABLE,
-                ATTR_ICON: self.sensor_soil_temperature.icon,
+                ATTR_ICON: self._get_entity_icon(self.sensor_soil_temperature),
                 ATTR_UNIT_OF_MEASUREMENT: self.sensor_soil_temperature.unit_of_measurement,
                 ATTR_SENSOR: self.sensor_soil_temperature.entity_id,
             },
@@ -623,7 +631,7 @@ class PlantDevice(Entity):
                 ATTR_MAX: self.max_dli.state,
                 ATTR_MIN: self.min_dli.state,
                 ATTR_CURRENT: STATE_UNAVAILABLE,
-                ATTR_ICON: self.dli.icon,
+                ATTR_ICON: self._get_entity_icon(self.dli),
                 ATTR_UNIT_OF_MEASUREMENT: self.dli.unit_of_measurement,
                 ATTR_SENSOR: self.dli.entity_id,
             },
