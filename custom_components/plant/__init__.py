@@ -498,6 +498,21 @@ class PlantDevice(Entity):
         self.soil_temperature_status = None
         self.dli_status = None
 
+    def _is_ppfd_source(self) -> bool:
+        """Check if illuminance source provides PPFD instead of lux.
+
+        FYTA sensors and similar devices report light in PPFD (µmol/s⋅m²)
+        instead of lux. When the source provides PPFD, the illuminance
+        threshold comparison is meaningless (thresholds are in lux).
+        """
+        if not self.sensor_illuminance or not self.sensor_illuminance.external_sensor:
+            return False
+        ext_state = self.hass.states.get(self.sensor_illuminance.external_sensor)
+        if not ext_state:
+            return False
+        unit = ext_state.attributes.get(ATTR_UNIT_OF_MEASUREMENT, "")
+        return "mol" in unit.lower() if unit else False
+
     @property
     def entity_category(self) -> None:
         """The plant device itself does not have a category"""
@@ -965,25 +980,34 @@ class PlantDevice(Entity):
 
         # Check the instant values for illuminance against "max"
         # Ignoring "min" value for illuminance as it would probably trigger every night
+        # Skip if source provides PPFD (thresholds are in lux, not PPFD)
         if self.sensor_illuminance is not None:
-            illuminance = getattr(
-                self.hass.states.get(self.sensor_illuminance.entity_id), "state", None
-            )
-            if (
-                illuminance is not None
-                and illuminance != STATE_UNKNOWN
-                and illuminance != STATE_UNAVAILABLE
-            ):
-                known_state = True
-                if float(illuminance) > float(self.max_illuminance.state):
-                    self.illuminance_status = STATE_HIGH
-                    if self.illuminance_trigger:
-                        new_state = STATE_PROBLEM
-                else:
-                    self.illuminance_status = STATE_OK
-            else:
-                # Reset status when sensor is unavailable
+            # Check if source is PPFD - skip threshold check if so
+            if self._is_ppfd_source():
+                # PPFD source - skip threshold check (thresholds are in lux)
+                # DLI problem detection still works
                 self.illuminance_status = None
+            else:
+                illuminance = getattr(
+                    self.hass.states.get(self.sensor_illuminance.entity_id),
+                    "state",
+                    None,
+                )
+                if (
+                    illuminance is not None
+                    and illuminance != STATE_UNKNOWN
+                    and illuminance != STATE_UNAVAILABLE
+                ):
+                    known_state = True
+                    if float(illuminance) > float(self.max_illuminance.state):
+                        self.illuminance_status = STATE_HIGH
+                        if self.illuminance_trigger:
+                            new_state = STATE_PROBLEM
+                    else:
+                        self.illuminance_status = STATE_OK
+                else:
+                    # Reset status when sensor is unavailable
+                    self.illuminance_status = None
         else:
             # Reset status when sensor is removed
             self.illuminance_status = None
