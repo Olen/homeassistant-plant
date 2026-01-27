@@ -413,11 +413,17 @@ class PlantDevice(Entity):
             ATTR_SPECIES, self._config.data[FLOW_PLANT_INFO].get(ATTR_SPECIES)
         )
         # Get display_species from options or from initial config
-        self.display_species = (
+        # Capitalize first letter for proper binomial nomenclature (genus capitalized)
+        raw_display_species = (
             self._config.options.get(
                 OPB_DISPLAY_PID, self._config.data[FLOW_PLANT_INFO].get(OPB_DISPLAY_PID)
             )
             or self.species
+        )
+        self.display_species = (
+            raw_display_species[0].upper() + raw_display_species[1:]
+            if raw_display_species
+            else ""
         )
         self._attr_unique_id = self._config.entry_id
 
