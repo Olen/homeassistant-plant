@@ -673,7 +673,6 @@ class PlantTotalLightIntegral(IntegrationSensor):
             unit_time=UnitOfTime.SECONDS,
             max_sub_interval=None,
         )
-        self._unit_of_measurement = UNIT_DLI
         self.entity_id = async_generate_entity_id(
             f"{DOMAIN_SENSOR}.{{}}", f"Total {READING_PPFD} Integral", current_ids={}
         )
@@ -685,9 +684,14 @@ class PlantTotalLightIntegral(IntegrationSensor):
             identifiers={(DOMAIN, self._plant.unique_id)},
         )
 
-    def _unit(self, source_unit: str) -> str:
-        """Override unit conversion to use mol instead of source unit."""
-        return self._unit_of_measurement
+    def _calculate_unit(self, source_unit: str) -> str:
+        """Override unit calculation to always return DLI unit.
+
+        The parent IntegrationSensor tries to derive the unit by appending
+        the time unit to the source unit (e.g., "mol/s⋅m²" + "s" = "mol/s⋅m²s").
+        We override this to always return the correct DLI unit.
+        """
+        return UNIT_DLI
 
     async def async_added_to_hass(self) -> None:
         """Handle entity which will be added."""
@@ -778,7 +782,17 @@ class PlantDailyLightIntegral(UtilityMeterSensor):
         self.entity_id = async_generate_entity_id(
             f"{DOMAIN_SENSOR}.{{}}", READING_DLI, current_ids={}
         )
-        self._unit_of_measurement = UNIT_DLI
+
+    @property
+    def native_unit_of_measurement(self) -> str:
+        """Return the unit of measurement.
+
+        Override the parent class which copies the unit from the source sensor.
+        The UtilityMeterSensor sets _attr_native_unit_of_measurement from the
+        source sensor on every state change, so we must override the property
+        to always return the correct DLI unit.
+        """
+        return UNIT_DLI
 
     @property
     def device_info(self) -> DeviceInfo:

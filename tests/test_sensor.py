@@ -380,11 +380,17 @@ class TestDliSensor:
         hass: HomeAssistant,
         init_integration: MockConfigEntry,
     ) -> None:
-        """Test DLI sensor unit of measurement."""
+        """Test DLI sensor unit of measurement.
+
+        The UtilityMeterSensor parent class overwrites the unit from the source
+        sensor on every state change. We override native_unit_of_measurement
+        property to always return the correct DLI unit.
+        """
         plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
         dli_sensor = plant.dli
 
-        assert dli_sensor._unit_of_measurement == UNIT_DLI
+        # Verify the property returns the correct unit
+        assert dli_sensor.native_unit_of_measurement == UNIT_DLI
 
 
 class TestTotalLightIntegralSensor:
@@ -406,15 +412,22 @@ class TestTotalLightIntegralSensor:
         hass: HomeAssistant,
         init_integration: MockConfigEntry,
     ) -> None:
-        """Test total integral sensor has unit override method."""
+        """Test total integral sensor has unit calculation override.
+
+        The IntegrationSensor parent class calculates units by appending time
+        unit to source unit. We override _calculate_unit to always return
+        the correct DLI unit.
+        """
         plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
 
         # Verify the sensor exists and is properly set up
         assert plant.total_integral is not None
         assert plant.total_integral.name is not None
-        # Verify the class has the _unit method defined
-        assert hasattr(plant.total_integral, "_unit")
-        assert callable(plant.total_integral._unit)
+        # Verify the class has the _calculate_unit method override
+        assert hasattr(plant.total_integral, "_calculate_unit")
+        assert callable(plant.total_integral._calculate_unit)
+        # Verify it returns the correct DLI unit regardless of input
+        assert plant.total_integral._calculate_unit("mol/s⋅m²") == UNIT_DLI
 
 
 class TestSensorDeviceInfo:
