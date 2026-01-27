@@ -87,6 +87,22 @@ gh pr create --fill
 
 The master branch is protected - all changes must go through pull requests.
 
+## Releases
+
+Releases are automated via GitHub Actions. The workflow triggers when `manifest.json` version changes.
+
+**To create a new release:**
+
+1. Update the version in `custom_components/plant/manifest.json`
+2. Commit and push to main (or merge PR)
+3. The CI workflow runs tests, then the release workflow creates a GitHub release
+
+**Version format:**
+- Stable: `YYYY.M.P` (e.g., `2026.1.0`)
+- Beta: `YYYY.M.P-betaN` (e.g., `2026.1.0-beta5`)
+
+**Do NOT manually create tags** - the release workflow handles this automatically based on the manifest version.
+
 ## Translations
 
 Translation files in `custom_components/plant/translations/`:
