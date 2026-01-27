@@ -560,7 +560,7 @@ class PlantCurrentSoilTemperature(PlantCurrentStatus):
 
 
 class PlantCurrentPpfd(PlantCurrentStatus):
-    """Entity reporting current PPFD calculated from LX"""
+    """Entity reporting current PPFD calculated from LX or passed through from PPFD source."""
 
     _attr_device_class = None
     _attr_entity_category = EntityCategory.DIAGNOSTIC
@@ -578,15 +578,34 @@ class PlantCurrentPpfd(PlantCurrentStatus):
         self._attr_unit_of_measurement = UNIT_PPFD
         self._plant = plantdevice
         self._external_sensor = self._plant.sensor_illuminance.entity_id
+        self._source_is_ppfd = False  # Track if source already provides PPFD
         super().__init__(hass, config, plantdevice)
         self._follow_unit = False
         self.entity_id = async_generate_entity_id(
             f"{DOMAIN_SENSOR}.{{}}", self._entity_id_key, current_ids={}
         )
 
+    def _is_ppfd_source(self) -> bool:
+        """Check if the external sensor provides PPFD directly (not lux).
+
+        FYTA sensors and similar devices report light in PPFD (µmol/s⋅m²)
+        instead of lux. When the source already provides PPFD, we should
+        pass through the value unchanged instead of converting from lux.
+        """
+        if not self.external_sensor:
+            return False
+        external_state = self.hass.states.get(self.external_sensor)
+        if not external_state:
+            return False
+        unit = external_state.attributes.get(ATTR_UNIT_OF_MEASUREMENT, "")
+        if not unit:
+            return False
+        # Check if unit contains 'mol' (covers µmol/s⋅m², mol/s⋅m², etc.)
+        return "mol" in unit.lower()
+
     def ppfd(self, value: float | int | str) -> float | str:
         """
-        Returns a calculated PPFD-value from the lx-value
+        Returns PPFD value - either passed through or converted from lux.
 
         See https://community.home-assistant.io/t/light-accumulation-for-xiaomi-flower-sensor/111180/3
         https://www.apogeeinstruments.com/conversion-ppfd-to-lux/
@@ -595,19 +614,23 @@ class PlantCurrentPpfd(PlantCurrentStatus):
         The conversion factor is configurable per plant to account for different
         light sources (sunlight ~0.0185, LED grow lights ~0.014-0.020, HPS ~0.013).
         """
-        if value is not None and value != STATE_UNAVAILABLE and value != STATE_UNKNOWN:
-            # Use plant's configurable conversion factor, fallback to default
-            lux_to_ppfd = DEFAULT_LUX_TO_PPFD
-            if (
-                self._plant.lux_to_ppfd is not None
-                and self._plant.lux_to_ppfd.native_value is not None
-            ):
-                lux_to_ppfd = float(self._plant.lux_to_ppfd.native_value)
-            value = float(value) * lux_to_ppfd / 1000000
-        else:
-            value = None
+        if value is None or value == STATE_UNAVAILABLE or value == STATE_UNKNOWN:
+            return None
 
-        return value
+        # Check if source already provides PPFD
+        if self._source_is_ppfd:
+            # Pass through unchanged - source already provides PPFD
+            return float(value)
+
+        # Convert from lux to PPFD (existing logic)
+        # Use plant's configurable conversion factor, fallback to default
+        lux_to_ppfd = DEFAULT_LUX_TO_PPFD
+        if (
+            self._plant.lux_to_ppfd is not None
+            and self._plant.lux_to_ppfd.native_value is not None
+        ):
+            lux_to_ppfd = float(self._plant.lux_to_ppfd.native_value)
+        return float(value) * lux_to_ppfd / 1000000
 
     async def async_update(self) -> None:
         """Run on every update to allow for changes from the GUI and service call"""
@@ -615,6 +638,10 @@ class PlantCurrentPpfd(PlantCurrentStatus):
             return
         if self.external_sensor != self._plant.sensor_illuminance.entity_id:
             self.replace_external_sensor(self._plant.sensor_illuminance.entity_id)
+
+        # Detect source type on each update (in case sensor changes)
+        self._source_is_ppfd = self._is_ppfd_source()
+
         if self.external_sensor:
             external_sensor = self.hass.states.get(self.external_sensor)
             if external_sensor:
@@ -631,6 +658,10 @@ class PlantCurrentPpfd(PlantCurrentStatus):
             return
         if self._external_sensor != self._plant.sensor_illuminance.entity_id:
             self.replace_external_sensor(self._plant.sensor_illuminance.entity_id)
+
+        # Detect source type
+        self._source_is_ppfd = self._is_ppfd_source()
+
         if self.external_sensor:
             external_sensor = self.hass.states.get(self.external_sensor)
             if external_sensor:

@@ -879,3 +879,192 @@ class TestDliSensorsWhenIlluminanceRemoved:
 
         # PPFD should become None
         assert ppfd_sensor.native_value is None
+
+
+class TestPpfdSensorWithPpfdSource:
+    """Tests for PPFD sensor when source already provides PPFD (e.g., FYTA sensors)."""
+
+    async def test_ppfd_passthrough_when_source_is_ppfd(
+        self, hass: HomeAssistant, init_integration: MockConfigEntry
+    ) -> None:
+        """Test PPFD passes through unchanged when source provides PPFD."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        ppfd_sensor = plant.ppfd
+        illuminance_sensor = plant.sensor_illuminance
+
+        # Set up a PPFD source sensor (like FYTA)
+        ppfd_value = 500  # µmol/s⋅m²
+        await set_sensor_state(
+            hass,
+            "sensor.fyta_light",
+            ppfd_value,
+            {"unit_of_measurement": "µmol/s⋅m²"},
+        )
+
+        # Replace external sensor with PPFD source
+        illuminance_sensor.replace_external_sensor("sensor.fyta_light")
+        await illuminance_sensor.async_update()
+        illuminance_sensor.async_write_ha_state()
+        await hass.async_block_till_done()
+
+        await ppfd_sensor.async_update()
+
+        # Value should pass through unchanged (not converted)
+        assert ppfd_sensor.native_value == pytest.approx(ppfd_value, rel=0.01)
+
+    async def test_ppfd_still_converts_lux_source(
+        self, hass: HomeAssistant, init_integration: MockConfigEntry
+    ) -> None:
+        """Test PPFD still converts from lux when source provides lux."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        ppfd_sensor = plant.ppfd
+        illuminance_sensor = plant.sensor_illuminance
+
+        lux_value = 10000
+        await set_sensor_state(
+            hass,
+            "sensor.test_illuminance",
+            lux_value,
+            {"unit_of_measurement": "lx"},
+        )
+
+        await illuminance_sensor.async_update()
+        illuminance_sensor.async_write_ha_state()
+        await hass.async_block_till_done()
+
+        await ppfd_sensor.async_update()
+
+        expected_ppfd = lux_value * DEFAULT_LUX_TO_PPFD / 1000000
+        assert ppfd_sensor.native_value == pytest.approx(expected_ppfd, rel=0.01)
+
+    async def test_ppfd_detects_various_mol_units(
+        self, hass: HomeAssistant, init_integration: MockConfigEntry
+    ) -> None:
+        """Test PPFD detection works for various mol unit formats."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        ppfd_sensor = plant.ppfd
+        illuminance_sensor = plant.sensor_illuminance
+
+        ppfd_units = ["µmol/s⋅m²", "μmol/s⋅m²", "mol/s⋅m²"]
+
+        for unit in ppfd_units:
+            await set_sensor_state(
+                hass, "sensor.ppfd_test", 100, {"unit_of_measurement": unit}
+            )
+            illuminance_sensor.replace_external_sensor("sensor.ppfd_test")
+            await illuminance_sensor.async_update()
+            illuminance_sensor.async_write_ha_state()
+            await hass.async_block_till_done()
+            await ppfd_sensor.async_update()
+
+            assert ppfd_sensor.native_value == pytest.approx(
+                100, rel=0.01
+            ), f"Failed for unit: {unit}"
+
+    async def test_ppfd_source_detection_flag(
+        self, hass: HomeAssistant, init_integration: MockConfigEntry
+    ) -> None:
+        """Test that _source_is_ppfd flag is correctly set."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        ppfd_sensor = plant.ppfd
+        illuminance_sensor = plant.sensor_illuminance
+
+        # Initially with lux source
+        await set_sensor_state(
+            hass,
+            "sensor.test_illuminance",
+            10000,
+            {"unit_of_measurement": "lx"},
+        )
+        await illuminance_sensor.async_update()
+        illuminance_sensor.async_write_ha_state()
+        await hass.async_block_till_done()
+        await ppfd_sensor.async_update()
+        assert ppfd_sensor._source_is_ppfd is False
+
+        # Switch to PPFD source
+        await set_sensor_state(
+            hass, "sensor.fyta_light", 500, {"unit_of_measurement": "µmol/s⋅m²"}
+        )
+        illuminance_sensor.replace_external_sensor("sensor.fyta_light")
+        await illuminance_sensor.async_update()
+        illuminance_sensor.async_write_ha_state()
+        await hass.async_block_till_done()
+        await ppfd_sensor.async_update()
+        assert ppfd_sensor._source_is_ppfd is True
+
+
+class TestProblemDetectionWithPpfdSource:
+    """Tests for problem detection when using PPFD source."""
+
+    async def test_illuminance_status_skipped_for_ppfd_source(
+        self, hass: HomeAssistant, init_integration: MockConfigEntry
+    ) -> None:
+        """Test that illuminance_status is None when source is PPFD."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        illuminance_sensor = plant.sensor_illuminance
+
+        # Set up PPFD source with high value that would trigger alert with lux
+        await set_sensor_state(
+            hass, "sensor.fyta_light", 5000, {"unit_of_measurement": "µmol/s⋅m²"}
+        )
+
+        illuminance_sensor.replace_external_sensor("sensor.fyta_light")
+        await illuminance_sensor.async_update()
+        illuminance_sensor.async_write_ha_state()
+        await hass.async_block_till_done()
+
+        plant.update()
+        await hass.async_block_till_done()
+
+        # illuminance_status should be None (skipped) for PPFD source
+        assert plant.illuminance_status is None
+
+    async def test_illuminance_status_works_for_lux_source(
+        self, hass: HomeAssistant, init_integration: MockConfigEntry
+    ) -> None:
+        """Test that illuminance_status works normally for lux sources."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        illuminance_sensor = plant.sensor_illuminance
+
+        # Set high lux value (above typical max threshold of 100000)
+        await set_sensor_state(
+            hass, "sensor.test_illuminance", 150000, {"unit_of_measurement": "lx"}
+        )
+
+        await illuminance_sensor.async_update()
+        illuminance_sensor.async_write_ha_state()
+        await hass.async_block_till_done()
+
+        plant.update()
+        await hass.async_block_till_done()
+
+        # illuminance_status should be STATE_HIGH for excessive lux
+        from custom_components.plant.const import STATE_HIGH
+
+        assert plant.illuminance_status == STATE_HIGH
+
+    async def test_plant_state_not_problem_for_ppfd_high_value(
+        self, hass: HomeAssistant, init_integration: MockConfigEntry
+    ) -> None:
+        """Test that plant state is not 'problem' when PPFD value is high."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        illuminance_sensor = plant.sensor_illuminance
+
+        # Set up PPFD source with value that would be way over lux threshold
+        # (5000 µmol/s⋅m² would be ~270,000 lux equivalent)
+        await set_sensor_state(
+            hass, "sensor.fyta_light", 5000, {"unit_of_measurement": "µmol/s⋅m²"}
+        )
+
+        illuminance_sensor.replace_external_sensor("sensor.fyta_light")
+        await illuminance_sensor.async_update()
+        illuminance_sensor.async_write_ha_state()
+        await hass.async_block_till_done()
+
+        plant.update()
+        await hass.async_block_till_done()
+
+        # Plant state should not be "problem" due to illuminance
+        # (it may still be unknown if no other sensors have values)
+        assert plant.illuminance_status is None
