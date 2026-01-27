@@ -311,6 +311,59 @@ class TestPlantDevice:
         assert "co2_status" in attrs
         assert "soil_temperature_status" in attrs
 
+    async def test_plant_device_species_capitalization(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test plant species is capitalized correctly (binomial nomenclature).
+
+        The genus (first word) should be capitalized, rest should be preserved.
+        E.g., "monstera deliciosa" -> "Monstera deliciosa"
+        """
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        plant.plant_complete = True
+        plant.update()
+
+        attrs = plant.extra_state_attributes
+        species = attrs["species"]
+
+        # First letter should be uppercase
+        assert species[0].isupper(), f"First letter should be uppercase: {species}"
+        # Species should be "Monstera deliciosa" (first word capitalized)
+        assert species == "Monstera deliciosa"
+
+    async def test_plant_device_species_capitalization_lowercase_input(
+        self,
+        hass: HomeAssistant,
+    ) -> None:
+        """Test species capitalization when input is all lowercase."""
+        from tests.conftest import create_plant_config_data
+
+        # Create config with all lowercase display_species
+        config_data = create_plant_config_data(
+            display_species="solanum lycopersicum",
+        )
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=config_data,
+            entry_id="test_lowercase_species",
+        )
+        entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][entry.entry_id][ATTR_PLANT]
+        plant.plant_complete = True
+        plant.update()
+
+        attrs = plant.extra_state_attributes
+        species = attrs["species"]
+
+        # First letter should be uppercase, rest preserved
+        assert species == "Solanum lycopersicum"
+
     async def test_plant_device_device_info(
         self,
         hass: HomeAssistant,

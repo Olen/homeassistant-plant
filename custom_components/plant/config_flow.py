@@ -591,7 +591,12 @@ async def update_plant_options(
 
     new_display_species = entry.options.get(OPB_DISPLAY_PID)
     if new_display_species is not None:
-        plant.display_species = new_display_species
+        # Capitalize first letter for proper binomial nomenclature
+        plant.display_species = (
+            new_display_species[0].upper() + new_display_species[1:]
+            if new_display_species
+            else ""
+        )
 
     new_species = entry.options.get(ATTR_SPECIES)
     force_new_species = entry.options.get(FLOW_FORCE_SPECIES_UPDATE)
@@ -611,7 +616,11 @@ async def update_plant_options(
         if plant_config[DATA_SOURCE] == DATA_SOURCE_PLANTBOOK:
             plant.species = new_species
             plant.add_image(plant_config[FLOW_PLANT_INFO][ATTR_ENTITY_PICTURE])
-            plant.display_species = plant_config[FLOW_PLANT_INFO][OPB_DISPLAY_PID]
+            # Capitalize first letter for proper binomial nomenclature
+            opb_display = plant_config[FLOW_PLANT_INFO][OPB_DISPLAY_PID]
+            plant.display_species = (
+                opb_display[0].upper() + opb_display[1:] if opb_display else ""
+            )
             for key, value in plant_config[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].items():
                 set_entity = getattr(plant, key)
                 _LOGGER.debug("Entity: %s To: %s", set_entity, value)
