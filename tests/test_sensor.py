@@ -18,6 +18,7 @@ from custom_components.plant.const import (
     DOMAIN,
     UNIT_DLI,
     UNIT_PPFD,
+    UNIT_TOTAL_LIGHT_INTEGRAL,
 )
 
 from .common import set_sensor_state
@@ -415,8 +416,8 @@ class TestTotalLightIntegralSensor:
         """Test total integral sensor has unit calculation override.
 
         The IntegrationSensor parent class calculates units by appending time
-        unit to source unit. We override _calculate_unit to always return
-        the correct DLI unit.
+        unit to source unit. We override _calculate_unit to return mol/m²
+        (the seconds cancel out when integrating mol/s⋅m² over time).
         """
         plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
 
@@ -426,8 +427,11 @@ class TestTotalLightIntegralSensor:
         # Verify the class has the _calculate_unit method override
         assert hasattr(plant.total_integral, "_calculate_unit")
         assert callable(plant.total_integral._calculate_unit)
-        # Verify it returns the correct DLI unit regardless of input
-        assert plant.total_integral._calculate_unit("mol/s⋅m²") == UNIT_DLI
+        # Verify it returns the correct unit (mol/m², not mol/d⋅m² which is for DLI)
+        assert (
+            plant.total_integral._calculate_unit("mol/s⋅m²")
+            == UNIT_TOTAL_LIGHT_INTEGRAL
+        )
 
 
 class TestSensorDeviceInfo:

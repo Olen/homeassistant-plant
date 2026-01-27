@@ -96,6 +96,7 @@ from .const import (
     TRANSLATION_KEY_TOTAL_LIGHT_INTEGRAL,
     UNIT_DLI,
     UNIT_PPFD,
+    UNIT_TOTAL_LIGHT_INTEGRAL,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -685,13 +686,14 @@ class PlantTotalLightIntegral(IntegrationSensor):
         )
 
     def _calculate_unit(self, source_unit: str) -> str:
-        """Override unit calculation to always return DLI unit.
+        """Override unit calculation to return the correct integrated unit.
 
         The parent IntegrationSensor tries to derive the unit by appending
         the time unit to the source unit (e.g., "mol/s⋅m²" + "s" = "mol/s⋅m²s").
-        We override this to always return the correct DLI unit.
+        We override this to return mol/m² (the seconds cancel out when
+        integrating mol/s⋅m² over time).
         """
-        return UNIT_DLI
+        return UNIT_TOTAL_LIGHT_INTEGRAL
 
     async def async_added_to_hass(self) -> None:
         """Handle entity which will be added."""
