@@ -72,6 +72,21 @@ See DEVELOPMENT.md for full setup instructions.
 - Temperature thresholds respect HA's configured unit system
 - DLI calculated from illuminance: `lux * lux_to_ppfd_factor / 1000000`
 
+## Git Workflow
+
+**Always use feature branches for code changes.** Do not commit directly to master.
+
+```bash
+# Create a branch for your work
+git checkout -b feature-name
+
+# After changes, push and create PR
+git push -u origin feature-name
+gh pr create --fill
+```
+
+The master branch is protected - all changes must go through pull requests.
+
 ## Translations
 
 Translation files in `custom_components/plant/translations/`:
