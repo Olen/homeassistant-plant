@@ -1,0 +1,55 @@
+name: Mark Stale Issues
+
+on:
+  schedule:
+    - cron: "0 6 * * *"  # Run daily at 6 AM UTC
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mark stale issues
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const daysUntilStale = 14;
+            const staleLabel = 'stale';
+            const awaitingLabel = 'awaiting feedback';
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - daysUntilStale);
+
+            // Get all open issues with "awaiting feedback" label
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: awaitingLabel,
+              per_page: 100
+            });
+
+            for (const issue of issues) {
+              // Skip pull requests
+              if (issue.pull_request) continue;
+
+              // Check if already has stale label
+              const hasStaleLabel = issue.labels.some(label => label.name === staleLabel);
+              if (hasStaleLabel) {
+                console.log(`Issue #${issue.number} already has stale label`);
+                continue;
+              }
+
+              // Check if issue was updated more than 14 days ago
+              const updatedAt = new Date(issue.updated_at);
+              if (updatedAt < cutoffDate) {
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  labels: [staleLabel]
+                });
+                console.log(`Added stale label to issue #${issue.number} (last updated: ${issue.updated_at})`);
+              } else {
+                console.log(`Issue #${issue.number} is not stale yet (last updated: ${issue.updated_at})`);
+              }
+            }
