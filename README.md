@@ -196,13 +196,19 @@ This corresponds to the file at `config/www/plants/my-plant.jpg`.
 
 **Media Source URLs:**
 
-You can use images from Home Assistant's Media Browser using `media-source://` URLs:
+You can use images from Home Assistant's local Media folder using `media-source://` URLs. The format is:
+```
+media-source://media_source/local/<path>
+```
+
+For example, if you have an image at `/media/plants/my-plant.jpg`:
 ```
 media-source://media_source/local/plants/my-plant.jpg
 ```
-See [Identifying a media source from the Media Browser](https://www.home-assistant.io/integrations/media_source/#identifying-a-media-source-from-the-media-browser) for how to get the correct URL.
 
-> **Note:** Media source URLs require a compatible Lovelace card (like the [Flower Card](https://github.com/Olen/lovelace-flower-card/)) that can resolve these URLs. The Device page in Home Assistant may not display media-source images correctly.
+> **Important:** Only the local media source (`media_source/local/`) is supported. Images from other media sources (like `image_upload` or network media) will not work.
+
+> **Note:** Media source URLs require a compatible Lovelace card (like the [Flower Card](https://github.com/Olen/lovelace-flower-card/)) that can resolve these URLs. The Device page in Home Assistant will not display media-source images.
 
 ## FAQ
 
