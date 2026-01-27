@@ -1,23 +1,25 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code when working with this repository.
 
 ## Project Overview
 
-This is a custom Home Assistant integration for plant monitoring. It replaces the built-in `plant` component with an enhanced version that treats plants as devices with multiple entities. It integrates with OpenPlantbook for automatic threshold data retrieval.
+Custom Home Assistant integration for plant monitoring. Replaces the built-in `plant` component with an enhanced version that treats plants as devices with multiple entities.
 
 **Domain:** `plant`
 **Minimum HA Version:** 2025.8.0
 
-## Build & Lint Commands
+## Related Repositories
+
+This integration is part of a plant monitoring ecosystem:
+
+- **[home-assistant-openplantbook](https://github.com/Olen/home-assistant-openplantbook)** - OpenPlantbook API integration that provides species data and thresholds
+- **[lovelace-flower-card](https://github.com/Olen/lovelace-flower-card)** - Lovelace card for displaying plant data (uses the websocket API)
+
+## Quick Commands
 
 ```bash
-# Setup (one time)
-uv venv
-uv pip install $(python3 -c "import tomllib; print(' '.join(tomllib.load(open('pyproject.toml', 'rb'))['project']['optional-dependencies']['test']))")
-rm -f uv.lock  # Prevent editable install issues
-
-# Format check (used in CI)
+# Format check (CI uses this)
 .venv/bin/black . --check --fast --diff
 
 # Format code
@@ -28,74 +30,51 @@ rm -f uv.lock  # Prevent editable install issues
 
 # Run tests with coverage
 .venv/bin/pytest tests/ --cov=custom_components/plant --cov-report=term-missing
-
-# Validate Home Assistant integration manifest
-# Run via hassfest action or within HA dev container
 ```
 
-See DEVELOPMENT.md for full development setup instructions.
+See DEVELOPMENT.md for full setup instructions.
 
 ## Architecture
 
-### Core Components
+### Core Files
 
-- **`__init__.py`** - Main integration setup. Defines `PlantDevice` entity class which is the primary plant entity. Handles config entry setup, device registry, and the `plant.replace_sensor` service.
-
-- **`config_flow.py`** - Multi-step config flow for plant setup:
-  1. Name/species input and sensor selection
-  2. OpenPlantbook species search (if available)
-  3. Threshold limits configuration
-
-  Also handles `OptionsFlowHandler` for reconfiguring plants (species changes, image updates, problem triggers).
-
-- **`sensor.py`** - Sensor entities for each plant:
-  - `PlantCurrentStatus` (base class) - Tracks external sensors for moisture, temperature, conductivity, illuminance, humidity
-  - `PlantCurrentPpfd` - Calculates PPFD from illuminance
-  - `PlantTotalLightIntegral` - Integration sensor for cumulative light
-  - `PlantDailyLightIntegral` - Utility meter for DLI calculation
-  - Dummy sensors for testing (enabled via `SETUP_DUMMY_SENSORS` flag)
-
-- **`number.py`** - Threshold entities (min/max for each measurement type). Uses `RestoreNumber` for persistence. Entities are `EntityCategory.CONFIG`.
-
-- **`plant_helpers.py`** - `PlantHelper` class for OpenPlantbook integration:
-  - `openplantbook_search()` - Search for species
-  - `openplantbook_get()` - Get detailed plant data
-  - `generate_configentry()` - Build config entry from OPB data or defaults
-
-- **`const.py`** - All constants, defaults, and configuration key mappings including `CONF_PLANTBOOK_MAPPING` for OPB field translation.
+| File | Purpose |
+|------|---------|
+| `__init__.py` | Integration setup, `PlantDevice` entity, `plant.replace_sensor` service |
+| `config_flow.py` | Multi-step config flow + `OptionsFlowHandler` for editing plants |
+| `sensor.py` | Sensor entities: current values, PPFD, TLI, DLI |
+| `number.py` | Threshold entities (min/max) using `RestoreNumber` |
+| `plant_helpers.py` | `PlantHelper` class for OpenPlantbook API calls |
+| `const.py` | Constants, defaults, `CONF_PLANTBOOK_MAPPING` |
 
 ### Entity Structure per Plant
 
-Each plant creates:
-- 1 `PlantDevice` entity (main plant state: ok/problem/unknown)
-- 5 sensor entities (moisture, temperature, conductivity, illuminance, humidity)
-- 12 number entities (min/max thresholds for 6 measurement types)
-- 3 calculated sensors (PPFD, total integral, DLI)
+- 1 `PlantDevice` (main state: ok/problem/unknown)
+- 8 sensor entities (moisture, temperature, conductivity, illuminance, humidity, CO2, soil_temperature + PPFD, TLI, DLI)
+- 16 number entities (min/max thresholds for 8 measurement types)
 
-### Key Patterns
-
-- Plants are HA devices with identifiers `{(DOMAIN, unique_id)}`
-- External physical sensors are tracked and their values copied to plant-owned sensors
-- Service `plant.replace_sensor` allows changing the external sensor for any measurement type
-- Temperature thresholds respect HA's configured unit system (°C/°F)
-- DLI is calculated from illuminance via PPFD conversion: `lux * 0.0185 / 1000000`
-
-### OpenPlantbook Integration
-
-The integration optionally depends on the `openplantbook` integration. When available:
-- Thresholds are auto-populated from OPB data
-- Species search is available during setup
-- Images are fetched from OPB
-
-Without OPB, default threshold values from `const.py` are used.
-
-## Configuration Flow States
+### Config Flow Steps
 
 1. `user` - Name, species, sensor selection
-2. `select_species` - OPB search results dropdown (skipped if no OPB)
-3. `limits` - Threshold values and image configuration
+2. `select_species` - OpenPlantbook search results (skipped if no OPB)
+3. `limits` - Threshold values and image
 4. `limits_done` - Entry creation
 
-## Websocket API
+### Websocket API
 
-- `plant/get_info` - Returns plant data including current readings and thresholds for Lovelace cards
+`plant/get_info` - Returns plant data for Lovelace cards (used by lovelace-flower-card)
+
+## Key Patterns
+
+- Plants are HA devices with identifiers `{(DOMAIN, unique_id)}`
+- External sensors are tracked; values copied to plant-owned sensors
+- Service `plant.replace_sensor` changes the external sensor for any measurement
+- Temperature thresholds respect HA's configured unit system
+- DLI calculated from illuminance: `lux * lux_to_ppfd_factor / 1000000`
+
+## Translations
+
+Translation files in `custom_components/plant/translations/`:
+- Use abbreviated forms (Max/Min) for entity names due to GUI space constraints
+- Each language uses appropriate abbreviations (Maks./Min., Maxi./Mini., etc.)
+- Services section should be present in all translation files
