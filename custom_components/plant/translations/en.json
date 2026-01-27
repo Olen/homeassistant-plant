@@ -35,52 +35,52 @@
     },
     "number": {
       "max_moisture": {
-        "name": "Maximum soil moisture"
+        "name": "Max soil moisture"
       },
       "min_moisture": {
-        "name": "Minimum soil moisture"
+        "name": "Min soil moisture"
       },
       "max_temperature": {
-        "name": "Maximum temperature"
+        "name": "Max temperature"
       },
       "min_temperature": {
-        "name": "Minimum temperature"
+        "name": "Min temperature"
       },
       "max_illuminance": {
-        "name": "Maximum illuminance"
+        "name": "Max illuminance"
       },
       "min_illuminance": {
-        "name": "Minimum illuminance"
+        "name": "Min illuminance"
       },
       "max_dli": {
-        "name": "Maximum DLI"
+        "name": "Max DLI"
       },
       "min_dli": {
-        "name": "Minimum DLI"
+        "name": "Min DLI"
       },
       "max_conductivity": {
-        "name": "Maximum conductivity"
+        "name": "Max conductivity"
       },
       "min_conductivity": {
-        "name": "Minimum conductivity"
+        "name": "Min conductivity"
       },
       "max_humidity": {
-        "name": "Maximum air humidity"
+        "name": "Max air humidity"
       },
       "min_humidity": {
-        "name": "Minimum air humidity"
+        "name": "Min air humidity"
       },
       "max_co2": {
-        "name": "Maximum CO2"
+        "name": "Max CO2"
       },
       "min_co2": {
-        "name": "Minimum CO2"
+        "name": "Min CO2"
       },
       "max_soil_temperature": {
-        "name": "Maximum soil temperature"
+        "name": "Max soil temperature"
       },
       "min_soil_temperature": {
-        "name": "Minimum soil temperature"
+        "name": "Min soil temperature"
       },
       "lux_to_ppfd": {
         "name": "Lux to PPFD factor"
@@ -123,18 +123,18 @@
         "data": {
           "right_plant": "This is the plant I was looking for",
           "display_pid": "Plant species to display",
-          "max_moisture": "Maximum soil moisture (%)",
-          "min_moisture": "Minimum soil moisture (%)",
-          "max_illuminance": "Maximum illuminance (lx)",
-          "min_illuminance": "Minimum illuminance (lx)",
-          "max_dli": "Maximum DLI (mol/d⋅m²)",
-          "min_dli": "Minimum DLI (mol/d⋅m²)",
-          "max_temperature": "Maximum temperature (see above)",
-          "min_temperature": "Minimum temperature (see above)",
-          "max_conductivity": "Maximum conductivity (uS/cm)",
-          "min_conductivity": "Minimum conductivity (uS/cm)",
-          "max_humidity": "Maximum air humidity (%)",
-          "min_humidity": "Minimum air humidity (%)",
+          "max_moisture": "Max soil moisture (%)",
+          "min_moisture": "Min soil moisture (%)",
+          "max_illuminance": "Max illuminance (lx)",
+          "min_illuminance": "Min illuminance (lx)",
+          "max_dli": "Max DLI (mol/d⋅m²)",
+          "min_dli": "Min DLI (mol/d⋅m²)",
+          "max_temperature": "Max temperature (see above)",
+          "min_temperature": "Min temperature (see above)",
+          "max_conductivity": "Max conductivity (uS/cm)",
+          "min_conductivity": "Min conductivity (uS/cm)",
+          "max_humidity": "Max air humidity (%)",
+          "min_humidity": "Min air humidity (%)",
           "entity_picture": "Image URL"
         }
       }
@@ -157,7 +157,7 @@
           "humidity_sensor": "Air humidity sensor",
           "entity_picture": "Image URL. Will be automatically updated if species is found in OpenPlantbook",
           "illuminance_trigger": "Use illuminance as problem trigger",
-          "dli_trigger": "Use daily light integral (dli) as problem trigger",
+          "dli_trigger": "Use daily light integral (DLI) as problem trigger",
           "humidity_trigger": "Use air humidity as problem trigger",
           "conductivity_trigger": "Use conductivity as problem trigger",
           "moisture_trigger": "Use soil moisture as problem trigger",
