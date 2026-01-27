@@ -194,7 +194,15 @@ Place your image in your Home Assistant `config/www/` folder (create it if it do
 ```
 This corresponds to the file at `config/www/plants/my-plant.jpg`.
 
-> **Note:** Only images in the `www` folder are accessible via `/local/`. Arbitrary filesystem paths (like `/mnt/...` or `/media/...`) and media source URIs (`media-source://...`) are **not supported**.
+**Media Source URLs:**
+
+You can use images from Home Assistant's Media Browser using `media-source://` URLs:
+```
+media-source://media_source/local/plants/my-plant.jpg
+```
+See [Identifying a media source from the Media Browser](https://www.home-assistant.io/integrations/media_source/#identifying-a-media-source-from-the-media-browser) for how to get the correct URL.
+
+> **Note:** Media source URLs require a compatible Lovelace card (like the [Flower Card](https://github.com/Olen/lovelace-flower-card/)) that can resolve these URLs. The Device page in Home Assistant may not display media-source images correctly.
 
 ## FAQ
 
@@ -234,10 +242,9 @@ Local images must be placed in your Home Assistant `www` folder and referenced u
 
 **Incorrect:**
 - `/mnt/nas/photos/plant.jpg` - Arbitrary filesystem paths are not supported
-- `media-source://media_source/local/plants/plant.jpg` - Media source URIs are not supported
 - `file:///config/www/plants/rose.jpg` - File URIs are not supported
 
-See the [Plant Images](#plant-images) section for details.
+You can also use `media-source://` URLs for images from the Media Browser. See the [Plant Images](#plant-images) section for details.
 
 ### I removed a sensor but it comes back after restart
 

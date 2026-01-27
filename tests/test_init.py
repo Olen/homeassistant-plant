@@ -476,6 +476,23 @@ class TestPlantDevice:
 
         assert plant.entity_picture == new_image
 
+    async def test_plant_device_add_media_source_image(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test adding a media-source image passes through as-is."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+
+        media_source_url = "media-source://media_source/local/plants/test.jpg"
+        plant.add_image(media_source_url)
+
+        # The entity_picture should be the media-source URL (passed through)
+        assert plant.entity_picture == media_source_url
+
+        # The config entry should also store the media-source URL
+        assert init_integration.options.get("entity_picture") == media_source_url
+
     async def test_plant_device_websocket_info(
         self,
         hass: HomeAssistant,

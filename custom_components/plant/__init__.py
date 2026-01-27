@@ -222,6 +222,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         new_sensor = call.data.get(ATTR_NEW_SENSOR)
         found = False
         for entry_id in hass.data[DOMAIN]:
+            # Skip internal settings keys
+            if entry_id.startswith("_") or entry_id.endswith("_store"):
+                continue
             if ATTR_SENSORS in hass.data[DOMAIN][entry_id]:
                 for sensor in hass.data[DOMAIN][entry_id][ATTR_SENSORS]:
                     if sensor.entity_id == meter_entity:
@@ -267,6 +270,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             new_sensor,
         )
         for key in hass.data[DOMAIN]:
+            # Skip internal settings keys
+            if key.startswith("_") or key.endswith("_store"):
+                continue
             if ATTR_SENSORS in hass.data[DOMAIN][key]:
                 meters = hass.data[DOMAIN][key][ATTR_SENSORS]
                 for meter in meters:
@@ -322,13 +328,26 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id, None)
         hass.data[DATA_UTILITY].pop(entry.entry_id, None)
-        _LOGGER.info(hass.data[DOMAIN])
+        _LOGGER.debug("Remaining domain data: %s", list(hass.data[DOMAIN].keys()))
+
+        # Check for empty plant entries (skip settings keys)
         for entry_id in list(hass.data[DOMAIN].keys()):
-            if len(hass.data[DOMAIN][entry_id]) == 0:
-                _LOGGER.info("Removing entry %s", entry_id)
-                del hass.data[DOMAIN][entry_id]
-        if len(hass.data[DOMAIN]) == 0:
-            _LOGGER.info("Removing domain %s", DOMAIN)
+            # Skip internal settings keys
+            if entry_id.startswith("_") or entry_id.endswith("_store"):
+                continue
+            if isinstance(hass.data[DOMAIN][entry_id], dict):
+                if len(hass.data[DOMAIN][entry_id]) == 0:
+                    _LOGGER.debug("Removing empty entry %s", entry_id)
+                    del hass.data[DOMAIN][entry_id]
+
+        # Check if only settings keys remain (no actual plant entries)
+        remaining_plant_entries = [
+            k
+            for k in hass.data[DOMAIN].keys()
+            if not k.startswith("_") and not k.endswith("_store")
+        ]
+        if len(remaining_plant_entries) == 0:
+            _LOGGER.debug("Removing domain %s (no more plants)", DOMAIN)
             hass.services.async_remove(DOMAIN, SERVICE_REPLACE_SENSOR)
             del hass.data[DOMAIN]
     return unload_ok
@@ -375,6 +394,9 @@ def ws_get_info(
         return
 
     for key in hass.data[DOMAIN]:
+        # Skip internal settings keys
+        if key.startswith("_") or key.endswith("_store"):
+            continue
         if ATTR_PLANT not in hass.data[DOMAIN][key]:
             continue
         plant_entity = hass.data[DOMAIN][key][ATTR_PLANT]
@@ -692,7 +714,7 @@ class PlantDevice(Entity):
         ]
 
     def add_image(self, image_url: str | None) -> None:
-        """Set new entity_picture"""
+        """Set new entity_picture."""
         self._attr_entity_picture = image_url
         options = self._config.options.copy()
         options[ATTR_ENTITY_PICTURE] = image_url

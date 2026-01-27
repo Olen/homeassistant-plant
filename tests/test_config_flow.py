@@ -438,3 +438,55 @@ class TestOptionsFlow:
         assert plant.entity_picture == new_entity_picture
         assert plant.display_species != original_display_species
         assert plant.entity_picture != original_entity_picture
+
+    async def test_options_flow_accepts_media_source_url(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+        mock_no_openplantbook,
+    ) -> None:
+        """Test that options flow accepts media-source:// URLs for images."""
+        plant = hass.data[DOMAIN][init_integration.entry_id]["plant"]
+        media_source_url = "media-source://media_source/local/plants/my_plant.jpg"
+
+        result = await hass.config_entries.options.async_init(init_integration.entry_id)
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            {
+                ATTR_SPECIES: "test species",
+                OPB_DISPLAY_PID: "Test Species",
+                ATTR_ENTITY_PICTURE: media_source_url,
+            },
+        )
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        await hass.async_block_till_done()
+
+        # Verify the media-source URL was stored correctly
+        assert plant.entity_picture == media_source_url
+
+    async def test_options_flow_accepts_local_path(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+        mock_no_openplantbook,
+    ) -> None:
+        """Test that options flow accepts /local/ paths for images."""
+        plant = hass.data[DOMAIN][init_integration.entry_id]["plant"]
+        local_path = "/local/plants/my_plant.jpg"
+
+        result = await hass.config_entries.options.async_init(init_integration.entry_id)
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            {
+                ATTR_SPECIES: "test species",
+                OPB_DISPLAY_PID: "Test Species",
+                ATTR_ENTITY_PICTURE: local_path,
+            },
+        )
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        await hass.async_block_till_done()
+
+        # Verify the /local/ path was stored correctly
+        assert plant.entity_picture == local_path

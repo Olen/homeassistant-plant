@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 import re
-import urllib.parse
 from typing import Any
 
 import voluptuous as vol
@@ -71,6 +70,7 @@ from .const import (
     FLOW_TEMPERATURE_TRIGGER,
     OPB_DISPLAY_PID,
     URL_SCHEME_HTTP,
+    URL_SCHEME_MEDIA_SOURCE,
 )
 from .plant_helpers import PlantHelper
 
@@ -400,7 +400,9 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             )
         ] = str
         entity_picture = plant_config[FLOW_PLANT_INFO].get(ATTR_ENTITY_PICTURE)
-        if not entity_picture.startswith(URL_SCHEME_HTTP):
+        if not entity_picture.startswith(
+            URL_SCHEME_HTTP
+        ) and not entity_picture.startswith(URL_SCHEME_MEDIA_SOURCE):
             try:
                 entity_picture = f"{get_url(self.hass, require_current_request=True)}{urllib.parse.quote(entity_picture)}"
             except NoURLAvailableError:
@@ -558,6 +560,11 @@ async def update_plant_options(
     hass: HomeAssistant, entry: config_entries.ConfigEntry
 ) -> None:
     """Handle options update."""
+    # Guard against being called after entry is unloaded
+    if entry.entry_id not in hass.data.get(DOMAIN, {}):
+        _LOGGER.debug("Ignoring update for unloaded entry %s", entry.entry_id)
+        return
+
     plant = hass.data[DOMAIN][entry.entry_id]["plant"]
 
     _LOGGER.debug(
@@ -571,23 +578,38 @@ async def update_plant_options(
     if entity_picture is not None:
         if entity_picture == "":
             plant.add_image(entity_picture)
-        else:
-            try:
-                url = cv.url(entity_picture)
-                _LOGGER.debug("Url 1 %s", url)
-            except vol.Invalid as exc1:
-                _LOGGER.warning("Not a valid url: %s", entity_picture)
-                if entity_picture.startswith("/local/"):
-                    try:
-                        url = cv.path(entity_picture)
-                        _LOGGER.debug("Url 2 %s", url)
-                    except vol.Invalid as exc2:
-                        _LOGGER.warning("Not a valid path: %s", entity_picture)
-                        raise vol.Invalid(f"Invalid URL: {entity_picture}") from exc2
-                else:
-                    raise vol.Invalid(f"Invalid URL: {entity_picture}") from exc1
-            _LOGGER.debug("Update image to %s", entity_picture)
+        elif entity_picture.startswith(URL_SCHEME_MEDIA_SOURCE):
+            # Media-source URL - pass through for frontend/card to resolve
+            _LOGGER.debug("Using media-source URL: %s", entity_picture)
             plant.add_image(entity_picture)
+        elif entity_picture.startswith(("http://", "https://")):
+            # Full HTTP URL - validate
+            try:
+                cv.url(entity_picture)
+                _LOGGER.debug("Using HTTP URL: %s", entity_picture)
+                plant.add_image(entity_picture)
+            except vol.Invalid as exc:
+                _LOGGER.warning("Not a valid URL: %s", entity_picture)
+                raise vol.Invalid(f"Invalid URL: {entity_picture}") from exc
+        elif entity_picture.startswith("/"):
+            # Relative path (like /local/...) - validate as path
+            try:
+                cv.path(entity_picture)
+                _LOGGER.debug("Using local path: %s", entity_picture)
+                plant.add_image(entity_picture)
+            except vol.Invalid as exc:
+                _LOGGER.warning("Not a valid path: %s", entity_picture)
+                raise vol.Invalid(f"Invalid path: {entity_picture}") from exc
+        else:
+            # Unknown format
+            _LOGGER.warning(
+                "Unknown image format: %s. Use a full URL or /local/ path.",
+                entity_picture,
+            )
+            raise vol.Invalid(
+                f"Unknown image format: {entity_picture}. "
+                "Use a full URL, media-source:// URL, or /local/ path."
+            )
 
     new_display_species = entry.options.get(OPB_DISPLAY_PID)
     if new_display_species is not None:

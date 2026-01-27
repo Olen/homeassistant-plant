@@ -9,6 +9,7 @@ ENTITY_ID_PREFIX_SENSOR = f"{DOMAIN_SENSOR}."
 
 # URL patterns
 URL_SCHEME_HTTP = "http"
+URL_SCHEME_MEDIA_SOURCE = "media-source://"
 PLANTBOOK_DOMAIN = "plantbook.io"
 
 REQUEST_TIMEOUT = 30
