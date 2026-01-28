@@ -105,6 +105,45 @@ The DLI sensor resets to zero at midnight each day. This is the standard and cor
 
 This behavior matches how DLI is measured in professional horticulture and research settings.
 
+### Why Midnight Reset (Not Rolling 24-Hour Window)
+
+Some users have asked whether DLI should be a rolling 24-hour window instead of resetting at midnight. Based on research of scientific and horticultural sources, **the standard approach is midnight reset (calendar day)**.
+
+#### Official Sources Supporting Midnight Reset
+
+1. **ZENTRA Cloud** (METER Group environmental monitoring):
+   > "The time period resets daily at midnight."
+
+   Source: https://docs.zentracloud.com/l/en/article/0fnw0xwzwh-daily-light-integral
+
+2. **LI-COR** (scientific instrumentation standard):
+   > "In the Logging Setup, set your start and stop time to 00:00 and set the Logging Period to 24 Hours."
+
+   > "If you capture measurements for more than one day, the DLI value will reset to zero and start again at the next configured start time."
+
+   Source: https://www.licor.com/support/LI-1500/topics/calculating-DLI.html
+
+3. **MSU Extension** uses the rain gauge analogy:
+   > "The DLI concept is like a rain gauge. Just as a rain gauge collects the total rain in a particular location over a period of time, so DLI measures the total amount of PAR received in a day."
+
+   Rain gauges are read and reset daily at a fixed time, not as rolling totals.
+
+   Source: https://www.canr.msu.edu/resources/daily_light_integral_defined
+
+#### Why Midnight Reset Makes Sense
+
+1. **Comparability**: DLI values are often reported as monthly/seasonal averages in literature. This requires consistent daily boundaries.
+
+2. **Photoperiod alignment**: Plants respond to the light/dark cycle within a calendar day. A rolling window would blur the distinction between days.
+
+3. **Practical use**: Growers make decisions based on "did the plant get enough light today?" not "in the last 24 hours from this moment."
+
+4. **Research standards**: Scientific studies define photoperiods within discrete daily windows (e.g., "7 to 22 hours of light"), implying fixed daily boundaries.
+
+#### No Support for Rolling Window
+
+We could not find any scientific, horticultural, or equipment manufacturer documentation that recommends or uses a rolling 24-hour window for DLI measurement.
+
 ## DLI Alerts and Thresholds
 
 DLI alerts are intentionally based on **yesterday's DLI value**, not today's current accumulation. This prevents false alerts from being triggered when the sensor resets to zero at midnight.
