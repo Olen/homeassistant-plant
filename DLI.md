@@ -140,9 +140,11 @@ Some users have asked whether DLI should be a rolling 24-hour window instead of 
 
 4. **Research standards**: Scientific studies define photoperiods within discrete daily windows (e.g., "7 to 22 hours of light"), implying fixed daily boundaries.
 
-#### No Support for Rolling Window
+#### Scientific Literature Uses Midnight Reset
 
-We could not find any scientific, horticultural, or equipment manufacturer documentation that recommends or uses a rolling 24-hour window for DLI measurement.
+We could not find any scientific, horticultural, or equipment manufacturer documentation that recommends or uses a rolling 24-hour window for DLI measurement. This is why the primary DLI sensor uses midnight reset.
+
+However, for users who prefer a rolling window for real-time monitoring, see [Rolling 24-Hour DLI (Alternative)](#rolling-24-hour-dli-alternative).
 
 ## DLI Alerts and Thresholds
 
