@@ -5,6 +5,7 @@
     "recorder",
     "openplantbook",
     "integration",
+    "statistics",
     "utility_meter"
   ],
   "codeowners": [
