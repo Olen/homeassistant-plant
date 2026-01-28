@@ -31,6 +31,9 @@
       },
       "daily_light_integral": {
         "name": "每日光照积分"
+      },
+      "dli_24h": {
+        "name": "DLI (24小时滚动)"
       }
     },
     "number": {

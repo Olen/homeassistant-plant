@@ -31,6 +31,9 @@
       },
       "daily_light_integral": {
         "name": "Daglig lysintegral"
+      },
+      "dli_24h": {
+        "name": "DLI (24t rullende)"
       }
     },
     "number": {

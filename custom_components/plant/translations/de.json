@@ -31,6 +31,9 @@
       },
       "daily_light_integral": {
         "name": "Tägliches Lichtintegral"
+      },
+      "dli_24h": {
+        "name": "DLI (24h rollierend)"
       }
     },
     "number": {

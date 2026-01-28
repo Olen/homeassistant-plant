@@ -31,6 +31,9 @@
       },
       "daily_light_integral": {
         "name": "Integral de luz diária"
+      },
+      "dli_24h": {
+        "name": "DLI (24h contínuo)"
       }
     },
     "number": {
