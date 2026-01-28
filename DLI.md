@@ -262,3 +262,33 @@ If your DLI seems low, it may simply be accurate - indoor light levels are genui
 ## Entity Visibility
 
 The intermediate sensors (`PlantCurrentPpfd` and `PlantTotalLightIntegral`) are hidden by default as they are diagnostic entities. Only the final `PlantDailyLightIntegral` sensor is visible by default, as it provides the actionable DLI value for plant care decisions.
+
+## Rolling 24-Hour DLI (Alternative)
+
+For users who prefer a rolling 24-hour window instead of the midnight-reset behavior, an additional sensor is available: **DLI (24h rolling)**.
+
+This sensor:
+- Shows the total light accumulated in the **last 24 hours** from any point in time
+- Does NOT reset at midnight
+- Uses Home Assistant's statistics sensor with the "change" characteristic
+- Is hidden by default (can be enabled in the entity settings)
+
+### When to Use Each Sensor
+
+| Sensor | Best For |
+|--------|----------|
+| **Daily Light Integral** (midnight reset) | Standard DLI tracking, comparing days, matching scientific literature |
+| **DLI (24h rolling)** | Real-time monitoring, seeing immediate impact of light changes |
+
+### How It Works
+
+The rolling 24-hour sensor tracks the `PlantTotalLightIntegral` sensor and computes the difference between the current value and the value from 24 hours ago. This gives a continuous view of accumulated light without the discontinuity at midnight.
+
+### Enabling the Rolling Sensor
+
+1. Go to **Settings** → **Devices & Services** → **Plant Monitor**
+2. Click on your plant device
+3. Find "DLI (24h rolling)" in the disabled entities
+4. Click on it and enable it
+
+Note: This sensor requires 24 hours of data collection before it shows meaningful values.

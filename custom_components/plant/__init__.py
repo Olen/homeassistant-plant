@@ -38,6 +38,7 @@ from .const import (
     ATTR_CONDUCTIVITY,
     ATTR_CURRENT,
     ATTR_DLI,
+    ATTR_DLI_24H,
     ATTR_HUMIDITY,
     ATTR_ILLUMINANCE,
     ATTR_MAX,
@@ -484,6 +485,7 @@ class PlantDevice(Entity):
         self.sensor_soil_temperature = None
 
         self.dli = None
+        self.dli_24h = None
         self.micro_dli = None
         self.ppfd = None
         self.total_integral = None
@@ -682,6 +684,22 @@ class PlantDevice(Entity):
         if self.dli.native_value is not None and self.dli.native_value != STATE_UNKNOWN:
             response[ATTR_DLI][ATTR_CURRENT] = float(self.dli.native_value)
 
+        # Add rolling 24h DLI if available
+        if self.dli_24h is not None:
+            response[ATTR_DLI_24H] = {
+                ATTR_MAX: self.max_dli.state,  # Same thresholds as regular DLI
+                ATTR_MIN: self.min_dli.state,
+                ATTR_CURRENT: STATE_UNAVAILABLE,
+                ATTR_ICON: self._get_entity_icon(self.dli_24h),
+                ATTR_UNIT_OF_MEASUREMENT: self.dli_24h.unit_of_measurement,
+                ATTR_SENSOR: self.dli_24h.entity_id,
+            }
+            if (
+                self.dli_24h.native_value is not None
+                and self.dli_24h.native_value != STATE_UNKNOWN
+            ):
+                response[ATTR_DLI_24H][ATTR_CURRENT] = float(self.dli_24h.native_value)
+
         return response
 
     @property
@@ -798,9 +816,11 @@ class PlantDevice(Entity):
     def add_dli(
         self,
         dli: Entity | None,
+        dli_24h: Entity | None = None,
     ) -> None:
         """Add the DLI-utility sensors"""
         self.dli = dli
+        self.dli_24h = dli_24h
         self.plant_complete = True
 
     def add_calculations(self, ppfd: Entity, total_integral: Entity) -> None:

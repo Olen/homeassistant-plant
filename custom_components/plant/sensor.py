@@ -14,6 +14,7 @@ from homeassistant.components.sensor import (
     SensorEntity,
     SensorStateClass,
 )
+from homeassistant.components.statistics.sensor import StatisticsSensor
 from homeassistant.components.utility_meter.const import DAILY
 from homeassistant.components.utility_meter.sensor import UtilityMeterSensor
 from homeassistant.config_entries import ConfigEntry
@@ -87,6 +88,7 @@ from .const import (
     TRANSLATION_KEY_CO2,
     TRANSLATION_KEY_CONDUCTIVITY,
     TRANSLATION_KEY_DAILY_LIGHT_INTEGRAL,
+    TRANSLATION_KEY_DLI_24H,
     TRANSLATION_KEY_HUMIDITY,
     TRANSLATION_KEY_ILLUMINANCE,
     TRANSLATION_KEY_MOISTURE,
@@ -161,7 +163,11 @@ async def async_setup_entry(
     pdli = PlantDailyLightIntegral(hass, entry, pintegral, plant)
     async_add_entities(new_entities=[pdli], update_before_add=True)
 
-    plant.add_dli(dli=pdli)
+    # Create rolling 24-hour DLI sensor (alternative to midnight-reset DLI)
+    pdli_24h = PlantDailyLightIntegral24h(hass, entry, pintegral, plant)
+    async_add_entities(new_entities=[pdli_24h], update_before_add=True)
+
+    plant.add_dli(dli=pdli, dli_24h=pdli_24h)
 
     return True
 
@@ -877,6 +883,65 @@ class PlantDailyLightIntegral(UtilityMeterSensor):
             "Updated source entity to %s. A restart may be required for "
             "state tracking to work correctly.",
             new_entity_id,
+        )
+
+
+class PlantDailyLightIntegral24h(StatisticsSensor):
+    """Entity class to calculate rolling 24-hour Daily Light Integral.
+
+    Unlike PlantDailyLightIntegral which resets at midnight, this sensor
+    provides a rolling 24-hour window showing the total light accumulated
+    in the last 24 hours from any point in time.
+    """
+
+    _attr_has_entity_name = True
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_entity_registry_visible_default = False
+    _attr_device_class = ATTR_DLI
+    _attr_icon = ICON_DLI
+    _attr_suggested_display_precision = 2
+    _attr_translation_key = TRANSLATION_KEY_DLI_24H
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        config: ConfigEntry,
+        illuminance_integration_sensor: Entity,
+        plantdevice: Entity,
+    ) -> None:
+        """Initialize the sensor."""
+        self._plant = plantdevice
+        self._source_unique_id = illuminance_integration_sensor.unique_id
+
+        super().__init__(
+            hass=hass,
+            source_entity_id=illuminance_integration_sensor.entity_id,
+            name=f"{READING_DLI} 24h",
+            unique_id=f"{config.entry_id}-dli-24h",
+            state_characteristic="change",
+            samples_max_buffer_size=None,  # Unlimited, driven by max_age
+            samples_max_age=timedelta(hours=24),
+            samples_keep_last=True,
+            precision=2,
+            percentile=50,  # Not used for "change" characteristic
+        )
+        self.entity_id = async_generate_entity_id(
+            f"{DOMAIN_SENSOR}.{{}}", f"{READING_DLI}_24h", current_ids={}
+        )
+
+    @property
+    def native_unit_of_measurement(self) -> str:
+        """Return the unit of measurement.
+
+        Override to return DLI unit instead of the source sensor's unit.
+        """
+        return UNIT_DLI
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Device info for devices."""
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._plant.unique_id)},
         )
 
 

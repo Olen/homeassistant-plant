@@ -31,6 +31,9 @@
       },
       "daily_light_integral": {
         "name": "Intégrale de lumière quotidienne"
+      },
+      "dli_24h": {
+        "name": "DLI (24h glissant)"
       }
     },
     "number": {

@@ -31,6 +31,9 @@
       },
       "daily_light_integral": {
         "name": "Napi fényintegrál"
+      },
+      "dli_24h": {
+        "name": "DLI (24 órás gördülő)"
       }
     },
     "number": {
