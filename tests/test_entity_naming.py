@@ -101,12 +101,10 @@ class TestEntityNamingSinglePlant:
         number_entities = [
             e
             for e in entities
-            if e.entity_id.startswith("number.") or (
+            if e.entity_id.startswith("number.")
+            or (
                 e.entity_id.startswith("plant.")
-                and any(
-                    kw in e.entity_id
-                    for kw in ("max_", "min_", "lux_to_ppfd")
-                )
+                and any(kw in e.entity_id for kw in ("max_", "min_", "lux_to_ppfd"))
             )
         ]
         plant_slug = _slugify("Test Plant")
@@ -128,27 +126,33 @@ class TestEntityNamingMultiplePlants:
         """Test that two plants produce unique entity IDs without _2 suffixes."""
         # Set up external sensors for both plants
         hass.states.async_set(
-            "sensor.fern_temperature", "22.0",
+            "sensor.fern_temperature",
+            "22.0",
             {"unit_of_measurement": "°C", "device_class": "temperature"},
         )
         hass.states.async_set(
-            "sensor.fern_moisture", "45.0",
+            "sensor.fern_moisture",
+            "45.0",
             {"unit_of_measurement": "%", "device_class": "moisture"},
         )
         hass.states.async_set(
-            "sensor.fern_illuminance", "5000.0",
+            "sensor.fern_illuminance",
+            "5000.0",
             {"unit_of_measurement": "lx", "device_class": "illuminance"},
         )
         hass.states.async_set(
-            "sensor.cactus_temperature", "25.0",
+            "sensor.cactus_temperature",
+            "25.0",
             {"unit_of_measurement": "°C", "device_class": "temperature"},
         )
         hass.states.async_set(
-            "sensor.cactus_moisture", "20.0",
+            "sensor.cactus_moisture",
+            "20.0",
             {"unit_of_measurement": "%", "device_class": "moisture"},
         )
         hass.states.async_set(
-            "sensor.cactus_illuminance", "8000.0",
+            "sensor.cactus_illuminance",
+            "8000.0",
             {"unit_of_measurement": "lx", "device_class": "illuminance"},
         )
 
@@ -170,12 +174,8 @@ class TestEntityNamingMultiplePlants:
         )
 
         entity_registry = er.async_get(hass)
-        entities1 = er.async_entries_for_config_entry(
-            entity_registry, entry1.entry_id
-        )
-        entities2 = er.async_entries_for_config_entry(
-            entity_registry, entry2.entry_id
-        )
+        entities1 = er.async_entries_for_config_entry(entity_registry, entry1.entry_id)
+        entities2 = er.async_entries_for_config_entry(entity_registry, entry2.entry_id)
 
         all_entity_ids = [e.entity_id for e in entities1 + entities2]
 
@@ -188,9 +188,7 @@ class TestEntityNamingMultiplePlants:
         for eid in all_entity_ids:
             assert not any(
                 eid.endswith(f"_{n}") for n in range(2, 10)
-            ), (
-                f"Entity ID '{eid}' has a numeric suffix indicating a collision"
-            )
+            ), f"Entity ID '{eid}' has a numeric suffix indicating a collision"
 
     async def test_two_plants_entities_contain_respective_names(
         self,
@@ -201,31 +199,38 @@ class TestEntityNamingMultiplePlants:
 
         # Second plant uses different external sensors
         hass.states.async_set(
-            "sensor.rose_temperature", "20.0",
+            "sensor.rose_temperature",
+            "20.0",
             {"unit_of_measurement": "°C", "device_class": "temperature"},
         )
         hass.states.async_set(
-            "sensor.rose_moisture", "50.0",
+            "sensor.rose_moisture",
+            "50.0",
             {"unit_of_measurement": "%", "device_class": "moisture"},
         )
         hass.states.async_set(
-            "sensor.rose_conductivity", "600.0",
+            "sensor.rose_conductivity",
+            "600.0",
             {"unit_of_measurement": "µS/cm", "device_class": "conductivity"},
         )
         hass.states.async_set(
-            "sensor.rose_illuminance", "3000.0",
+            "sensor.rose_illuminance",
+            "3000.0",
             {"unit_of_measurement": "lx", "device_class": "illuminance"},
         )
         hass.states.async_set(
-            "sensor.rose_humidity", "60.0",
+            "sensor.rose_humidity",
+            "60.0",
             {"unit_of_measurement": "%", "device_class": "humidity"},
         )
         hass.states.async_set(
-            "sensor.rose_co2", "500.0",
+            "sensor.rose_co2",
+            "500.0",
             {"unit_of_measurement": "ppm", "device_class": "carbon_dioxide"},
         )
         hass.states.async_set(
-            "sensor.rose_soil_temperature", "19.0",
+            "sensor.rose_soil_temperature",
+            "19.0",
             {"unit_of_measurement": "°C", "device_class": "temperature"},
         )
 
@@ -267,20 +272,20 @@ class TestEntityNamingMultiplePlants:
         rose_slug = _slugify("Red Rose")
 
         for entity in fern_entities:
-            assert fern_slug in entity.entity_id, (
-                f"Fern entity '{entity.entity_id}' does not contain '{fern_slug}'"
-            )
-            assert rose_slug not in entity.entity_id, (
-                f"Fern entity '{entity.entity_id}' contains other plant name '{rose_slug}'"
-            )
+            assert (
+                fern_slug in entity.entity_id
+            ), f"Fern entity '{entity.entity_id}' does not contain '{fern_slug}'"
+            assert (
+                rose_slug not in entity.entity_id
+            ), f"Fern entity '{entity.entity_id}' contains other plant name '{rose_slug}'"
 
         for entity in rose_entities:
-            assert rose_slug in entity.entity_id, (
-                f"Rose entity '{entity.entity_id}' does not contain '{rose_slug}'"
-            )
-            assert fern_slug not in entity.entity_id, (
-                f"Rose entity '{entity.entity_id}' contains other plant name '{fern_slug}'"
-            )
+            assert (
+                rose_slug in entity.entity_id
+            ), f"Rose entity '{entity.entity_id}' does not contain '{rose_slug}'"
+            assert (
+                fern_slug not in entity.entity_id
+            ), f"Rose entity '{entity.entity_id}' contains other plant name '{fern_slug}'"
 
         # Cleanup
         for entry in (entry1, entry2):
@@ -313,9 +318,7 @@ class TestEntityNamingMultiplePlants:
         # Every entity_id must be unique
         counts = Counter(all_entity_ids)
         duplicates = {eid: c for eid, c in counts.items() if c > 1}
-        assert not duplicates, (
-            f"Duplicate entity IDs with 3 plants: {duplicates}"
-        )
+        assert not duplicates, f"Duplicate entity IDs with 3 plants: {duplicates}"
 
         # No collision suffixes
         for eid in all_entity_ids:
