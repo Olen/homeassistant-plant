@@ -9,9 +9,7 @@ Regression test for https://github.com/Olen/homeassistant-plant/issues/331
 from __future__ import annotations
 
 from collections import Counter
-from typing import Any
 
-import pytest
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
