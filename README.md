@@ -1,266 +1,318 @@
-# Alternative plants component for Home Assistant
+# 🌱 Plant Monitor for Home Assistant
 
-This integration can automatically fetch data from [OpenPlantBook](https://open.plantbook.io/docs.html) if you are a registered user. Registration is free.
+[![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
+[![GitHub Release](https://img.shields.io/github/v/release/Olen/homeassistant-plant?style=for-the-badge)](https://github.com/Olen/homeassistant-plant/releases)
 
-> **Warning**
->
-> **This integration is *not* compatible with the original built-in plant integration in Home Assistant.**
+A comprehensive plant monitoring integration for Home Assistant that treats each plant as a **device** with its own sensors, thresholds, and health tracking. Automatically fetches species data from [OpenPlantbook](https://open.plantbook.io/docs.html) to configure optimal growing conditions.
 
-Plants are set up in the UI and all configuration of your plants can be managed there or by automations and scripts.
+> [!WARNING]
+> This integration is **not** compatible with the original built-in plant integration in Home Assistant.
 
-## Plants are treated as _devices_
+---
 
-This means that the main plant entity references other entities, and they are grouped together in the GUI as a single device.
+## 📑 Table of Contents
 
-![image](https://user-images.githubusercontent.com/203184/184302443-9d9fb1f2-4b2a-48bb-a479-1cd3a6e634af.png)
+- [🌱 Plant Monitor for Home Assistant](#-plant-monitor-for-home-assistant)
+  - [🌿 Overview](#-overview)
+  - [📦 Installation](#-installation)
+  - [🔧 Setup \& Configuration](#-setup--configuration)
+  - [🌡️ Sensors \& Thresholds](#️-sensors--thresholds)
+  - [☀️ Daily Light Integral (DLI)](#️-daily-light-integral-dli)
+  - [🖼️ Plant Images](#️-plant-images)
+  - [⚠️ Problem Reports](#️-problem-reports)
+  - [🔄 Replacing Sensors](#-replacing-sensors)
+  - [🌻 OpenPlantbook Integration](#-openplantbook-integration)
+  - [🃏 Lovelace Card](#-lovelace-card)
+  - [💡 Tips & Tricks](TIPS.md)
+  - [❓ FAQ](#-faq)
+  - [☕ Support](#-support)
 
-## Highlights
+---
 
-### Use the UI to set up plant devices
-* Config Flow is used to set up the plants
+## 🌿 Overview
 
-![PlantConfigFlow](https://user-images.githubusercontent.com/203184/183286111-9b0e64ff-3972-40ad-80ea-d7a5186e933c.gif)
+Each plant is a **device** in Home Assistant, grouping all its related entities together:
 
-* This works both with and without OpenPlantbook
+![Plant device overview](https://user-images.githubusercontent.com/203184/184302443-9d9fb1f2-4b2a-48bb-a479-1cd3a6e634af.png)
 
-### Better handling of thresholds
+**Key features:**
 
-* All thresholds and plant images are fetched automatically from OpenPlantbook if available
-* All thresholds now are their own entities and their values can be changed from the UI or by scripts and automations.
-* These changes are instantly reflected in HA. No need to restart to change the thresholds.
+- 🖥️ **UI-based setup** — guided multi-step config flow with optional OpenPlantbook search
+- 📊 **Per-plant thresholds** — each threshold is its own entity, adjustable from the UI or via automations
+- 🌤️ **Daily Light Integral** — automatic DLI calculation from illuminance sensors
+- 🔄 **Live updates** — change sensors, thresholds, species, or images without restarting HA
+- 🚨 **Problem detection** — configurable per-sensor problem triggers
+- 🔌 **Auto-disable** — sensors without a source entity are automatically disabled
 
-![image](https://user-images.githubusercontent.com/203184/184302654-dd1f46ec-d645-4d95-b25d-7202faa944cc.png) ![image](https://user-images.githubusercontent.com/203184/184302847-8e593300-2c68-49f3-803c-8a3f5323f7f8.png)
+---
 
-* Max and min temperature is now dependent on the unit of measurement - currently °C and °F is supported.
-  * The values will be updated if you change your units in the Home Assistant settings
+## 📦 Installation
 
-### Easier to replace sensors
+### 1. Install OpenPlantbook *(optional but recommended)*
 
-* You can use an Action (previously "service call") to replace the different sensors used to monitor the plant
+The [OpenPlantbook integration](https://github.com/Olen/home-assistant-openplantbook) automatically fetches species data, thresholds, and images. Without it, you must set all thresholds manually.
 
-![image](https://user-images.githubusercontent.com/203184/183286188-174dc709-173f-42fb-9d66-678d0c1f62e4.png)
+- Install from HACS or manually
+- Register at [open.plantbook.io](https://open.plantbook.io/) (free)
+- Add your `client_id` and `secret` in the integration config
+- Test with the `openplantbook.search` action
 
-What I personally do, to make a clearer separation between the physical sensor and the sensor that is part of the plant, is that all my _physical_ sensors (e.g BLE-devices) have generic entity_ids like `sensor.ble_sensor_1_moisture`, `sensor.ble_sensor_1_illumination`, `sensor.ble_sensor_2_conductivity` etc.
-And all my plants sensors have entity_ids like `sensor.rose_moisture`, `sensor.chili_conductivity` etc.
+### 2. Install the Flower Card *(optional)*
 
-That way, if I need to replace a (physical) sensor for e.g. my "Rose" plant, it is very easy to grasp the concept and use
+[Lovelace Flower Card v2](https://github.com/Olen/lovelace-flower-card/) is the recommended card for displaying plant data. Install via HACS or manually.
+
+### 3. Install Plant Monitor
+
+#### Via HACS
+
+1. Add this repo as a [Custom Repository](https://hacs.xyz/docs/faq/custom_repositories/) with type **Integration**
+2. Click **Install** in the "Plant Monitor" card
+3. Restart Home Assistant
+
+#### Manual Installation
+
+1. Copy `custom_components/plant/` to your `<config>/custom_components/` directory
+2. Restart Home Assistant
+
+After restart, add plants via **Settings** → **Devices & Services** → **Add Integration** → **Plant Monitor**.
+
+---
+
+## 🔧 Setup & Configuration
+
+The config flow guides you through plant setup in four steps:
+
+### Step 1: Name & Species
+
+Enter a name for your plant. Optionally enter a species to search OpenPlantbook.
+
+- If OpenPlantbook is installed and a species is entered, the flow proceeds to species selection
+- If no species is entered (or OpenPlantbook is not installed), the flow skips to sensor selection
+
+### Step 2: Select Species *(OpenPlantbook only)*
+
+If OpenPlantbook found matches, select the correct species from a dropdown list. You can also re-search with a different term if the initial results aren't right.
+
+If the wrong species was selected, you can go back and search again.
+
+### Step 3: Select Sensors
+
+Choose which physical sensors to associate with your plant. All sensors are optional and can be added or changed later. Available sensor types:
+
+| Sensor | Device Class | Description |
+|--------|-------------|-------------|
+| 🌡️ Temperature | `temperature` | Air temperature |
+| 💧 Soil moisture | `moisture` | Soil water content |
+| ⚡ Conductivity | `conductivity` | Soil nutrient level |
+| ☀️ Illuminance | `illuminance` | Light level |
+| 💨 Air humidity | `humidity` | Air moisture |
+| 🫧 CO2 | `carbon_dioxide` | CO2 concentration |
+| 🌡️ Soil temperature | `temperature` | Soil temperature |
+
+> [!TIP]
+> Sensors without a source entity are automatically disabled. You can add or replace sensors at any time after setup.
+
+### Step 4: Set Limits
+
+Configure min/max thresholds for each sensor type. If OpenPlantbook data is available, thresholds are pre-filled automatically. Only thresholds for sensor types selected in the previous step are shown (if no sensors were selected, all thresholds are displayed).
+
+You can also set a custom image URL and display species name on this page.
+
+---
+
+## 🌡️ Sensors & Thresholds
+
+All thresholds are their own entities and can be changed from the UI or by automations and scripts. Changes take effect immediately — no restart needed.
+
+![Threshold entities](https://user-images.githubusercontent.com/203184/184302654-dd1f46ec-d645-4d95-b25d-7202faa944cc.png) ![Threshold config](https://user-images.githubusercontent.com/203184/184302847-8e593300-2c68-49f3-803c-8a3f5323f7f8.png)
+
+- 🌡️ Max/min temperature adapts to your HA unit of measurement (°C or °F)
+- Threshold values update automatically if you change your HA temperature units
+
+---
+
+## ☀️ Daily Light Integral (DLI)
+
+A **Daily Light Integral** sensor is automatically created for each plant, measuring the total photosynthetically active light received per day.
+
+![DLI sensor](https://user-images.githubusercontent.com/203184/183286314-91382bf5-7767-4f50-bf58-673c63282c1c.png)
+
+See [Wikipedia: Daily Light Integral](https://en.wikipedia.org/wiki/Daily_light_integral) for background.
+
+### Configurable Lux-to-PPFD Conversion
+
+The DLI calculation converts illuminance (lux) to PPFD. The default factor (`0.0185`) is optimized for sunlight, but different light sources need different factors. Adjust it per plant using the **Lux to PPFD factor** entity.
+
+For technical details on the DLI calculation pipeline, conversion factors, troubleshooting low readings, and the optional rolling 24-hour sensor, see **[DLI.md](DLI.md)**.
+
+---
+
+## 🖼️ Plant Images
+
+The plant image can be set in several ways:
+
+### From OpenPlantbook *(automatic)*
+
+If the species is found in OpenPlantbook, the image URL is fetched automatically. The integration validates that the URL is accessible before using it.
+
+### Custom Images
+
+You can override the image with your own. Supported formats:
+
+| Format | Example |
+|--------|---------|
+| **HTTP/HTTPS URL** | `https://example.com/my-plant.jpg` |
+| **Local `/www/` folder** | `/local/plants/my-plant.jpg` (file at `config/www/plants/my-plant.jpg`) |
+| **Media Source** | `media-source://media_source/local/plants/my-plant.jpg` |
+
+> [!NOTE]
+> - Paths are **case-sensitive** — the filename must match exactly
+> - Only `media_source/local/` is supported for media source URLs
+> - Media source URLs require a compatible Lovelace card (like the [Flower Card](https://github.com/Olen/lovelace-flower-card/))
+
+---
+
+## ⚠️ Problem Reports
+
+By default, any sensor reading outside its configured threshold triggers a **"problem"** state on the plant. You can enable or disable problem triggers per sensor type.
+
+Configure via **Settings** → **Devices & Services** → **Plant Monitor** → *Your Plant* → **Configure**.
+
+![Problem trigger options](https://user-images.githubusercontent.com/203184/184301674-0461813a-a665-4e93-b5a8-7c9575fe4782.png)
+
+---
+
+## 🔄 Replacing Sensors
+
+Use the `plant.replace_sensor` action to swap the physical sensor backing a plant measurement — no restart needed.
+
+![Replace sensor](https://user-images.githubusercontent.com/203184/183286188-174dc709-173f-42fb-9d66-678d0c1f62e4.png)
+
 ```yaml
-service: plant.replace_sensor
+action: plant.replace_sensor
 data:
   meter_entity: sensor.rose_illumination
   new_sensor: sensor.ble_sensor_12_illumination
 ```
 
-* The new sensor values are immediately picked up by the plant integration without any need to restart
+> [!TIP]
+> Use generic entity IDs for physical sensors (e.g. `sensor.ble_sensor_1_moisture`) and descriptive IDs for plant sensors (e.g. `sensor.rose_moisture`). This makes it easy to swap hardware without confusion.
 
-### Better handling of species, image and problem triggers
+To remove a sensor, call the action with an empty `new_sensor`.
 
-* If you change the species of a plant in the UI, new data are fetched from OpenPlantbook
-* You can optionally select to force a refresh of plant data from OpenPlantbook, even if you do not change the species.
-* Image can also be updated from the UI
-* You can chose to disable problem triggers on all sensors.
+### Adding a sensor to an existing plant
 
-![image](https://user-images.githubusercontent.com/203184/184301674-0461813a-a665-4e93-b5a8-7c9575fe4782.png)
+If you set up a plant without a particular sensor (e.g. you didn't have a CO2 or humidity sensor at the time), that plant sensor entity is **automatically disabled**. To add the sensor later:
 
-These updates are immediately reflected in HA without restarting anything.
+1. Go to your plant's device page
+2. Find the disabled sensor entity (e.g. "CO2") and **enable** it
+3. Use the `plant.replace_sensor` action to assign your physical sensor to it
 
-### Daily Light Integral
+> [!IMPORTANT]
+> You must enable the plant sensor entity **before** using `replace_sensor` — Home Assistant hides disabled entities from the entity picker in the UI, so you won't be able to select it as the `meter_entity` target otherwise.
 
-* A new Daily Light Integral - DLI - sensor is created for all plants.
+---
 
-![image](https://user-images.githubusercontent.com/203184/183286314-91382bf5-7767-4f50-bf58-673c63282c1c.png)
+## 🌻 OpenPlantbook Integration
 
-See https://en.wikipedia.org/wiki/Daily_light_integral for what DLI means.
+*Requires the [OpenPlantbook integration](https://github.com/Olen/home-assistant-openplantbook) to be installed.*
 
-#### Configurable Lux to PPFD Conversion
+### During Setup
 
-The DLI calculation converts illuminance (lux) to PPFD using a conversion factor. The default factor (0.0185) is optimized for sunlight, but different light sources have different conversion factors. You can now adjust this per plant using the **"Lux to PPFD factor"** configuration entity.
+When adding a new plant, the config flow searches OpenPlantbook for the species you enter. Matching species are displayed in a dropdown. The selected species' thresholds and image are pre-filled in the limits step.
 
-This is useful for:
-- Indoor plants under LED grow lights
-- Greenhouses with supplemental lighting
-- Any situation where the default sunlight factor doesn't match your light source
+> [!NOTE]
+> The OpenPlantbook API does not include your private user-defined species in search results. See "Force Refresh" below for how to fetch data for private species.
 
-For technical details on how DLI is calculated in this integration, see [DLI.md](DLI.md).
+### Changing Species / Refreshing Data
 
-### More flexible lovelace card
+Go to **Settings** → **Devices & Services** → **Plant Monitor** → *Your Plant* → **Configure**.
 
-* I have upgraded the Lovelace flower card to make use of the new integration, and made it more flexible.
+![Options flow](https://user-images.githubusercontent.com/203184/184328930-8be5fc06-1761-4067-a785-7c46c0b73162.png)
 
-![image](https://user-images.githubusercontent.com/203184/183286657-824a0e7f-a140-4d8e-8d6a-387070419dfd.png)
+- **Change species:** Enter the new species exactly as the `pid` in OpenPlantbook (including punctuation). New thresholds and image are fetched automatically.
+- **Force refresh:** Check this box to re-fetch data from OpenPlantbook without changing the species. Useful for private species not found during initial search. When checked, both the image and display species name are updated.
 
-![image](https://user-images.githubusercontent.com/203184/183286691-02294d6b-84cf-46e6-9070-845d00f24a14.png)
+> [!NOTE]
+> If the current image points to a local file or non-OpenPlantbook URL, it is **not** replaced unless "Force refresh" is checked.
 
-* The flower card also handles both °C and °F
+---
 
-![image](https://user-images.githubusercontent.com/203184/181259071-58622446-3e24-4f93-8334-293748958bd2.png)
+## 🃏 Lovelace Card
 
+The [Lovelace Flower Card](https://github.com/Olen/lovelace-flower-card/) is designed to work with this integration.
 
-## Dependencies
+![Flower card light](https://user-images.githubusercontent.com/203184/183286657-824a0e7f-a140-4d8e-8d6a-387070419dfd.png)
+![Flower card dark](https://user-images.githubusercontent.com/203184/183286691-02294d6b-84cf-46e6-9070-845d00f24a14.png)
 
-* [Updated Lovelace Flower Card](https://github.com/Olen/lovelace-flower-card/tree/new_plant)
+The card supports both °C and °F:
 
-* [OpenPlantbook integration](https://github.com/Olen/home-assistant-openplantbook)
+![Temperature units](https://user-images.githubusercontent.com/203184/181259071-58622446-3e24-4f93-8334-293748958bd2.png)
 
-OpenPlantbook is not a strict requirement, but a strong recommendation. Without the OpenPlantbook integration, you need to set and adjust all the thresholds for every plant manually.  With the OpenPlantbook integration added, all data is fetched from OpenPlanbook automatically, and it makes setting up and maintaining plants much, much easier.
+---
 
-# Installation
+## 💡 Tips & Tricks
 
-### Install and set up OpenPlantbook
+For practical tips, template examples, and workarounds — including fixing sensors with wrong `device_class`, auto-watering automations, and problem notifications — see **[TIPS.md](TIPS.md)**.
 
-_Not required, but strongly recommended_
+---
 
-* Upgrade to the latest version of the OpenPlantbook integration: https://github.com/Olen/home-assistant-openplantbook
-* Set it up, and add your client_id and secret, and test it by using e.g. the `openplantbook.search` service call to search for something.
+## ❓ FAQ
 
-### Install new flower-card for Lovelace
+<details>
+<summary><strong>I added the wrong sensors — after removing and re-adding the plant, old values still show</strong></summary>
 
-_Currently this is the only card in lovelace that support this integration.  Feel free to fork and update - or create PRs - for other lovelace cards._
+Home Assistant remembers old entity configurations. Instead of removing and re-adding a plant, use the `plant.replace_sensor` action to swap sensors. See [Replacing Sensors](#-replacing-sensors).
+</details>
 
-* Install verson 2 of the Flower Card from https://github.com/Olen/lovelace-flower-card/
+<details>
+<summary><strong>I can't select the correct sensor type (e.g. Moisture, Humidity) from the dropdown</strong></summary>
 
+The sensor dropdowns filter by `device_class`. Some integrations don't set the correct device class on their sensors.
 
-### Install this integration
-
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
-
-#### Via HACS
-* Add this repo as a ["Custom repository"](https://hacs.xyz/docs/faq/custom_repositories/) with type "Integration"
-* Click "Install" in the new "Home Assistant Plant" card in HACS.
-* Install
-* Restart Home Assistant
-
-#### Manual Installation
-* Copy the entire `custom_components/plant/` directory to your server's `<config>/custom_components` directory
-* Restart Home Assistant
-
-After Home Assistant is restarted, you can add plants under "Settings" - "Devices and Services" - "Add Integration" - "Plant Monitor".
-
-## Problem reports
-By default, all problems (e.g. every time a sensor reports a value that is above or below the threshold set in "limits"), the plant state will be set to "problem".
-
-This can be adjusted under "Settings" -> "Devices and Services" -> "Plant Monitor" -> "Your Plant Name" and "Configure".
-
-![image](https://user-images.githubusercontent.com/203184/183286212-000391c2-9c5d-4c1a-a166-a27e1bf0d3ed.png)
-
-Here you can select what kind of threshold violations should trigger a "problem" state of the plant entity.
-
-
-## Fetching data from OpenPlantbook
-
-_This requires the [OpenPlantbook integration](https://github.com/Olen/home-assistant-openplantbook) to be installed._
-
-When you set up a new plant, the configuration flow will search OpenPlantbook for the species you enter.  If any matches are found, you are presented with a list of exact species to choose from.  Be aware that the OpenPlantbook API does currently not include any of your private user defined species, so you will not find them in the list.  See below for how to refresh data from OpenPlantbook.
-If no matches are found, the configuration flow will continue directly to the next step.
-
-In the following step, the threshold values from OpenPlantbook for the chosen species is pre filled and the image from OpenPlantbook is also displayed.  If you chose the incorrect species, you can uncheck the _"This is the plant I was looking for"_ checkbox, and you will be directed back to the dropdown of species to select another one.
-If no match is found in OpenPlantbook, the thresholds are pre filled with some default values that you probably want to adjust.
-
-### Changing the species / refreshing data
-
-If you later want to change the species of a plant, you do that under "Configuration" of the selected device.
-
-"Settings" -> "Devices and Services" -> "Plant Monitor" -> "Your Plant Name" and "Configure".
-
-![image](https://user-images.githubusercontent.com/203184/184328930-8be5fc06-1761-4067-a785-7c46c0b73162.png)
-
-From there, you have the option to set a new species. If you change the species, data for the new species will be automatically fetched from OpenPlantbook.  The species will have to be entered **exactly** as the "pid" in OpenPlantbook (including any punctations etc.).  If the species is found in OpenPlantbook, the thresholds are updated to the new values.  Also, if the current image links to OpenPlantbook or the image link is empty, the URL to the image in OpenPlanbook is added.  If the current image points to a local file, or a different URL, the image is **not** replaced unless "Force refresh" is checked.  The "Species to display" is not changed if you change the species unless "Force refresh" is checked.
-If no species are found in OpenPlantbook, the thresholds and image will be retained with their current values.
-
-If you just want to refresh the data from OpenPlantbook, without changing the species - for instance if you have private species defined in OpenPlantbook that are not found during setup, you check the "Force refresh" checkbox, and data will be fetched from OpenPlantbook without needing to change the species.  If this checkbox is checked, both the image and the "Species to display" is updated if the species is found in OpenPlantbook.
-If no species is found in OpenPlantbook, nothing is changed.
-
-## Plant Images
-
-The plant image can be set in two ways:
-
-### 1. From OpenPlantbook (automatic)
-If the species is found in OpenPlantbook, the image URL is automatically fetched. The integration validates that the image URL is accessible before using it.
-
-### 2. Custom images
-
-You can override the image with your own. The following formats are supported:
-
-**HTTP/HTTPS URLs:**
-```
-https://example.com/my-plant.jpg
-```
-
-**Local images in the `www` folder:**
-
-Place your image in your Home Assistant `config/www/` folder (create it if it doesn't exist), then reference it using the `/local/` path:
-```
-/local/plants/my-plant.jpg
-```
-This corresponds to the file at `config/www/plants/my-plant.jpg`.
-
-> **Note:** The path is case-sensitive. The filename in the `/local/` path must match the file on disk exactly, including capitalization.
-
-**Media Source URLs:**
-
-You can use images from Home Assistant's local Media folder using `media-source://` URLs. The format is:
-```
-media-source://media_source/local/<path>
-```
-
-For example, if you have an image at `/media/plants/my-plant.jpg`:
-```
-media-source://media_source/local/plants/my-plant.jpg
-```
-
-> **Important:** Only the local media source (`media_source/local/`) is supported. Images from other media sources (like `image_upload` or network media) will not work.
-
-> **Note:** Media source URLs require a compatible Lovelace card (like the [Flower Card](https://github.com/Olen/lovelace-flower-card/)) that can resolve these URLs. The Device page in Home Assistant will not display media-source images.
-
-## FAQ
-
-### I added the wrong sensors, and after removing and adding the plant again with the correct sensor, I can still see the wrong values from the old sensor.
-
-Home Assistant is _very_ good at remembering old configuration of entities if new entities with the same name as the old ones are added again.  This means that if you first create e.g. a moisture-sensor for your plant that reads the data from `sensor.bluetooth_temperature_xxxx`, and the remove the plant and add it back again with the same name, but with moisture-sensor set to `sensor.xiaomi_moisture_yyyy` you might experience that the plant will still show data from the old sensor.  Instead of removing and re-adding a plant, you should just use the `replace_sensor` service call to add the new sensor.
-
-### I can add new plants, but the I can't select the correct sensor (typically "Moisture" or "Humidity") from the list of physical sensors
-
-The dropdowns of available sensors are based on the `Device Class` of the originating (physical) sensor.  Quite some integrations in Home Assistant do NOT report the correct `Device Class` for their sensors.
-
-E.g. A humidity sensor should have Device Class `SensorDeviceClass.HUMIDITY` and a moisture sensor should use the device class `SensorDeviceClass.MOISTURE`
-A list of the supported Device Classes is available [here](https://developers.home-assistant.io/docs/core/entity/sensor/#available-device-classes)
-
-If the wrong device class is used for a sensor, it will not show up in the list of available sensors.
-
-So what you need to do is:
-1) Report the issue to the owner of the integration your phsyical sensor belongs to. They are the only ones who can fix this permanently.
-2) You can create the plant without the sensor in question, and then use the Action (Service Call) ["Replace Sensor"](https://github.com/Olen/homeassistant-plant/?tab=readme-ov-file#easier-to-replace-sensors) to add the physical sensor after the plant is set up.  The checks for replacing a sensor are slightly more relaxed than the initial setup.
-3) Another option is to create template-sensors that incorporate the correct Device Class.  Add something like this to your `configuration.yaml`:
+**Solutions:**
+1. Report the issue to the physical sensor's integration maintainer
+2. Add the plant without that sensor, then use the `plant.replace_sensor` action (its checks are more relaxed)
+3. Create a template sensor with the correct device class:
 
 ```yaml
 template:
   - sensor:
-      - name: "Soil Moisture"                                       # Choose your desired friendly name
-        unique_id: "soil_sensor_moisture"                           # Make this unique
-        state: "{{ states('sensor.soil_sensor_soil_moisture') }}"   # Get the state from your zigbee sensor
-        unit_of_measurement: "%"                                    # Or your desired unit
-        device_class: "moisture"                                    # This will give it the appropriate icon and state representation
+      - name: "Soil Moisture"
+        unique_id: "soil_sensor_moisture"
+        state: "{{ states('sensor.soil_sensor_soil_moisture') }}"
+        unit_of_measurement: "%"
+        device_class: "moisture"
 ```
+</details>
 
-### My local image path doesn't work
+<details>
+<summary><strong>My local image path doesn't work</strong></summary>
 
-Local images must be placed in your Home Assistant `www` folder and referenced using the `/local/` prefix. The path is case-sensitive — the filename must match exactly.
+Local images must be in your HA `www` folder, referenced with the `/local/` prefix. The path is **case-sensitive**.
 
-**Correct:** `/local/plants/my-plant.jpg` (file at `config/www/plants/my-plant.jpg`)
+| Path | Works? |
+|------|--------|
+| `/local/plants/my-plant.jpg` | ✅ (file at `config/www/plants/my-plant.jpg`) |
+| `/local/plants/My-Plant.jpg` (wrong case) | ❌ |
+| `/mnt/nas/photos/plant.jpg` (filesystem path) | ❌ |
+| `file:///config/www/plants/my-plant.jpg` (file URI) | ❌ |
 
-**Incorrect:**
-- `/local/plants/My-Plant.jpg` when the file is named `my-plant.jpg` — capitalization must match
-- `/mnt/nas/photos/plant.jpg` — arbitrary filesystem paths are not supported
-- `file:///config/www/plants/my-plant.jpg` — file URIs are not supported
+You can also use `media-source://` URLs. See [Plant Images](#️-plant-images).
+</details>
 
-You can also use `media-source://` URLs for images from the Media Browser. See the [Plant Images](#plant-images) section for details.
+<details>
+<summary><strong>I removed a sensor but it comes back after restart</strong></summary>
 
-### I removed a sensor but it comes back after restart
+When you remove a sensor using `plant.replace_sensor` (with an empty `new_sensor`), the change is persisted to the configuration. If sensors reappear, update to the latest release.
+</details>
 
-When you remove a sensor using the `plant.replace_sensor` service (by passing an empty `new_sensor`), the change is now persisted to the configuration. If you're running an older version, update to the latest release.
+---
 
+## ☕ Support
+
+If you find this integration useful, consider buying me a coffee:
 
 <a href="https://www.buymeacoffee.com/olatho" target="_blank">
 <img src="https://user-images.githubusercontent.com/203184/184674974-db7b9e53-8c5a-40a0-bf71-c01311b36b0a.png" style="height: 50px !important;">
 </a>
-
