@@ -1,17 +1,19 @@
-# This file is just some notes I want to share whle developing
+# 🧪 Developer Notes & Experiments
 
-## Templates
+> [!NOTE]
+> This file contains developer notes and useful template examples. It is not end-user documentation.
 
+---
 
-### Generate yaml-config
-This template will create yaml-config from your current plants, ignoring any thresholds.
-It allows you to quickly remove all your plants from the UI, and have them added back using the migration tool.  this might be needed to pick up all changes to the device types and other settings that HA will restore after restart.
+## 📝 Useful Templates
 
-I just pick all the devices from certain areas, and loop through them to find all the plants.
+### Generate YAML Config from Existing Plants
 
-Please modify it to suit your needs.
+This template generates YAML config from your current UI-configured plants. Useful for migration testing — remove plants from the UI, then re-add them via the migration tool to pick up all device type changes.
 
-```
+Modify the area names to match your setup:
+
+```jinja2
 {% set device_ids = area_devices("are51") + area_devices("livingroom") + area_devices("outside") %}
 {% set ns = namespace(is_plant=False) %}
 {%- for device_id in device_ids %}
@@ -45,31 +47,29 @@ Please modify it to suit your needs.
     {%- endfor %}
   {%- endif %}
 {%- endfor %}
-``` 
+```
 
-### Average moisture for multiple plants
+### Average Moisture for Multiple Plants
 
-I have an auto-watering setup, that will water multiple plants, and I don't want it to run just because one single plant might be slightly low on soil moisture.
-So I have this template sensor that averages out all the "moisture" sensors, and trigger the watering automation based on that instead.
+Template sensor that averages moisture across all plants in an area. Useful for auto-watering setups where you don't want to trigger based on a single plant being slightly low.
 
-This is just an example, and this sensor can of course be replaced by a min/max-helper, but this one will be updated automatically as soon as a plant is added to the area, which can be useful.
+Updates automatically when plants are added to the area.
 
-``` 
-        {%- set ns = namespace(m=0, c=0) -%}
-        {%- for device_id in area_devices("outside") -%}
-          {%- for entity_id in device_entities(device_id) -%}
-            {%- if entity_id.startswith("sensor.") %}
-              {%- if "moisture" in entity_id %}
-                {%- set ns.m = ns.m + states(entity_id) | float(default=0) %}
-                {%- set ns.c = ns.c + 1 %}
-              {%- endif %}
-            {%- endif %}
-          {%- endfor %}
-        {%- endfor %}
-        {%- if ns.c > 0 and ns.m > 0 %}
-          {{ (ns.m / ns.c) | round(1) }}
-        {%- else %}
-          0
-        {% endif %}
-
-``` 
+```jinja2
+{%- set ns = namespace(m=0, c=0) -%}
+{%- for device_id in area_devices("outside") -%}
+  {%- for entity_id in device_entities(device_id) -%}
+    {%- if entity_id.startswith("sensor.") %}
+      {%- if "moisture" in entity_id %}
+        {%- set ns.m = ns.m + states(entity_id) | float(default=0) %}
+        {%- set ns.c = ns.c + 1 %}
+      {%- endif %}
+    {%- endif %}
+  {%- endfor %}
+{%- endfor %}
+{%- if ns.c > 0 and ns.m > 0 %}
+  {{ (ns.m / ns.c) | round(1) }}
+{%- else %}
+  0
+{% endif %}
+```

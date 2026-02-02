@@ -1,38 +1,25 @@
-# Alternative plants component for Home Assistant
+# 🌱 Plant Monitor for Home Assistant
 
-This integration can automatically fetch data from [OpenPlantBook](https://open.plantbook.io/docs.html) if you are a registered user. Registration is free.
+A comprehensive plant monitoring integration that treats each plant as a **device** with its own sensors, thresholds, and health tracking. Automatically fetches species data from [OpenPlantbook](https://open.plantbook.io/docs.html).
 
-# BREAKING CHANGES
+> [!WARNING]
+> This integration is **not** compatible with the original built-in plant integration in Home Assistant.
 
->**Warning**
->
-> **This integration is about to be completely rewritten.  Versions > 2.0.0 will *not* be compatible with the original plant integration in HA or with earlier releases of this integration.**
+## ✨ Features
 
-> **Note** 
->
-> Version 2 of this integration will try to convert all `plant:` entries from `configuration.yaml` to the new format.  After migration, you can (and should) remove your `plant:` entries from your YAML-configuration.   
+- 🖥️ **UI-based setup** — guided multi-step config flow with optional OpenPlantbook species search
+- 📊 **Per-plant thresholds** — each threshold is its own entity, adjustable from the UI or via automations
+- 🌤️ **Daily Light Integral** — automatic DLI calculation from illuminance sensors
+- 🔄 **Live updates** — change sensors, thresholds, species, or images without restarting HA
+- 🚨 **Configurable problem triggers** — enable/disable per sensor type
+- 🔌 **Auto-disable** — sensors without a source entity are automatically disabled
+- 🖼️ **Flexible images** — HTTP URLs, local `/www/` files, or media source URLs
 
-> **Warning**
-> Please notice that the `entity_id` of the plants will **NOT** be preserved during auto-migration.  Also, since the "layout" of the new integration is completely different from the old one, you probably have to update and modify any automations, scripts, blueprints etc. you have made based on the old version.
->
-> Make sure you check you plant settings after the first restart. You can find the configuration options in the Integrations page under Settings in Home Assistant.
+## 📦 Dependencies
 
+- **[OpenPlantbook integration](https://github.com/Olen/home-assistant-openplantbook)** *(optional but recommended)* — automatically fetches thresholds and images for your plant species
+- **[Lovelace Flower Card](https://github.com/Olen/lovelace-flower-card/)** *(optional)* — the recommended card for displaying plant data
 
-# Version 1
+## 📖 Documentation
 
-This is the "old" version.  Requiring `plant`-entries in `configuration.yaml` and manual setup.
-
-This version will no longer be maintained, and I strongly urge everyone to test out the new version and report any issues.
-
-[Read more and see installation instructions](https://github.com/Olen/homeassistant-plant/blob/master/Version%201.md)
-
-The rest of this file will describe the upcoming version - 2.0.0.
-
-# Version 2
-
-This is the new and upcoming version.  It is set up in the UI and all configuration of your plants can be managed there or by automations and scripts.
-
-All existing entries in `configuration.yaml` from version 1 will be migrated to the new format automatically.  Notice that some options (like `warn_low_brightness`) will not be migrated over, but can be easily changed in the UI configuration after migration. 
-
-Version 2 is available as a beta release in HACS. 
-
+See the [README](https://github.com/Olen/homeassistant-plant/) for full installation instructions, configuration details, and FAQ.
