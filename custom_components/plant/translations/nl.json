@@ -94,17 +94,10 @@
     "step": {
       "user": {
         "title": "Stel een plant in",
-        "description": "Als je de juiste sensoren niet kunt vinden in de dropdown menu's, dan kunnen de sensoren toegevoegd worden nadat de installatie voltooid is",
+        "description": "Voer een naam in voor uw plant. Voer optioneel een soort in om te zoeken in OpenPlantbook.",
         "data": {
           "name": "Plantnaam",
-          "species": "Soort",
-          "temperature_sensor": "Temperatuursensor",
-          "moisture_sensor": "Bodemvochtsensor",
-          "conductivity_sensor": "Geleidbaarheidssensor",
-          "illuminance_sensor": "Lichtsensor",
-          "humidity_sensor": "Luchtvochtigheidssensor",
-          "co2_sensor": "CO2-sensor",
-          "soil_temperature_sensor": "Bodemtemperatuursensor"
+          "species": "Soort"
         },
         "data_description": {
           "species": "Wordt gebruikt voor het zoeken in OpenPlantbook"
@@ -114,10 +107,24 @@
         "title": "Selecteer soort uit OpenPlantbook",
         "description": "{desc}",
         "data": {
+          "search_for": "Zoek naar een andere soort",
           "species": "Soort"
         },
         "menu_options": {
           "user": "Terug"
+        }
+      },
+      "sensors": {
+        "title": "Selecteer sensoren",
+        "description": "Alle sensoren zijn optioneel. Sensoren kunnen ook later worden toegevoegd of gewijzigd.",
+        "data": {
+          "temperature_sensor": "Temperatuursensor",
+          "moisture_sensor": "Bodemvochtsensor",
+          "conductivity_sensor": "Geleidbaarheidssensor",
+          "illuminance_sensor": "Lichtsensor",
+          "humidity_sensor": "Luchtvochtigheidssensor",
+          "co2_sensor": "CO2-sensor",
+          "soil_temperature_sensor": "Bodemtemperatuursensor"
         }
       },
       "limits": {

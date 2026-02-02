@@ -572,16 +572,10 @@ class TestSensorEntityIdRename:
         # Verify the integral sensor is tracking the PPFD sensor
         assert integral_sensor._source_entity == old_entity_id
 
-        # Fire entity registry update event (simulating a rename)
-        hass.bus.async_fire(
-            EVENT_ENTITY_REGISTRY_UPDATED,
-            {
-                "action": "update",
-                "entity_id": new_entity_id,
-                "old_entity_id": old_entity_id,
-                "changes": {"entity_id": new_entity_id},
-            },
-        )
+        # Rename the entity via the entity registry so HA's internal handlers
+        # can find the registry entry (avoids AssertionError in teardown)
+        ent_reg = er.async_get(hass)
+        ent_reg.async_update_entity(old_entity_id, new_entity_id=new_entity_id)
         await hass.async_block_till_done()
 
         # Verify the integral sensor updated its source reference
@@ -604,16 +598,10 @@ class TestSensorEntityIdRename:
         # Verify the DLI sensor is tracking the integral sensor
         assert dli_sensor._sensor_source_id == old_entity_id
 
-        # Fire entity registry update event (simulating a rename)
-        hass.bus.async_fire(
-            EVENT_ENTITY_REGISTRY_UPDATED,
-            {
-                "action": "update",
-                "entity_id": new_entity_id,
-                "old_entity_id": old_entity_id,
-                "changes": {"entity_id": new_entity_id},
-            },
-        )
+        # Rename the entity via the entity registry so HA's internal handlers
+        # can find the registry entry (avoids AssertionError in teardown)
+        ent_reg = er.async_get(hass)
+        ent_reg.async_update_entity(old_entity_id, new_entity_id=new_entity_id)
         await hass.async_block_till_done()
 
         # Verify the DLI sensor updated its source reference

@@ -9,6 +9,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.plant.const import (
+    ATTR_SEARCH_FOR,
     ATTR_SPECIES,
     CONF_MAX_CONDUCTIVITY,
     CONF_MAX_DLI,
@@ -24,7 +25,9 @@ from custom_components.plant.const import (
     CONF_MIN_TEMPERATURE,
     DOMAIN,
     FLOW_PLANT_INFO,
+    FLOW_PLANT_LIMITS,
     FLOW_RIGHT_PLANT,
+    FLOW_SENSOR_ILLUMINANCE,
     FLOW_SENSOR_MOISTURE,
     FLOW_SENSOR_TEMPERATURE,
     OPB_DISPLAY_PID,
@@ -73,12 +76,12 @@ class TestConfigFlowUserStep:
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "select_species"
 
-    async def test_user_step_without_opb_skips_to_limits(
+    async def test_user_step_without_opb_skips_to_sensors(
         self,
         hass: HomeAssistant,
         mock_no_openplantbook,
     ) -> None:
-        """Test user step without OpenPlantbook skips to limits."""
+        """Test user step without OpenPlantbook skips to sensors."""
         result = await hass.config_entries.flow.async_init(
             DOMAIN, context={"source": config_entries.SOURCE_USER}
         )
@@ -91,20 +94,16 @@ class TestConfigFlowUserStep:
             },
         )
 
-        # Should skip to limits step when OPB is not available
+        # Should skip to sensors step when OPB is not available
         assert result["type"] == FlowResultType.FORM
-        assert result["step_id"] == "limits"
+        assert result["step_id"] == "sensors"
 
-    async def test_user_step_with_sensors(
+    async def test_user_step_empty_species_skips_to_sensors(
         self,
         hass: HomeAssistant,
-        mock_no_openplantbook,
+        mock_openplantbook_services,
     ) -> None:
-        """Test user step with sensor selections."""
-        # Set up mock sensors
-        hass.states.async_set("sensor.temp", "22", {"device_class": "temperature"})
-        hass.states.async_set("sensor.moisture", "45", {"device_class": "moisture"})
-
+        """Test user step with empty species skips OPB and goes to sensors."""
         result = await hass.config_entries.flow.async_init(
             DOMAIN, context={"source": config_entries.SOURCE_USER}
         )
@@ -113,14 +112,13 @@ class TestConfigFlowUserStep:
             result["flow_id"],
             {
                 ATTR_NAME: "My Plant",
-                ATTR_SPECIES: "ficus",
-                FLOW_SENSOR_TEMPERATURE: "sensor.temp",
-                FLOW_SENSOR_MOISTURE: "sensor.moisture",
+                ATTR_SPECIES: "",
             },
         )
 
+        # Empty species means OPB search returns None, skip to sensors
         assert result["type"] == FlowResultType.FORM
-        assert result["step_id"] == "limits"
+        assert result["step_id"] == "sensors"
 
 
 class TestConfigFlowSelectSpeciesStep:
@@ -147,12 +145,12 @@ class TestConfigFlowSelectSpeciesStep:
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "select_species"
 
-    async def test_select_species_proceeds_to_limits(
+    async def test_select_species_proceeds_to_sensors(
         self,
         hass: HomeAssistant,
         mock_openplantbook_services,
     ) -> None:
-        """Test selecting a species proceeds to limits step."""
+        """Test selecting a species proceeds to sensors step."""
         result = await hass.config_entries.flow.async_init(
             DOMAIN, context={"source": config_entries.SOURCE_USER}
         )
@@ -168,8 +166,135 @@ class TestConfigFlowSelectSpeciesStep:
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
             {
+                ATTR_SEARCH_FOR: "monstera",
                 ATTR_SPECIES: "monstera deliciosa",
             },
+        )
+
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "sensors"
+
+    async def test_select_species_re_search(
+        self,
+        hass: HomeAssistant,
+        mock_openplantbook_services,
+    ) -> None:
+        """Test re-searching with a different species term.
+
+        The mock OPB search only returns results for queries containing
+        'monstera', so we re-search with 'monstera adansonii' which is
+        different from the original 'monstera' and still returns results.
+        """
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_USER}
+        )
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                ATTR_NAME: "My Monstera",
+                ATTR_SPECIES: "monstera",
+            },
+        )
+
+        assert result["step_id"] == "select_species"
+
+        # Submit with a different search term to trigger re-search
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                ATTR_SEARCH_FOR: "monstera adansonii",
+                ATTR_SPECIES: "monstera deliciosa",
+            },
+        )
+
+        # Should re-show select_species with new results
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "select_species"
+
+
+class TestConfigFlowSensorsStep:
+    """Tests for the sensors step of config flow."""
+
+    async def test_sensors_step_shows_form(
+        self,
+        hass: HomeAssistant,
+        mock_no_openplantbook,
+    ) -> None:
+        """Test that sensors step shows the form."""
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_USER}
+        )
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                ATTR_NAME: "My Plant",
+                ATTR_SPECIES: "some plant",
+            },
+        )
+
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "sensors"
+
+    async def test_sensors_step_with_selections_proceeds_to_limits(
+        self,
+        hass: HomeAssistant,
+        mock_no_openplantbook,
+    ) -> None:
+        """Test sensor step with selections proceeds to limits."""
+        hass.states.async_set("sensor.temp", "22", {"device_class": "temperature"})
+        hass.states.async_set("sensor.moisture", "45", {"device_class": "moisture"})
+
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_USER}
+        )
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                ATTR_NAME: "My Plant",
+                ATTR_SPECIES: "ficus",
+            },
+        )
+
+        assert result["step_id"] == "sensors"
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                FLOW_SENSOR_TEMPERATURE: "sensor.temp",
+                FLOW_SENSOR_MOISTURE: "sensor.moisture",
+            },
+        )
+
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "limits"
+
+    async def test_sensors_step_empty_proceeds_to_limits(
+        self,
+        hass: HomeAssistant,
+        mock_no_openplantbook,
+    ) -> None:
+        """Test sensor step with no selections proceeds to limits."""
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_USER}
+        )
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                ATTR_NAME: "My Plant",
+                ATTR_SPECIES: "ficus",
+            },
+        )
+
+        assert result["step_id"] == "sensors"
+
+        # Submit with no sensors selected
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {},
         )
 
         assert result["type"] == FlowResultType.FORM
@@ -197,6 +322,12 @@ class TestConfigFlowLimitsStep:
             },
         )
 
+        # Sensors step
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {},
+        )
+
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "limits"
 
@@ -216,6 +347,12 @@ class TestConfigFlowLimitsStep:
                 ATTR_NAME: "My Plant",
                 ATTR_SPECIES: "some plant",
             },
+        )
+
+        # Sensors step - no sensors
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {},
         )
 
         result = await hass.config_entries.flow.async_configure(
@@ -263,8 +400,15 @@ class TestConfigFlowLimitsStep:
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
             {
+                ATTR_SEARCH_FOR: "monstera",
                 ATTR_SPECIES: "monstera deliciosa",
             },
+        )
+
+        # Sensors step
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {},
         )
 
         # The limits form should show OPB data
@@ -292,8 +436,15 @@ class TestConfigFlowLimitsStep:
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
             {
+                ATTR_SEARCH_FOR: "monstera",
                 ATTR_SPECIES: "monstera deliciosa",
             },
+        )
+
+        # Sensors step
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {},
         )
 
         # Submit with FLOW_RIGHT_PLANT = False
@@ -321,6 +472,290 @@ class TestConfigFlowLimitsStep:
         # Should go back to select_species
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "select_species"
+
+    async def test_conditional_limits_only_selected_sensors(
+        self,
+        hass: HomeAssistant,
+        mock_no_openplantbook,
+    ) -> None:
+        """Test that only thresholds for selected sensors are shown."""
+        hass.states.async_set("sensor.moisture", "45", {"device_class": "moisture"})
+
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_USER}
+        )
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                ATTR_NAME: "My Plant",
+                ATTR_SPECIES: "ficus",
+            },
+        )
+
+        # Select only moisture sensor
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                FLOW_SENSOR_MOISTURE: "sensor.moisture",
+            },
+        )
+
+        assert result["step_id"] == "limits"
+
+        # Check that the schema only contains moisture thresholds (not temperature, etc.)
+        schema_keys = [str(k) for k in result["data_schema"].schema.keys()]
+        assert CONF_MAX_MOISTURE in schema_keys
+        assert CONF_MIN_MOISTURE in schema_keys
+        # Temperature thresholds should NOT be present
+        assert CONF_MAX_TEMPERATURE not in schema_keys
+        assert CONF_MIN_TEMPERATURE not in schema_keys
+        # Conductivity thresholds should NOT be present
+        assert CONF_MAX_CONDUCTIVITY not in schema_keys
+
+    async def test_conditional_limits_illuminance_includes_dli(
+        self,
+        hass: HomeAssistant,
+        mock_no_openplantbook,
+    ) -> None:
+        """Test that selecting illuminance also shows DLI thresholds."""
+        hass.states.async_set("sensor.lux", "5000", {"device_class": "illuminance"})
+
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_USER}
+        )
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                ATTR_NAME: "My Plant",
+                ATTR_SPECIES: "ficus",
+            },
+        )
+
+        # Select only illuminance sensor
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                FLOW_SENSOR_ILLUMINANCE: "sensor.lux",
+            },
+        )
+
+        assert result["step_id"] == "limits"
+
+        schema_keys = [str(k) for k in result["data_schema"].schema.keys()]
+        assert CONF_MAX_ILLUMINANCE in schema_keys
+        assert CONF_MIN_ILLUMINANCE in schema_keys
+        assert CONF_MAX_DLI in schema_keys
+        assert CONF_MIN_DLI in schema_keys
+        # Non-selected sensor thresholds should NOT be present
+        assert CONF_MAX_MOISTURE not in schema_keys
+
+    async def test_conditional_limits_no_sensors_shows_all(
+        self,
+        hass: HomeAssistant,
+        mock_no_openplantbook,
+    ) -> None:
+        """Test that no sensors selected shows all thresholds."""
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_USER}
+        )
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                ATTR_NAME: "My Plant",
+                ATTR_SPECIES: "ficus",
+            },
+        )
+
+        # No sensors selected
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {},
+        )
+
+        assert result["step_id"] == "limits"
+
+        schema_keys = [str(k) for k in result["data_schema"].schema.keys()]
+        # All thresholds should be present
+        assert CONF_MAX_MOISTURE in schema_keys
+        assert CONF_MAX_TEMPERATURE in schema_keys
+        assert CONF_MAX_CONDUCTIVITY in schema_keys
+        assert CONF_MAX_ILLUMINANCE in schema_keys
+        assert CONF_MAX_DLI in schema_keys
+        assert CONF_MAX_HUMIDITY in schema_keys
+
+    async def test_hidden_thresholds_get_defaults_in_entry(
+        self,
+        hass: HomeAssistant,
+        mock_no_openplantbook,
+    ) -> None:
+        """Test that hidden thresholds get default values in the config entry."""
+        hass.states.async_set("sensor.moisture", "45", {"device_class": "moisture"})
+
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_USER}
+        )
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                ATTR_NAME: "My Plant",
+                ATTR_SPECIES: "ficus",
+            },
+        )
+
+        # Select only moisture sensor
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                FLOW_SENSOR_MOISTURE: "sensor.moisture",
+            },
+        )
+
+        # Submit limits with only moisture thresholds visible
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                OPB_DISPLAY_PID: "Ficus",
+                CONF_MAX_MOISTURE: 60,
+                CONF_MIN_MOISTURE: 20,
+                ATTR_ENTITY_PICTURE: "",
+            },
+        )
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        plant_info = result["data"][FLOW_PLANT_INFO]
+        limits = plant_info[FLOW_PLANT_LIMITS]
+
+        # Moisture thresholds should be from user input
+        assert limits[CONF_MAX_MOISTURE] == 60
+        assert limits[CONF_MIN_MOISTURE] == 20
+
+        # Hidden thresholds should have default values
+        assert CONF_MAX_TEMPERATURE in limits
+        assert CONF_MIN_TEMPERATURE in limits
+        assert CONF_MAX_CONDUCTIVITY in limits
+        assert CONF_MIN_CONDUCTIVITY in limits
+        assert CONF_MAX_ILLUMINANCE in limits
+        assert CONF_MIN_ILLUMINANCE in limits
+        assert CONF_MAX_DLI in limits
+        assert CONF_MIN_DLI in limits
+        assert CONF_MAX_HUMIDITY in limits
+        assert CONF_MIN_HUMIDITY in limits
+
+
+class TestConfigFlowFullFlow:
+    """Tests for complete flow paths."""
+
+    async def test_full_flow_without_opb(
+        self,
+        hass: HomeAssistant,
+        mock_no_openplantbook,
+    ) -> None:
+        """Test complete flow: name → sensors → limits → done (no OPB)."""
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_USER}
+        )
+        assert result["step_id"] == "user"
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                ATTR_NAME: "My Fern",
+                ATTR_SPECIES: "nephrolepis",
+            },
+        )
+        assert result["step_id"] == "sensors"
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {},
+        )
+        assert result["step_id"] == "limits"
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                OPB_DISPLAY_PID: "Nephrolepis",
+                CONF_MAX_MOISTURE: 60,
+                CONF_MIN_MOISTURE: 20,
+                CONF_MAX_TEMPERATURE: 40,
+                CONF_MIN_TEMPERATURE: 10,
+                CONF_MAX_CONDUCTIVITY: 3000,
+                CONF_MIN_CONDUCTIVITY: 500,
+                CONF_MAX_ILLUMINANCE: 100000,
+                CONF_MIN_ILLUMINANCE: 0,
+                CONF_MAX_HUMIDITY: 60,
+                CONF_MIN_HUMIDITY: 20,
+                CONF_MAX_DLI: 30,
+                CONF_MIN_DLI: 2,
+                ATTR_ENTITY_PICTURE: "",
+            },
+        )
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert result["title"] == "My Fern"
+
+    async def test_full_flow_with_opb(
+        self,
+        hass: HomeAssistant,
+        mock_openplantbook_services,
+    ) -> None:
+        """Test complete flow: name+species → select_species → sensors → limits → done."""
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_USER}
+        )
+        assert result["step_id"] == "user"
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                ATTR_NAME: "My Monstera",
+                ATTR_SPECIES: "monstera",
+            },
+        )
+        assert result["step_id"] == "select_species"
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                ATTR_SEARCH_FOR: "monstera",
+                ATTR_SPECIES: "monstera deliciosa",
+            },
+        )
+        assert result["step_id"] == "sensors"
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {},
+        )
+        assert result["step_id"] == "limits"
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                FLOW_RIGHT_PLANT: True,
+                OPB_DISPLAY_PID: "Monstera deliciosa",
+                CONF_MAX_MOISTURE: 60,
+                CONF_MIN_MOISTURE: 20,
+                CONF_MAX_TEMPERATURE: 30,
+                CONF_MIN_TEMPERATURE: 15,
+                CONF_MAX_CONDUCTIVITY: 2000,
+                CONF_MIN_CONDUCTIVITY: 350,
+                CONF_MAX_ILLUMINANCE: 35000,
+                CONF_MIN_ILLUMINANCE: 1500,
+                CONF_MAX_HUMIDITY: 80,
+                CONF_MIN_HUMIDITY: 50,
+                CONF_MAX_DLI: 22,
+                CONF_MIN_DLI: 5,
+                ATTR_ENTITY_PICTURE: GET_RESULT_MONSTERA_DELICIOSA["image_url"],
+            },
+        )
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert result["title"] == "My Monstera"
 
 
 class TestConfigFlowImport:

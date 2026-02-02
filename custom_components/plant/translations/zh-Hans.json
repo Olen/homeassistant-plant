@@ -94,17 +94,10 @@
     "step": {
       "user": {
         "title": "配置植物",
-        "description": "如果在下拉菜单中找不到正确的传感器，可以在植物设置完成后添加传感器",
+        "description": "输入植物名称。可选择输入种类以在OpenPlantbook中搜索。",
         "data": {
           "name": "植物名称",
-          "species": "植物种类",
-          "temperature_sensor": "温度传感器",
-          "moisture_sensor": "土壤湿度传感器",
-          "conductivity_sensor": "电导率传感器",
-          "illuminance_sensor": "光照传感器",
-          "humidity_sensor": "空气湿度传感器",
-          "co2_sensor": "二氧化碳传感器",
-          "soil_temperature_sensor": "土壤温度传感器"
+          "species": "植物种类"
         },
         "data_description": {
           "species": "将用于在OpenPlantbook中搜索"
@@ -114,10 +107,24 @@
         "title": "从OpenPlantbook选择种类",
         "description": "{desc}",
         "data": {
+          "search_for": "搜索其他种类",
           "species": "植物种类"
         },
         "menu_options": {
           "user": "返回"
+        }
+      },
+      "sensors": {
+        "title": "选择传感器",
+        "description": "所有传感器都是可选的。传感器也可以在之后添加或更改。",
+        "data": {
+          "temperature_sensor": "温度传感器",
+          "moisture_sensor": "土壤湿度传感器",
+          "conductivity_sensor": "电导率传感器",
+          "illuminance_sensor": "光照传感器",
+          "humidity_sensor": "空气湿度传感器",
+          "co2_sensor": "二氧化碳传感器",
+          "soil_temperature_sensor": "土壤温度传感器"
         }
       },
       "limits": {
