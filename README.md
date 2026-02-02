@@ -194,6 +194,8 @@ Place your image in your Home Assistant `config/www/` folder (create it if it do
 ```
 This corresponds to the file at `config/www/plants/my-plant.jpg`.
 
+> **Note:** The path is case-sensitive. The filename in the `/local/` path must match the file on disk exactly, including capitalization.
+
 **Media Source URLs:**
 
 You can use images from Home Assistant's local Media folder using `media-source://` URLs. The format is:
@@ -242,13 +244,14 @@ template:
 
 ### My local image path doesn't work
 
-Local images must be placed in your Home Assistant `www` folder and referenced using the `/local/` prefix.
+Local images must be placed in your Home Assistant `www` folder and referenced using the `/local/` prefix. The path is case-sensitive — the filename must match exactly.
 
-**Correct:** `/local/plants/rose.jpg` (file at `config/www/plants/rose.jpg`)
+**Correct:** `/local/plants/my-plant.jpg` (file at `config/www/plants/my-plant.jpg`)
 
 **Incorrect:**
-- `/mnt/nas/photos/plant.jpg` - Arbitrary filesystem paths are not supported
-- `file:///config/www/plants/rose.jpg` - File URIs are not supported
+- `/local/plants/My-Plant.jpg` when the file is named `my-plant.jpg` — capitalization must match
+- `/mnt/nas/photos/plant.jpg` — arbitrary filesystem paths are not supported
+- `file:///config/www/plants/my-plant.jpg` — file URIs are not supported
 
 You can also use `media-source://` URLs for images from the Media Browser. See the [Plant Images](#plant-images) section for details.
 
