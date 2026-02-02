@@ -199,6 +199,17 @@ data:
 
 To remove a sensor, call the action with an empty `new_sensor`.
 
+### Adding a sensor to an existing plant
+
+If you set up a plant without a particular sensor (e.g. you didn't have a CO2 or humidity sensor at the time), that plant sensor entity is **automatically disabled**. To add the sensor later:
+
+1. Go to your plant's device page
+2. Find the disabled sensor entity (e.g. "CO2") and **enable** it
+3. Use the `plant.replace_sensor` action to assign your physical sensor to it
+
+> [!IMPORTANT]
+> You must enable the plant sensor entity **before** using `replace_sensor` — Home Assistant hides disabled entities from the entity picker in the UI, so you won't be able to select it as the `meter_entity` target otherwise.
+
 ---
 
 ## 🌻 OpenPlantbook Integration
