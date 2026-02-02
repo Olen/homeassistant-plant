@@ -290,6 +290,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     websocket_api.async_register_command(hass, ws_get_info)
     plant.async_schedule_update_ha_state(True)
 
+    # Disable entities that have no external sensor configured
+    for meter_sensor in plant.meter_entities:
+        plant.update_entity_disabled_state(meter_sensor)
+
     # Lets add the dummy sensors automatically if we are testing stuff
     if USE_DUMMY_SENSORS is True:
         for sensor in plant.meter_entities:
@@ -324,6 +328,11 @@ async def _plant_add_to_device_registry(
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
+    # Prevent auto-disable from firing during unload teardown
+    plant_data = hass.data.get(DOMAIN, {}).get(entry.entry_id, {})
+    if ATTR_PLANT in plant_data:
+        plant_data[ATTR_PLANT].plant_complete = False
+
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
     if unload_ok:
@@ -831,6 +840,63 @@ class PlantDevice(Entity):
     def add_lux_to_ppfd(self, lux_to_ppfd: Entity) -> None:
         """Add the lux to PPFD conversion factor entity"""
         self.lux_to_ppfd = lux_to_ppfd
+
+    def _get_related_entities_for_sensor(self, meter_sensor) -> list:
+        """Return the meter sensor and its related threshold/derived entities."""
+        if meter_sensor is self.sensor_moisture:
+            return [self.sensor_moisture, self.max_moisture, self.min_moisture]
+        if meter_sensor is self.sensor_temperature:
+            return [self.sensor_temperature, self.max_temperature, self.min_temperature]
+        if meter_sensor is self.sensor_conductivity:
+            return [
+                self.sensor_conductivity,
+                self.max_conductivity,
+                self.min_conductivity,
+            ]
+        if meter_sensor is self.sensor_humidity:
+            return [self.sensor_humidity, self.max_humidity, self.min_humidity]
+        if meter_sensor is self.sensor_co2:
+            return [self.sensor_co2, self.max_co2, self.min_co2]
+        if meter_sensor is self.sensor_soil_temperature:
+            return [
+                self.sensor_soil_temperature,
+                self.max_soil_temperature,
+                self.min_soil_temperature,
+            ]
+        if meter_sensor is self.sensor_illuminance:
+            return [
+                self.sensor_illuminance,
+                self.max_illuminance,
+                self.min_illuminance,
+                self.max_dli,
+                self.min_dli,
+                self.lux_to_ppfd,
+                self.ppfd,
+                self.total_integral,
+                self.dli,
+                self.dli_24h,
+            ]
+        return []
+
+    def update_entity_disabled_state(self, meter_sensor) -> None:
+        """Disable or enable entities based on whether an external sensor is configured."""
+        ent_reg = er.async_get(self.hass)
+        has_sensor = meter_sensor.external_sensor is not None
+        for entity in self._get_related_entities_for_sensor(meter_sensor):
+            if entity is None:
+                continue
+            entry = ent_reg.async_get(entity.entity_id)
+            if entry is None:
+                continue
+            if has_sensor:
+                if entry.disabled_by == er.RegistryEntryDisabler.INTEGRATION:
+                    ent_reg.async_update_entity(entry.entity_id, disabled_by=None)
+            else:
+                if entry.disabled_by is None:
+                    ent_reg.async_update_entity(
+                        entry.entity_id,
+                        disabled_by=er.RegistryEntryDisabler.INTEGRATION,
+                    )
 
     def update(self) -> None:
         """Run on every update of the entities"""

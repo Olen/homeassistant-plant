@@ -251,6 +251,13 @@ class PlantCurrentStatus(RestoreSensor):
 
         self.async_write_ha_state()
 
+        if (
+            self._plant
+            and getattr(self._plant, "plant_complete", False)
+            and not self.hass.is_stopping
+        ):
+            self._plant.update_entity_disabled_state(self)
+
     def _update_config_entry(self, new_sensor: str | None) -> None:
         """Update the config entry with the new sensor value."""
         if not self._config_key:

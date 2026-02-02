@@ -810,7 +810,7 @@ class TestDliSensorsWhenIlluminanceRemoved:
         hass: HomeAssistant,
         init_integration: MockConfigEntry,
     ) -> None:
-        """Test that PPFD becomes None when illuminance external sensor is removed."""
+        """Test that PPFD is disabled when illuminance external sensor is removed."""
         plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
         illuminance_sensor = plant.sensor_illuminance
         ppfd_sensor = plant.ppfd
@@ -833,19 +833,12 @@ class TestDliSensorsWhenIlluminanceRemoved:
         illuminance_sensor.replace_external_sensor(None)
         await hass.async_block_till_done()
 
-        # Trigger full update of illuminance sensor to update HA state
-        illuminance_sensor.async_schedule_update_ha_state(True)
-        await hass.async_block_till_done()
-
-        # Illuminance sensor's value should now be None (default)
-        assert illuminance_sensor.native_value is None
-
-        # Update PPFD to reflect the change (it reads from illuminance sensor's state)
-        ppfd_sensor.async_schedule_update_ha_state(True)
-        await hass.async_block_till_done()
-
-        # PPFD should become None when illuminance has no value
-        assert ppfd_sensor.native_value is None
+        # Illuminance and PPFD entities should be disabled by the integration
+        ent_reg = er.async_get(hass)
+        illuminance_entry = ent_reg.async_get(illuminance_sensor.entity_id)
+        assert illuminance_entry.disabled_by == er.RegistryEntryDisabler.INTEGRATION
+        ppfd_entry = ent_reg.async_get(ppfd_sensor.entity_id)
+        assert ppfd_entry.disabled_by == er.RegistryEntryDisabler.INTEGRATION
 
     async def test_illuminance_sensor_deletion_affects_ppfd(
         self,
