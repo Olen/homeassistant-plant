@@ -204,7 +204,9 @@ class PlantMinMax(RestoreNumber):
         self.hass = hass
         self._plant = plantdevice
         self.entity_id = async_generate_entity_id(
-            f"{DOMAIN}.{{}}", self._entity_id_key, current_ids={}
+            f"{DOMAIN}.{{}}",
+            f"{self._plant.name} {self._entity_id_key}",
+            current_ids={},
         )
         # pylint: disable=no-member
         if (
