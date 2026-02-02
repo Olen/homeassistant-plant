@@ -23,6 +23,7 @@ A comprehensive plant monitoring integration for Home Assistant that treats each
   - [🔄 Replacing Sensors](#-replacing-sensors)
   - [🌻 OpenPlantbook Integration](#-openplantbook-integration)
   - [🃏 Lovelace Card](#-lovelace-card)
+  - [💡 Tips & Tricks](TIPS.md)
   - [❓ FAQ](#-faq)
   - [☕ Support](#-support)
 
@@ -247,6 +248,12 @@ The [Lovelace Flower Card](https://github.com/Olen/lovelace-flower-card/) is des
 The card supports both °C and °F:
 
 ![Temperature units](https://user-images.githubusercontent.com/203184/181259071-58622446-3e24-4f93-8334-293748958bd2.png)
+
+---
+
+## 💡 Tips & Tricks
+
+For practical tips, template examples, and workarounds — including fixing sensors with wrong `device_class`, auto-watering automations, and problem notifications — see **[TIPS.md](TIPS.md)**.
 
 ---
 
