@@ -94,17 +94,10 @@
     "step": {
       "user": {
         "title": "Eine Pflanze konfigurieren",
-        "description": "Wenn Sie in den Dropdown-Menüs nicht die richtigen Sensoren finden, können Sie die Sensoren nach Abschluss der Installation hinzufügen",
+        "description": "Geben Sie einen Namen für Ihre Pflanze ein. Optional können Sie eine Art eingeben, um in OpenPlantbook zu suchen.",
         "data": {
           "name": "Pflanzenname",
-          "species": "Art",
-          "temperature_sensor": "Temperatursensor",
-          "moisture_sensor": "Bodenfeuchtesensor",
-          "conductivity_sensor": "Leitfähigkeitssensor",
-          "illuminance_sensor": "Beleuchtungsstärkesensor",
-          "humidity_sensor": "Luftfeuchtigkeitssensor",
-          "co2_sensor": "CO2-Sensor",
-          "soil_temperature_sensor": "Bodentemperatursensor"
+          "species": "Art"
         },
         "data_description": {
           "species": "Wird für die Suche in OpenPlantbook verwendet"
@@ -114,10 +107,24 @@
         "title": "Art aus OpenPlantbook auswählen",
         "description": "{desc}",
         "data": {
+          "search_for": "Nach einer anderen Art suchen",
           "species": "Art"
         },
         "menu_options": {
           "user": "Zurück"
+        }
+      },
+      "sensors": {
+        "title": "Sensoren auswählen",
+        "description": "Alle Sensoren sind optional. Sensoren können auch später hinzugefügt oder geändert werden.",
+        "data": {
+          "temperature_sensor": "Temperatursensor",
+          "moisture_sensor": "Bodenfeuchtesensor",
+          "conductivity_sensor": "Leitfähigkeitssensor",
+          "illuminance_sensor": "Beleuchtungsstärkesensor",
+          "humidity_sensor": "Luftfeuchtigkeitssensor",
+          "co2_sensor": "CO2-Sensor",
+          "soil_temperature_sensor": "Bodentemperatursensor"
         }
       },
       "limits": {

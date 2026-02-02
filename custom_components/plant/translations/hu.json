@@ -94,17 +94,10 @@
     "step": {
       "user": {
         "title": "Növény konfigurálása",
-        "description": "Ha nem találja a megfelelő érzékelőket a legördülő menüben, az érzékelőket a növény beállítása után is hozzáadhatja",
+        "description": "Adjon meg egy nevet a növényének. Opcionálisan adjon meg egy fajt az OpenPlantbook-ban való kereséshez.",
         "data": {
           "name": "Növény neve",
-          "species": "Faj",
-          "temperature_sensor": "Hőmérséklet-érzékelő",
-          "moisture_sensor": "Talajnedvesség-érzékelő",
-          "conductivity_sensor": "Vezetőképesség-érzékelő",
-          "illuminance_sensor": "Fényérzékelő",
-          "humidity_sensor": "Páratartalom-érzékelő",
-          "co2_sensor": "CO2-érzékelő",
-          "soil_temperature_sensor": "Talajhőmérséklet-érzékelő"
+          "species": "Faj"
         },
         "data_description": {
           "species": "OpenPlantbook keresésére lesz felhasználva"
@@ -114,10 +107,24 @@
         "title": "Faj kiválasztása az OpenPlantbook-ból",
         "description": "{desc}",
         "data": {
+          "search_for": "Másik faj keresése",
           "species": "Faj"
         },
         "menu_options": {
           "user": "Vissza"
+        }
+      },
+      "sensors": {
+        "title": "Érzékelők kiválasztása",
+        "description": "Minden érzékelő opcionális. Az érzékelők később is hozzáadhatók vagy módosíthatók.",
+        "data": {
+          "temperature_sensor": "Hőmérséklet-érzékelő",
+          "moisture_sensor": "Talajnedvesség-érzékelő",
+          "conductivity_sensor": "Vezetőképesség-érzékelő",
+          "illuminance_sensor": "Fényérzékelő",
+          "humidity_sensor": "Páratartalom-érzékelő",
+          "co2_sensor": "CO2-érzékelő",
+          "soil_temperature_sensor": "Talajhőmérséklet-érzékelő"
         }
       },
       "limits": {

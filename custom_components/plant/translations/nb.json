@@ -94,17 +94,10 @@
     "step": {
       "user": {
         "title": "Konfigurer en plante",
-        "description": "Hvis du ikke finner de riktige sensorene i nedtrekksmenyene, kan du legge til sensorene etter at planten er satt opp",
+        "description": "Skriv inn et navn for planten din. Du kan eventuelt skrive inn en art for å søke i OpenPlantbook.",
         "data": {
           "name": "Plantenavn",
-          "species": "Art",
-          "temperature_sensor": "Temperatursensor",
-          "moisture_sensor": "Jordfuktighetssensor",
-          "conductivity_sensor": "Ledningsevnesensor",
-          "illuminance_sensor": "Lyssensor",
-          "humidity_sensor": "Luftfuktighetssensor",
-          "co2_sensor": "CO2-sensor",
-          "soil_temperature_sensor": "Jordtemperatursensor"
+          "species": "Art"
         },
         "data_description": {
           "species": "Brukes for å søke i OpenPlantbook"
@@ -114,10 +107,24 @@
         "title": "Velg art fra OpenPlantbook",
         "description": "{desc}",
         "data": {
+          "search_for": "Søk etter en annen art",
           "species": "Art"
         },
         "menu_options": {
           "user": "Tilbake"
+        }
+      },
+      "sensors": {
+        "title": "Velg sensorer",
+        "description": "Alle sensorer er valgfrie. Sensorer kan også legges til eller endres senere.",
+        "data": {
+          "temperature_sensor": "Temperatursensor",
+          "moisture_sensor": "Jordfuktighetssensor",
+          "conductivity_sensor": "Ledningsevnesensor",
+          "illuminance_sensor": "Lyssensor",
+          "humidity_sensor": "Luftfuktighetssensor",
+          "co2_sensor": "CO2-sensor",
+          "soil_temperature_sensor": "Jordtemperatursensor"
         }
       },
       "limits": {

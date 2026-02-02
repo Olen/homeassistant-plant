@@ -44,6 +44,18 @@ from .const import (
     CONF_MIN_TEMPERATURE,
     DATA_SOURCE,
     DATA_SOURCE_PLANTBOOK,
+    DEFAULT_MAX_CONDUCTIVITY,
+    DEFAULT_MAX_DLI,
+    DEFAULT_MAX_HUMIDITY,
+    DEFAULT_MAX_ILLUMINANCE,
+    DEFAULT_MAX_MOISTURE,
+    DEFAULT_MAX_TEMPERATURE,
+    DEFAULT_MIN_CONDUCTIVITY,
+    DEFAULT_MIN_DLI,
+    DEFAULT_MIN_HUMIDITY,
+    DEFAULT_MIN_ILLUMINANCE,
+    DEFAULT_MIN_MOISTURE,
+    DEFAULT_MIN_TEMPERATURE,
     DOMAIN,
     DOMAIN_PLANTBOOK,
     DOMAIN_SENSOR,
@@ -107,7 +119,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Handle the initial step."""
+        """Handle the initial step - name and species only."""
         errors = {}
         if user_input is not None:
             _LOGGER.debug("User Input %s", user_input)
@@ -132,6 +144,90 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             ): cv.string,
         }
 
+        return self.async_show_form(
+            step_id="user",
+            data_schema=vol.Schema(data_schema),
+            errors=errors,
+            description_placeholders={"opb_search": self.plant_info.get(ATTR_SPECIES)},
+        )
+
+    async def async_step_select_species(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Search the OpenPlantbook."""
+        errors = {}
+
+        if user_input is not None:
+            _LOGGER.debug("User Input %s", user_input)
+
+            # Check if the user wants to re-search with a different term
+            new_search = user_input.get(ATTR_SEARCH_FOR, "").strip()
+            if new_search and new_search != self.plant_info.get(ATTR_SEARCH_FOR, ""):
+                self.plant_info[ATTR_SEARCH_FOR] = new_search
+                self.plant_info[ATTR_SPECIES] = new_search
+                # Re-show this step with new search results
+                return await self.async_step_select_species()
+
+            # Validate user input
+            valid = await self.validate_step_2(user_input)
+            if valid:
+                # Store info to use in next step
+                self.plant_info[DATA_SOURCE] = DOMAIN_PLANTBOOK
+                self.plant_info[ATTR_SPECIES] = user_input[ATTR_SPECIES]
+
+                # Return the form of the next step
+                _LOGGER.debug("Plant_info: %s", self.plant_info)
+                return await self.async_step_sensors()
+        plant_helper = PlantHelper(self.hass)
+        search_result = await plant_helper.openplantbook_search(
+            species=self.plant_info[ATTR_SEARCH_FOR]
+        )
+        if search_result is None:
+            return await self.async_step_sensors()
+        dropdown = []
+        for pid, display_pid in search_result.items():
+            dropdown.append({"label": display_pid, "value": pid})
+        _LOGGER.debug("Dropdown: %s", dropdown)
+        data_schema = {}
+        data_schema[
+            vol.Optional(
+                ATTR_SEARCH_FOR,
+                default=self.plant_info.get(ATTR_SEARCH_FOR, ""),
+            )
+        ] = cv.string
+        data_schema[ATTR_SPECIES] = selector({ATTR_SELECT: {ATTR_OPTIONS: dropdown}})
+
+        return self.async_show_form(
+            step_id="select_species",
+            data_schema=vol.Schema(data_schema),
+            errors=errors,
+            description_placeholders={
+                "opb_search": self.plant_info[ATTR_SPECIES],
+                FLOW_STRING_DESCRIPTION: "Results from OpenPlantbook",
+            },
+        )
+
+    async def async_step_sensors(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Handle sensor selection step."""
+        if user_input is not None:
+            _LOGGER.debug("User Input (sensors) %s", user_input)
+            # Store sensor selections in plant_info
+            for key in (
+                FLOW_SENSOR_TEMPERATURE,
+                FLOW_SENSOR_MOISTURE,
+                FLOW_SENSOR_CONDUCTIVITY,
+                FLOW_SENSOR_ILLUMINANCE,
+                FLOW_SENSOR_HUMIDITY,
+                FLOW_SENSOR_CO2,
+                FLOW_SENSOR_SOIL_TEMPERATURE,
+            ):
+                self.plant_info[key] = user_input.get(key)
+            _LOGGER.debug("Plant_info: %s", self.plant_info)
+            return await self.async_step_limits()
+
+        data_schema = {}
         data_schema[FLOW_SENSOR_TEMPERATURE] = selector(
             {
                 ATTR_ENTITY: {
@@ -190,51 +286,8 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )
 
         return self.async_show_form(
-            step_id="user",
+            step_id="sensors",
             data_schema=vol.Schema(data_schema),
-            errors=errors,
-            description_placeholders={"opb_search": self.plant_info.get(ATTR_SPECIES)},
-        )
-
-    async def async_step_select_species(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Search the OpenPlantbook."""
-        errors = {}
-
-        if user_input is not None:
-            _LOGGER.debug("User Input %s", user_input)
-            # Validate user input
-            valid = await self.validate_step_2(user_input)
-            if valid:
-                # Store info to use in next step
-                self.plant_info[DATA_SOURCE] = DOMAIN_PLANTBOOK
-                self.plant_info[ATTR_SPECIES] = user_input[ATTR_SPECIES]
-
-                # Return the form of the next step
-                _LOGGER.debug("Plant_info: %s", self.plant_info)
-                return await self.async_step_limits()
-        plant_helper = PlantHelper(self.hass)
-        search_result = await plant_helper.openplantbook_search(
-            species=self.plant_info[ATTR_SEARCH_FOR]
-        )
-        if search_result is None:
-            return await self.async_step_limits()
-        dropdown = []
-        for pid, display_pid in search_result.items():
-            dropdown.append({"label": display_pid, "value": pid})
-        _LOGGER.debug("Dropdown: %s", dropdown)
-        data_schema = {}
-        data_schema[ATTR_SPECIES] = selector({ATTR_SELECT: {ATTR_OPTIONS: dropdown}})
-
-        return self.async_show_form(
-            step_id="select_species",
-            data_schema=vol.Schema(data_schema),
-            errors=errors,
-            description_placeholders={
-                "opb_search": self.plant_info[ATTR_SPECIES],
-                FLOW_STRING_DESCRIPTION: "Results from OpenPlantbook",
-            },
         )
 
     async def async_step_limits(
@@ -265,7 +318,28 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 user_input.pop(OPB_DISPLAY_PID)
                 if FLOW_RIGHT_PLANT in user_input:
                     user_input.pop(FLOW_RIGHT_PLANT)
-                self.plant_info[FLOW_PLANT_LIMITS] = user_input
+
+                # Fill in default values for hidden thresholds to keep data structure complete
+                limits = dict(user_input)
+                all_threshold_defaults = {
+                    CONF_MAX_MOISTURE: DEFAULT_MAX_MOISTURE,
+                    CONF_MIN_MOISTURE: DEFAULT_MIN_MOISTURE,
+                    CONF_MAX_TEMPERATURE: DEFAULT_MAX_TEMPERATURE,
+                    CONF_MIN_TEMPERATURE: DEFAULT_MIN_TEMPERATURE,
+                    CONF_MAX_CONDUCTIVITY: DEFAULT_MAX_CONDUCTIVITY,
+                    CONF_MIN_CONDUCTIVITY: DEFAULT_MIN_CONDUCTIVITY,
+                    CONF_MAX_ILLUMINANCE: DEFAULT_MAX_ILLUMINANCE,
+                    CONF_MIN_ILLUMINANCE: DEFAULT_MIN_ILLUMINANCE,
+                    CONF_MAX_DLI: DEFAULT_MAX_DLI,
+                    CONF_MIN_DLI: DEFAULT_MIN_DLI,
+                    CONF_MAX_HUMIDITY: DEFAULT_MAX_HUMIDITY,
+                    CONF_MIN_HUMIDITY: DEFAULT_MIN_HUMIDITY,
+                }
+                for key, default_val in all_threshold_defaults.items():
+                    if key not in limits:
+                        limits[key] = default_val
+
+                self.plant_info[FLOW_PLANT_LIMITS] = limits
                 _LOGGER.debug("Plant_info: %s", self.plant_info)
                 # Return the form of the next step
                 return await self.async_step_limits_done()
@@ -301,98 +375,125 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 default=display_pid,
             )
         ] = cv.string
-        data_schema[
-            vol.Required(
-                CONF_MAX_MOISTURE,
-                default=plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(
-                    CONF_MAX_MOISTURE
-                ),
-            )
-        ] = int
-        data_schema[
-            vol.Required(
-                CONF_MIN_MOISTURE,
-                default=plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(
-                    CONF_MIN_MOISTURE
-                ),
-            )
-        ] = int
-        data_schema[
-            vol.Required(
-                CONF_MAX_ILLUMINANCE,
-                default=plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(
-                    CONF_MAX_ILLUMINANCE
-                ),
-            )
-        ] = int
-        data_schema[
-            vol.Required(
-                CONF_MIN_ILLUMINANCE,
-                default=plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(
-                    CONF_MIN_ILLUMINANCE
-                ),
-            )
-        ] = int
-        data_schema[
-            vol.Required(
-                CONF_MAX_DLI,
-                default=plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(CONF_MAX_DLI),
-            )
-        ] = int
-        data_schema[
-            vol.Required(
-                CONF_MIN_DLI,
-                default=plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(CONF_MIN_DLI),
-            )
-        ] = int
-        data_schema[
-            vol.Required(
-                CONF_MAX_TEMPERATURE,
-                default=plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(
-                    CONF_MAX_TEMPERATURE
-                ),
-            )
-        ] = int
-        data_schema[
-            vol.Required(
-                CONF_MIN_TEMPERATURE,
-                default=plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(
-                    CONF_MIN_TEMPERATURE
-                ),
-            )
-        ] = int
-        data_schema[
-            vol.Required(
-                CONF_MAX_CONDUCTIVITY,
-                default=plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(
-                    CONF_MAX_CONDUCTIVITY
-                ),
-            )
-        ] = int
-        data_schema[
-            vol.Required(
-                CONF_MIN_CONDUCTIVITY,
-                default=plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(
-                    CONF_MIN_CONDUCTIVITY
-                ),
-            )
-        ] = int
-        data_schema[
-            vol.Required(
-                CONF_MAX_HUMIDITY,
-                default=plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(
-                    CONF_MAX_HUMIDITY
-                ),
-            )
-        ] = int
-        data_schema[
-            vol.Required(
-                CONF_MIN_HUMIDITY,
-                default=plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(
-                    CONF_MIN_HUMIDITY
-                ),
-            )
-        ] = int
+
+        # Determine which sensors were selected to conditionally show thresholds
+        selected_sensors = {
+            "moisture": bool(self.plant_info.get(FLOW_SENSOR_MOISTURE)),
+            "temperature": bool(self.plant_info.get(FLOW_SENSOR_TEMPERATURE)),
+            "conductivity": bool(self.plant_info.get(FLOW_SENSOR_CONDUCTIVITY)),
+            "illuminance": bool(self.plant_info.get(FLOW_SENSOR_ILLUMINANCE)),
+            "humidity": bool(self.plant_info.get(FLOW_SENSOR_HUMIDITY)),
+            "co2": bool(self.plant_info.get(FLOW_SENSOR_CO2)),
+            "soil_temperature": bool(self.plant_info.get(FLOW_SENSOR_SOIL_TEMPERATURE)),
+        }
+        show_all = not any(selected_sensors.values())
+
+        if show_all or selected_sensors["moisture"]:
+            data_schema[
+                vol.Required(
+                    CONF_MAX_MOISTURE,
+                    default=plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(
+                        CONF_MAX_MOISTURE
+                    ),
+                )
+            ] = int
+            data_schema[
+                vol.Required(
+                    CONF_MIN_MOISTURE,
+                    default=plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(
+                        CONF_MIN_MOISTURE
+                    ),
+                )
+            ] = int
+
+        if show_all or selected_sensors["illuminance"]:
+            data_schema[
+                vol.Required(
+                    CONF_MAX_ILLUMINANCE,
+                    default=plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(
+                        CONF_MAX_ILLUMINANCE
+                    ),
+                )
+            ] = int
+            data_schema[
+                vol.Required(
+                    CONF_MIN_ILLUMINANCE,
+                    default=plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(
+                        CONF_MIN_ILLUMINANCE
+                    ),
+                )
+            ] = int
+            # Always show DLI together with illuminance
+            data_schema[
+                vol.Required(
+                    CONF_MAX_DLI,
+                    default=plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(
+                        CONF_MAX_DLI
+                    ),
+                )
+            ] = int
+            data_schema[
+                vol.Required(
+                    CONF_MIN_DLI,
+                    default=plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(
+                        CONF_MIN_DLI
+                    ),
+                )
+            ] = int
+
+        if show_all or selected_sensors["temperature"]:
+            data_schema[
+                vol.Required(
+                    CONF_MAX_TEMPERATURE,
+                    default=plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(
+                        CONF_MAX_TEMPERATURE
+                    ),
+                )
+            ] = int
+            data_schema[
+                vol.Required(
+                    CONF_MIN_TEMPERATURE,
+                    default=plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(
+                        CONF_MIN_TEMPERATURE
+                    ),
+                )
+            ] = int
+
+        if show_all or selected_sensors["conductivity"]:
+            data_schema[
+                vol.Required(
+                    CONF_MAX_CONDUCTIVITY,
+                    default=plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(
+                        CONF_MAX_CONDUCTIVITY
+                    ),
+                )
+            ] = int
+            data_schema[
+                vol.Required(
+                    CONF_MIN_CONDUCTIVITY,
+                    default=plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(
+                        CONF_MIN_CONDUCTIVITY
+                    ),
+                )
+            ] = int
+
+        if show_all or selected_sensors["humidity"]:
+            data_schema[
+                vol.Required(
+                    CONF_MAX_HUMIDITY,
+                    default=plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(
+                        CONF_MAX_HUMIDITY
+                    ),
+                )
+            ] = int
+            data_schema[
+                vol.Required(
+                    CONF_MIN_HUMIDITY,
+                    default=plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(
+                        CONF_MIN_HUMIDITY
+                    ),
+                )
+            ] = int
 
         data_schema[
             vol.Optional(

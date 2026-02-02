@@ -94,17 +94,10 @@
     "step": {
       "user": {
         "title": "Configurer une plante",
-        "description": "Si vous ne trouvez pas les capteurs appropriés dans les menus déroulants, les capteurs peuvent être ajoutés après la configuration de la plante",
+        "description": "Entrez un nom pour votre plante. Vous pouvez optionnellement entrer une espèce pour rechercher dans OpenPlantbook.",
         "data": {
           "name": "Nom de la plante",
-          "species": "Espèce",
-          "temperature_sensor": "Capteur de température",
-          "moisture_sensor": "Capteur d'humidité du sol",
-          "conductivity_sensor": "Capteur de conductivité",
-          "illuminance_sensor": "Capteur de luminosité",
-          "humidity_sensor": "Capteur d'humidité de l'air",
-          "co2_sensor": "Capteur de CO2",
-          "soil_temperature_sensor": "Capteur de température du sol"
+          "species": "Espèce"
         },
         "data_description": {
           "species": "Sera utilisé pour la recherche dans OpenPlantbook"
@@ -114,10 +107,24 @@
         "title": "Sélectionner une espèce dans OpenPlantbook",
         "description": "{desc}",
         "data": {
+          "search_for": "Rechercher une autre espèce",
           "species": "Espèce"
         },
         "menu_options": {
           "user": "Revenir en arrière"
+        }
+      },
+      "sensors": {
+        "title": "Sélectionner les capteurs",
+        "description": "Tous les capteurs sont optionnels. Les capteurs peuvent également être ajoutés ou modifiés ultérieurement.",
+        "data": {
+          "temperature_sensor": "Capteur de température",
+          "moisture_sensor": "Capteur d'humidité du sol",
+          "conductivity_sensor": "Capteur de conductivité",
+          "illuminance_sensor": "Capteur de luminosité",
+          "humidity_sensor": "Capteur d'humidité de l'air",
+          "co2_sensor": "Capteur de CO2",
+          "soil_temperature_sensor": "Capteur de température du sol"
         }
       },
       "limits": {

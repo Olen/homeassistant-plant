@@ -94,17 +94,10 @@
     "step": {
       "user": {
         "title": "Configurar uma planta",
-        "description": "Caso não consiga encontrar o sensor correto no dropdown, pode personalizar posteriormente",
+        "description": "Introduza um nome para a sua planta. Opcionalmente introduza uma espécie para pesquisar no OpenPlantbook.",
         "data": {
           "name": "Nome da planta",
-          "species": "Espécie",
-          "temperature_sensor": "Sensor de temperatura",
-          "moisture_sensor": "Sensor de humidade do solo",
-          "conductivity_sensor": "Sensor de condutividade",
-          "illuminance_sensor": "Sensor de iluminação",
-          "humidity_sensor": "Sensor de humidade do ar",
-          "co2_sensor": "Sensor de CO2",
-          "soil_temperature_sensor": "Sensor de temperatura do solo"
+          "species": "Espécie"
         },
         "data_description": {
           "species": "Será usado para pesquisar no OpenPlantbook"
@@ -114,10 +107,24 @@
         "title": "Selecionar espécie do OpenPlantbook",
         "description": "{desc}",
         "data": {
+          "search_for": "Pesquisar uma espécie diferente",
           "species": "Espécie"
         },
         "menu_options": {
           "user": "Voltar"
+        }
+      },
+      "sensors": {
+        "title": "Selecionar sensores",
+        "description": "Todos os sensores são opcionais. Os sensores também podem ser adicionados ou alterados mais tarde.",
+        "data": {
+          "temperature_sensor": "Sensor de temperatura",
+          "moisture_sensor": "Sensor de humidade do solo",
+          "conductivity_sensor": "Sensor de condutividade",
+          "illuminance_sensor": "Sensor de iluminação",
+          "humidity_sensor": "Sensor de humidade do ar",
+          "co2_sensor": "Sensor de CO2",
+          "soil_temperature_sensor": "Sensor de temperatura do solo"
         }
       },
       "limits": {
