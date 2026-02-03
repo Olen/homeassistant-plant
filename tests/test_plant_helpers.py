@@ -503,9 +503,7 @@ class TestImageValidation:
             "custom_components.plant.plant_helpers.async_get_clientsession",
             return_value=mock_session,
         ):
-            result = await helper.validate_image_url(
-                "https://example.com/plant.jpg"
-            )
+            result = await helper.validate_image_url("https://example.com/plant.jpg")
         assert result is True
 
     async def test_validate_http_url_not_found(
@@ -526,9 +524,7 @@ class TestImageValidation:
             "custom_components.plant.plant_helpers.async_get_clientsession",
             return_value=mock_session,
         ):
-            result = await helper.validate_image_url(
-                "https://example.com/missing.jpg"
-            )
+            result = await helper.validate_image_url("https://example.com/missing.jpg")
         assert result is False
 
     async def test_validate_http_url_timeout(
@@ -548,9 +544,7 @@ class TestImageValidation:
             "custom_components.plant.plant_helpers.async_get_clientsession",
             return_value=mock_session,
         ):
-            result = await helper.validate_image_url(
-                "https://example.com/slow.jpg"
-            )
+            result = await helper.validate_image_url("https://example.com/slow.jpg")
         assert result is False
 
     async def test_validate_http_url_client_error(
