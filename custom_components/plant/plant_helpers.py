@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from typing import Any
 
 import aiohttp
@@ -198,12 +199,29 @@ class PlantHelper:
         return None
 
     async def validate_image_url(self, url: str | None) -> bool:
-        """Validate that an image URL is accessible (returns HTTP 200).
+        """Validate that an image URL is accessible.
 
+        For /local/ paths, checks that the corresponding file exists on disk.
+        For HTTP(S) URLs, validates with a HEAD request (returns HTTP 200).
         Returns True if the URL is valid and accessible, False otherwise.
         """
         if not url or url == "":
             return False
+
+        # /local/ paths map to config/www/ on disk - check file existence
+        if url.startswith("/local/"):
+            relative_path = url.replace("/local/", "www/", 1)
+            full_path = self.hass.config.path(relative_path)
+            exists = await self.hass.async_add_executor_job(os.path.isfile, full_path)
+            if not exists:
+                _LOGGER.warning(
+                    "Local image file not found: %s (looked for %s)", url, full_path
+                )
+            return exists
+
+        # media-source:// URLs can't be validated here, assume valid
+        if url.startswith("media-source://"):
+            return True
 
         try:
             session = async_get_clientsession(self.hass)

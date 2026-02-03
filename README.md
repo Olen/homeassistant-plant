@@ -153,7 +153,7 @@ The plant image can be set in several ways:
 
 ### From OpenPlantbook *(automatic)*
 
-If the species is found in OpenPlantbook, the image URL is fetched automatically. The integration validates that the URL is accessible before using it.
+If the species is found in OpenPlantbook, the image URL is fetched automatically. The integration validates that the URL is accessible before using it. If the OpenPlantbook integration is configured to download images, the downloaded files are stored in `config/www/images/plants/` by default and referenced as `/local/images/plants/`.
 
 ### Custom Images
 
@@ -162,7 +162,7 @@ You can override the image with your own. Supported formats:
 | Format | Example |
 |--------|---------|
 | **HTTP/HTTPS URL** | `https://example.com/my-plant.jpg` |
-| **Local `/www/` folder** | `/local/plants/my-plant.jpg` (file at `config/www/plants/my-plant.jpg`) |
+| **Local `/www/` folder** | `/local/images/plants/my-plant.jpg` (file at `config/www/images/plants/my-plant.jpg`) |
 | **Media Source** | `media-source://media_source/local/plants/my-plant.jpg` |
 
 > [!NOTE]
@@ -293,10 +293,10 @@ Local images must be in your HA `www` folder, referenced with the `/local/` pref
 
 | Path | Works? |
 |------|--------|
-| `/local/plants/my-plant.jpg` | ✅ (file at `config/www/plants/my-plant.jpg`) |
-| `/local/plants/My-Plant.jpg` (wrong case) | ❌ |
+| `/local/images/plants/my-plant.jpg` | ✅ (file at `config/www/images/plants/my-plant.jpg`) |
+| `/local/images/plants/My-Plant.jpg` (wrong case) | ❌ |
 | `/mnt/nas/photos/plant.jpg` (filesystem path) | ❌ |
-| `file:///config/www/plants/my-plant.jpg` (file URI) | ❌ |
+| `file:///config/www/images/plants/my-plant.jpg` (file URI) | ❌ |
 
 You can also use `media-source://` URLs. See [Plant Images](#️-plant-images).
 </details>
