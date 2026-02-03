@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import aiohttp
 from homeassistant.const import ATTR_ENTITY_PICTURE, ATTR_NAME
 from homeassistant.core import HomeAssistant
 
@@ -426,3 +429,150 @@ class TestImageValidation:
         helper = PlantHelper(hass)
         assert await helper.validate_image_url("") is False
         assert await helper.validate_image_url(None) is False
+
+    async def test_validate_local_path_file_exists(
+        self,
+        hass: HomeAssistant,
+    ) -> None:
+        """Test /local/ path returns True when file exists on disk."""
+        helper = PlantHelper(hass)
+        with patch("os.path.isfile", return_value=True):
+            result = await helper.validate_image_url(
+                "/local/images/plants/monstera.jpg"
+            )
+        assert result is True
+
+    async def test_validate_local_path_file_missing(
+        self,
+        hass: HomeAssistant,
+    ) -> None:
+        """Test /local/ path returns False when file does not exist."""
+        helper = PlantHelper(hass)
+        with patch("os.path.isfile", return_value=False):
+            result = await helper.validate_image_url(
+                "/local/images/plants/nonexistent.jpg"
+            )
+        assert result is False
+
+    async def test_validate_local_path_maps_to_www(
+        self,
+        hass: HomeAssistant,
+    ) -> None:
+        """Test /local/ is mapped to config/www/ for disk check."""
+        helper = PlantHelper(hass)
+        checked_path = None
+
+        def capture_isfile(path):
+            nonlocal checked_path
+            checked_path = path
+            return True
+
+        with patch("os.path.isfile", side_effect=capture_isfile):
+            await helper.validate_image_url("/local/images/plants/test.jpg")
+
+        assert checked_path is not None
+        assert "www/images/plants/test.jpg" in checked_path
+        assert "/local/" not in checked_path
+
+    async def test_validate_media_source_url(
+        self,
+        hass: HomeAssistant,
+    ) -> None:
+        """Test media-source:// URLs are accepted without validation."""
+        helper = PlantHelper(hass)
+        result = await helper.validate_image_url(
+            "media-source://media_source/local/plants/my-plant.jpg"
+        )
+        assert result is True
+
+    async def test_validate_http_url_success(
+        self,
+        hass: HomeAssistant,
+    ) -> None:
+        """Test HTTP URL returning 200 is valid."""
+        helper = PlantHelper(hass)
+        mock_response = MagicMock()
+        mock_response.status = 200
+        mock_response.__aenter__ = AsyncMock(return_value=mock_response)
+        mock_response.__aexit__ = AsyncMock(return_value=False)
+
+        mock_session = MagicMock()
+        mock_session.head = MagicMock(return_value=mock_response)
+
+        with patch(
+            "custom_components.plant.plant_helpers.async_get_clientsession",
+            return_value=mock_session,
+        ):
+            result = await helper.validate_image_url(
+                "https://example.com/plant.jpg"
+            )
+        assert result is True
+
+    async def test_validate_http_url_not_found(
+        self,
+        hass: HomeAssistant,
+    ) -> None:
+        """Test HTTP URL returning 404 is invalid."""
+        helper = PlantHelper(hass)
+        mock_response = MagicMock()
+        mock_response.status = 404
+        mock_response.__aenter__ = AsyncMock(return_value=mock_response)
+        mock_response.__aexit__ = AsyncMock(return_value=False)
+
+        mock_session = MagicMock()
+        mock_session.head = MagicMock(return_value=mock_response)
+
+        with patch(
+            "custom_components.plant.plant_helpers.async_get_clientsession",
+            return_value=mock_session,
+        ):
+            result = await helper.validate_image_url(
+                "https://example.com/missing.jpg"
+            )
+        assert result is False
+
+    async def test_validate_http_url_timeout(
+        self,
+        hass: HomeAssistant,
+    ) -> None:
+        """Test HTTP URL that times out is invalid."""
+        helper = PlantHelper(hass)
+        mock_response = MagicMock()
+        mock_response.__aenter__ = AsyncMock(side_effect=TimeoutError)
+        mock_response.__aexit__ = AsyncMock(return_value=False)
+
+        mock_session = MagicMock()
+        mock_session.head = MagicMock(return_value=mock_response)
+
+        with patch(
+            "custom_components.plant.plant_helpers.async_get_clientsession",
+            return_value=mock_session,
+        ):
+            result = await helper.validate_image_url(
+                "https://example.com/slow.jpg"
+            )
+        assert result is False
+
+    async def test_validate_http_url_client_error(
+        self,
+        hass: HomeAssistant,
+    ) -> None:
+        """Test HTTP URL with connection error is invalid."""
+        helper = PlantHelper(hass)
+        mock_response = MagicMock()
+        mock_response.__aenter__ = AsyncMock(
+            side_effect=aiohttp.ClientError("Connection refused")
+        )
+        mock_response.__aexit__ = AsyncMock(return_value=False)
+
+        mock_session = MagicMock()
+        mock_session.head = MagicMock(return_value=mock_response)
+
+        with patch(
+            "custom_components.plant.plant_helpers.async_get_clientsession",
+            return_value=mock_session,
+        ):
+            result = await helper.validate_image_url(
+                "https://unreachable.example.com/plant.jpg"
+            )
+        assert result is False
