@@ -165,7 +165,6 @@ class TestWebsocketGetInfo:
         # Result should be empty dict when not complete
         assert response["result"]["result"] == {}
 
-
     async def test_websocket_get_info_disabled_sensors(
         self,
         hass: HomeAssistant,
