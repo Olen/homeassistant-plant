@@ -166,6 +166,46 @@ class TestWebsocketGetInfo:
         assert response["result"]["result"] == {}
 
 
+    async def test_websocket_get_info_disabled_sensors(
+        self,
+        hass: HomeAssistant,
+        init_integration_no_sensors: MockConfigEntry,
+        hass_ws_client,
+    ) -> None:
+        """Test websocket returns partial result when sensors are disabled."""
+        plant = hass.data[DOMAIN][init_integration_no_sensors.entry_id][ATTR_PLANT]
+
+        # Plant is complete but sensors have no external source and are disabled
+        plant.plant_complete = True
+
+        client = await hass_ws_client(hass)
+
+        await client.send_json(
+            {
+                "id": 1,
+                "type": "plant/get_info",
+                "entity_id": plant.entity_id,
+            }
+        )
+
+        response = await client.receive_json()
+
+        # Should succeed, not crash with unknown_error
+        assert response["success"] is True
+        assert "result" in response
+
+        # Result should be a dict (possibly empty if all sensors disabled)
+        result = response["result"]["result"]
+        assert isinstance(result, dict)
+
+        # Each included sensor should have the expected structure
+        for attr_name in result:
+            assert ATTR_MAX in result[attr_name]
+            assert ATTR_MIN in result[attr_name]
+            assert ATTR_CURRENT in result[attr_name]
+            assert ATTR_SENSOR in result[attr_name]
+
+
 class TestWebsocketRegistration:
     """Tests for websocket command registration."""
 

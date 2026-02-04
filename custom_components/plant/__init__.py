@@ -415,8 +415,16 @@ def ws_get_info(
                 connection.send_result(
                     msg["id"], {"result": plant_entity.websocket_info}
                 )
-            except ValueError as e:
-                _LOGGER.warning(e)
+            except Exception as e:
+                _LOGGER.warning(
+                    "Error getting plant info for %s: %s",
+                    msg["entity_id"],
+                    e,
+                    exc_info=True,
+                )
+                connection.send_error(
+                    msg["id"], "plant_info_error", str(e)
+                )
             return
     connection.send_error(
         msg["id"], "entity_not_found", f"Entity {msg['entity_id']} not found"
@@ -617,6 +625,52 @@ class PlantDevice(Entity):
             return entry.icon
         return entity.icon
 
+    def _sensor_available(self, sensor) -> bool:
+        """Check if a sensor entity is available for websocket reporting."""
+        if sensor is None:
+            _LOGGER.debug("Sensor is None, skipping")
+            return False
+        try:
+            has_state = self.hass.states.get(sensor.entity_id) is not None
+            if not has_state:
+                _LOGGER.debug(
+                    "Sensor %s has no hass state (disabled or not loaded), skipping",
+                    sensor.entity_id,
+                )
+            return has_state
+        except (AttributeError, TypeError) as e:
+            _LOGGER.debug(
+                "Error checking sensor availability for %s: %s", sensor, e
+            )
+            return False
+
+    def _sensor_info(self, attr_name, sensor, max_entity, min_entity) -> dict | None:
+        """Build websocket info dict for a single sensor, or None if unavailable."""
+        if not self._sensor_available(sensor):
+            _LOGGER.debug(
+                "Skipping %s: sensor %s not available", attr_name, sensor
+            )
+            return None
+        try:
+            return {
+                ATTR_MAX: max_entity.state,
+                ATTR_MIN: min_entity.state,
+                ATTR_CURRENT: sensor.state or STATE_UNAVAILABLE,
+                ATTR_ICON: self._get_entity_icon(sensor),
+                ATTR_UNIT_OF_MEASUREMENT: sensor.unit_of_measurement,
+                ATTR_SENSOR: sensor.entity_id,
+            }
+        except (AttributeError, TypeError) as e:
+            _LOGGER.warning(
+                "Error building websocket info for %s (sensor=%s, max=%s, min=%s): %s",
+                attr_name,
+                sensor,
+                max_entity,
+                min_entity,
+                e,
+            )
+            return None
+
     @property
     def websocket_info(self) -> dict:
         """Websocket response"""
@@ -624,77 +678,37 @@ class PlantDevice(Entity):
             # We are not fully set up, so we just return an empty dict for now
             return {}
 
-        response = {
-            ATTR_TEMPERATURE: {
-                ATTR_MAX: self.max_temperature.state,
-                ATTR_MIN: self.min_temperature.state,
-                ATTR_CURRENT: self.sensor_temperature.state or STATE_UNAVAILABLE,
-                ATTR_ICON: self._get_entity_icon(self.sensor_temperature),
-                ATTR_UNIT_OF_MEASUREMENT: self.sensor_temperature.unit_of_measurement,
-                ATTR_SENSOR: self.sensor_temperature.entity_id,
-            },
-            ATTR_ILLUMINANCE: {
-                ATTR_MAX: self.max_illuminance.state,
-                ATTR_MIN: self.min_illuminance.state,
-                ATTR_CURRENT: self.sensor_illuminance.state or STATE_UNAVAILABLE,
-                ATTR_ICON: self._get_entity_icon(self.sensor_illuminance),
-                ATTR_UNIT_OF_MEASUREMENT: self.sensor_illuminance.unit_of_measurement,
-                ATTR_SENSOR: self.sensor_illuminance.entity_id,
-            },
-            ATTR_MOISTURE: {
-                ATTR_MAX: self.max_moisture.state,
-                ATTR_MIN: self.min_moisture.state,
-                ATTR_CURRENT: self.sensor_moisture.state or STATE_UNAVAILABLE,
-                ATTR_ICON: self._get_entity_icon(self.sensor_moisture),
-                ATTR_UNIT_OF_MEASUREMENT: self.sensor_moisture.unit_of_measurement,
-                ATTR_SENSOR: self.sensor_moisture.entity_id,
-            },
-            ATTR_CONDUCTIVITY: {
-                ATTR_MAX: self.max_conductivity.state,
-                ATTR_MIN: self.min_conductivity.state,
-                ATTR_CURRENT: self.sensor_conductivity.state or STATE_UNAVAILABLE,
-                ATTR_ICON: self._get_entity_icon(self.sensor_conductivity),
-                ATTR_UNIT_OF_MEASUREMENT: self.sensor_conductivity.unit_of_measurement,
-                ATTR_SENSOR: self.sensor_conductivity.entity_id,
-            },
-            ATTR_HUMIDITY: {
-                ATTR_MAX: self.max_humidity.state,
-                ATTR_MIN: self.min_humidity.state,
-                ATTR_CURRENT: self.sensor_humidity.state or STATE_UNAVAILABLE,
-                ATTR_ICON: self._get_entity_icon(self.sensor_humidity),
-                ATTR_UNIT_OF_MEASUREMENT: self.sensor_humidity.unit_of_measurement,
-                ATTR_SENSOR: self.sensor_humidity.entity_id,
-            },
-            ATTR_CO2: {
-                ATTR_MAX: self.max_co2.state,
-                ATTR_MIN: self.min_co2.state,
-                ATTR_CURRENT: self.sensor_co2.state or STATE_UNAVAILABLE,
-                ATTR_ICON: self._get_entity_icon(self.sensor_co2),
-                ATTR_UNIT_OF_MEASUREMENT: self.sensor_co2.unit_of_measurement,
-                ATTR_SENSOR: self.sensor_co2.entity_id,
-            },
-            ATTR_SOIL_TEMPERATURE: {
-                ATTR_MAX: self.max_soil_temperature.state,
-                ATTR_MIN: self.min_soil_temperature.state,
-                ATTR_CURRENT: self.sensor_soil_temperature.state or STATE_UNAVAILABLE,
-                ATTR_ICON: self._get_entity_icon(self.sensor_soil_temperature),
-                ATTR_UNIT_OF_MEASUREMENT: self.sensor_soil_temperature.unit_of_measurement,
-                ATTR_SENSOR: self.sensor_soil_temperature.entity_id,
-            },
-            ATTR_DLI: {
+        sensor_map = [
+            (ATTR_TEMPERATURE, self.sensor_temperature, self.max_temperature, self.min_temperature),
+            (ATTR_ILLUMINANCE, self.sensor_illuminance, self.max_illuminance, self.min_illuminance),
+            (ATTR_MOISTURE, self.sensor_moisture, self.max_moisture, self.min_moisture),
+            (ATTR_CONDUCTIVITY, self.sensor_conductivity, self.max_conductivity, self.min_conductivity),
+            (ATTR_HUMIDITY, self.sensor_humidity, self.max_humidity, self.min_humidity),
+            (ATTR_CO2, self.sensor_co2, self.max_co2, self.min_co2),
+            (ATTR_SOIL_TEMPERATURE, self.sensor_soil_temperature, self.max_soil_temperature, self.min_soil_temperature),
+        ]
+
+        response = {}
+        for attr_name, sensor, max_entity, min_entity in sensor_map:
+            info = self._sensor_info(attr_name, sensor, max_entity, min_entity)
+            if info is not None:
+                response[attr_name] = info
+
+        # DLI uses its own entity (not a meter sensor)
+        if self._sensor_available(self.dli):
+            response[ATTR_DLI] = {
                 ATTR_MAX: self.max_dli.state,
                 ATTR_MIN: self.min_dli.state,
                 ATTR_CURRENT: STATE_UNAVAILABLE,
                 ATTR_ICON: self._get_entity_icon(self.dli),
                 ATTR_UNIT_OF_MEASUREMENT: self.dli.unit_of_measurement,
                 ATTR_SENSOR: self.dli.entity_id,
-            },
-        }
-        if self.dli.native_value is not None and self.dli.native_value != STATE_UNKNOWN:
-            response[ATTR_DLI][ATTR_CURRENT] = float(self.dli.native_value)
+            }
+            if self.dli.native_value is not None and self.dli.native_value != STATE_UNKNOWN:
+                response[ATTR_DLI][ATTR_CURRENT] = float(self.dli.native_value)
 
         # Add rolling 24h DLI if available
-        if self.dli_24h is not None:
+        if self.dli_24h is not None and self._sensor_available(self.dli_24h):
             response[ATTR_DLI_24H] = {
                 ATTR_MAX: self.max_dli.state,  # Same thresholds as regular DLI
                 ATTR_MIN: self.min_dli.state,
