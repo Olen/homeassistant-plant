@@ -422,9 +422,7 @@ def ws_get_info(
                     e,
                     exc_info=True,
                 )
-                connection.send_error(
-                    msg["id"], "plant_info_error", str(e)
-                )
+                connection.send_error(msg["id"], "plant_info_error", str(e))
             return
     connection.send_error(
         msg["id"], "entity_not_found", f"Entity {msg['entity_id']} not found"
@@ -639,17 +637,13 @@ class PlantDevice(Entity):
                 )
             return has_state
         except (AttributeError, TypeError) as e:
-            _LOGGER.debug(
-                "Error checking sensor availability for %s: %s", sensor, e
-            )
+            _LOGGER.debug("Error checking sensor availability for %s: %s", sensor, e)
             return False
 
     def _sensor_info(self, attr_name, sensor, max_entity, min_entity) -> dict | None:
         """Build websocket info dict for a single sensor, or None if unavailable."""
         if not self._sensor_available(sensor):
-            _LOGGER.debug(
-                "Skipping %s: sensor %s not available", attr_name, sensor
-            )
+            _LOGGER.debug("Skipping %s: sensor %s not available", attr_name, sensor)
             return None
         try:
             return {
@@ -679,13 +673,33 @@ class PlantDevice(Entity):
             return {}
 
         sensor_map = [
-            (ATTR_TEMPERATURE, self.sensor_temperature, self.max_temperature, self.min_temperature),
-            (ATTR_ILLUMINANCE, self.sensor_illuminance, self.max_illuminance, self.min_illuminance),
+            (
+                ATTR_TEMPERATURE,
+                self.sensor_temperature,
+                self.max_temperature,
+                self.min_temperature,
+            ),
+            (
+                ATTR_ILLUMINANCE,
+                self.sensor_illuminance,
+                self.max_illuminance,
+                self.min_illuminance,
+            ),
             (ATTR_MOISTURE, self.sensor_moisture, self.max_moisture, self.min_moisture),
-            (ATTR_CONDUCTIVITY, self.sensor_conductivity, self.max_conductivity, self.min_conductivity),
+            (
+                ATTR_CONDUCTIVITY,
+                self.sensor_conductivity,
+                self.max_conductivity,
+                self.min_conductivity,
+            ),
             (ATTR_HUMIDITY, self.sensor_humidity, self.max_humidity, self.min_humidity),
             (ATTR_CO2, self.sensor_co2, self.max_co2, self.min_co2),
-            (ATTR_SOIL_TEMPERATURE, self.sensor_soil_temperature, self.max_soil_temperature, self.min_soil_temperature),
+            (
+                ATTR_SOIL_TEMPERATURE,
+                self.sensor_soil_temperature,
+                self.max_soil_temperature,
+                self.min_soil_temperature,
+            ),
         ]
 
         response = {}
@@ -704,7 +718,10 @@ class PlantDevice(Entity):
                 ATTR_UNIT_OF_MEASUREMENT: self.dli.unit_of_measurement,
                 ATTR_SENSOR: self.dli.entity_id,
             }
-            if self.dli.native_value is not None and self.dli.native_value != STATE_UNKNOWN:
+            if (
+                self.dli.native_value is not None
+                and self.dli.native_value != STATE_UNKNOWN
+            ):
                 response[ATTR_DLI][ATTR_CURRENT] = float(self.dli.native_value)
 
         # Add rolling 24h DLI if available
