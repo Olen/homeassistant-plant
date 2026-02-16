@@ -231,14 +231,10 @@ To remove a sensor, call the action with an empty `new_sensor`.
 
 ### Adding a sensor to an existing plant
 
-If you set up a plant without a particular sensor (e.g. you didn't have a CO2 or humidity sensor at the time), that plant sensor entity is **automatically disabled**. To add the sensor later:
+If you set up a plant without a particular sensor (e.g. you didn't have a CO2 or humidity sensor at the time), that plant sensor entity is **automatically disabled**. When you assign a physical sensor to it — either through **Configure** → **Replace sensors** or via the `plant.replace_sensor` action — the disabled entity and its related threshold entities are **automatically enabled**.
 
-1. Go to your plant's device page
-2. Find the disabled sensor entity (e.g. "CO2") and **enable** it
-3. Use **Configure** → **Replace sensors** to assign your physical sensor, or use the `plant.replace_sensor` action
-
-> [!IMPORTANT]
-> You must enable the plant sensor entity **before** replacing it — Home Assistant hides disabled entities from the entity picker in the UI.
+> [!NOTE]
+> After replacing a sensor, it may take up to a minute for the new sensor values to appear. Other sensor readings for the same plant may be temporarily unavailable while the configuration reloads.
 
 ---
 

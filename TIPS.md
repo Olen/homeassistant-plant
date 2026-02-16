@@ -67,7 +67,7 @@ data:
 ```
 
 > [!NOTE]
-> If the plant sensor entity is disabled (because no source was configured during setup), you must **enable** it first on the device page before it appears in the entity picker. See [Adding a sensor to an existing plant](README.md#adding-a-sensor-to-an-existing-plant).
+> If the plant sensor entity is disabled (because no source was configured during setup), it will be **automatically enabled** when you assign a physical sensor to it. This applies to both the **Configure** → **Replace sensors** UI and the `plant.replace_sensor` action.
 
 ### Which Option to Choose?
 
@@ -75,7 +75,7 @@ data:
 |--------|------|------|
 | `customize.yaml` | Simple, no extra entities | Affects the sensor globally |
 | Template sensor | Full control, can rename/process | Extra entity to maintain |
-| `replace_sensor` | No config changes needed, available from UI | Sensor must be enabled first |
+| `replace_sensor` | No config changes needed, available from UI | Slightly less convenient for wrong device_class |
 
 > [!TIP]
 > Regardless of the workaround, **report the missing `device_class` to the integration that owns the physical sensor**. That's the only way to fix it permanently for everyone.
