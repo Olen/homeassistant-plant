@@ -251,7 +251,13 @@ class PlantMinMax(RestoreNumber):
             new_state,
             self._attr_native_value,
         )
-        self._attr_native_value = new_state
+        if new_state is not None:
+            try:
+                self._attr_native_value = float(new_state)
+            except (ValueError, TypeError):
+                self._attr_native_value = new_state
+        else:
+            self._attr_native_value = new_state
 
     def state_attributes_changed(
         self, old_attributes: dict[str, Any], new_attributes: dict[str, Any]
@@ -279,6 +285,12 @@ class PlantMinMax(RestoreNumber):
                 "No restore data for %s, keeping default %s",
                 self.entity_id,
                 self._default_value,
+            )
+            self.async_write_ha_state()
+            async_track_state_change_event(
+                self.hass,
+                [self.entity_id],
+                self._state_changed_event,
             )
             return
         _LOGGER.debug(
