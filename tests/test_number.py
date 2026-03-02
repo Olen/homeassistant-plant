@@ -378,7 +378,7 @@ class TestThresholdStateChanges:
 
         # Simulate state change
         threshold.state_changed(old_state="60", new_state="70")
-        assert threshold.native_value == "70"
+        assert threshold.native_value == 70.0
 
 
 class TestTemperatureUnitConversion:
