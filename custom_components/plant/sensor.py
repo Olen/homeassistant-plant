@@ -44,6 +44,9 @@ from homeassistant.helpers.entity_registry import (
     EVENT_ENTITY_REGISTRY_UPDATED,
     EventEntityRegistryUpdatedData,
 )
+from homeassistant.helpers.entity_registry import (
+    async_get as er_async_get,
+)
 from homeassistant.helpers.event import (
     async_track_state_change_event,
 )
@@ -198,11 +201,15 @@ class PlantCurrentStatus(RestoreSensor):
         self._plant = plantdevice
         self._tracker = []
         self._follow_external = True
-        self.entity_id = async_generate_entity_id(
-            f"{DOMAIN}.{{}}",
-            f"{self._plant.name} {self._entity_id_key}",
-            current_ids={},
-        )
+        # Only force entity_id for existing entities (backwards compat).
+        # New entities let has_entity_name derive the entity_id automatically.
+        ent_reg = er_async_get(hass)
+        if ent_reg.async_get_entity_id(DOMAIN_SENSOR, DOMAIN, self._attr_unique_id):
+            self.entity_id = async_generate_entity_id(
+                f"{DOMAIN}.{{}}",
+                f"{self._plant.name} {self._entity_id_key}",
+                current_ids={},
+            )
         if (
             not self._attr_native_value
             or self._attr_native_value == STATE_UNKNOWN
@@ -220,6 +227,7 @@ class PlantCurrentStatus(RestoreSensor):
         """Device info for devices"""
         return DeviceInfo(
             identifiers={(DOMAIN, self._plant.unique_id)},
+            name=self._plant.name,
         )
 
     @property
@@ -622,11 +630,13 @@ class PlantCurrentPpfd(PlantCurrentStatus):
         self._source_is_ppfd = False  # Track if source already provides PPFD
         super().__init__(hass, config, plantdevice)
         self._follow_unit = False
-        self.entity_id = async_generate_entity_id(
-            f"{DOMAIN_SENSOR}.{{}}",
-            f"{self._plant.name} {self._entity_id_key}",
-            current_ids={},
-        )
+        ent_reg = er_async_get(hass)
+        if ent_reg.async_get_entity_id(DOMAIN_SENSOR, DOMAIN, self._attr_unique_id):
+            self.entity_id = async_generate_entity_id(
+                f"{DOMAIN_SENSOR}.{{}}",
+                f"{self._plant.name} {self._entity_id_key}",
+                current_ids={},
+            )
 
     def _is_ppfd_source(self) -> bool:
         """Check if the external sensor provides PPFD directly (not lux).
@@ -765,17 +775,22 @@ class PlantTotalLightIntegral(IntegrationSensor):
             unit_time=UnitOfTime.SECONDS,
             max_sub_interval=None,
         )
-        self.entity_id = async_generate_entity_id(
-            f"{DOMAIN_SENSOR}.{{}}",
-            f"{self._plant.name} Total {READING_PPFD} Integral",
-            current_ids={},
-        )
+        ent_reg = er_async_get(hass)
+        if ent_reg.async_get_entity_id(
+            DOMAIN_SENSOR, DOMAIN, f"{config.entry_id}-ppfd-integral"
+        ):
+            self.entity_id = async_generate_entity_id(
+                f"{DOMAIN_SENSOR}.{{}}",
+                f"{self._plant.name} Total {READING_PPFD} Integral",
+                current_ids={},
+            )
 
     @property
     def device_info(self) -> DeviceInfo:
         """Device info for devices"""
         return DeviceInfo(
             identifiers={(DOMAIN, self._plant.unique_id)},
+            name=self._plant.name,
         )
 
     def _calculate_unit(self, source_unit: str) -> str:
@@ -874,11 +889,13 @@ class PlantDailyLightIntegral(UtilityMeterSensor):
             suggested_entity_id=None,
             periodically_resetting=True,
         )
-        self.entity_id = async_generate_entity_id(
-            f"{DOMAIN_SENSOR}.{{}}",
-            f"{self._plant.name} {READING_DLI}",
-            current_ids={},
-        )
+        ent_reg = er_async_get(hass)
+        if ent_reg.async_get_entity_id(DOMAIN_SENSOR, DOMAIN, f"{config.entry_id}-dli"):
+            self.entity_id = async_generate_entity_id(
+                f"{DOMAIN_SENSOR}.{{}}",
+                f"{self._plant.name} {READING_DLI}",
+                current_ids={},
+            )
 
     @property
     def native_unit_of_measurement(self) -> str:
@@ -896,6 +913,7 @@ class PlantDailyLightIntegral(UtilityMeterSensor):
         """Device info for devices"""
         return DeviceInfo(
             identifiers={(DOMAIN, self._plant.unique_id)},
+            name=self._plant.name,
         )
 
     async def async_added_to_hass(self) -> None:
@@ -983,11 +1001,15 @@ class PlantDailyLightIntegral24h(StatisticsSensor):
             precision=2,
             percentile=50,  # Not used for "change" characteristic
         )
-        self.entity_id = async_generate_entity_id(
-            f"{DOMAIN_SENSOR}.{{}}",
-            f"{self._plant.name} {READING_DLI}_24h",
-            current_ids={},
-        )
+        ent_reg = er_async_get(hass)
+        if ent_reg.async_get_entity_id(
+            DOMAIN_SENSOR, DOMAIN, f"{config.entry_id}-dli-24h"
+        ):
+            self.entity_id = async_generate_entity_id(
+                f"{DOMAIN_SENSOR}.{{}}",
+                f"{self._plant.name} {READING_DLI}_24h",
+                current_ids={},
+            )
 
     @property
     def native_unit_of_measurement(self) -> str:
@@ -1002,6 +1024,7 @@ class PlantDailyLightIntegral24h(StatisticsSensor):
         """Device info for devices."""
         return DeviceInfo(
             identifiers={(DOMAIN, self._plant.unique_id)},
+            name=self._plant.name,
         )
 
 

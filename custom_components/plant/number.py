@@ -24,6 +24,7 @@ from homeassistant.helpers.entity import (
     async_generate_entity_id,
 )
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_registry import async_get as er_async_get
 from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.util.unit_conversion import TemperatureConverter
 
@@ -203,11 +204,16 @@ class PlantMinMax(RestoreNumber):
         self._config = config
         self.hass = hass
         self._plant = plantdevice
-        self.entity_id = async_generate_entity_id(
-            f"{DOMAIN}.{{}}",
-            f"{self._plant.name} {self._entity_id_key}",
-            current_ids={},
-        )
+        # Only force entity_id for existing entities (backwards compat).
+        # New entities let has_entity_name derive the entity_id automatically,
+        # which enables auto-rename when the device is renamed.
+        ent_reg = er_async_get(hass)
+        if ent_reg.async_get_entity_id("number", DOMAIN, self._attr_unique_id):
+            self.entity_id = async_generate_entity_id(
+                f"{DOMAIN}.{{}}",
+                f"{self._plant.name} {self._entity_id_key}",
+                current_ids={},
+            )
         # pylint: disable=no-member
         if (
             not hasattr(self, "_attr_native_value")
@@ -221,6 +227,7 @@ class PlantMinMax(RestoreNumber):
         """Device info for devices"""
         return DeviceInfo(
             identifiers={(DOMAIN, self._plant.unique_id)},
+            name=self._plant.name,
         )
 
     async def async_set_native_value(self, value: float) -> None:
