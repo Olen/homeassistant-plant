@@ -43,6 +43,8 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.entity_registry import (
     EVENT_ENTITY_REGISTRY_UPDATED,
     EventEntityRegistryUpdatedData,
+)
+from homeassistant.helpers.entity_registry import (
     async_get as er_async_get,
 )
 from homeassistant.helpers.event import (
