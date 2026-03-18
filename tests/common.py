@@ -146,8 +146,11 @@ async def update_plant_sensors(hass: HomeAssistant, entry_id: str) -> None:
     plant = plant_data[ATTR_PLANT]
 
     # Update all plant sensors to read external sensor values
+    # Skip disabled entities (hass is None) as they don't have state
     if ATTR_SENSORS in plant_data:
         for sensor in plant_data[ATTR_SENSORS]:
+            if sensor.hass is None:
+                continue
             await sensor.async_update()
             sensor.async_write_ha_state()
 

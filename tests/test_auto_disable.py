@@ -9,6 +9,8 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.plant.const import (
     ATTR_PLANT,
     DOMAIN,
+    FLOW_PLANT_INFO,
+    FLOW_SENSOR_MOISTURE,
     SERVICE_REPLACE_SENSOR,
 )
 
@@ -89,16 +91,16 @@ class TestAutoDisableOnReplaceSensor:
         hass: HomeAssistant,
         init_integration_no_sensors: MockConfigEntry,
     ) -> None:
-        """Adding an external sensor should re-enable the related entities."""
+        """Adding an external sensor via service should re-enable the related entities."""
         ent_reg = er.async_get(hass)
         plant = hass.data[DOMAIN][init_integration_no_sensors.entry_id][ATTR_PLANT]
+        meter_entity = plant.sensor_temperature.entity_id
 
         # Verify initially disabled
-        entry = ent_reg.async_get(plant.sensor_temperature.entity_id)
+        entry = ent_reg.async_get(meter_entity)
         assert entry.disabled_by == er.RegistryEntryDisabler.INTEGRATION
 
-        # Directly call replace_external_sensor (service can't reach disabled entities
-        # because their state is not registered)
+        # Use the service call (now works on disabled entities)
         new_sensor_id = "sensor.new_temperature"
         hass.states.async_set(
             new_sensor_id,
@@ -107,7 +109,12 @@ class TestAutoDisableOnReplaceSensor:
         )
         await hass.async_block_till_done()
 
-        plant.sensor_temperature.replace_external_sensor(new_sensor_id)
+        await hass.services.async_call(
+            DOMAIN,
+            SERVICE_REPLACE_SENSOR,
+            {"meter_entity": meter_entity, "new_sensor": new_sensor_id},
+            blocking=True,
+        )
         await hass.async_block_till_done()
 
         # Meter sensor, max and min thresholds should now be enabled
@@ -194,6 +201,50 @@ class TestAutoDisableOnReplaceSensor:
             assert (
                 entry.disabled_by == er.RegistryEntryDisabler.INTEGRATION
             ), f"{entity.entity_id} should be disabled"
+
+    async def test_replace_sensor_service_works_on_disabled_entity(
+        self,
+        hass: HomeAssistant,
+        init_integration_no_sensors: MockConfigEntry,
+    ) -> None:
+        """Service call on a disabled meter should re-enable it and update config."""
+        ent_reg = er.async_get(hass)
+        plant = hass.data[DOMAIN][init_integration_no_sensors.entry_id][ATTR_PLANT]
+        meter_entity = plant.sensor_moisture.entity_id
+
+        # Verify initially disabled
+        entry = ent_reg.async_get(meter_entity)
+        assert entry.disabled_by == er.RegistryEntryDisabler.INTEGRATION
+
+        # Set up the new sensor state
+        new_sensor_id = "sensor.new_moisture"
+        hass.states.async_set(
+            new_sensor_id,
+            "45",
+            {"unit_of_measurement": "%", "device_class": "moisture"},
+        )
+        await hass.async_block_till_done()
+
+        # Call the service — should work even though meter is disabled
+        await hass.services.async_call(
+            DOMAIN,
+            SERVICE_REPLACE_SENSOR,
+            {"meter_entity": meter_entity, "new_sensor": new_sensor_id},
+            blocking=True,
+        )
+        await hass.async_block_till_done()
+
+        # Entity should be re-enabled
+        entry = ent_reg.async_get(meter_entity)
+        assert (
+            entry.disabled_by != er.RegistryEntryDisabler.INTEGRATION
+        ), f"{meter_entity} should be re-enabled after service call"
+
+        # Config data should be updated with the new sensor
+        config_entry = hass.config_entries.async_get_entry(
+            init_integration_no_sensors.entry_id
+        )
+        assert config_entry.data[FLOW_PLANT_INFO][FLOW_SENSOR_MOISTURE] == new_sensor_id
 
 
 class TestAutoDisablePartialSensors:

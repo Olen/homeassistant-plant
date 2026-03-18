@@ -154,20 +154,28 @@ async def async_setup_entry(
 
     # Create and add the integral-entities
     # Must be run after the sensors are added to the plant
+    # Default-disable illuminance-derived entities when no illuminance sensor configured
+    has_illuminance = (
+        entry.data.get(FLOW_PLANT_INFO, {}).get(FLOW_SENSOR_ILLUMINANCE) is not None
+    )
 
     pcurppfd = PlantCurrentPpfd(hass, entry, plant)
+    pcurppfd._attr_entity_registry_enabled_default = has_illuminance
     async_add_entities([pcurppfd])
 
     pintegral = PlantTotalLightIntegral(hass, entry, pcurppfd, plant)
+    pintegral._attr_entity_registry_enabled_default = has_illuminance
     async_add_entities([pintegral], update_before_add=True)
 
     plant.add_calculations(pcurppfd, pintegral)
 
     pdli = PlantDailyLightIntegral(hass, entry, pintegral, plant)
+    pdli._attr_entity_registry_enabled_default = has_illuminance
     async_add_entities(new_entities=[pdli], update_before_add=True)
 
     # Create rolling 24-hour DLI sensor (alternative to midnight-reset DLI)
     pdli_24h = PlantDailyLightIntegral24h(hass, entry, pintegral, plant)
+    pdli_24h._attr_entity_registry_enabled_default = has_illuminance
     async_add_entities(new_entities=[pdli_24h], update_before_add=True)
 
     plant.add_dli(dli=pdli, dli_24h=pdli_24h)
@@ -210,6 +218,11 @@ class PlantCurrentStatus(RestoreSensor):
                 f"{self._plant.name} {self._entity_id_key}",
                 current_ids={},
             )
+        # Default-disable entities with no external sensor configured.
+        # HA only applies entity_registry_enabled_default on first registration,
+        # so user-enabled entities survive config entry reloads.
+        self._attr_entity_registry_enabled_default = self._external_sensor is not None
+
         if (
             not self._attr_native_value
             or self._attr_native_value == STATE_UNKNOWN
@@ -250,25 +263,45 @@ class PlantCurrentStatus(RestoreSensor):
         _LOGGER.info("Setting %s external sensor to %s", self.entity_id, new_sensor)
         # pylint: disable=attribute-defined-outside-init
         self._external_sensor = new_sensor
-        self.async_track_entity(self.entity_id)
-        self.async_track_entity(self.external_sensor)
+
+        # Disabled entities have self.hass = None; use the plant's hass reference
+        # for operations that need it (config updates, registry changes)
+        hass = self.hass or (self._plant.hass if self._plant else None)
+
+        # Only track state changes if the entity is enabled (has its own hass ref).
+        # Disabled entities will set up tracking when enabled via async_added_to_hass.
+        if self.hass is not None:
+            self.async_track_entity(self.entity_id)
+            self.async_track_entity(self.external_sensor)
 
         # Persist the change to config entry if we have a config key
         if self._config_key:
-            self._update_config_entry(new_sensor)
+            self._update_config_entry(new_sensor, hass)
 
-        self.async_write_ha_state()
+        # Only write state if the entity is enabled (disabled entities have no state)
+        if self.hass is not None and self.hass.states.get(self.entity_id) is not None:
+            self.async_write_ha_state()
 
         if (
             self._plant
             and getattr(self._plant, "plant_complete", False)
-            and not self.hass.is_stopping
+            and hass is not None
+            and not hass.is_stopping
         ):
             self._plant.update_entity_disabled_state(self)
 
-    def _update_config_entry(self, new_sensor: str | None) -> None:
+    def _update_config_entry(
+        self, new_sensor: str | None, hass: HomeAssistant | None = None
+    ) -> None:
         """Update the config entry with the new sensor value."""
         if not self._config_key:
+            return
+
+        hass = hass or self.hass
+        if hass is None:
+            _LOGGER.warning(
+                "Cannot update config entry for %s: no hass reference", self.entity_id
+            )
             return
 
         # Skip update if value hasn't changed (avoids spurious config entry
@@ -283,7 +316,7 @@ class PlantCurrentStatus(RestoreSensor):
         new_plant_info[self._config_key] = new_sensor
         new_data[FLOW_PLANT_INFO] = new_plant_info
 
-        self.hass.config_entries.async_update_entry(self._config, data=new_data)
+        hass.config_entries.async_update_entry(self._config, data=new_data)
         _LOGGER.debug(
             "Updated config entry %s with %s=%s",
             self._config.entry_id,
