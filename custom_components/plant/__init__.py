@@ -224,7 +224,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         """Replace a sensor entity within a plant device."""
         meter_entity = call.data[ATTR_METER_ENTITY]
         new_sensor = call.data.get(ATTR_NEW_SENSOR)
-        found = False
+
+        # Find the meter entity across all plant config entries
+        matched_meter = None
         for entry_id in hass.data[DOMAIN]:
             # Skip internal settings keys
             if entry_id.startswith("_") or entry_id.endswith("_store"):
@@ -232,9 +234,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             if ATTR_SENSORS in hass.data[DOMAIN][entry_id]:
                 for sensor in hass.data[DOMAIN][entry_id][ATTR_SENSORS]:
                     if sensor.entity_id == meter_entity:
-                        found = True
+                        matched_meter = sensor
                         break
-        if not found:
+            if matched_meter:
+                break
+        if matched_meter is None:
             _LOGGER.warning(
                 "Refuse to update non-%s entities: %s", DOMAIN, meter_entity
             )
@@ -245,15 +249,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             and not new_sensor.startswith(ENTITY_ID_PREFIX_SENSOR)
         ):
             _LOGGER.warning("%s is not a sensor", new_sensor)
-            return False
-
-        try:
-            meter = hass.states.get(meter_entity)
-        except AttributeError:
-            _LOGGER.error("Meter entity %s not found", meter_entity)
-            return False
-        if meter is None:
-            _LOGGER.error("Meter entity %s not found", meter_entity)
             return False
 
         if new_sensor and new_sensor != "":
@@ -273,15 +268,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             meter_entity,
             new_sensor,
         )
-        for key in hass.data[DOMAIN]:
-            # Skip internal settings keys
-            if key.startswith("_") or key.endswith("_store"):
-                continue
-            if ATTR_SENSORS in hass.data[DOMAIN][key]:
-                meters = hass.data[DOMAIN][key][ATTR_SENSORS]
-                for meter in meters:
-                    if meter.entity_id == meter_entity:
-                        meter.replace_external_sensor(new_sensor)
+        matched_meter.replace_external_sensor(new_sensor)
         return
 
     hass.services.async_register(
@@ -302,10 +289,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         return False
 
     plant.async_schedule_update_ha_state(True)
-
-    # Disable entities that have no external sensor configured
-    for meter_sensor in plant.meter_entities:
-        plant.update_entity_disabled_state(meter_sensor)
 
     # Lets add the dummy sensors automatically if we are testing stuff
     if USE_DUMMY_SENSORS is True:

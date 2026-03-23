@@ -73,6 +73,13 @@ from .const import (
     DOMAIN,
     FLOW_PLANT_INFO,
     FLOW_PLANT_LIMITS,
+    FLOW_SENSOR_CO2,
+    FLOW_SENSOR_CONDUCTIVITY,
+    FLOW_SENSOR_HUMIDITY,
+    FLOW_SENSOR_ILLUMINANCE,
+    FLOW_SENSOR_MOISTURE,
+    FLOW_SENSOR_SOIL_TEMPERATURE,
+    FLOW_SENSOR_TEMPERATURE,
     ICON_CO2,
     ICON_CONDUCTIVITY,
     ICON_DLI,
@@ -158,6 +165,25 @@ async def async_setup_entry(
         pminmm,
         plux_ppfd,
     ]
+
+    # Default-disable threshold entities when no corresponding sensor is configured.
+    # HA only applies entity_registry_enabled_default on first registration,
+    # so user-enabled entities survive config entry reloads.
+    plant_info = entry.data.get(FLOW_PLANT_INFO, {})
+    sensor_groups = {
+        FLOW_SENSOR_MOISTURE: [pmaxm, pminm],
+        FLOW_SENSOR_TEMPERATURE: [pmaxt, pmint],
+        FLOW_SENSOR_ILLUMINANCE: [pmaxb, pminb, pmaxmm, pminmm, plux_ppfd],
+        FLOW_SENSOR_CONDUCTIVITY: [pmaxc, pminc],
+        FLOW_SENSOR_HUMIDITY: [pmaxh, pminh],
+        FLOW_SENSOR_CO2: [pmaxco2, pminco2],
+        FLOW_SENSOR_SOIL_TEMPERATURE: [pmaxst, pminst],
+    }
+    for sensor_key, entities in sensor_groups.items():
+        has_sensor = plant_info.get(sensor_key) is not None
+        for entity in entities:
+            entity._attr_entity_registry_enabled_default = has_sensor
+
     async_add_entities(number_entities)
 
     hass.data[DOMAIN][entry.entry_id][ATTR_THRESHOLDS] = number_entities
