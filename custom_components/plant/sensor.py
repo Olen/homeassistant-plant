@@ -224,7 +224,7 @@ class PlantCurrentStatus(RestoreSensor):
         self._attr_entity_registry_enabled_default = self._external_sensor is not None
 
         if (
-            not self._attr_native_value
+            self._attr_native_value is None
             or self._attr_native_value == STATE_UNKNOWN
             or self._attr_native_value == STATE_UNAVAILABLE
         ):
@@ -1075,7 +1075,7 @@ class PlantDummyStatus(SensorEntity):
         )
         self._plant = plantdevice
 
-        if not self._attr_native_value or self._attr_native_value == STATE_UNKNOWN:
+        if self._attr_native_value is None or self._attr_native_value == STATE_UNKNOWN:
             self._attr_native_value = self._default_state
 
 
