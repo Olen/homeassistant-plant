@@ -42,6 +42,7 @@ from .const import (
     CONF_MIN_ILLUMINANCE,
     CONF_MIN_MOISTURE,
     CONF_MIN_TEMPERATURE,
+    CONF_MOISTURE_GRACE_PERIOD,
     DATA_SOURCE,
     DATA_SOURCE_PLANTBOOK,
     DEFAULT_MAX_CONDUCTIVITY,
@@ -56,6 +57,7 @@ from .const import (
     DEFAULT_MIN_ILLUMINANCE,
     DEFAULT_MIN_MOISTURE,
     DEFAULT_MIN_TEMPERATURE,
+    DEFAULT_MOISTURE_GRACE_PERIOD,
     DOMAIN,
     DOMAIN_PLANTBOOK,
     DOMAIN_SENSOR,
@@ -630,6 +632,16 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         data_schema[
             vol.Optional(FLOW_MOISTURE_TRIGGER, default=self.plant.moisture_trigger)
         ] = cv.boolean
+        # Add moisture grace period setting (in seconds)
+        current_grace_period = self.config_entry.options.get(
+            CONF_MOISTURE_GRACE_PERIOD, DEFAULT_MOISTURE_GRACE_PERIOD
+        )
+        data_schema[
+            vol.Optional(
+                CONF_MOISTURE_GRACE_PERIOD,
+                description={"suggested_value": current_grace_period},
+            )
+        ] = vol.All(vol.Coerce(int), vol.Range(min=0, max=86400))
         data_schema[
             vol.Optional(
                 FLOW_CONDUCTIVITY_TRIGGER, default=self.plant.conductivity_trigger

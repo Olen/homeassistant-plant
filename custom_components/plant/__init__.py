@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from datetime import datetime, timedelta
 
 import voluptuous as vol
 from homeassistant.components import websocket_api
@@ -61,7 +62,9 @@ from .const import (
     CONF_MIN_CONDUCTIVITY,
     CONF_MIN_MOISTURE,
     CONF_MIN_TEMPERATURE,
+    CONF_MOISTURE_GRACE_PERIOD,
     DATA_SOURCE,
+    DEFAULT_MOISTURE_GRACE_PERIOD,
     DOMAIN,
     DOMAIN_PLANTBOOK,
     ENTITY_ID_PREFIX_SENSOR,
@@ -75,6 +78,7 @@ from .const import (
     FLOW_SOIL_TEMPERATURE_TRIGGER,
     FLOW_TEMPERATURE_TRIGGER,
     HYSTERESIS_FRACTION,
+    MOISTURE_INCREASE_THRESHOLD,
     OPB_DISPLAY_PID,
     SERVICE_REPLACE_SENSOR,
     STATE_HIGH,
@@ -550,6 +554,10 @@ class PlantDevice(Entity):
         self.co2_status = None
         self.soil_temperature_status = None
         self.dli_status = None
+
+        # Moisture grace period tracking
+        self._moisture_grace_end_time: datetime | None = None
+        self._last_moisture_value: float | None = None
 
     def _is_ppfd_source(self) -> bool:
         """Check if illuminance source provides PPFD instead of lux.
@@ -1052,23 +1060,74 @@ class PlantDevice(Entity):
             moisture_val = self._safe_float(moisture, self.sensor_moisture.entity_id)
             if moisture_val is not None:
                 known_state = True
+
+                # Detect watering event (rapid moisture increase)
+                if self._last_moisture_value is not None:
+                    if moisture_val - self._last_moisture_value >= MOISTURE_INCREASE_THRESHOLD:
+                        grace_period_seconds = self._config.options.get(
+                            CONF_MOISTURE_GRACE_PERIOD, DEFAULT_MOISTURE_GRACE_PERIOD
+                        )
+                        self._moisture_grace_end_time = datetime.now() + timedelta(
+                            seconds=grace_period_seconds
+                        )
+                        _LOGGER.debug(
+                            "Watering detected for %s: moisture increased by %.1f%% "
+                            "(from %.1f%% to %.1f%%). Grace period active until %s",
+                            self.entity_id,
+                            moisture_increase,
+                            self._last_moisture_value,
+                            moisture_val,
+                            self._moisture_grace_end_time,
+                        )
+
+                self._last_moisture_value = moisture_val
+
                 self.moisture_status = self._check_threshold(
                     moisture_val,
                     self.min_moisture,
                     self.max_moisture,
                     self.moisture_status,
                 )
-                if (
-                    self.moisture_status in (STATE_LOW, STATE_HIGH)
-                    and self.moisture_trigger
-                ):
-                    new_state = STATE_PROBLEM
+
+                # Apply grace period logic: only suppress "high" problems during grace period
+                # Allow "low" problems (needs water) to trigger immediately
+                if self.moisture_trigger:
+                    if self.moisture_status == STATE_LOW:
+                        new_state = STATE_PROBLEM
+                    elif self.moisture_status == STATE_HIGH:
+                        now = datetime.now()
+                        if (
+                            self._moisture_grace_end_time is not None
+                            and now < self._moisture_grace_end_time
+                        ):
+                            # Grace period active - suppress high moisture problem
+                            remaining = (self._moisture_grace_end_time - now).total_seconds()
+                            _LOGGER.debug(
+                                "Moisture high for %s but grace period active "
+                                "(%.0f seconds remaining) - not reporting problem",
+                                self.entity_id,
+                                remaining,
+                            )
+                        else:
+                            # Grace period expired or not active - report problem
+                            new_state = STATE_PROBLEM
+                            if self._moisture_grace_end_time is not None:
+                                _LOGGER.debug(
+                                    "Moisture grace period expired for %s - "
+                                    "reporting high moisture problem",
+                                    self.entity_id,
+                                )
+                                self._moisture_grace_end_time = None
             else:
-                # Reset status when sensor is unavailable or non-numeric
+                # Reset status and tracking when sensor is unavailable or non-numeric
                 self.moisture_status = None
+                self._last_moisture_value = None
+                self._moisture_grace_end_time = None
         else:
-            # Reset status when sensor is removed
+            # Reset status and tracking when sensor is removed
             self.moisture_status = None
+            self._last_moisture_value = None
+            self._moisture_grace_end_time = None
 
         if self.sensor_conductivity is not None:
             conductivity = getattr(
