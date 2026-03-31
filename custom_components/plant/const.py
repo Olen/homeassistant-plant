@@ -197,7 +197,8 @@ HYSTERESIS_FRACTION = 0.05
 DEFAULT_MOISTURE_GRACE_PERIOD = 0
 FLOW_MOISTURE_GRACE_PERIOD = "moisture_grace_period"
 # Threshold for detecting rapid moisture increase (watering event)
-# If moisture increases by this percentage within a short time, trigger grace period
+# If moisture increases by this many percentage points (e.g. 40% → 50%),
+# trigger grace period. This is an absolute difference, not a relative percentage.
 MOISTURE_INCREASE_THRESHOLD = 10.0
 
 # PPFD to DLI: /1000000 * 3600 to get from microseconds to hours
