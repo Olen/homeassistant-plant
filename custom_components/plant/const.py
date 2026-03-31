@@ -191,6 +191,16 @@ OPB_DISPLAY_PID = "display_pid"
 # value oscillates near a threshold.
 HYSTERESIS_FRACTION = 0.05
 
+# Grace period after watering: delay before reporting moisture "high" problem
+# This prevents false alarms immediately after watering when moisture spikes
+# temporarily before stabilizing as water distributes through soil.
+DEFAULT_MOISTURE_GRACE_PERIOD = 0
+FLOW_MOISTURE_GRACE_PERIOD = "moisture_grace_period"
+# Threshold for detecting rapid moisture increase (watering event)
+# If moisture increases by this many percentage points (e.g. 40% → 50%),
+# trigger grace period. This is an absolute difference, not a relative percentage.
+MOISTURE_INCREASE_THRESHOLD = 10.0
+
 # PPFD to DLI: /1000000 * 3600 to get from microseconds to hours
 PPFD_DLI_FACTOR = 0.0036
 # See https://www.apogeeinstruments.com/conversion-ppfd-to-lux/

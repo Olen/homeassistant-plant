@@ -1117,3 +1117,82 @@ class TestOptionsFlow:
         finally:
             # Restore hass so teardown can clean up properly
             plant.sensor_co2.hass = saved_hass
+
+    async def test_options_flow_set_moisture_grace_period(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test setting moisture grace period through options flow."""
+        from custom_components.plant.const import (
+            FLOW_MOISTURE_GRACE_PERIOD,
+            DEFAULT_MOISTURE_GRACE_PERIOD,
+        )
+
+        plant = hass.data[DOMAIN][init_integration.entry_id]["plant"]
+
+        # Default should be 0
+        assert plant.moisture_grace_period == DEFAULT_MOISTURE_GRACE_PERIOD
+
+        # Run the options flow to set grace period
+        result = await hass.config_entries.options.async_init(init_integration.entry_id)
+
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            {"next_step_id": "plant_properties"},
+        )
+        assert result["step_id"] == "plant_properties"
+
+        # Set grace period to 1 hour (3600 seconds)
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            {
+                FLOW_MOISTURE_GRACE_PERIOD: 3600,
+            },
+        )
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        await hass.async_block_till_done()
+
+        # Verify the option was saved
+        assert init_integration.options.get(FLOW_MOISTURE_GRACE_PERIOD) == 3600
+
+        # Verify the plant entity uses the new value
+        assert plant.moisture_grace_period == 3600
+
+    async def test_options_flow_moisture_grace_period_validation(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test moisture grace period validation in options flow."""
+        from custom_components.plant.const import FLOW_MOISTURE_GRACE_PERIOD
+
+        result = await hass.config_entries.options.async_init(init_integration.entry_id)
+
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            {"next_step_id": "plant_properties"},
+        )
+
+        # Test that values are coerced to int and validated
+        # Valid: 0 (disabled)
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            {FLOW_MOISTURE_GRACE_PERIOD: 0},
+        )
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert init_integration.options.get(FLOW_MOISTURE_GRACE_PERIOD) == 0
+
+        # Valid: 86400 (24 hours, max allowed)
+        result = await hass.config_entries.options.async_init(init_integration.entry_id)
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            {"next_step_id": "plant_properties"},
+        )
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            {FLOW_MOISTURE_GRACE_PERIOD: 86400},
+        )
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert init_integration.options.get(FLOW_MOISTURE_GRACE_PERIOD) == 86400
