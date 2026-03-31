@@ -1920,3 +1920,628 @@ class TestYamlImport:
             assert result is True
             # Should be called once for my_plant, not for openplantbook
             assert mock_migrate.call_count == 1
+
+
+class TestMoistureGracePeriod:
+    """Tests for moisture grace period feature after watering."""
+
+    async def test_grace_period_suppresses_high_moisture_alert(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test that grace period suppresses high moisture alerts after watering.
+
+        Scenario:
+        1. Start with normal moisture (40%)
+        2. Water plant - moisture jumps by 15% (to 55%)
+        3. Grace period activates
+        4. Moisture rises above threshold (65% > 60%)
+        5. Verify problem is NOT reported during grace period
+        """
+        from datetime import timedelta
+        from homeassistant.util import dt as dt_util
+        from custom_components.plant.const import (
+            FLOW_MOISTURE_GRACE_PERIOD,
+            MOISTURE_INCREASE_THRESHOLD,
+        )
+
+        # Configure grace period of 3600 seconds (1 hour)
+        hass.config_entries.async_update_entry(
+            init_integration, options={FLOW_MOISTURE_GRACE_PERIOD: 3600}
+        )
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+
+        # Step 1: Start with normal moisture
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=40.0,
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=40.0,
+        )
+        await update_plant_sensors(hass, init_integration.entry_id)
+        assert plant.state == STATE_OK
+        assert plant.moisture_status == STATE_OK
+        assert plant._last_moisture_value == 40.0
+        assert plant._moisture_grace_end_time is None
+
+        # Step 2: Simulate watering - moisture increases by 15% (triggers grace period)
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=55.0,  # Increased by 15% from 40%
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=40.0,
+        )
+        await update_plant_sensors(hass, init_integration.entry_id)
+
+        # Grace period should be activated
+        assert plant._last_moisture_value == 55.0
+        assert plant._moisture_grace_end_time is not None
+        # Grace period should be set to approximately now + 3600 seconds
+        grace_remaining = (
+            plant._moisture_grace_end_time - dt_util.now()
+        ).total_seconds()
+        assert (
+            3595 < grace_remaining < 3605
+        ), f"Grace period remaining: {grace_remaining}"
+
+        # Step 3: Moisture rises above max threshold (65% > 60%)
+        # But grace period is still active - should NOT report problem
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=65.0,  # Above max of 60
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=40.0,
+        )
+        await update_plant_sensors(hass, init_integration.entry_id)
+
+        # Moisture is high but grace period suppresses the problem
+        assert plant.moisture_status == STATE_HIGH
+        assert plant.state == STATE_OK  # No problem reported!
+        assert plant._last_moisture_value == 65.0
+
+    async def test_low_moisture_triggers_during_grace_period(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test that low moisture alerts still trigger during grace period.
+
+        Grace period only suppresses HIGH moisture problems, not LOW.
+        This ensures we still get alerts if plant needs water.
+        """
+        from datetime import timedelta
+        from unittest.mock import patch
+        from custom_components.plant.const import FLOW_MOISTURE_GRACE_PERIOD
+
+        # Configure grace period
+        hass.config_entries.async_update_entry(
+            init_integration, options={FLOW_MOISTURE_GRACE_PERIOD: 3600}
+        )
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+
+        # Start with normal moisture
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=40.0,
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=40.0,
+        )
+        await update_plant_sensors(hass, init_integration.entry_id)
+
+        # Trigger watering detection
+        with patch("custom_components.plant.dt_util.now") as mock_now:
+            from homeassistant.util import dt as dt_util
+
+            base_time = dt_util.now()
+            mock_now.return_value = base_time
+
+            await set_external_sensor_states(hass, moisture=55.0)
+            await update_plant_sensors(hass, init_integration.entry_id)
+
+            # Grace period active
+            assert plant._moisture_grace_end_time is not None
+
+        # Now moisture drops LOW during grace period
+        with patch("custom_components.plant.dt_util.now") as mock_now:
+            current_time = base_time + timedelta(minutes=15)
+            mock_now.return_value = current_time
+
+            await set_external_sensor_states(
+                hass,
+                temperature=25.0,
+                moisture=15.0,  # Below min of 20
+                conductivity=1000.0,
+                illuminance=5000.0,
+                humidity=40.0,
+            )
+            await update_plant_sensors(hass, init_integration.entry_id)
+
+            # LOW moisture should trigger problem even during grace period
+            assert plant.moisture_status == STATE_LOW
+            assert plant.state == STATE_PROBLEM
+            assert plant._last_moisture_value == 15.0
+
+    async def test_grace_period_expiration_enables_high_alerts(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+        freezer,
+    ) -> None:
+        """Test that high moisture alerts trigger after grace period expires.
+
+        Scenario:
+        1. Activate grace period
+        2. Moisture goes high during grace period (suppressed)
+        3. Time advances past grace period end
+        4. Update sensors - problem should now be reported
+        """
+        from datetime import timedelta
+        from homeassistant.util import dt as dt_util
+        from custom_components.plant.const import FLOW_MOISTURE_GRACE_PERIOD
+
+        # Short grace period for testing
+        hass.config_entries.async_update_entry(
+            init_integration, options={FLOW_MOISTURE_GRACE_PERIOD: 600}
+        )
+        await hass.async_block_till_done()  # 10 minutes
+
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+
+        # Start normal
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=40.0,
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=40.0,
+        )
+        await update_plant_sensors(hass, init_integration.entry_id)
+
+        # Freeze time at a known point
+        base_time = dt_util.now()
+        freezer.move_to(base_time)
+
+        # Water plant
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=55.0,
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=40.0,
+        )
+        await update_plant_sensors(hass, init_integration.entry_id)
+
+        # Moisture goes high
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=65.0,
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=40.0,
+        )
+        await update_plant_sensors(hass, init_integration.entry_id)
+
+        # Problem suppressed during grace period
+        assert plant.moisture_status == STATE_HIGH
+        assert plant.state == STATE_OK
+
+        # Advance time past grace period (15 minutes > 10 minutes)
+        freezer.move_to(base_time + timedelta(minutes=15))
+
+        # Trigger update - moisture still high
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=65.0,
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=40.0,
+        )
+        await update_plant_sensors(hass, init_integration.entry_id)
+
+        # Grace period expired - problem should now be reported
+        assert plant.moisture_status == STATE_HIGH
+        assert plant.state == STATE_PROBLEM
+        # Grace end time should be cleared
+        assert plant._moisture_grace_end_time is None
+
+    async def test_grace_period_zero_means_no_suppression(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test that grace period of 0 disables the feature entirely.
+
+        With grace period = 0, high moisture should trigger immediately.
+        """
+        from custom_components.plant.const import FLOW_MOISTURE_GRACE_PERIOD
+
+        # Disable grace period
+        hass.config_entries.async_update_entry(
+            init_integration, options={FLOW_MOISTURE_GRACE_PERIOD: 0}
+        )
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+
+        # Start normal
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=40.0,
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=40.0,
+        )
+        await update_plant_sensors(hass, init_integration.entry_id)
+        assert plant.state == STATE_OK
+
+        # Large moisture increase (would normally trigger grace period)
+        await set_external_sensor_states(hass, moisture=55.0)
+        await update_plant_sensors(hass, init_integration.entry_id)
+
+        # No grace period should be set
+        assert plant._moisture_grace_end_time is None
+
+        # High moisture should trigger problem immediately
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=65.0,  # Above max of 60
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=40.0,
+        )
+        await update_plant_sensors(hass, init_integration.entry_id)
+
+        # Problem should be reported immediately (no grace period)
+        assert plant.moisture_status == STATE_HIGH
+        assert plant.state == STATE_PROBLEM
+
+    async def test_sensor_unavailable_resets_tracking_state(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test that sensor becoming unavailable resets grace period tracking.
+
+        When moisture sensor goes unavailable, we should reset:
+        - _last_moisture_value
+        - _moisture_grace_end_time
+        - moisture_status
+        """
+        from datetime import timedelta
+        from unittest.mock import patch
+        from custom_components.plant.const import FLOW_MOISTURE_GRACE_PERIOD
+
+        hass.config_entries.async_update_entry(
+            init_integration, options={FLOW_MOISTURE_GRACE_PERIOD: 3600}
+        )
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+
+        # Start with moisture data and active grace period
+        with patch("custom_components.plant.dt_util.now") as mock_now:
+            from homeassistant.util import dt as dt_util
+
+            base_time = dt_util.now()
+            mock_now.return_value = base_time
+
+            await set_external_sensor_states(hass, moisture=40.0)
+            await update_plant_sensors(hass, init_integration.entry_id)
+
+            # Trigger watering
+            await set_external_sensor_states(hass, moisture=55.0)
+            await update_plant_sensors(hass, init_integration.entry_id)
+
+            # Verify grace period is active
+            assert plant._last_moisture_value == 55.0
+            assert plant._moisture_grace_end_time is not None
+
+        # Make moisture sensor unavailable
+        hass.states.async_set("sensor.test_moisture", STATE_UNAVAILABLE)
+        await update_plant_sensors(hass, init_integration.entry_id)
+
+        # All tracking state should be reset
+        assert plant._last_moisture_value is None
+        assert plant._moisture_grace_end_time is None
+        assert plant.moisture_status is None
+
+    async def test_sensor_removed_resets_tracking_state(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test that removing moisture sensor resets grace period tracking."""
+        from datetime import timedelta
+        from unittest.mock import patch
+        from custom_components.plant.const import FLOW_MOISTURE_GRACE_PERIOD
+
+        hass.config_entries.async_update_entry(
+            init_integration, options={FLOW_MOISTURE_GRACE_PERIOD: 3600}
+        )
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+
+        # Setup active grace period
+        with patch("custom_components.plant.dt_util.now") as mock_now:
+            from homeassistant.util import dt as dt_util
+
+            base_time = dt_util.now()
+            mock_now.return_value = base_time
+
+            await set_external_sensor_states(hass, moisture=40.0)
+            await update_plant_sensors(hass, init_integration.entry_id)
+
+            await set_external_sensor_states(hass, moisture=55.0)
+            await update_plant_sensors(hass, init_integration.entry_id)
+
+            assert plant._moisture_grace_end_time is not None
+
+        # Remove the moisture sensor
+        plant.sensor_moisture = None
+        plant.update()
+
+        # Tracking state should be reset
+        assert plant._last_moisture_value is None
+        assert plant._moisture_grace_end_time is None
+        assert plant.moisture_status is None
+
+    async def test_sensor_non_numeric_resets_tracking_state(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test that non-numeric sensor value resets grace period tracking."""
+        from datetime import timedelta
+        from unittest.mock import patch
+        from custom_components.plant.const import FLOW_MOISTURE_GRACE_PERIOD
+
+        hass.config_entries.async_update_entry(
+            init_integration, options={FLOW_MOISTURE_GRACE_PERIOD: 3600}
+        )
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+
+        # Setup active grace period
+        with patch("custom_components.plant.dt_util.now") as mock_now:
+            from homeassistant.util import dt as dt_util
+
+            base_time = dt_util.now()
+            mock_now.return_value = base_time
+
+            await set_external_sensor_states(hass, moisture=40.0)
+            await update_plant_sensors(hass, init_integration.entry_id)
+
+            await set_external_sensor_states(hass, moisture=55.0)
+            await update_plant_sensors(hass, init_integration.entry_id)
+
+            assert plant._moisture_grace_end_time is not None
+
+        # Set sensor to non-numeric value
+        hass.states.async_set("sensor.test_moisture", "unknown")
+        await update_plant_sensors(hass, init_integration.entry_id)
+
+        # Tracking state should be reset
+        assert plant._last_moisture_value is None
+        assert plant._moisture_grace_end_time is None
+        assert plant.moisture_status is None
+
+    async def test_small_moisture_increase_does_not_trigger_grace_period(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test that small moisture increases don't activate grace period.
+
+        Only increases >= MOISTURE_INCREASE_THRESHOLD (10%) trigger grace period.
+        """
+        from custom_components.plant.const import FLOW_MOISTURE_GRACE_PERIOD
+
+        hass.config_entries.async_update_entry(
+            init_integration, options={FLOW_MOISTURE_GRACE_PERIOD: 3600}
+        )
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+
+        # Start at 40%
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=40.0,
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=40.0,
+        )
+        await update_plant_sensors(hass, init_integration.entry_id)
+        assert plant._last_moisture_value == 40.0
+        assert plant._moisture_grace_end_time is None
+
+        # Increase by only 5% (below 10% threshold)
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=45.0,
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=40.0,
+        )
+        await update_plant_sensors(hass, init_integration.entry_id)
+
+        # Grace period should NOT be activated
+        assert plant._last_moisture_value == 45.0
+        assert plant._moisture_grace_end_time is None
+
+        # Now if moisture goes high, problem should be reported immediately
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=54.0,
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=40.0,
+        )
+        await update_plant_sensors(hass, init_integration.entry_id)
+
+        # Still no grace period
+        assert plant._moisture_grace_end_time is None
+
+        # Now jump to 65% (11% increase from 54%, triggers grace period but too late)
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=40.0,
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=40.0,
+        )
+        await update_plant_sensors(hass, init_integration.entry_id)
+
+        # Now increase by 7% (below 10% threshold) multiple times to get above max
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=47.0,  # +7%
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=40.0,
+        )
+        await update_plant_sensors(hass, init_integration.entry_id)
+        assert plant._moisture_grace_end_time is None
+
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=54.0,  # +7%
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=40.0,
+        )
+        await update_plant_sensors(hass, init_integration.entry_id)
+        assert plant._moisture_grace_end_time is None
+
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=61.0,  # +7%, now above max of 60
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=40.0,
+        )
+        await update_plant_sensors(hass, init_integration.entry_id)
+
+        # Grace period should still NOT be activated (only 7% increase each time)
+        assert plant._moisture_grace_end_time is None
+        # Problem should be reported immediately (no grace period)
+        assert plant.moisture_status == STATE_HIGH
+        assert plant.state == STATE_PROBLEM
+
+    async def test_grace_period_default_value(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test that default grace period value is 0 (disabled)."""
+        from custom_components.plant.const import DEFAULT_MOISTURE_GRACE_PERIOD
+
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+
+        # Default should be 0
+        assert DEFAULT_MOISTURE_GRACE_PERIOD == 0
+        assert plant.moisture_grace_period == 0
+
+    async def test_multiple_watering_events_reset_grace_period(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test that each watering event resets the grace period timer.
+
+        If plant is watered multiple times, each watering should start
+        a new grace period.
+        """
+        from datetime import timedelta
+        from unittest.mock import patch
+        from custom_components.plant.const import FLOW_MOISTURE_GRACE_PERIOD
+
+        hass.config_entries.async_update_entry(
+            init_integration, options={FLOW_MOISTURE_GRACE_PERIOD: 3600}
+        )
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+
+        # First watering
+        from homeassistant.util import dt as dt_util
+
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=40.0,
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=40.0,
+        )
+        await update_plant_sensors(hass, init_integration.entry_id)
+
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=55.0,
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=40.0,
+        )
+        await update_plant_sensors(hass, init_integration.entry_id)
+
+        first_grace_end = plant._moisture_grace_end_time
+        assert first_grace_end is not None
+        # Grace period should be approximately 3600 seconds from now
+        first_remaining = (first_grace_end - dt_util.now()).total_seconds()
+        assert 3595 < first_remaining < 3605
+
+        # Second watering (moisture drops slightly then increases again)
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=50.0,
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=40.0,
+        )
+        await update_plant_sensors(hass, init_integration.entry_id)
+
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=65.0,  # +15% increase triggers new grace period
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=40.0,
+        )
+        await update_plant_sensors(hass, init_integration.entry_id)
+
+        second_grace_end = plant._moisture_grace_end_time
+        # New grace period should be set (later than first one)
+        assert second_grace_end is not None
+        assert second_grace_end > first_grace_end
