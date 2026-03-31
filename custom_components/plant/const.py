@@ -195,7 +195,7 @@ HYSTERESIS_FRACTION = 0.05
 # This prevents false alarms immediately after watering when moisture spikes
 # temporarily before stabilizing as water distributes through soil.
 DEFAULT_MOISTURE_GRACE_PERIOD = 0
-CONF_MOISTURE_GRACE_PERIOD = "moisture_grace_period"
+FLOW_MOISTURE_GRACE_PERIOD = "moisture_grace_period"
 # Threshold for detecting rapid moisture increase (watering event)
 # If moisture increases by this percentage within a short time, trigger grace period
 MOISTURE_INCREASE_THRESHOLD = 10.0

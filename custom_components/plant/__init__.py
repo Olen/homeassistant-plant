@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 import voluptuous as vol
 from homeassistant.components import websocket_api
+from homeassistant.util import dt as dt_util
 from homeassistant.components.utility_meter.const import (
     DATA_TARIFF_SENSORS,
     DATA_UTILITY,
@@ -62,7 +63,6 @@ from .const import (
     CONF_MIN_CONDUCTIVITY,
     CONF_MIN_MOISTURE,
     CONF_MIN_TEMPERATURE,
-    CONF_MOISTURE_GRACE_PERIOD,
     DATA_SOURCE,
     DEFAULT_MOISTURE_GRACE_PERIOD,
     DOMAIN,
@@ -73,6 +73,7 @@ from .const import (
     FLOW_DLI_TRIGGER,
     FLOW_HUMIDITY_TRIGGER,
     FLOW_ILLUMINANCE_TRIGGER,
+    FLOW_MOISTURE_GRACE_PERIOD,
     FLOW_MOISTURE_TRIGGER,
     FLOW_PLANT_INFO,
     FLOW_SOIL_TEMPERATURE_TRIGGER,
@@ -640,6 +641,13 @@ class PlantDevice(Entity):
         return self._config.options.get(FLOW_CONDUCTIVITY_TRIGGER, True)
 
     @property
+    def moisture_grace_period(self) -> int:
+        """Grace period in seconds after watering before reporting high moisture"""
+        return self._config.options.get(
+            FLOW_MOISTURE_GRACE_PERIOD, DEFAULT_MOISTURE_GRACE_PERIOD
+        )
+
+    @property
     def extra_state_attributes(self) -> dict:
         """Return the device specific state attributes."""
         if not self.plant_complete:
@@ -1063,22 +1071,22 @@ class PlantDevice(Entity):
 
                 # Detect watering event (rapid moisture increase)
                 if self._last_moisture_value is not None:
-                    if moisture_val - self._last_moisture_value >= MOISTURE_INCREASE_THRESHOLD:
-                        grace_period_seconds = self._config.options.get(
-                            CONF_MOISTURE_GRACE_PERIOD, DEFAULT_MOISTURE_GRACE_PERIOD
-                        )
-                        self._moisture_grace_end_time = datetime.now() + timedelta(
-                            seconds=grace_period_seconds
-                        )
-                        _LOGGER.debug(
-                            "Watering detected for %s: moisture increased by %.1f%% "
-                            "(from %.1f%% to %.1f%%). Grace period active until %s",
-                            self.entity_id,
-                            moisture_increase,
-                            self._last_moisture_value,
-                            moisture_val,
-                            self._moisture_grace_end_time,
-                        )
+                    moisture_increase = moisture_val - self._last_moisture_value
+                    if moisture_increase >= MOISTURE_INCREASE_THRESHOLD:
+                        grace_period_seconds = self.moisture_grace_period
+                        if grace_period_seconds > 0:
+                            self._moisture_grace_end_time = dt_util.now() + timedelta(
+                                seconds=grace_period_seconds
+                            )
+                            _LOGGER.debug(
+                                "Watering detected for %s: moisture increased by %.1f%% "
+                                "(from %.1f%% to %.1f%%). Grace period active until %s",
+                                self.entity_id,
+                                moisture_increase,
+                                self._last_moisture_value,
+                                moisture_val,
+                                self._moisture_grace_end_time,
+                            )
 
                 self._last_moisture_value = moisture_val
 
@@ -1095,7 +1103,7 @@ class PlantDevice(Entity):
                     if self.moisture_status == STATE_LOW:
                         new_state = STATE_PROBLEM
                     elif self.moisture_status == STATE_HIGH:
-                        now = datetime.now()
+                        now = dt_util.now()
                         if (
                             self._moisture_grace_end_time is not None
                             and now < self._moisture_grace_end_time

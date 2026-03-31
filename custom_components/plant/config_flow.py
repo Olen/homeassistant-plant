@@ -42,7 +42,6 @@ from .const import (
     CONF_MIN_ILLUMINANCE,
     CONF_MIN_MOISTURE,
     CONF_MIN_TEMPERATURE,
-    CONF_MOISTURE_GRACE_PERIOD,
     DATA_SOURCE,
     DATA_SOURCE_PLANTBOOK,
     DEFAULT_MAX_CONDUCTIVITY,
@@ -68,6 +67,7 @@ from .const import (
     FLOW_FORCE_SPECIES_UPDATE,
     FLOW_HUMIDITY_TRIGGER,
     FLOW_ILLUMINANCE_TRIGGER,
+    FLOW_MOISTURE_GRACE_PERIOD,
     FLOW_MOISTURE_TRIGGER,
     FLOW_PLANT_INFO,
     FLOW_PLANT_LIMITS,
@@ -634,11 +634,11 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         ] = cv.boolean
         # Add moisture grace period setting (in seconds)
         current_grace_period = self.config_entry.options.get(
-            CONF_MOISTURE_GRACE_PERIOD, DEFAULT_MOISTURE_GRACE_PERIOD
+            FLOW_MOISTURE_GRACE_PERIOD, DEFAULT_MOISTURE_GRACE_PERIOD
         )
         data_schema[
             vol.Optional(
-                CONF_MOISTURE_GRACE_PERIOD,
+                FLOW_MOISTURE_GRACE_PERIOD,
                 description={"suggested_value": current_grace_period},
             )
         ] = vol.All(vol.Coerce(int), vol.Range(min=0, max=86400))
