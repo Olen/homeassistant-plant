@@ -28,6 +28,7 @@ from custom_components.plant.const import (
     FLOW_PLANT_LIMITS,
     FLOW_RIGHT_PLANT,
     FLOW_SENSOR_CO2,
+    FLOW_SENSOR_CONDUCTIVITY,
     FLOW_SENSOR_ILLUMINANCE,
     FLOW_SENSOR_MOISTURE,
     FLOW_SENSOR_TEMPERATURE,
@@ -266,6 +267,42 @@ class TestConfigFlowSensorsStep:
             {
                 FLOW_SENSOR_TEMPERATURE: "sensor.temp",
                 FLOW_SENSOR_MOISTURE: "sensor.moisture",
+            },
+        )
+
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "limits"
+
+    async def test_sensors_step_accepts_soil_fertility_sensor_for_conductivity(
+        self,
+        hass: HomeAssistant,
+        mock_no_openplantbook,
+    ) -> None:
+        """Test that soil_fertility sensors can be selected as conductivity input."""
+        hass.states.async_set(
+            "sensor.soil_fertility",
+            "750",
+            {"device_class": "soil_fertility"},
+        )
+
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_USER}
+        )
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                ATTR_NAME: "My Plant",
+                ATTR_SPECIES: "ficus",
+            },
+        )
+
+        assert result["step_id"] == "sensors"
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                FLOW_SENSOR_CONDUCTIVITY: "sensor.soil_fertility",
             },
         )
 
@@ -513,6 +550,39 @@ class TestConfigFlowLimitsStep:
         assert CONF_MIN_TEMPERATURE not in schema_keys
         # Conductivity thresholds should NOT be present
         assert CONF_MAX_CONDUCTIVITY not in schema_keys
+
+
+class TestOptionsFlowReplaceSensor:
+    """Tests for the replace sensor options step."""
+
+    async def test_replace_sensor_accepts_soil_fertility_sensor(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test replacing conductivity sensor with a soil_fertility sensor."""
+        hass.states.async_set(
+            "sensor.soil_fertility",
+            "850",
+            {"device_class": "soil_fertility"},
+        )
+
+        result = await hass.config_entries.options.async_init(init_integration.entry_id)
+
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            {"next_step_id": "replace_sensor"},
+        )
+
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "replace_sensor"
+
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            {FLOW_SENSOR_CONDUCTIVITY: "sensor.soil_fertility"},
+        )
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
 
     async def test_conditional_limits_illuminance_includes_dli(
         self,
