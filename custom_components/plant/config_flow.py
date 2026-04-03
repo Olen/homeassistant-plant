@@ -89,10 +89,15 @@ from .plant_helpers import PlantHelper
 
 _LOGGER = logging.getLogger(__name__)
 
+CONDUCTIVITY_DEVICE_CLASSES = [
+    SensorDeviceClass.CONDUCTIVITY,
+    "soil_fertility",
+]
+
 SENSOR_SCHEMA_FIELDS = [
     (FLOW_SENSOR_TEMPERATURE, SensorDeviceClass.TEMPERATURE),
     (FLOW_SENSOR_MOISTURE, SensorDeviceClass.MOISTURE),
-    (FLOW_SENSOR_CONDUCTIVITY, SensorDeviceClass.CONDUCTIVITY),
+    (FLOW_SENSOR_CONDUCTIVITY, CONDUCTIVITY_DEVICE_CLASSES),
     (FLOW_SENSOR_ILLUMINANCE, SensorDeviceClass.ILLUMINANCE),
     (FLOW_SENSOR_HUMIDITY, SensorDeviceClass.HUMIDITY),
     (FLOW_SENSOR_CO2, SensorDeviceClass.CO2),
