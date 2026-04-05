@@ -105,7 +105,6 @@ CONDUCTIVITY_ALLOWED_UNIT_SUFFIXES = {
 SENSOR_SCHEMA_FIELDS = [
     (FLOW_SENSOR_TEMPERATURE, SensorDeviceClass.TEMPERATURE),
     (FLOW_SENSOR_MOISTURE, SensorDeviceClass.MOISTURE),
-    (FLOW_SENSOR_CONDUCTIVITY, None),
     (FLOW_SENSOR_ILLUMINANCE, SensorDeviceClass.ILLUMINANCE),
     (FLOW_SENSOR_HUMIDITY, SensorDeviceClass.HUMIDITY),
     (FLOW_SENSOR_CO2, SensorDeviceClass.CO2),
@@ -113,7 +112,23 @@ SENSOR_SCHEMA_FIELDS = [
 ]
 
 
-def _build_sensor_schema(defaults: dict[str, Any] | None = None) -> dict:
+def _get_compatible_conductivity_entities(
+    hass: HomeAssistant, current: str | None = None
+) -> list[str]:
+    """Return sensor entity IDs that look compatible with conductivity input."""
+    entity_ids = [
+        entity_id
+        for entity_id in hass.states.async_entity_ids(DOMAIN_SENSOR)
+        if _is_valid_conductivity_sensor(hass, entity_id)
+    ]
+    if current and current.startswith(f"{DOMAIN_SENSOR}.") and current not in entity_ids:
+        entity_ids.append(current)
+    return sorted(entity_ids)
+
+
+def _build_sensor_schema(
+    hass: HomeAssistant, defaults: dict[str, Any] | None = None
+) -> dict:
     """Build sensor selection schema, optionally pre-filled with current values."""
     defaults = defaults or {}
     schema = {}
@@ -127,6 +142,22 @@ def _build_sensor_schema(defaults: dict[str, Any] | None = None) -> dict:
         if device_class is not None:
             entity_selector[ATTR_DEVICE_CLASS] = device_class
         schema[vol_key] = selector({ATTR_ENTITY: entity_selector})
+
+    current = defaults.get(FLOW_SENSOR_CONDUCTIVITY)
+    conductivity_key = (
+        vol.Optional(FLOW_SENSOR_CONDUCTIVITY, description={"suggested_value": current})
+        if current
+        else vol.Optional(FLOW_SENSOR_CONDUCTIVITY)
+    )
+    schema[conductivity_key] = selector(
+        {
+            ATTR_ENTITY: {
+                "include_entities": _get_compatible_conductivity_entities(
+                    hass, current
+                ),
+            }
+        }
+    )
     return schema
 
 
@@ -301,7 +332,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="sensors",
-            data_schema=vol.Schema(_build_sensor_schema()),
+            data_schema=vol.Schema(_build_sensor_schema(self.hass)),
             errors=errors,
         )
 
@@ -730,7 +761,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         plant_info = self.config_entry.data.get(FLOW_PLANT_INFO, {})
         return self.async_show_form(
             step_id="replace_sensor",
-            data_schema=vol.Schema(_build_sensor_schema(defaults=plant_info)),
+            data_schema=vol.Schema(_build_sensor_schema(self.hass, defaults=plant_info)),
             errors=errors,
             description_placeholders={"plant_name": self.plant.name},
         )
