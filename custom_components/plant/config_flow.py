@@ -798,6 +798,13 @@ async def update_plant_options(
         # this will only be run once (unchanged options are will not trigger the flow)
         options = dict(entry.options)
         data = dict(entry.data)
+        # Persist refreshed OPB limits to config entry so they survive restarts
+        if plant_config[DATA_SOURCE] == DATA_SOURCE_PLANTBOOK:
+            plant_info = dict(data.get(FLOW_PLANT_INFO, {}))
+            plant_info[FLOW_PLANT_LIMITS] = dict(
+                plant_config[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS]
+            )
+            data[FLOW_PLANT_INFO] = plant_info
         options[FLOW_FORCE_SPECIES_UPDATE] = False
         options[OPB_DISPLAY_PID] = plant.display_species
         options[ATTR_ENTITY_PICTURE] = plant.entity_picture
