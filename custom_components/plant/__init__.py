@@ -4,11 +4,10 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import voluptuous as vol
 from homeassistant.components import websocket_api
-from homeassistant.util import dt as dt_util
 from homeassistant.components.utility_meter.const import (
     DATA_TARIFF_SENSORS,
     DATA_UTILITY,
@@ -32,6 +31,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity, async_generate_entity_id
 from homeassistant.helpers.entity_component import EntityComponent
+from homeassistant.util import dt as dt_util
 
 from . import group as group  # noqa: F401 - needed for HA group discovery
 from .config_flow import update_plant_options
