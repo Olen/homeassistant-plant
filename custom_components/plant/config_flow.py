@@ -16,6 +16,7 @@ from homeassistant.const import (
     ATTR_DOMAIN,
     ATTR_ENTITY_PICTURE,
     ATTR_NAME,
+    ATTR_UNIT_OF_MEASUREMENT,
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
@@ -89,15 +90,22 @@ from .plant_helpers import PlantHelper
 
 _LOGGER = logging.getLogger(__name__)
 
-CONDUCTIVITY_DEVICE_CLASSES = [
+CONDUCTIVITY_ALLOWED_DEVICE_CLASSES = {
     SensorDeviceClass.CONDUCTIVITY,
     "soil_fertility",
-]
+}
+CONDUCTIVITY_ALLOWED_UNIT_SUFFIXES = {
+    "us/cm",
+    "µs/cm",
+    "μs/cm",
+    "ms/cm",
+    "s/cm",
+}
 
 SENSOR_SCHEMA_FIELDS = [
     (FLOW_SENSOR_TEMPERATURE, SensorDeviceClass.TEMPERATURE),
     (FLOW_SENSOR_MOISTURE, SensorDeviceClass.MOISTURE),
-    (FLOW_SENSOR_CONDUCTIVITY, CONDUCTIVITY_DEVICE_CLASSES),
+    (FLOW_SENSOR_CONDUCTIVITY, None),
     (FLOW_SENSOR_ILLUMINANCE, SensorDeviceClass.ILLUMINANCE),
     (FLOW_SENSOR_HUMIDITY, SensorDeviceClass.HUMIDITY),
     (FLOW_SENSOR_CO2, SensorDeviceClass.CO2),
@@ -115,15 +123,38 @@ def _build_sensor_schema(defaults: dict[str, Any] | None = None) -> dict:
             vol_key = vol.Optional(key, description={"suggested_value": current})
         else:
             vol_key = vol.Optional(key)
-        schema[vol_key] = selector(
-            {
-                ATTR_ENTITY: {
-                    ATTR_DEVICE_CLASS: device_class,
-                    ATTR_DOMAIN: DOMAIN_SENSOR,
-                }
-            }
-        )
+        entity_selector = {ATTR_DOMAIN: DOMAIN_SENSOR}
+        if device_class is not None:
+            entity_selector[ATTR_DEVICE_CLASS] = device_class
+        schema[vol_key] = selector({ATTR_ENTITY: entity_selector})
     return schema
+
+
+def _normalize_unit(unit: str | None) -> str:
+    """Normalize unit strings for conductivity compatibility checks."""
+    if not unit:
+        return ""
+    return unit.strip().replace(" ", "").lower()
+
+
+def _is_valid_conductivity_sensor(hass: HomeAssistant, entity_id: str | None) -> bool:
+    """Check whether an entity can be used as conductivity/fertility sensor."""
+    if not entity_id:
+        return True
+
+    state = hass.states.get(entity_id)
+    if state is None:
+        return False
+
+    device_class = state.attributes.get(ATTR_DEVICE_CLASS)
+    if device_class in CONDUCTIVITY_ALLOWED_DEVICE_CLASSES:
+        return True
+
+    unit = _normalize_unit(state.attributes.get(ATTR_UNIT_OF_MEASUREMENT))
+    if unit in CONDUCTIVITY_ALLOWED_UNIT_SUFFIXES:
+        return True
+
+    return "soil_fertility" in entity_id or "conductivity" in entity_id
 
 
 class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -247,25 +278,31 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Handle sensor selection step."""
+        errors = {}
         if user_input is not None:
             _LOGGER.debug("User Input (sensors) %s", user_input)
-            # Store sensor selections in plant_info
-            for key in (
-                FLOW_SENSOR_TEMPERATURE,
-                FLOW_SENSOR_MOISTURE,
-                FLOW_SENSOR_CONDUCTIVITY,
-                FLOW_SENSOR_ILLUMINANCE,
-                FLOW_SENSOR_HUMIDITY,
-                FLOW_SENSOR_CO2,
-                FLOW_SENSOR_SOIL_TEMPERATURE,
-            ):
-                self.plant_info[key] = user_input.get(key)
-            _LOGGER.debug("Plant_info: %s", self.plant_info)
-            return await self.async_step_limits()
+            conductivity_sensor = user_input.get(FLOW_SENSOR_CONDUCTIVITY)
+            if not _is_valid_conductivity_sensor(self.hass, conductivity_sensor):
+                errors[FLOW_SENSOR_CONDUCTIVITY] = "invalid_conductivity_sensor"
+            else:
+                # Store sensor selections in plant_info
+                for key in (
+                    FLOW_SENSOR_TEMPERATURE,
+                    FLOW_SENSOR_MOISTURE,
+                    FLOW_SENSOR_CONDUCTIVITY,
+                    FLOW_SENSOR_ILLUMINANCE,
+                    FLOW_SENSOR_HUMIDITY,
+                    FLOW_SENSOR_CO2,
+                    FLOW_SENSOR_SOIL_TEMPERATURE,
+                ):
+                    self.plant_info[key] = user_input.get(key)
+                _LOGGER.debug("Plant_info: %s", self.plant_info)
+                return await self.async_step_limits()
 
         return self.async_show_form(
             step_id="sensors",
             data_schema=vol.Schema(_build_sensor_schema()),
+            errors=errors,
         )
 
     async def async_step_limits(
@@ -660,35 +697,41 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Handle sensor replacement."""
+        errors = {}
         if user_input is not None:
-            plant_info = self.config_entry.data.get(FLOW_PLANT_INFO, {})
-            for key, attr_name in _SENSOR_ATTR_MAP.items():
-                new_val = user_input.get(key)
-                old_val = plant_info.get(key)
-                if new_val != old_val:
-                    sensor = getattr(self.plant, attr_name, None)
-                    if sensor and sensor.hass is not None:
-                        sensor.replace_external_sensor(new_val)
-                    else:
-                        # Sensor entity is disabled (not added to HA).
-                        # Update config_entry.data directly; the entity
-                        # will pick up the new sensor when enabled.
-                        new_data = dict(self.config_entry.data)
-                        new_plant_info = dict(new_data.get(FLOW_PLANT_INFO, {}))
-                        new_plant_info[key] = new_val
-                        new_data[FLOW_PLANT_INFO] = new_plant_info
-                        self.hass.config_entries.async_update_entry(
-                            self.config_entry, data=new_data
-                        )
-            # Preserve existing options (triggers, image, species, etc.)
-            return self.async_create_entry(
-                title="", data=dict(self.config_entry.options)
-            )
+            conductivity_sensor = user_input.get(FLOW_SENSOR_CONDUCTIVITY)
+            if not _is_valid_conductivity_sensor(self.hass, conductivity_sensor):
+                errors[FLOW_SENSOR_CONDUCTIVITY] = "invalid_conductivity_sensor"
+            else:
+                plant_info = self.config_entry.data.get(FLOW_PLANT_INFO, {})
+                for key, attr_name in _SENSOR_ATTR_MAP.items():
+                    new_val = user_input.get(key)
+                    old_val = plant_info.get(key)
+                    if new_val != old_val:
+                        sensor = getattr(self.plant, attr_name, None)
+                        if sensor and sensor.hass is not None:
+                            sensor.replace_external_sensor(new_val)
+                        else:
+                            # Sensor entity is disabled (not added to HA).
+                            # Update config_entry.data directly; the entity
+                            # will pick up the new sensor when enabled.
+                            new_data = dict(self.config_entry.data)
+                            new_plant_info = dict(new_data.get(FLOW_PLANT_INFO, {}))
+                            new_plant_info[key] = new_val
+                            new_data[FLOW_PLANT_INFO] = new_plant_info
+                            self.hass.config_entries.async_update_entry(
+                                self.config_entry, data=new_data
+                            )
+                # Preserve existing options (triggers, image, species, etc.)
+                return self.async_create_entry(
+                    title="", data=dict(self.config_entry.options)
+                )
 
         plant_info = self.config_entry.data.get(FLOW_PLANT_INFO, {})
         return self.async_show_form(
             step_id="replace_sensor",
             data_schema=vol.Schema(_build_sensor_schema(defaults=plant_info)),
+            errors=errors,
             description_placeholders={"plant_name": self.plant.name},
         )
 

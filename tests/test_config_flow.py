@@ -282,7 +282,7 @@ class TestConfigFlowSensorsStep:
         hass.states.async_set(
             "sensor.soil_fertility",
             "750",
-            {"device_class": "soil_fertility"},
+            {"unit_of_measurement": "µS/cm"},
         )
 
         result = await hass.config_entries.flow.async_init(
@@ -564,7 +564,7 @@ class TestOptionsFlowReplaceSensor:
         hass.states.async_set(
             "sensor.soil_fertility",
             "850",
-            {"device_class": "soil_fertility"},
+            {"unit_of_measurement": "µS/cm"},
         )
 
         result = await hass.config_entries.options.async_init(init_integration.entry_id)
