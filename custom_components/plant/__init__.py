@@ -685,7 +685,9 @@ class PlantDevice(Entity):
             return {
                 ATTR_MAX: max_entity.state,
                 ATTR_MIN: min_entity.state,
-                ATTR_CURRENT: sensor.state or STATE_UNAVAILABLE,
+                ATTR_CURRENT: (
+                    sensor.state if sensor.state is not None else STATE_UNAVAILABLE
+                ),
                 ATTR_ICON: self._get_entity_icon(sensor),
                 ATTR_UNIT_OF_MEASUREMENT: sensor.unit_of_measurement,
                 ATTR_SENSOR: sensor.entity_id,
