@@ -174,6 +174,7 @@
           "humidity_trigger": "使用空气湿度作为问题触发器",
           "conductivity_trigger": "使用电导率作为问题触发器",
           "moisture_trigger": "使用土壤湿度作为问题触发器",
+          "moisture_grace_period": "Moisture grace period after watering (seconds, 0-86400)",
           "temperature_trigger": "使用温度作为问题触发器",
           "co2_trigger": "使用二氧化碳作为问题触发器",
           "soil_temperature_trigger": "使用土壤温度作为问题触发器"
