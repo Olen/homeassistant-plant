@@ -1125,8 +1125,8 @@ class TestOptionsFlow:
     ) -> None:
         """Test setting moisture grace period through options flow."""
         from custom_components.plant.const import (
-            FLOW_MOISTURE_GRACE_PERIOD,
             DEFAULT_MOISTURE_GRACE_PERIOD,
+            FLOW_MOISTURE_GRACE_PERIOD,
         )
 
         plant = hass.data[DOMAIN][init_integration.entry_id]["plant"]

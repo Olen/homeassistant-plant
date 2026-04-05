@@ -1939,11 +1939,10 @@ class TestMoistureGracePeriod:
         4. Moisture rises above threshold (65% > 60%)
         5. Verify problem is NOT reported during grace period
         """
-        from datetime import timedelta
         from homeassistant.util import dt as dt_util
+
         from custom_components.plant.const import (
             FLOW_MOISTURE_GRACE_PERIOD,
-            MOISTURE_INCREASE_THRESHOLD,
         )
 
         # Configure grace period of 3600 seconds (1 hour)
@@ -2020,6 +2019,7 @@ class TestMoistureGracePeriod:
         """
         from datetime import timedelta
         from unittest.mock import patch
+
         from custom_components.plant.const import FLOW_MOISTURE_GRACE_PERIOD
 
         # Configure grace period
@@ -2089,7 +2089,9 @@ class TestMoistureGracePeriod:
         4. Update sensors - problem should now be reported
         """
         from datetime import timedelta
+
         from homeassistant.util import dt as dt_util
+
         from custom_components.plant.const import FLOW_MOISTURE_GRACE_PERIOD
 
         # Short grace period for testing
@@ -2226,8 +2228,8 @@ class TestMoistureGracePeriod:
         - _moisture_grace_end_time
         - moisture_status
         """
-        from datetime import timedelta
         from unittest.mock import patch
+
         from custom_components.plant.const import FLOW_MOISTURE_GRACE_PERIOD
 
         hass.config_entries.async_update_entry(
@@ -2270,8 +2272,8 @@ class TestMoistureGracePeriod:
         init_integration: MockConfigEntry,
     ) -> None:
         """Test that removing moisture sensor resets grace period tracking."""
-        from datetime import timedelta
         from unittest.mock import patch
+
         from custom_components.plant.const import FLOW_MOISTURE_GRACE_PERIOD
 
         hass.config_entries.async_update_entry(
@@ -2311,8 +2313,8 @@ class TestMoistureGracePeriod:
         init_integration: MockConfigEntry,
     ) -> None:
         """Test that non-numeric sensor value resets grace period tracking."""
-        from datetime import timedelta
         from unittest.mock import patch
+
         from custom_components.plant.const import FLOW_MOISTURE_GRACE_PERIOD
 
         hass.config_entries.async_update_entry(
@@ -2480,8 +2482,6 @@ class TestMoistureGracePeriod:
         If plant is watered multiple times, each watering should start
         a new grace period.
         """
-        from datetime import timedelta
-        from unittest.mock import patch
         from custom_components.plant.const import FLOW_MOISTURE_GRACE_PERIOD
 
         hass.config_entries.async_update_entry(
