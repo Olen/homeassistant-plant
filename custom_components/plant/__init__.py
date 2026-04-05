@@ -1109,7 +1109,9 @@ class PlantDevice(Entity):
                             and now < self._moisture_grace_end_time
                         ):
                             # Grace period active - suppress high moisture problem
-                            remaining = (self._moisture_grace_end_time - now).total_seconds()
+                            remaining = (
+                                self._moisture_grace_end_time - now
+                            ).total_seconds()
                             _LOGGER.debug(
                                 "Moisture high for %s but grace period active "
                                 "(%.0f seconds remaining) - not reporting problem",
