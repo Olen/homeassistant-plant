@@ -283,7 +283,7 @@ The card supports both °C and °F:
 
 ## 💡 Tips & Tricks
 
-For practical tips, template examples, and workarounds — including fixing sensors with wrong `device_class`, auto-watering automations, and problem notifications — see **[TIPS.md](TIPS.md)**.
+For practical tips, template examples, and workarounds — including fixing sensors with wrong `device_class`, auto-watering automations, problem notifications, and battery/stuck sensor monitoring — see **[TIPS.md](TIPS.md)**.
 
 ---
 
@@ -329,6 +329,12 @@ Local images must be in your HA `www` folder, referenced with the `/local/` pref
 | `file:///config/www/images/plants/my-plant.jpg` (file URI) | ❌ |
 
 You can also use `media-source://` URLs. See [Plant Images](#️-plant-images).
+</details>
+
+<details>
+<summary><strong>Can the integration monitor sensor battery levels or detect dead sensors?</strong></summary>
+
+The integration monitors plant *readings*, not sensor hardware. For battery monitoring, see Home Assistant's official tutorial: [Get notified when a device needs a new battery](https://www.home-assistant.io/docs/templating/tutorial-battery-alerts/). For detecting stuck sensors (no value change in 24+ hours), see the [Battery Monitoring & Stuck Sensors](TIPS.md#-battery-monitoring--stuck-sensors) section in TIPS.md.
 </details>
 
 <details>

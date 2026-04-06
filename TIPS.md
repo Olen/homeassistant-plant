@@ -12,6 +12,7 @@ Practical tips, template examples, and workarounds for common situations with th
   - [🚨 Problem Notification Automation](#-problem-notification-automation)
   - [🌤️ Weather Forecast Warnings for Outdoor Plants](#️-weather-forecast-warnings-for-outdoor-plants)
   - [🌡️ Combining Multiple Temperature Sources](#️-combining-multiple-temperature-sources)
+  - [🔋 Battery Monitoring & Stuck Sensors](#-battery-monitoring--stuck-sensors)
   - [📊 Export Plant Config as YAML](#-export-plant-config-as-yaml)
 
 ---
@@ -300,6 +301,9 @@ This picks up new plants automatically when they're added to the area.
 
 ## 🌡️ Combining Multiple Temperature Sources
 
+> [!TIP]
+> Home Assistant has an official tutorial on averaging sensor values: [Show the average home temperature on your dashboard](https://www.home-assistant.io/docs/templating/tutorial-average-temperature/). The same approach works for averaging moisture, conductivity, or any other numeric sensor across your plants.
+
 If you have multiple temperature sensors near a plant and want to use the average:
 
 ```yaml
@@ -318,6 +322,54 @@ template:
           {% set valid = sensors | select('greaterthan', -40) | list %}
           {{ (valid | sum / valid | count) | round(1) if valid else 'unavailable' }}
 ```
+
+---
+
+## 🔋 Battery Monitoring & Stuck Sensors
+
+Plant sensors (especially BLE and Zigbee) are battery-powered and will eventually stop updating when the battery dies. This integration does not monitor battery levels directly — it monitors the *readings* from your sensors. A dead battery typically shows up as a sensor stuck on its last value or going unavailable.
+
+Home Assistant has an official tutorial that walks you through building a daily low-battery notification: **[Get notified when a device needs a new battery](https://www.home-assistant.io/docs/templating/tutorial-battery-alerts/)**. This covers all your HA devices, including plant sensors.
+
+If you want to detect **stuck sensors** (battery not yet reported as low, but readings stopped changing), you can use a `last_changed` check:
+
+```yaml
+automation:
+  - alias: "Plant sensor stuck warning"
+    description: >
+      Warns when a plant sensor hasn't changed value in 24 hours,
+      which may indicate a dead battery or connectivity issue.
+    trigger:
+      - platform: time
+        at: "09:00:00"
+    action:
+      - variables:
+          stale_sensors: >
+            {% set ns = namespace(items=[]) %}
+            {% for state in states.sensor %}
+              {% if 'external_sensor' in state.attributes
+                 and (now() - state.last_changed).total_seconds() > 86400 %}
+                {% set ns.items = ns.items + [
+                  state.attributes.friendly_name ~ ' (last changed '
+                  ~ relative_time(state.last_changed) ~ ' ago)'
+                ] %}
+              {% endif %}
+            {% endfor %}
+            {{ ns.items }}
+      - condition: template
+        value_template: "{{ stale_sensors | length > 0 }}"
+      - action: notify.mobile_app
+        data:
+          title: "Plant sensor may be stuck"
+          message: >
+            These plant sensors haven't updated in 24 hours:
+            {% for s in stale_sensors %}
+            - {{ s }}
+            {% endfor %}
+```
+
+> [!NOTE]
+> The `external_sensor` attribute is present on plant-owned sensor entities, so this filters specifically for plant sensors rather than all sensors in your system.
 
 ---
 
