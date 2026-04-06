@@ -165,19 +165,25 @@ class PlantHelper:
             return plant_search_result
         return None
 
-    async def openplantbook_get(self, species: str) -> dict[str, Any] | None:
+    async def openplantbook_get(
+        self, species: str, cache: bool = True
+    ) -> dict[str, Any] | None:
         """Get information about a plant species from OpenPlantbook"""
         if not self.has_openplantbook:
             return None
         if not species or species == "":
             return None
 
+        service_data = {ATTR_SPECIES: species.lower()}
+        if not cache:
+            service_data["cache"] = False
+
         try:
             async with timeout(REQUEST_TIMEOUT):
                 plant_get_result = await self.hass.services.async_call(
                     domain=DOMAIN_PLANTBOOK,
                     service=OPB_GET,
-                    service_data={ATTR_SPECIES: species.lower()},
+                    service_data=service_data,
                     blocking=True,
                     return_response=True,
                 )
@@ -316,7 +322,10 @@ class PlantHelper:
 
         if config.get(OPB_DISPLAY_PID, "") == "":
             config[OPB_DISPLAY_PID] = None
-        opb_plant = await self.openplantbook_get(config.get(ATTR_SPECIES))
+        bypass_cache = config.get(FLOW_FORCE_SPECIES_UPDATE, False) is True
+        opb_plant = await self.openplantbook_get(
+            config.get(ATTR_SPECIES), cache=not bypass_cache
+        )
         if opb_plant:
             data_source = DATA_SOURCE_PLANTBOOK
             # Cast all OPB values to int to handle string responses from API
