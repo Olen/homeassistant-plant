@@ -698,9 +698,11 @@ class PlantDevice(Entity):
             _LOGGER.debug("Skipping %s: sensor %s not available", attr_name, sensor)
             return None
         try:
+            max_val = self._safe_float(max_entity.state, max_entity.entity_id)
+            min_val = self._safe_float(min_entity.state, min_entity.entity_id)
             return {
-                ATTR_MAX: max_entity.state,
-                ATTR_MIN: min_entity.state,
+                ATTR_MAX: max_val if max_val is not None else max_entity._default_value,
+                ATTR_MIN: min_val if min_val is not None else min_entity._default_value,
                 ATTR_CURRENT: (
                     sensor.state if sensor.state is not None else STATE_UNAVAILABLE
                 ),
