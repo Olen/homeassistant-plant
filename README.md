@@ -18,6 +18,7 @@ A comprehensive plant monitoring integration for Home Assistant that treats each
   - [🔧 Setup \& Configuration](#-setup--configuration)
   - [🌡️ Sensors \& Thresholds](#️-sensors--thresholds)
   - [☀️ Daily Light Integral (DLI)](#️-daily-light-integral-dli)
+  - [💧 Vapour Pressure Deficit (VPD)](#-vapour-pressure-deficit-vpd)
   - [🖼️ Plant Images](#️-plant-images)
   - [⚠️ Problem Reports](#️-problem-reports)
   - [🔄 Replacing Sensors](#-replacing-sensors)
@@ -40,6 +41,7 @@ Each plant is a **device** in Home Assistant, grouping all its related entities 
 - 🖥️ **UI-based setup** — guided multi-step config flow with optional OpenPlantbook search
 - 📊 **Per-plant thresholds** — each threshold is its own entity, adjustable from the UI or via automations
 - 🌤️ **Daily Light Integral** — automatic DLI calculation from illuminance sensors
+- 💧 **Vapour Pressure Deficit** — automatic VPD calculation from temperature + humidity
 - 🔄 **Live updates** — change sensors, thresholds, species, or images without restarting HA
 - 🚨 **Problem detection** — configurable per-sensor problem triggers
 - 🔌 **Auto-disable** — sensors without a source entity are automatically disabled
@@ -144,6 +146,40 @@ See [Wikipedia: Daily Light Integral](https://en.wikipedia.org/wiki/Daily_light_
 The DLI calculation converts illuminance (lux) to PPFD. The default factor (`0.0185`) is optimized for sunlight, but different light sources need different factors. Adjust it per plant using the **Lux to PPFD factor** entity.
 
 For technical details on the DLI calculation pipeline, conversion factors, troubleshooting low readings, and the optional rolling 24-hour sensor, see **[DLI.md](DLI.md)**.
+
+---
+
+## 💧 Vapour Pressure Deficit (VPD)
+
+A **VPD sensor** is automatically created when a plant has both a **temperature** and **humidity** sensor configured. VPD measures the "drying power" of the air — how aggressively it pulls moisture from leaf surfaces. It is calculated using the [Tetens formula](https://en.wikipedia.org/wiki/Vapour-pressure_deficit):
+
+```
+SVP = 0.6108 × e^((17.27 × T) / (T + 237.3))
+VPD = SVP × (1 - RH / 100)
+```
+
+### Default Thresholds
+
+| Threshold | Default | Meaning |
+|-----------|---------|---------|
+| Minimum | 0.4 kPa | Below this the air is too humid — risk of fungal disease |
+| Maximum | 1.6 kPa | Above this plants may close stomata and stop growing |
+
+### Practical Considerations
+
+> [!NOTE]
+> **VPD is primarily useful for greenhouses and controlled growing environments.** The default thresholds come from agricultural science where humidity is actively managed (typically 50–80% RH).
+>
+> A typical heated indoor environment — especially in winter — often has humidity around 20–35%, which produces VPD values of 1.5–2.5 kPa. This *is* genuinely stressful for most plants (it's why greenhouses exist), but it is also completely normal for a living room. Most houseplants tolerate it, even if it's not optimal.
+>
+> For this reason, **the VPD problem trigger is disabled by default**. You can enable it in the plant's options if you want VPD to affect the plant's ok/problem state — this is most useful if you are actively managing humidity (e.g. in a greenhouse, grow tent, or terrarium).
+
+### Enabling VPD Problem Trigger
+
+1. Go to **Settings → Devices & Services → Plant Monitor**
+2. Select your plant
+3. Click **Configure → Plant properties**
+4. Enable **"Use VPD as problem trigger"**
 
 ---
 
