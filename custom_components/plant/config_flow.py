@@ -821,18 +821,16 @@ async def update_plant_options(
             for key, value in plant_config[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].items():
                 set_entity = getattr(plant, key)
                 _LOGGER.debug("Entity: %s To: %s", set_entity, value)
-                set_entity_id = set_entity.entity_id
                 _LOGGER.debug(
                     "Setting %s to %s",
-                    set_entity_id,
+                    set_entity.entity_id,
                     value,
                 )
-
-                hass.states.async_set(
-                    set_entity_id,
-                    new_state=value,
-                    attributes=hass.states.get(set_entity_id).attributes,
-                )
+                # Use async_set_native_value to update the entity's internal
+                # state. hass.states.async_set() only updates the state
+                # machine but leaves _attr_native_value unchanged, so the
+                # old value reappears on next write or restart.
+                await set_entity.async_set_native_value(float(value))
 
         else:
             plant.species = new_species
