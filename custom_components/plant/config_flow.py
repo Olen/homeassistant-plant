@@ -481,20 +481,18 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if show_all or (
             selected_sensors["temperature"] and selected_sensors["humidity"]
         ):
+            max_vpd = plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(CONF_MAX_VPD)
+            min_vpd = plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(CONF_MIN_VPD)
             data_schema[
                 vol.Required(
                     CONF_MAX_VPD,
-                    default=plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(
-                        CONF_MAX_VPD
-                    ),
+                    default=max_vpd if max_vpd is not None else DEFAULT_MAX_VPD,
                 )
             ] = float
             data_schema[
                 vol.Required(
                     CONF_MIN_VPD,
-                    default=plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(
-                        CONF_MIN_VPD
-                    ),
+                    default=min_vpd if min_vpd is not None else DEFAULT_MIN_VPD,
                 )
             ] = float
 
