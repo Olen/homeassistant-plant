@@ -34,6 +34,9 @@
       },
       "dli_24h": {
         "name": "DLI (24h rolling)"
+      },
+      "vpd": {
+        "name": "Vapour pressure deficit"
       }
     },
     "number": {
