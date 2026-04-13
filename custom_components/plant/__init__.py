@@ -55,6 +55,7 @@ from .const import (
     ATTR_SOIL_TEMPERATURE,
     ATTR_SPECIES,
     ATTR_TEMPERATURE,
+    ATTR_VPD,
     CONF_MAX_BRIGHTNESS,
     CONF_MAX_CONDUCTIVITY,
     CONF_MAX_MOISTURE,
@@ -78,6 +79,7 @@ from .const import (
     FLOW_PLANT_INFO,
     FLOW_SOIL_TEMPERATURE_TRIGGER,
     FLOW_TEMPERATURE_TRIGGER,
+    FLOW_VPD_TRIGGER,
     HYSTERESIS_FRACTION,
     MOISTURE_INCREASE_THRESHOLD,
     OPB_DISPLAY_PID,
@@ -531,6 +533,8 @@ class PlantDevice(Entity):
         self.min_soil_temperature = None
         self.max_dli = None
         self.min_dli = None
+        self.max_vpd = None
+        self.min_vpd = None
 
         self.sensor_moisture = None
         self.sensor_temperature = None
@@ -542,6 +546,7 @@ class PlantDevice(Entity):
 
         self.dli = None
         self.dli_24h = None
+        self.vpd = None
         self.micro_dli = None
         self.ppfd = None
         self.total_integral = None
@@ -555,6 +560,7 @@ class PlantDevice(Entity):
         self.co2_status = None
         self.soil_temperature_status = None
         self.dli_status = None
+        self.vpd_status = None
 
         # Moisture grace period tracking
         self._moisture_grace_end_time: datetime | None = None
@@ -626,6 +632,11 @@ class PlantDevice(Entity):
         return self._config.options.get(FLOW_TEMPERATURE_TRIGGER, True)
 
     @property
+    def vpd_trigger(self) -> bool:
+        """Whether we will generate alarms based on VPD"""
+        return self._config.options.get(FLOW_VPD_TRIGGER, False)
+
+    @property
     def dli_trigger(self) -> bool:
         """Whether we will generate alarms based on dli"""
         return self._config.options.get(FLOW_DLI_TRIGGER, True)
@@ -663,6 +674,7 @@ class PlantDevice(Entity):
             f"{ATTR_CO2}_status": self.co2_status,
             f"{ATTR_SOIL_TEMPERATURE}_status": self.soil_temperature_status,
             f"{ATTR_DLI}_status": self.dli_status,
+            f"{ATTR_VPD}_status": self.vpd_status,
             f"{ATTR_SPECIES}_original": self.species,
         }
         return attributes
@@ -794,6 +806,12 @@ class PlantDevice(Entity):
             if dli_24h_val is not None:
                 response[ATTR_DLI_24H][ATTR_CURRENT] = dli_24h_val
 
+        # Add VPD if available
+        if self._sensor_available(self.vpd):
+            info = self._sensor_info(ATTR_VPD, self.vpd, self.max_vpd, self.min_vpd)
+            if info is not None:
+                response[ATTR_VPD] = info
+
         return response
 
     @property
@@ -816,6 +834,8 @@ class PlantDevice(Entity):
             self.min_moisture,
             self.min_soil_temperature,
             self.min_temperature,
+            self.max_vpd,
+            self.min_vpd,
         ]
 
     @property
@@ -869,6 +889,8 @@ class PlantDevice(Entity):
         min_soil_temperature: Entity | None,
         max_dli: Entity | None,
         min_dli: Entity | None,
+        max_vpd: Entity | None = None,
+        min_vpd: Entity | None = None,
     ) -> None:
         """Add the threshold entities"""
         self.max_moisture = max_moisture
@@ -887,6 +909,8 @@ class PlantDevice(Entity):
         self.min_soil_temperature = min_soil_temperature
         self.max_dli = max_dli
         self.min_dli = min_dli
+        self.max_vpd = max_vpd
+        self.min_vpd = min_vpd
 
     def add_sensors(
         self,
@@ -916,6 +940,10 @@ class PlantDevice(Entity):
         self.dli = dli
         self.dli_24h = dli_24h
         self.plant_complete = True
+
+    def add_vpd(self, vpd: Entity | None) -> None:
+        """Add the VPD sensor"""
+        self.vpd = vpd
 
     def add_calculations(self, ppfd: Entity, total_integral: Entity) -> None:
         """Add the intermediate calculation entities"""
@@ -1336,6 +1364,21 @@ class PlantDevice(Entity):
         else:
             # Reset DLI status when sensor is unavailable or removed
             self.dli_status = None
+
+        # Check VPD (computed from temperature + humidity)
+        if self.vpd is not None and self.vpd.native_value is not None:
+            vpd_val = self._safe_float(self.vpd.native_value, self.vpd.entity_id)
+            if vpd_val is not None:
+                known_state = True
+                self.vpd_status = self._check_threshold(
+                    vpd_val, self.min_vpd, self.max_vpd, self.vpd_status
+                )
+                if self.vpd_status in (STATE_LOW, STATE_HIGH) and self.vpd_trigger:
+                    new_state = STATE_PROBLEM
+            else:
+                self.vpd_status = None
+        else:
+            self.vpd_status = None
 
         if not known_state:
             new_state = STATE_UNKNOWN

@@ -85,6 +85,12 @@
       "min_soil_temperature": {
         "name": "Min soil temperature"
       },
+      "max_vpd": {
+        "name": "Max VPD"
+      },
+      "min_vpd": {
+        "name": "Min VPD"
+      },
       "lux_to_ppfd": {
         "name": "Lux to PPFD factor"
       }
@@ -145,6 +151,8 @@
           "min_conductivity": "Min conductivity (uS/cm)",
           "max_humidity": "Max air humidity (%)",
           "min_humidity": "Min air humidity (%)",
+          "max_vpd": "Max VPD (kPa)",
+          "min_vpd": "Min VPD (kPa)",
           "entity_picture": "Image URL"
         }
       }
@@ -177,7 +185,8 @@
           "moisture_grace_period": "Moisture grace period after watering (seconds, 0-86400)",
           "temperature_trigger": "Use temperature as problem trigger",
           "co2_trigger": "Use CO2 as problem trigger",
-          "soil_temperature_trigger": "Use soil temperature as problem trigger"
+          "soil_temperature_trigger": "Use soil temperature as problem trigger",
+          "vpd_trigger": "Use VPD as problem trigger"
         }
       },
       "replace_sensor": {

@@ -31,6 +31,7 @@ from custom_components.plant.const import (
     CONF_MAX_MOISTURE,
     CONF_MAX_SOIL_TEMPERATURE,
     CONF_MAX_TEMPERATURE,
+    CONF_MAX_VPD,
     CONF_MIN_CO2,
     CONF_MIN_CONDUCTIVITY,
     CONF_MIN_DLI,
@@ -39,6 +40,7 @@ from custom_components.plant.const import (
     CONF_MIN_MOISTURE,
     CONF_MIN_SOIL_TEMPERATURE,
     CONF_MIN_TEMPERATURE,
+    CONF_MIN_VPD,
     DATA_SOURCE,
     DATA_SOURCE_DEFAULT,
     DATA_SOURCE_PLANTBOOK,
@@ -110,6 +112,8 @@ def create_plant_config_data(
             CONF_MIN_CO2: 400,
             CONF_MAX_SOIL_TEMPERATURE: 40,
             CONF_MIN_SOIL_TEMPERATURE: 10,
+            CONF_MAX_VPD: 1.6,
+            CONF_MIN_VPD: 0.4,
         }
 
     return {
@@ -173,6 +177,8 @@ def plant_config_data_with_opb() -> dict[str, Any]:
             CONF_MIN_CO2: 400,
             CONF_MAX_SOIL_TEMPERATURE: 30,
             CONF_MIN_SOIL_TEMPERATURE: 15,
+            CONF_MAX_VPD: 1.6,
+            CONF_MIN_VPD: 0.4,
         },
         entity_picture=GET_RESULT_MONSTERA_DELICIOSA["image_url"],
     )

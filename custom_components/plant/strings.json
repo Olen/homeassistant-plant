@@ -25,6 +25,9 @@
       },
       "daily_light_integral": {
         "name": "Daily light integral"
+      },
+      "vpd": {
+        "name": "Vapour pressure deficit"
       }
     },
     "number": {
@@ -63,6 +66,12 @@
       },
       "min_humidity": {
         "name": "Minimum air humidity"
+      },
+      "max_vpd": {
+        "name": "Maximum VPD"
+      },
+      "min_vpd": {
+        "name": "Minimum VPD"
       }
     }
   },
@@ -121,6 +130,8 @@
           "min_conductivity": "Minimum conductivity (uS/cm)",
           "max_humidity": "Maximum air humidity (%)",
           "min_humidity": "Minimum air humidity (%)",
+          "max_vpd": "Maximum VPD (kPa)",
+          "min_vpd": "Minimum VPD (kPa)",
           "entity_picture": "Image URL"
         }
       }
@@ -152,7 +163,8 @@
           "moisture_trigger": "Use soil moisture as problem trigger",
           "temperature_trigger": "Use temperature as problem trigger",
           "co2_trigger": "Use CO2 as problem trigger",
-          "soil_temperature_trigger": "Use soil temperature as problem trigger"
+          "soil_temperature_trigger": "Use soil temperature as problem trigger",
+          "vpd_trigger": "Use vapour pressure deficit (VPD) as problem trigger"
         }
       },
       "replace_sensor": {

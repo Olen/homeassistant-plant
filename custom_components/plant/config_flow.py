@@ -36,12 +36,14 @@ from .const import (
     CONF_MAX_ILLUMINANCE,
     CONF_MAX_MOISTURE,
     CONF_MAX_TEMPERATURE,
+    CONF_MAX_VPD,
     CONF_MIN_CONDUCTIVITY,
     CONF_MIN_DLI,
     CONF_MIN_HUMIDITY,
     CONF_MIN_ILLUMINANCE,
     CONF_MIN_MOISTURE,
     CONF_MIN_TEMPERATURE,
+    CONF_MIN_VPD,
     DATA_SOURCE,
     DATA_SOURCE_PLANTBOOK,
     DEFAULT_MAX_CONDUCTIVITY,
@@ -50,12 +52,14 @@ from .const import (
     DEFAULT_MAX_ILLUMINANCE,
     DEFAULT_MAX_MOISTURE,
     DEFAULT_MAX_TEMPERATURE,
+    DEFAULT_MAX_VPD,
     DEFAULT_MIN_CONDUCTIVITY,
     DEFAULT_MIN_DLI,
     DEFAULT_MIN_HUMIDITY,
     DEFAULT_MIN_ILLUMINANCE,
     DEFAULT_MIN_MOISTURE,
     DEFAULT_MIN_TEMPERATURE,
+    DEFAULT_MIN_VPD,
     DEFAULT_MOISTURE_GRACE_PERIOD,
     DOMAIN,
     DOMAIN_PLANTBOOK,
@@ -83,6 +87,7 @@ from .const import (
     FLOW_STRING_DESCRIPTION,
     FLOW_TEMP_UNIT,
     FLOW_TEMPERATURE_TRIGGER,
+    FLOW_VPD_TRIGGER,
     OPB_DISPLAY_PID,
     URL_SCHEME_HTTP,
     URL_SCHEME_MEDIA_SOURCE,
@@ -309,6 +314,8 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     CONF_MIN_DLI: DEFAULT_MIN_DLI,
                     CONF_MAX_HUMIDITY: DEFAULT_MAX_HUMIDITY,
                     CONF_MIN_HUMIDITY: DEFAULT_MIN_HUMIDITY,
+                    CONF_MAX_VPD: DEFAULT_MAX_VPD,
+                    CONF_MIN_VPD: DEFAULT_MIN_VPD,
                 }
                 for key, default_val in all_threshold_defaults.items():
                     if key not in limits:
@@ -469,6 +476,27 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     ),
                 )
             ] = int
+
+        # Show VPD thresholds when both temperature and humidity are selected
+        if show_all or (
+            selected_sensors["temperature"] and selected_sensors["humidity"]
+        ):
+            data_schema[
+                vol.Required(
+                    CONF_MAX_VPD,
+                    default=plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(
+                        CONF_MAX_VPD
+                    ),
+                )
+            ] = float
+            data_schema[
+                vol.Required(
+                    CONF_MIN_VPD,
+                    default=plant_config[FLOW_PLANT_INFO][ATTR_LIMITS].get(
+                        CONF_MIN_VPD
+                    ),
+                )
+            ] = float
 
         data_schema[
             vol.Optional(
@@ -656,6 +684,9 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 default=self.plant.soil_temperature_trigger,
             )
         ] = cv.boolean
+        data_schema[vol.Optional(FLOW_VPD_TRIGGER, default=self.plant.vpd_trigger)] = (
+            cv.boolean
+        )
 
         return self.async_show_form(
             step_id="plant_properties",
