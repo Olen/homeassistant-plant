@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import math
 import random
 from datetime import datetime, timedelta
 
@@ -653,9 +654,6 @@ class PlantCurrentSoilTemperature(PlantCurrentStatus):
             FLOW_SENSOR_SOIL_TEMPERATURE
         )
         super().__init__(hass, config, plantdevice)
-
-
-import math
 
 
 class PlantCurrentVpd(RestoreSensor):
