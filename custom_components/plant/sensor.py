@@ -59,6 +59,7 @@ from .const import (
     ATTR_MOISTURE,
     ATTR_PLANT,
     ATTR_SENSORS,
+    ATTR_VPD,
     DATA_UPDATED,
     DEFAULT_LUX_TO_PPFD,
     DOMAIN,
@@ -665,7 +666,7 @@ class PlantCurrentVpd(RestoreSensor):
 
     _attr_has_entity_name = True
     _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_device_class = SensorDeviceClass.ATMOSPHERIC_PRESSURE
+    _attr_device_class = ATTR_VPD
     _attr_icon = ICON_VPD
     _attr_native_unit_of_measurement = UNIT_VPD
     _attr_suggested_display_precision = 2
