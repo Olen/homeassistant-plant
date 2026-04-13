@@ -79,6 +79,7 @@ from .const import (
     ICON_PPFD,
     ICON_SOIL_TEMPERATURE,
     ICON_TEMPERATURE,
+    ICON_VPD,
     READING_CO2,
     READING_CONDUCTIVITY,
     READING_DLI,
@@ -88,6 +89,7 @@ from .const import (
     READING_PPFD,
     READING_SOIL_TEMPERATURE,
     READING_TEMPERATURE,
+    READING_VPD,
     TRANSLATION_KEY_CO2,
     TRANSLATION_KEY_CONDUCTIVITY,
     TRANSLATION_KEY_DAILY_LIGHT_INTEGRAL,
@@ -99,9 +101,11 @@ from .const import (
     TRANSLATION_KEY_SOIL_TEMPERATURE,
     TRANSLATION_KEY_TEMPERATURE,
     TRANSLATION_KEY_TOTAL_LIGHT_INTEGRAL,
+    TRANSLATION_KEY_VPD,
     UNIT_DLI,
     UNIT_PPFD,
     UNIT_TOTAL_LIGHT_INTEGRAL,
+    UNIT_VPD,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -179,6 +183,16 @@ async def async_setup_entry(
     async_add_entities(new_entities=[pdli_24h], update_before_add=True)
 
     plant.add_dli(dli=pdli, dli_24h=pdli_24h)
+
+    # Create VPD sensor (computed from temperature + humidity)
+    has_temp_and_humidity = (
+        entry.data.get(FLOW_PLANT_INFO, {}).get(FLOW_SENSOR_TEMPERATURE) is not None
+        and entry.data.get(FLOW_PLANT_INFO, {}).get(FLOW_SENSOR_HUMIDITY) is not None
+    )
+    pvpd = PlantCurrentVpd(hass, entry, plant)
+    pvpd._attr_entity_registry_enabled_default = has_temp_and_humidity
+    async_add_entities([pvpd])
+    plant.add_vpd(vpd=pvpd)
 
     return True
 
@@ -639,6 +653,142 @@ class PlantCurrentSoilTemperature(PlantCurrentStatus):
             FLOW_SENSOR_SOIL_TEMPERATURE
         )
         super().__init__(hass, config, plantdevice)
+
+
+import math
+
+
+class PlantCurrentVpd(RestoreSensor):
+    """Entity reporting current VPD (Vapour Pressure Deficit) calculated from temperature and humidity.
+
+    VPD = SVP * (1 - RH/100), where SVP is the saturation vapor pressure
+    calculated using the Tetens formula: SVP = 0.6108 * exp((17.27 * T) / (T + 237.3))
+    """
+
+    _attr_has_entity_name = True
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_device_class = SensorDeviceClass.ATMOSPHERIC_PRESSURE
+    _attr_icon = ICON_VPD
+    _attr_native_unit_of_measurement = UNIT_VPD
+    _attr_suggested_display_precision = 2
+    _attr_translation_key = TRANSLATION_KEY_VPD
+    _entity_id_key = READING_VPD
+
+    def __init__(
+        self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
+    ) -> None:
+        """Initialize the sensor"""
+        self._attr_unique_id = f"{config.entry_id}-current-vpd"
+        self._plant = plantdevice
+        self.hass = hass
+        self._config = config
+        self._tracker = []
+
+        # Only force entity_id for existing entities (backwards compat)
+        ent_reg = er_async_get(hass)
+        if ent_reg.async_get_entity_id(DOMAIN_SENSOR, DOMAIN, self._attr_unique_id):
+            self.entity_id = async_generate_entity_id(
+                f"{DOMAIN_SENSOR}.{{}}",
+                f"{self._plant.name} {self._entity_id_key}",
+                current_ids={},
+            )
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Device info for devices"""
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._plant.unique_id)},
+            name=self._plant.name,
+        )
+
+    @staticmethod
+    def calculate_vpd(temperature_c: float, humidity: float) -> float:
+        """Calculate VPD in kPa from temperature (Celsius) and relative humidity (%).
+
+        Uses the Tetens formula for saturation vapor pressure.
+        """
+        svp = 0.6108 * math.exp((17.27 * temperature_c) / (temperature_c + 237.3))
+        return svp * (1 - humidity / 100.0)
+
+    def _get_temperature_celsius(self) -> float | None:
+        """Get the current temperature in Celsius from the plant's temperature sensor."""
+        if self._plant.sensor_temperature is None:
+            return None
+        state = getattr(
+            self.hass.states.get(self._plant.sensor_temperature.entity_id),
+            "state",
+            None,
+        )
+        if state is None or state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
+            return None
+        try:
+            temp = float(state)
+        except (ValueError, TypeError):
+            return None
+        # The plant sensor stores values in Celsius
+        return temp
+
+    def _get_humidity(self) -> float | None:
+        """Get the current humidity from the plant's humidity sensor."""
+        if self._plant.sensor_humidity is None:
+            return None
+        state = getattr(
+            self.hass.states.get(self._plant.sensor_humidity.entity_id),
+            "state",
+            None,
+        )
+        if state is None or state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
+            return None
+        try:
+            return float(state)
+        except (ValueError, TypeError):
+            return None
+
+    def _update_vpd(self) -> None:
+        """Recalculate VPD from current temperature and humidity."""
+        temp_c = self._get_temperature_celsius()
+        humidity = self._get_humidity()
+        if temp_c is not None and humidity is not None:
+            self._attr_native_value = round(self.calculate_vpd(temp_c, humidity), 2)
+        else:
+            self._attr_native_value = None
+
+    async def async_added_to_hass(self) -> None:
+        """Restore state and subscribe to temperature and humidity changes."""
+        await super().async_added_to_hass()
+
+        # Track temperature sensor state changes
+        if self._plant.sensor_temperature is not None:
+            self._tracker.append(
+                async_track_state_change_event(
+                    self.hass,
+                    [self._plant.sensor_temperature.entity_id],
+                    self._state_changed_event,
+                )
+            )
+
+        # Track humidity sensor state changes
+        if self._plant.sensor_humidity is not None:
+            self._tracker.append(
+                async_track_state_change_event(
+                    self.hass,
+                    [self._plant.sensor_humidity.entity_id],
+                    self._state_changed_event,
+                )
+            )
+
+        # Calculate initial value
+        self._update_vpd()
+
+    @callback
+    def _state_changed_event(self, event: Event) -> None:
+        """Handle state changes from temperature or humidity sensors."""
+        self._update_vpd()
+        self.async_write_ha_state()
+
+    async def async_update(self) -> None:
+        """Update VPD value."""
+        self._update_vpd()
 
 
 class PlantCurrentPpfd(PlantCurrentStatus):
