@@ -85,7 +85,7 @@ jobs:
         if: steps.check_manifest.outputs.changed == 'true' && steps.check_tag.outputs.exists != 'true'
 
       - name: "Create Stable release"
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           prerelease: false
           body_path: RELEASE_CHANGELOG.md
@@ -94,7 +94,7 @@ jobs:
         if: steps.check_manifest.outputs.changed == 'true' && steps.check_tag.outputs.exists != 'true' && contains(env.COMPONENT_VERSION, 'beta') == false
 
       - name: "Create Beta release"
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           prerelease: true
           body_path: RELEASE_CHANGELOG.md
