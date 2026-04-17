@@ -178,6 +178,12 @@ class PlantHelper:
         if not cache:
             service_data["cache"] = False
 
+        _LOGGER.debug(
+            "Calling openplantbook.get for '%s' (cache=%s, service_data=%s)",
+            species,
+            cache,
+            service_data,
+        )
         try:
             async with timeout(REQUEST_TIMEOUT):
                 plant_get_result = await self.hass.services.async_call(
