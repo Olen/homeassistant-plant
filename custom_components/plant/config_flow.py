@@ -598,6 +598,11 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
     ) -> ConfigFlowResult:
         """Manage the options."""
         if user_input is not None:
+            _LOGGER.debug(
+                "Options flow submitted for %s: %s",
+                self.config_entry.entry_id,
+                user_input,
+            )
             if ATTR_SPECIES not in user_input or not re.match(
                 r"\w+", user_input[ATTR_SPECIES]
             ):
@@ -611,6 +616,11 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             ):
                 user_input[OPB_DISPLAY_PID] = ""
 
+            _LOGGER.debug(
+                "Options flow creating entry with data: %s (previous options: %s)",
+                user_input,
+                dict(self.config_entry.options),
+            )
             return self.async_create_entry(title="", data=user_input)
 
         plant_helper = PlantHelper(hass=self.hass)
@@ -733,6 +743,7 @@ async def update_plant_options(
     hass: HomeAssistant, entry: config_entries.ConfigEntry
 ) -> None:
     """Handle options update."""
+    _LOGGER.debug("update_plant_options CALLED for entry %s", entry.entry_id)
     # Guard against being called after entry is unloaded
     if entry.entry_id not in hass.data.get(DOMAIN, {}):
         _LOGGER.debug("Ignoring update for unloaded entry %s", entry.entry_id)
@@ -741,10 +752,10 @@ async def update_plant_options(
     plant = hass.data[DOMAIN][entry.entry_id]["plant"]
 
     _LOGGER.debug(
-        "Update plant options begin for %s Data %s, Options: %s",
+        "update_plant_options begin for %s Options: %s Data: %s",
         entry.entry_id,
-        entry.options,
-        entry.data,
+        dict(entry.options),
+        dict(entry.data),
     )
     entity_picture = entry.options.get(ATTR_ENTITY_PICTURE)
 
@@ -795,6 +806,14 @@ async def update_plant_options(
 
     new_species = entry.options.get(ATTR_SPECIES)
     force_new_species = entry.options.get(FLOW_FORCE_SPECIES_UPDATE)
+    _LOGGER.debug(
+        "Force refresh check: new_species=%s, plant.species=%s, "
+        "force_new_species=%s, species_changed=%s",
+        new_species,
+        plant.species,
+        force_new_species,
+        new_species != plant.species if new_species is not None else "N/A",
+    )
     if new_species is not None and (
         new_species != plant.species or force_new_species is True
     ):
@@ -808,6 +827,11 @@ async def update_plant_options(
                 FLOW_FORCE_SPECIES_UPDATE: force_new_species,
             }
         )
+        _LOGGER.debug(
+            "generate_configentry returned: data_source=%s, limits=%s",
+            plant_config[DATA_SOURCE],
+            plant_config.get(FLOW_PLANT_INFO, {}).get(FLOW_PLANT_LIMITS),
+        )
         if plant_config[DATA_SOURCE] == DATA_SOURCE_PLANTBOOK:
             plant.species = new_species
             plant.add_image(plant_config[FLOW_PLANT_INFO][ATTR_ENTITY_PICTURE])
@@ -816,18 +840,26 @@ async def update_plant_options(
             plant.display_species = (
                 opb_display[0].upper() + opb_display[1:] if opb_display else ""
             )
+            _LOGGER.debug(
+                "Updating %d threshold entities from OPB data",
+                len(plant_config[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS]),
+            )
             for key, value in plant_config[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].items():
                 set_entity = getattr(plant, key)
-                _LOGGER.debug("Entity: %s To: %s", set_entity, value)
+                if set_entity is None:
+                    _LOGGER.warning(
+                        "Threshold entity for '%s' is None on plant %s, skipping",
+                        key,
+                        plant.name,
+                    )
+                    continue
                 _LOGGER.debug(
-                    "Setting %s to %s",
+                    "Setting %s (entity_id=%s) from %s to %s",
+                    key,
                     set_entity.entity_id,
+                    set_entity.native_value,
                     value,
                 )
-                # Use async_set_native_value to update the entity's internal
-                # state. hass.states.async_set() only updates the state
-                # machine but leaves _attr_native_value unchanged, so the
-                # old value reappears on next write or restart.
                 await set_entity.async_set_native_value(float(value))
 
         else:
