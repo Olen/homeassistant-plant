@@ -9,7 +9,7 @@ from typing import Any
 
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.components.sensor import SensorDeviceClass
+from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN, SensorDeviceClass
 from homeassistant.config_entries import ConfigFlowResult
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
@@ -63,7 +63,6 @@ from .const import (
     DEFAULT_MOISTURE_GRACE_PERIOD,
     DOMAIN,
     DOMAIN_PLANTBOOK,
-    DOMAIN_SENSOR,
     FLOW_CO2_TRIGGER,
     FLOW_CONDUCTIVITY_TRIGGER,
     FLOW_DLI_TRIGGER,
@@ -121,7 +120,7 @@ def _build_sensor_schema(defaults: dict[str, Any] | None = None) -> dict:
             {
                 ATTR_ENTITY: {
                     ATTR_DEVICE_CLASS: device_class,
-                    ATTR_DOMAIN: DOMAIN_SENSOR,
+                    ATTR_DOMAIN: SENSOR_DOMAIN,
                 }
             }
         )

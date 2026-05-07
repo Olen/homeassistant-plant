@@ -69,6 +69,7 @@ ignore = [
 
 [tool.ruff.lint.isort]
 known-first-party = ["custom_components.plant"]
+combine-as-imports = true
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["E402"]  # Allow imports not at top of file in tests

@@ -7,8 +7,6 @@ from typing import Any
 
 from homeassistant.components.number import (
     DOMAIN as NUMBER_DOMAIN,
-)
-from homeassistant.components.number import (
     NumberDeviceClass,
     NumberMode,
     RestoreNumber,
