@@ -26,6 +26,7 @@ from custom_components.plant.const import (
     CONF_MIN_TEMPERATURE,
     CONF_MIN_VPD,
     DOMAIN,
+    FLOW_FORCE_SPECIES_UPDATE,
     FLOW_PLANT_INFO,
     FLOW_PLANT_LIMITS,
     FLOW_RIGHT_PLANT,
@@ -1206,3 +1207,144 @@ class TestOptionsFlow:
         )
         assert result["type"] == FlowResultType.CREATE_ENTRY
         assert init_integration.options.get(FLOW_MOISTURE_GRACE_PERIOD) == 86400
+
+    async def test_force_refresh_works_when_options_unchanged(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+        mock_openplantbook_services,
+    ) -> None:
+        """Force refresh must trigger an OPB sync even when the resulting
+        options dict is identical to the current options dict.
+
+        Regression for the Mars2020-Github case in #392: a previous
+        force-refresh attempt failed before it could reset force_update,
+        leaving force_update=True permanently in entry.options. The next
+        force-refresh attempt then submits the same options dict, HA's
+        async_update_entry detects no change, the update_listener never
+        fires, and OPB sync is silently skipped.
+        """
+        entry = init_integration
+        plant = hass.data[DOMAIN][entry.entry_id]["plant"]
+
+        # Simulate the stale state: every option the form would submit is
+        # already in entry.options at the same value, including a stale
+        # force_update=True from a prior failed attempt. We bypass update
+        # listeners while seeding this state so the listener doesn't reset
+        # force_update to False the way a successful run normally would.
+        identical_options = {
+            ATTR_SPECIES: "monstera deliciosa",
+            FLOW_FORCE_SPECIES_UPDATE: True,
+            OPB_DISPLAY_PID: "Monstera deliciosa",
+            ATTR_ENTITY_PICTURE: "https://example.com/stale.jpg",
+            "illuminance_trigger": True,
+            "dli_trigger": True,
+            "humidity_trigger": True,
+            "temperature_trigger": True,
+            "moisture_trigger": True,
+            "moisture_grace_period": 0,
+            "conductivity_trigger": True,
+            "co2_trigger": True,
+            "soil_temperature_trigger": True,
+            "vpd_trigger": False,
+        }
+        saved_listeners = list(entry.update_listeners)
+        entry.update_listeners.clear()
+        try:
+            hass.config_entries.async_update_entry(entry, options=identical_options)
+            await hass.async_block_till_done()
+        finally:
+            entry.update_listeners.extend(saved_listeners)
+
+        # Sanity check the precondition: stale force_update=True is in
+        # entry.options now, with no listener invocation having reset it.
+        assert entry.options.get(FLOW_FORCE_SPECIES_UPDATE) is True
+
+        # User opens the options form and submits the form prefilled with
+        # those same values — bit-identical to current entry.options.
+        result = await hass.config_entries.options.async_init(entry.entry_id)
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            {"next_step_id": "plant_properties"},
+        )
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"], dict(identical_options)
+        )
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        await hass.async_block_till_done()
+
+        # OPB sync must have run: the plant should now show the OPB-fetched
+        # image (not the stale form-prefilled value).
+        assert plant.entity_picture == GET_RESULT_MONSTERA_DELICIOSA["image_url"]
+
+    async def test_options_flow_publishes_state_immediately(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+        mock_no_openplantbook,
+    ) -> None:
+        """After a successful options-flow submission, the plant entity's
+        published state must reflect the new attributes immediately, not
+        after the next 30-second poll. Without an explicit
+        async_write_ha_state call, mutating instance attributes
+        (display_species, entity_picture) leaves hass.states stale until
+        polling fires.
+        """
+        entry = init_integration
+        plant = hass.data[DOMAIN][entry.entry_id]["plant"]
+
+        result = await hass.config_entries.options.async_init(entry.entry_id)
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"], {"next_step_id": "plant_properties"}
+        )
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            {
+                ATTR_SPECIES: "rebranded species",
+                OPB_DISPLAY_PID: "Rebranded Display",
+                ATTR_ENTITY_PICTURE: "https://example.com/rebranded.jpg",
+            },
+        )
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        await hass.async_block_till_done()
+
+        # No sleep, no poll — read state immediately.
+        state = hass.states.get(plant.entity_id)
+        assert state is not None
+        assert state.attributes.get(ATTR_SPECIES) == "Rebranded Display"
+        assert (
+            state.attributes.get("entity_picture")
+            == "https://example.com/rebranded.jpg"
+        )
+
+    async def test_force_update_not_persisted_to_options(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+        mock_openplantbook_services,
+    ) -> None:
+        """force_update is an edge-triggered signal ('do this now'), not
+        durable state. After processing, it must not remain in
+        entry.options where it could collide with a future identical
+        submission and silently break force-refresh.
+        """
+        entry = init_integration
+
+        result = await hass.config_entries.options.async_init(entry.entry_id)
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"], {"next_step_id": "plant_properties"}
+        )
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            {
+                ATTR_SPECIES: "monstera deliciosa",
+                FLOW_FORCE_SPECIES_UPDATE: True,
+                OPB_DISPLAY_PID: "Monstera deliciosa",
+                ATTR_ENTITY_PICTURE: "https://example.com/whatever.jpg",
+            },
+        )
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        await hass.async_block_till_done()
+
+        assert FLOW_FORCE_SPECIES_UPDATE not in entry.options
