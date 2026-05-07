@@ -5,7 +5,14 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from homeassistant.components.number import NumberDeviceClass, NumberMode, RestoreNumber
+from homeassistant.components.number import (
+    DOMAIN as NUMBER_DOMAIN,
+)
+from homeassistant.components.number import (
+    NumberDeviceClass,
+    NumberMode,
+    RestoreNumber,
+)
 from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
@@ -258,9 +265,9 @@ class PlantMinMax(RestoreNumber):
         # New entities let has_entity_name derive the entity_id automatically,
         # which enables auto-rename when the device is renamed.
         ent_reg = er_async_get(hass)
-        if ent_reg.async_get_entity_id("number", DOMAIN, self._attr_unique_id):
+        if ent_reg.async_get_entity_id(NUMBER_DOMAIN, DOMAIN, self._attr_unique_id):
             self.entity_id = async_generate_entity_id(
-                f"{DOMAIN}.{{}}",
+                f"{NUMBER_DOMAIN}.{{}}",
                 f"{self._plant.name} {self._entity_id_key}",
                 current_ids={},
             )

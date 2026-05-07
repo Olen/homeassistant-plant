@@ -230,7 +230,7 @@ class PlantCurrentStatus(RestoreSensor):
         ent_reg = er_async_get(hass)
         if ent_reg.async_get_entity_id(DOMAIN_SENSOR, DOMAIN, self._attr_unique_id):
             self.entity_id = async_generate_entity_id(
-                f"{DOMAIN}.{{}}",
+                f"{DOMAIN_SENSOR}.{{}}",
                 f"{self._plant.name} {self._entity_id_key}",
                 current_ids={},
             )
@@ -1220,7 +1220,7 @@ class PlantDummyStatus(SensorEntity):
         self._config = config
         self._default_state = STATE_UNKNOWN
         self.entity_id = async_generate_entity_id(
-            f"{DOMAIN}.{{}}", self.name, current_ids={}
+            f"{DOMAIN_SENSOR}.{{}}", self.name, current_ids={}
         )
         self._plant = plantdevice
 
