@@ -778,16 +778,23 @@ async def update_plant_options(
         return
 
     plant = hass.data[DOMAIN][entry.entry_id]["plant"]
+    _LOGGER.debug(
+        "update_plant_options begin for %s Options: %s",
+        entry.entry_id,
+        dict(entry.options),
+    )
     entity_picture = entry.options.get(ATTR_ENTITY_PICTURE)
 
     if entity_picture is not None:
         if entity_picture == "":
             plant.add_image(entity_picture)
         elif entity_picture.startswith(URL_SCHEME_MEDIA_SOURCE):
+            _LOGGER.debug("Using media-source URL: %s", entity_picture)
             plant.add_image(entity_picture)
         elif entity_picture.startswith(("http://", "https://")):
             try:
                 cv.url(entity_picture)
+                _LOGGER.debug("Using HTTP URL: %s", entity_picture)
                 plant.add_image(entity_picture)
             except vol.Invalid as exc:
                 _LOGGER.warning("Not a valid URL: %s", entity_picture)
@@ -795,6 +802,7 @@ async def update_plant_options(
         elif entity_picture.startswith("/"):
             try:
                 cv.path(entity_picture)
+                _LOGGER.debug("Using local path: %s", entity_picture)
                 plant.add_image(entity_picture)
             except vol.Invalid as exc:
                 _LOGGER.warning("Not a valid path: %s", entity_picture)
@@ -819,6 +827,12 @@ async def update_plant_options(
 
     new_species = entry.options.get(ATTR_SPECIES)
     if new_species is not None and new_species != plant.species:
+        _LOGGER.debug(
+            "Species changed from '%s' to '%s' (no OPB sync — that's "
+            "handled by the form handler when applicable)",
+            plant.species,
+            new_species,
+        )
         plant.species = new_species
 
     plant.update_registry()
@@ -826,6 +840,7 @@ async def update_plant_options(
     # state machine immediately. Without this the UI would only see the
     # update on the next 30 s poll.
     plant.async_write_ha_state()
+    _LOGGER.debug("update_plant_options done for %s", entry.entry_id)
 
 
 async def refresh_plant_from_openplantbook(
@@ -843,11 +858,21 @@ async def refresh_plant_from_openplantbook(
     applied, False if OPB had nothing for this species.
     """
     _LOGGER.debug(
-        "Refreshing %s from OpenPlantbook for species '%s'",
+        "refresh_plant_from_openplantbook CALLED for %s, species='%s'",
         entry.entry_id,
         new_species,
     )
     plant_helper = PlantHelper(hass=hass)
+    if not plant_helper.has_openplantbook:
+        _LOGGER.debug(
+            "OpenPlantbook integration not available; recording species "
+            "without sync for %s",
+            entry.entry_id,
+        )
+        plant.species = new_species
+        plant.async_write_ha_state()
+        return False
+
     plant_config = await plant_helper.generate_configentry(
         config={
             ATTR_SPECIES: new_species,
@@ -857,8 +882,17 @@ async def refresh_plant_from_openplantbook(
             FLOW_FORCE_SPECIES_UPDATE: True,
         }
     )
+    _LOGGER.debug(
+        "generate_configentry returned: data_source=%s, limits=%s",
+        plant_config[DATA_SOURCE],
+        plant_config.get(FLOW_PLANT_INFO, {}).get(FLOW_PLANT_LIMITS),
+    )
 
     if plant_config[DATA_SOURCE] != DATA_SOURCE_PLANTBOOK:
+        _LOGGER.debug(
+            "OpenPlantbook had no data for '%s'; recording species without " "sync",
+            new_species,
+        )
         plant.species = new_species
         plant.async_write_ha_state()
         return False
@@ -875,7 +909,9 @@ async def refresh_plant_from_openplantbook(
         opb_display_raw[0].upper() + opb_display_raw[1:] if opb_display_raw else ""
     )
 
-    for key, value in plant_config[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].items():
+    limits = plant_config[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS]
+    _LOGGER.debug("Updating %d threshold entities from OPB data", len(limits))
+    for key, value in limits.items():
         set_entity = getattr(plant, key, None)
         if set_entity is None:
             _LOGGER.warning(
@@ -884,6 +920,13 @@ async def refresh_plant_from_openplantbook(
                 plant.name,
             )
             continue
+        _LOGGER.debug(
+            "Setting %s (entity_id=%s) from %s to %s",
+            key,
+            set_entity.entity_id,
+            set_entity.native_value,
+            value,
+        )
         await set_entity.async_set_native_value(float(value))
 
     # Single atomic update of entry.data (limits) + entry.options
@@ -891,15 +934,15 @@ async def refresh_plant_from_openplantbook(
     # entry state that already matches the in-memory plant attrs.
     data = dict(entry.data)
     plant_info = dict(data.get(FLOW_PLANT_INFO, {}))
-    plant_info[FLOW_PLANT_LIMITS] = dict(
-        plant_config[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS]
-    )
+    plant_info[FLOW_PLANT_LIMITS] = dict(limits)
     data[FLOW_PLANT_INFO] = plant_info
     options = dict(entry.options)
     options[OPB_DISPLAY_PID] = plant.display_species
     options[ATTR_ENTITY_PICTURE] = plant.entity_picture
+    _LOGGER.debug("Persisting refreshed limits and OPB metadata for %s", entry.entry_id)
     hass.config_entries.async_update_entry(entry, data=data, options=options)
 
     plant.update_registry()
     plant.async_write_ha_state()
+    _LOGGER.debug("refresh_plant_from_openplantbook done for %s", entry.entry_id)
     return True
