@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from homeassistant.components.integration.const import METHOD_TRAPEZOIDAL
 from homeassistant.components.integration.sensor import IntegrationSensor
 from homeassistant.components.sensor import (
+    DOMAIN as SENSOR_DOMAIN,
     RestoreSensor,
     SensorDeviceClass,
     SensorEntity,
@@ -44,8 +45,6 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.entity_registry import (
     EVENT_ENTITY_REGISTRY_UPDATED,
     EventEntityRegistryUpdatedData,
-)
-from homeassistant.helpers.entity_registry import (
     async_get as er_async_get,
 )
 from homeassistant.helpers.event import (
@@ -63,7 +62,6 @@ from .const import (
     DATA_UPDATED,
     DEFAULT_LUX_TO_PPFD,
     DOMAIN,
-    DOMAIN_SENSOR,
     FLOW_PLANT_INFO,
     FLOW_SENSOR_CO2,
     FLOW_SENSOR_CONDUCTIVITY,
@@ -228,9 +226,9 @@ class PlantCurrentStatus(RestoreSensor):
         # Only force entity_id for existing entities (backwards compat).
         # New entities let has_entity_name derive the entity_id automatically.
         ent_reg = er_async_get(hass)
-        if ent_reg.async_get_entity_id(DOMAIN_SENSOR, DOMAIN, self._attr_unique_id):
+        if ent_reg.async_get_entity_id(SENSOR_DOMAIN, DOMAIN, self._attr_unique_id):
             self.entity_id = async_generate_entity_id(
-                f"{DOMAIN}.{{}}",
+                f"{SENSOR_DOMAIN}.{{}}",
                 f"{self._plant.name} {self._entity_id_key}",
                 current_ids={},
             )
@@ -685,9 +683,9 @@ class PlantCurrentVpd(RestoreSensor):
 
         # Only force entity_id for existing entities (backwards compat)
         ent_reg = er_async_get(hass)
-        if ent_reg.async_get_entity_id(DOMAIN_SENSOR, DOMAIN, self._attr_unique_id):
+        if ent_reg.async_get_entity_id(SENSOR_DOMAIN, DOMAIN, self._attr_unique_id):
             self.entity_id = async_generate_entity_id(
-                f"{DOMAIN_SENSOR}.{{}}",
+                f"{SENSOR_DOMAIN}.{{}}",
                 f"{self._plant.name} {self._entity_id_key}",
                 current_ids={},
             )
@@ -813,9 +811,9 @@ class PlantCurrentPpfd(PlantCurrentStatus):
         super().__init__(hass, config, plantdevice)
         self._follow_unit = False
         ent_reg = er_async_get(hass)
-        if ent_reg.async_get_entity_id(DOMAIN_SENSOR, DOMAIN, self._attr_unique_id):
+        if ent_reg.async_get_entity_id(SENSOR_DOMAIN, DOMAIN, self._attr_unique_id):
             self.entity_id = async_generate_entity_id(
-                f"{DOMAIN_SENSOR}.{{}}",
+                f"{SENSOR_DOMAIN}.{{}}",
                 f"{self._plant.name} {self._entity_id_key}",
                 current_ids={},
             )
@@ -959,10 +957,10 @@ class PlantTotalLightIntegral(IntegrationSensor):
         )
         ent_reg = er_async_get(hass)
         if ent_reg.async_get_entity_id(
-            DOMAIN_SENSOR, DOMAIN, f"{config.entry_id}-ppfd-integral"
+            SENSOR_DOMAIN, DOMAIN, f"{config.entry_id}-ppfd-integral"
         ):
             self.entity_id = async_generate_entity_id(
-                f"{DOMAIN_SENSOR}.{{}}",
+                f"{SENSOR_DOMAIN}.{{}}",
                 f"{self._plant.name} Total {READING_PPFD} Integral",
                 current_ids={},
             )
@@ -1072,9 +1070,9 @@ class PlantDailyLightIntegral(UtilityMeterSensor):
             periodically_resetting=True,
         )
         ent_reg = er_async_get(hass)
-        if ent_reg.async_get_entity_id(DOMAIN_SENSOR, DOMAIN, f"{config.entry_id}-dli"):
+        if ent_reg.async_get_entity_id(SENSOR_DOMAIN, DOMAIN, f"{config.entry_id}-dli"):
             self.entity_id = async_generate_entity_id(
-                f"{DOMAIN_SENSOR}.{{}}",
+                f"{SENSOR_DOMAIN}.{{}}",
                 f"{self._plant.name} {READING_DLI}",
                 current_ids={},
             )
@@ -1185,10 +1183,10 @@ class PlantDailyLightIntegral24h(StatisticsSensor):
         )
         ent_reg = er_async_get(hass)
         if ent_reg.async_get_entity_id(
-            DOMAIN_SENSOR, DOMAIN, f"{config.entry_id}-dli-24h"
+            SENSOR_DOMAIN, DOMAIN, f"{config.entry_id}-dli-24h"
         ):
             self.entity_id = async_generate_entity_id(
-                f"{DOMAIN_SENSOR}.{{}}",
+                f"{SENSOR_DOMAIN}.{{}}",
                 f"{self._plant.name} {READING_DLI}_24h",
                 current_ids={},
             )
@@ -1220,7 +1218,7 @@ class PlantDummyStatus(SensorEntity):
         self._config = config
         self._default_state = STATE_UNKNOWN
         self.entity_id = async_generate_entity_id(
-            f"{DOMAIN}.{{}}", self.name, current_ids={}
+            f"{SENSOR_DOMAIN}.{{}}", self.name, current_ids={}
         )
         self._plant = plantdevice
 
