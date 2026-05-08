@@ -1393,7 +1393,12 @@ class PlantDevice(Entity):
                 new_state,
             )
         self._attr_state = new_state
-        self.update_registry()
+        # Note: do NOT call self.update_registry() here. update() runs in
+        # an executor thread (HA's polling), and device_registry.async_get_or_create
+        # raises in HA 2026.5+ when called off the event loop. Device-registry
+        # updates are handled by the async paths (async_added_to_hass,
+        # update_plant_options, refresh_plant_from_openplantbook), which fire
+        # whenever model/manufacturer can actually change.
 
     @property
     def data_source(self) -> str | None:
