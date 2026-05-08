@@ -263,7 +263,16 @@ class PlantMinMax(RestoreNumber):
         # New entities let has_entity_name derive the entity_id automatically,
         # which enables auto-rename when the device is renamed.
         ent_reg = er_async_get(hass)
-        if ent_reg.async_get_entity_id(NUMBER_DOMAIN, DOMAIN, self._attr_unique_id):
+        # Track whether this is a brand-new config entry. HA's RestoreState
+        # keyed by entity_id preserves deleted entities' last state for ~7
+        # days, so a delete + re-add with the same plant name would restore
+        # stale values over the fresh ones from OpenPlantbook. Skip restore
+        # when the unique_id is new.
+        self._is_new_entity = (
+            ent_reg.async_get_entity_id(NUMBER_DOMAIN, DOMAIN, self._attr_unique_id)
+            is None
+        )
+        if not self._is_new_entity:
             self.entity_id = async_generate_entity_id(
                 f"{NUMBER_DOMAIN}.{{}}",
                 f"{self._plant.name} {self._entity_id_key}",
@@ -341,6 +350,19 @@ class PlantMinMax(RestoreNumber):
     async def async_added_to_hass(self) -> None:
         """Restore state of thresholds on startup."""
         await super().async_added_to_hass()
+        if self._is_new_entity:
+            _LOGGER.debug(
+                "New entity %s, using default %s (skipping restore)",
+                self.entity_id,
+                self._default_value,
+            )
+            self.async_write_ha_state()
+            async_track_state_change_event(
+                self.hass,
+                [self.entity_id],
+                self._state_changed_event,
+            )
+            return
         state = await self.async_get_last_number_data()
         if not state:
             _LOGGER.debug(
