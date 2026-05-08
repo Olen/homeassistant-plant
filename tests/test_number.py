@@ -4,10 +4,13 @@ from __future__ import annotations
 
 from homeassistant.components.number import NumberMode
 from homeassistant.const import LIGHT_LUX, PERCENTAGE, UnitOfConductivity
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, State
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity import EntityCategory
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.common import (
+    MockConfigEntry,
+    mock_restore_cache_with_extra_data,
+)
 
 from custom_components.plant.const import (
     ATTR_PLANT,
@@ -15,6 +18,8 @@ from custom_components.plant.const import (
     DOMAIN,
     UNIT_DLI,
 )
+
+from .conftest import TEST_PLANT_NAME
 
 
 class TestThresholdEntitiesCreation:
@@ -610,3 +615,118 @@ class TestLuxToPpfdEntity:
         await hass.async_block_till_done()
 
         assert lux_to_ppfd.native_value == 0.014
+
+
+# Pre-built NumberExtraStoredData payload for max_moisture (0-100 %, step 1).
+def _moisture_extra(value: float) -> dict:
+    return {
+        "native_max_value": 100,
+        "native_min_value": 0,
+        "native_step": 1,
+        "native_unit_of_measurement": PERCENTAGE,
+        "native_value": value,
+    }
+
+
+class TestThresholdRestoreState:
+    """Tests for RestoreState behavior of threshold entities.
+
+    HA's RestoreState is keyed by entity_id and retains values for ~7 days
+    after entity removal. A delete + re-add of a plant with the same name
+    produces a colliding auto-derived entity_id, which without a guard
+    would restore the deleted entity's stale value over the fresh
+    OPB-fetched default. These tests cover both halves of the contract:
+
+    - Brand-new config entries skip restore and use defaults.
+    - Existing entries (already in the entity registry) still restore,
+      so user edits survive normal restarts and reloads.
+    """
+
+    async def test_new_entity_skips_stale_restore_state(
+        self,
+        hass: HomeAssistant,
+        plant_config_data: dict,
+        mock_external_sensors,
+        mock_no_openplantbook,
+    ) -> None:
+        """A brand-new config entry must use the default value from
+        FLOW_PLANT_LIMITS, not stale RestoreState left behind by a
+        previously-deleted entity that happened to share the same
+        auto-derived entity_id.
+
+        Reproduces the delete + re-add scenario from #392: the
+        deleted plant left max_moisture=99 % in RestoreState; a fresh
+        re-add with the same name must show the configured 60 %.
+        """
+        mock_restore_cache_with_extra_data(
+            hass,
+            [
+                (
+                    State("number.test_plant_max_soil_moisture", "99"),
+                    _moisture_extra(99),
+                ),
+            ],
+        )
+
+        config_entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=plant_config_data,
+            entry_id="brand_new_entry_id",
+            title=TEST_PLANT_NAME,
+        )
+        config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][config_entry.entry_id][ATTR_PLANT]
+        # plant_config_data sets max_moisture=60. Without the skip-restore
+        # guard, the stale 99 from RestoreState would win.
+        assert plant.max_moisture.native_value == 60
+
+        await hass.config_entries.async_unload(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+    async def test_existing_entity_restores_user_edited_value(
+        self,
+        hass: HomeAssistant,
+        plant_config_data: dict,
+        mock_external_sensors,
+        mock_no_openplantbook,
+    ) -> None:
+        """Existing entries (already present in the entity registry from
+        a prior setup) must continue to restore their previous value.
+        Only brand-new entries skip restore.
+        """
+        entry_id = "existing_entry_id"
+        unique_id = f"{entry_id}-max-moisture"
+
+        # Pre-register the entity so the integration sees it as existing.
+        ent_reg = er.async_get(hass)
+        registry_entry = ent_reg.async_get_or_create(
+            domain="number",
+            platform=DOMAIN,
+            unique_id=unique_id,
+        )
+
+        mock_restore_cache_with_extra_data(
+            hass,
+            [(State(registry_entry.entity_id, "85"), _moisture_extra(85))],
+        )
+
+        config_entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=plant_config_data,
+            entry_id=entry_id,
+            title=TEST_PLANT_NAME,
+        )
+        config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][config_entry.entry_id][ATTR_PLANT]
+        # The user previously edited max_moisture to 85; that must win
+        # over the config default of 60.
+        assert plant.max_moisture.native_value == 85
+
+        await hass.config_entries.async_unload(config_entry.entry_id)
+        await hass.async_block_till_done()
