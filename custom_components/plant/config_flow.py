@@ -920,6 +920,17 @@ async def refresh_plant_from_openplantbook(
                 plant.name,
             )
             continue
+        # Disabled threshold entities (e.g. CO2 thresholds when no CO2
+        # sensor is configured) get aborted by HA's EntityPlatform with
+        # entity.hass set back to None. The instance is still referenced
+        # from plant.add_thresholds, but it cannot publish state — skip.
+        if set_entity.hass is None:
+            _LOGGER.debug(
+                "Threshold entity for '%s' is disabled on plant %s, skipping",
+                key,
+                plant.name,
+            )
+            continue
         _LOGGER.debug(
             "Setting %s (entity_id=%s) from %s to %s",
             key,

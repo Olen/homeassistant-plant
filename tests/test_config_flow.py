@@ -37,6 +37,7 @@ from custom_components.plant.const import (
     OPB_DISPLAY_PID,
 )
 
+from .conftest import create_plant_config_data
 from .fixtures.openplantbook_responses import (
     GET_RESULT_MONSTERA_DELICIOSA,
 )
@@ -1317,6 +1318,76 @@ class TestOptionsFlow:
             state.attributes.get("entity_picture")
             == "https://example.com/rebranded.jpg"
         )
+
+    async def test_force_refresh_skips_disabled_threshold_entities(
+        self,
+        hass: HomeAssistant,
+        mock_openplantbook_services,
+    ) -> None:
+        """Force refresh must not crash when threshold entities are
+        disabled (which happens when the user hasn't configured the
+        corresponding sensor — e.g., no CO2 sensor → CO2 thresholds
+        default-disabled).
+
+        HA's EntityPlatform calls entity.add_to_platform_abort() for
+        disabled entities, which sets entity.hass = None. The disabled
+        entity is still referenced from plant.add_thresholds, so the
+        OPB refresh loop hits it and previously crashed with
+        "Attribute hass is None for <entity unknown.unknown=unknown>".
+        """
+        # Plant with no CO2 / soil_temperature / illuminance sensors —
+        # those threshold entities will be default-disabled. moisture +
+        # temperature + humidity remain enabled.
+        config_data = create_plant_config_data(
+            co2_sensor=None,
+            soil_temperature_sensor=None,
+            illuminance_sensor=None,
+        )
+        config_entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=config_data,
+            entry_id="test_disabled_thresholds",
+        )
+        config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][config_entry.entry_id]["plant"]
+
+        # Sanity-check the precondition: at least one threshold has
+        # hass=None because the platform aborted the add for it.
+        assert plant.max_co2 is not None
+        assert plant.max_co2.hass is None
+
+        # Force refresh on a species that's in the OPB mock.
+        result = await hass.config_entries.options.async_init(config_entry.entry_id)
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"], {"next_step_id": "plant_properties"}
+        )
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            {
+                ATTR_SPECIES: "monstera deliciosa",
+                FLOW_FORCE_SPECIES_UPDATE: True,
+                OPB_DISPLAY_PID: "Monstera deliciosa",
+                ATTR_ENTITY_PICTURE: "https://example.com/test.jpg",
+            },
+        )
+
+        # The form must complete cleanly even with disabled thresholds
+        # in the loop. Before the fix this raised RuntimeError and the
+        # form returned "Unknown error occurred".
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        await hass.async_block_till_done()
+
+        # An enabled threshold (moisture) should pick up the OPB value.
+        assert (
+            plant.max_moisture.native_value
+            == GET_RESULT_MONSTERA_DELICIOSA["max_soil_moist"]
+        )
+
+        await hass.config_entries.async_unload(config_entry.entry_id)
+        await hass.async_block_till_done()
 
     async def test_force_update_not_persisted_to_options(
         self,
