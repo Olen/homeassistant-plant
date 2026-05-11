@@ -554,6 +554,137 @@ class TestTemperatureUnitConversion:
         state = hass.states.get(threshold.entity_id)
         assert state.state == initial_value
 
+    async def test_max_soil_temperature_converts_fahrenheit_to_celsius(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Soil-temperature thresholds must publish converted values to
+        the state machine on unit change, mirroring the existing air
+        max_temperature behavior. Pre-fix the soil class only mutated
+        _attr_native_value without writing state, so the published
+        state stayed in the old unit."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        threshold = plant.max_soil_temperature
+
+        await threshold.async_set_native_value(68)
+        await hass.async_block_till_done()
+
+        threshold.state_attributes_changed(
+            {"unit_of_measurement": "°F"},
+            {"unit_of_measurement": "°C"},
+        )
+        await hass.async_block_till_done()
+
+        state = hass.states.get(threshold.entity_id)
+        assert state is not None
+        assert int(state.state) == 20
+
+    async def test_max_soil_temperature_converts_celsius_to_fahrenheit(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Soil max-temperature: °C → °F."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        threshold = plant.max_soil_temperature
+
+        await threshold.async_set_native_value(20)
+        await hass.async_block_till_done()
+
+        threshold.state_attributes_changed(
+            {"unit_of_measurement": "°C"},
+            {"unit_of_measurement": "°F"},
+        )
+        await hass.async_block_till_done()
+
+        state = hass.states.get(threshold.entity_id)
+        assert state is not None
+        assert int(state.state) == 68
+
+    async def test_min_soil_temperature_converts_fahrenheit_to_celsius(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Soil min-temperature: °F → °C."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        threshold = plant.min_soil_temperature
+
+        await threshold.async_set_native_value(50)
+        await hass.async_block_till_done()
+
+        threshold.state_attributes_changed(
+            {"unit_of_measurement": "°F"},
+            {"unit_of_measurement": "°C"},
+        )
+        await hass.async_block_till_done()
+
+        state = hass.states.get(threshold.entity_id)
+        assert state is not None
+        assert int(state.state) == 10
+
+    async def test_min_soil_temperature_converts_celsius_to_fahrenheit(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Soil min-temperature: °C → °F."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        threshold = plant.min_soil_temperature
+
+        await threshold.async_set_native_value(10)
+        await hass.async_block_till_done()
+
+        threshold.state_attributes_changed(
+            {"unit_of_measurement": "°C"},
+            {"unit_of_measurement": "°F"},
+        )
+        await hass.async_block_till_done()
+
+        state = hass.states.get(threshold.entity_id)
+        assert state is not None
+        assert int(state.state) == 50
+
+    async def test_temperature_conversion_persists_through_next_state_write(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Unit conversion must update the entity's _attr_native_value
+        AND publish state — not just one or the other.
+
+        Pre-fix the air-temp classes wrote the converted value via
+        hass.states.async_set, leaving _attr_native_value untouched.
+        The next time the entity calls async_write_ha_state (user
+        edit, polling, RestoreState restoration), it published from
+        native_value and the conversion was silently reverted.
+        """
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        threshold = plant.max_temperature
+
+        await threshold.async_set_native_value(68)
+        await hass.async_block_till_done()
+
+        threshold.state_attributes_changed(
+            {"unit_of_measurement": "°F"},
+            {"unit_of_measurement": "°C"},
+        )
+        await hass.async_block_till_done()
+
+        # Conversion happened correctly the first time. (hass.states.async_set
+        # writes the int value; subsequent NumberEntity writes format as
+        # "20.0" — float() handles both.)
+        assert float(hass.states.get(threshold.entity_id).state) == 20
+
+        # Force any subsequent state write — same channel that polling,
+        # restoration, or user edits would use.
+        threshold.async_write_ha_state()
+        await hass.async_block_till_done()
+
+        # State must still reflect the converted value, not revert.
+        assert float(hass.states.get(threshold.entity_id).state) == 20
+
 
 class TestLuxToPpfdEntity:
     """Tests for lux to PPFD conversion factor entity."""
