@@ -544,6 +544,16 @@ class PlantMaxTemperature(PlantMinMax):
                 new_state,
             )
 
+        # Update internal state AND publish via hass.states.async_set.
+        # Setting only _attr_native_value (without async_set) leaves the
+        # state machine stale until the next entity update; setting only
+        # via async_set leaves _attr_native_value stale so the next
+        # async_write_ha_state silently reverts the conversion. Both are
+        # required.
+        self._attr_native_value = new_state
+        self._attr_native_unit_of_measurement = new_attributes.get(
+            ATTR_UNIT_OF_MEASUREMENT
+        )
         self.hass.states.async_set(self.entity_id, new_state, new_attributes)
 
 
@@ -627,6 +637,10 @@ class PlantMinTemperature(PlantMinMax):
                 new_state,
             )
 
+        self._attr_native_value = new_state
+        self._attr_native_unit_of_measurement = new_attributes.get(
+            ATTR_UNIT_OF_MEASUREMENT
+        )
         self.hass.states.async_set(self.entity_id, new_state, new_attributes)
 
 
@@ -980,6 +994,7 @@ class PlantMaxSoilTemperature(PlantMinMax):
         self._attr_native_unit_of_measurement = new_attributes.get(
             ATTR_UNIT_OF_MEASUREMENT
         )
+        self.hass.states.async_set(self.entity_id, new_state, new_attributes)
 
 
 class PlantMinSoilTemperature(PlantMinMax):
@@ -1056,6 +1071,7 @@ class PlantMinSoilTemperature(PlantMinMax):
         self._attr_native_unit_of_measurement = new_attributes.get(
             ATTR_UNIT_OF_MEASUREMENT
         )
+        self.hass.states.async_set(self.entity_id, new_state, new_attributes)
 
 
 class PlantLuxToPpfd(PlantMinMax):
