@@ -272,4 +272,6 @@ CONF_PLANTBOOK_MAPPING = {
     CONF_MAX_MMOL: "max_light_mmol",
     CONF_MIN_DLI: "min_dli",
     CONF_MAX_DLI: "max_dli",
+    CONF_MIN_SOIL_TEMPERATURE: "min_soil_temp",
+    CONF_MAX_SOIL_TEMPERATURE: "max_soil_temp",
 }

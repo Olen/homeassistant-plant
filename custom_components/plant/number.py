@@ -976,10 +976,7 @@ class PlantMaxSoilTemperature(PlantMinMax):
                 )
             )
 
-        self._attr_native_value = new_state
-        self._attr_native_unit_of_measurement = new_attributes.get(
-            ATTR_UNIT_OF_MEASUREMENT
-        )
+        self.hass.states.async_set(self.entity_id, new_state, new_attributes)
 
 
 class PlantMinSoilTemperature(PlantMinMax):
@@ -1052,10 +1049,7 @@ class PlantMinSoilTemperature(PlantMinMax):
                 )
             )
 
-        self._attr_native_value = new_state
-        self._attr_native_unit_of_measurement = new_attributes.get(
-            ATTR_UNIT_OF_MEASUREMENT
-        )
+        self.hass.states.async_set(self.entity_id, new_state, new_attributes)
 
 
 class PlantLuxToPpfd(PlantMinMax):
