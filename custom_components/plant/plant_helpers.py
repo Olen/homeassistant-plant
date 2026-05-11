@@ -369,6 +369,24 @@ class PlantHelper:
                 UnitOfTemperature.CELSIUS,
                 0,
             )
+            max_soil_temperature = display_temp(
+                self.hass,
+                _to_int(
+                    opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MAX_SOIL_TEMPERATURE]),
+                    DEFAULT_MAX_SOIL_TEMPERATURE,
+                ),
+                UnitOfTemperature.CELSIUS,
+                0,
+            )
+            min_soil_temperature = display_temp(
+                self.hass,
+                _to_int(
+                    opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MIN_SOIL_TEMPERATURE]),
+                    DEFAULT_MIN_SOIL_TEMPERATURE,
+                ),
+                UnitOfTemperature.CELSIUS,
+                0,
+            )
             # Prefer pre-computed DLI from openplantbook integration (includes
             # ratio-based detection). Fall back to mmol × PPFD_DLI_FACTOR.
             opb_max_dli = opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MAX_DLI])

@@ -18,6 +18,8 @@ GET_RESULT_MONSTERA_DELICIOSA = {
     "min_light_lux": 1500,
     "max_temp": 30,
     "min_temp": 15,
+    "max_soil_temp": 28,
+    "min_soil_temp": 12,
     "max_env_humid": 80,
     "min_env_humid": 50,
     "max_soil_moist": 60,

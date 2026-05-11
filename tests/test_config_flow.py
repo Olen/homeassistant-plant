@@ -1319,6 +1319,48 @@ class TestOptionsFlow:
             == "https://example.com/rebranded.jpg"
         )
 
+    async def test_force_refresh_picks_up_opb_soil_temperature(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+        mock_openplantbook_services,
+    ) -> None:
+        """OPB-fetched soil temperature thresholds (max_soil_temp /
+        min_soil_temp) must propagate to the plant. Without the
+        CONF_PLANTBOOK_MAPPING entries, generate_configentry's
+        if opb_plant: block silently skipped soil temp and the user
+        always saw the un-converted default values.
+        """
+        entry = init_integration
+        plant = hass.data[DOMAIN][entry.entry_id]["plant"]
+
+        result = await hass.config_entries.options.async_init(entry.entry_id)
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"], {"next_step_id": "plant_properties"}
+        )
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            {
+                ATTR_SPECIES: "monstera deliciosa",
+                FLOW_FORCE_SPECIES_UPDATE: True,
+                OPB_DISPLAY_PID: "Monstera deliciosa",
+                ATTR_ENTITY_PICTURE: "https://example.com/monstera.jpg",
+            },
+        )
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        await hass.async_block_till_done()
+
+        # HA test default unit system is metric (Celsius); display_temp
+        # passes the OPB Celsius value through unchanged.
+        assert (
+            plant.max_soil_temperature.native_value
+            == GET_RESULT_MONSTERA_DELICIOSA["max_soil_temp"]
+        )
+        assert (
+            plant.min_soil_temperature.native_value
+            == GET_RESULT_MONSTERA_DELICIOSA["min_soil_temp"]
+        )
+
     async def test_force_refresh_skips_disabled_threshold_entities(
         self,
         hass: HomeAssistant,
