@@ -386,6 +386,107 @@ class TestConfigFlowLimitsStep:
         assert result["title"] == "My Plant"
         assert FLOW_PLANT_INFO in result["data"]
 
+    async def test_limits_step_accepts_integer_vpd(
+        self,
+        hass: HomeAssistant,
+        mock_no_openplantbook,
+    ) -> None:
+        """Integer-valued VPD must be accepted by the limits step.
+
+        Regression for #435: the HA frontend has no int/float distinction,
+        so a whole number entered for VPD (e.g. 3 or 3.0) is serialised to
+        JSON as ``3`` and parsed back as a Python ``int``. A bare ``float``
+        schema is an ``isinstance`` check, not a coercion, so integer VPD
+        input was rejected with "expected float". ``vol.Coerce(float)``
+        must convert it instead.
+        """
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_USER}
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {ATTR_NAME: "My Plant", ATTR_SPECIES: "some plant"},
+        )
+        # Sensors step - no sensors
+        result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                OPB_DISPLAY_PID: "Some Plant",
+                CONF_MAX_MOISTURE: 60,
+                CONF_MIN_MOISTURE: 20,
+                CONF_MAX_TEMPERATURE: 40,
+                CONF_MIN_TEMPERATURE: 10,
+                CONF_MAX_CONDUCTIVITY: 3000,
+                CONF_MIN_CONDUCTIVITY: 500,
+                CONF_MAX_ILLUMINANCE: 100000,
+                CONF_MIN_ILLUMINANCE: 0,
+                CONF_MAX_HUMIDITY: 60,
+                CONF_MIN_HUMIDITY: 20,
+                CONF_MAX_DLI: 30,
+                CONF_MIN_DLI: 2,
+                CONF_MAX_VPD: 3,
+                CONF_MIN_VPD: 1,
+                ATTR_ENTITY_PICTURE: "",
+            },
+        )
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        limits = result["data"][FLOW_PLANT_INFO][FLOW_PLANT_LIMITS]
+        assert limits[CONF_MAX_VPD] == 3.0
+        assert limits[CONF_MIN_VPD] == 1.0
+
+    async def test_limits_step_accepts_string_numeric_input(
+        self,
+        hass: HomeAssistant,
+        mock_no_openplantbook,
+    ) -> None:
+        """Numeric limit fields submitted as strings must be coerced.
+
+        Every numeric field in the limits step uses a bare Python type,
+        which rejects anything that is not already that exact type. The
+        schema must coerce string input (e.g. ``"40"``) to the proper
+        numeric type so the flow does not error on otherwise valid values.
+        """
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_USER}
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {ATTR_NAME: "My Plant", ATTR_SPECIES: "some plant"},
+        )
+        # Sensors step - no sensors
+        result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                OPB_DISPLAY_PID: "Some Plant",
+                CONF_MAX_MOISTURE: "60",
+                CONF_MIN_MOISTURE: "20",
+                CONF_MAX_TEMPERATURE: "40",
+                CONF_MIN_TEMPERATURE: "10",
+                CONF_MAX_CONDUCTIVITY: "3000",
+                CONF_MIN_CONDUCTIVITY: "500",
+                CONF_MAX_ILLUMINANCE: "100000",
+                CONF_MIN_ILLUMINANCE: "0",
+                CONF_MAX_HUMIDITY: "60",
+                CONF_MIN_HUMIDITY: "20",
+                CONF_MAX_DLI: "30",
+                CONF_MIN_DLI: "2",
+                CONF_MAX_VPD: "1.6",
+                CONF_MIN_VPD: "0.4",
+                ATTR_ENTITY_PICTURE: "",
+            },
+        )
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        limits = result["data"][FLOW_PLANT_INFO][FLOW_PLANT_LIMITS]
+        # Integer fields coerced to int, VPD fields coerced to float.
+        assert limits[CONF_MAX_TEMPERATURE] == 40
+        assert isinstance(limits[CONF_MAX_TEMPERATURE], int)
+        assert limits[CONF_MAX_VPD] == 1.6
+        assert isinstance(limits[CONF_MAX_VPD], float)
+
     async def test_limits_step_with_opb_data(
         self,
         hass: HomeAssistant,

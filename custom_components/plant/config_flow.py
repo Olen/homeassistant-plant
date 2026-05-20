@@ -377,7 +377,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_MAX_MOISTURE
                     ),
                 )
-            ] = int
+            ] = vol.Coerce(int)
             data_schema[
                 vol.Required(
                     CONF_MIN_MOISTURE,
@@ -385,7 +385,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_MIN_MOISTURE
                     ),
                 )
-            ] = int
+            ] = vol.Coerce(int)
 
         if show_all or selected_sensors["illuminance"]:
             data_schema[
@@ -395,7 +395,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_MAX_ILLUMINANCE
                     ),
                 )
-            ] = int
+            ] = vol.Coerce(int)
             data_schema[
                 vol.Required(
                     CONF_MIN_ILLUMINANCE,
@@ -403,7 +403,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_MIN_ILLUMINANCE
                     ),
                 )
-            ] = int
+            ] = vol.Coerce(int)
             # Always show DLI together with illuminance
             data_schema[
                 vol.Required(
@@ -412,7 +412,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_MAX_DLI
                     ),
                 )
-            ] = int
+            ] = vol.Coerce(int)
             data_schema[
                 vol.Required(
                     CONF_MIN_DLI,
@@ -420,7 +420,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_MIN_DLI
                     ),
                 )
-            ] = int
+            ] = vol.Coerce(int)
 
         if show_all or selected_sensors["temperature"]:
             data_schema[
@@ -430,7 +430,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_MAX_TEMPERATURE
                     ),
                 )
-            ] = int
+            ] = vol.Coerce(int)
             data_schema[
                 vol.Required(
                     CONF_MIN_TEMPERATURE,
@@ -438,7 +438,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_MIN_TEMPERATURE
                     ),
                 )
-            ] = int
+            ] = vol.Coerce(int)
 
         if show_all or selected_sensors["conductivity"]:
             data_schema[
@@ -448,7 +448,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_MAX_CONDUCTIVITY
                     ),
                 )
-            ] = int
+            ] = vol.Coerce(int)
             data_schema[
                 vol.Required(
                     CONF_MIN_CONDUCTIVITY,
@@ -456,7 +456,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_MIN_CONDUCTIVITY
                     ),
                 )
-            ] = int
+            ] = vol.Coerce(int)
 
         if show_all or selected_sensors["humidity"]:
             data_schema[
@@ -466,7 +466,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_MAX_HUMIDITY
                     ),
                 )
-            ] = int
+            ] = vol.Coerce(int)
             data_schema[
                 vol.Required(
                     CONF_MIN_HUMIDITY,
@@ -474,7 +474,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_MIN_HUMIDITY
                     ),
                 )
-            ] = int
+            ] = vol.Coerce(int)
 
         # Show VPD thresholds when both temperature and humidity are selected
         if show_all or (
@@ -487,13 +487,13 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     CONF_MAX_VPD,
                     default=max_vpd if max_vpd is not None else DEFAULT_MAX_VPD,
                 )
-            ] = float
+            ] = vol.Coerce(float)
             data_schema[
                 vol.Required(
                     CONF_MIN_VPD,
                     default=min_vpd if min_vpd is not None else DEFAULT_MIN_VPD,
                 )
-            ] = float
+            ] = vol.Coerce(float)
 
         data_schema[
             vol.Optional(
