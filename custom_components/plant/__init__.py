@@ -1106,8 +1106,8 @@ class PlantDevice(Entity):
                 "sensor_type": st,
                 "status": info[1],
                 "current": str(info[0]),
-                "min": info[2].state,
-                "max": info[3].state,
+                "min": str(info[2].state),
+                "max": str(info[3].state),
             }
             for st, info in problem_sensors.items()
         ]
