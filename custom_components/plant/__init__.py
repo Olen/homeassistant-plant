@@ -519,6 +519,9 @@ class PlantDevice(Entity):
         self.plant_complete = False
         self._device_id = None
         self._problems = []
+        # In-memory only — resets on HA restart, causing active problems to re-log as new onsets.
+        # Future fix: restore from last state via RestoreEntity.async_get_last_state(), or
+        # by reading self.hass.states.get(self.entity_id) in async_added_to_hass.
         self._logged_problem_types: set[str] = set()
 
         self._check_days = None
