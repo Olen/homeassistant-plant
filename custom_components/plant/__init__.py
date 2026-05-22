@@ -1152,6 +1152,7 @@ class PlantDevice(Entity):
         # Collects one compact tuple per triggered sensor: (current_val, status, min_entity, max_entity).
         # Converted to self._problems at the end of update() — adding a new sensor type
         # only requires one extra line at the trigger site.
+        # TODO: document "how to add a new sensor type" in DEVELOPMENT.md and reference it here.
         _problem_sensors: dict[str, tuple] = {}
 
         if self.sensor_moisture is not None:
