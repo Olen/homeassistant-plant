@@ -1,0 +1,12 @@
+type: custom:markdown-card
+content: |
+  {% for state in states.plant %}
+  {% set problems = state.attributes.get('problems', []) %}
+  {% if problems %}
+  **{{ state.name }}**
+  {% for p in problems %}
+  - {{ p.sensor_type | replace('_', ' ') | title }}: {{ p.status | lower }} — current: {{ p.current }}, {{ 'min: ' + p.min if p.status == 'Low' else 'max: ' + p.max }}
+  {% endfor %}
+
+  {% endif %}
+  {% endfor %}
