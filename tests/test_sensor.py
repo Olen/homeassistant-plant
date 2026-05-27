@@ -1058,6 +1058,12 @@ class TestVpdSensor:
     system unit is °F, the plant-owned mirror temperature sensor (device
     class ``temperature``) publishes its state in °F to ``hass.states``,
     and ``_get_temperature_celsius`` reads it back without converting.
+
+    The Kelvin test guards the generalised form of the fix: any unit in
+    ``TemperatureConverter.VALID_UNITS`` other than Celsius should be
+    converted before Tetens is applied. HA's system unit can only be °C
+    or °F, but external sensors (thermocouples, etc.) may legitimately
+    publish in Kelvin.
     """
 
     async def test_vpd_when_system_unit_is_celsius(
@@ -1113,6 +1119,46 @@ class TestVpdSensor:
             "sensor.test_temperature",
             "62.0",
             {"unit_of_measurement": "°F", "device_class": "temperature"},
+        )
+        hass.states.async_set(
+            "sensor.test_humidity",
+            "74.4",
+            {"unit_of_measurement": "%", "device_class": "humidity"},
+        )
+        mock_config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][mock_config_entry.entry_id][ATTR_PLANT]
+        await plant.sensor_temperature.async_update()
+        plant.sensor_temperature.async_write_ha_state()
+        await plant.sensor_humidity.async_update()
+        plant.sensor_humidity.async_write_ha_state()
+        await hass.async_block_till_done()
+        await plant.vpd.async_update()
+
+        assert plant.vpd.native_value == pytest.approx(0.49, abs=0.01)
+
+    async def test_vpd_when_source_sensor_reports_kelvin(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+    ) -> None:
+        """Source sensors reporting in Kelvin must also be converted.
+
+        HA's system unit cannot be Kelvin (UnitSystem rejects it), but an
+        external sensor with ``device_class=temperature`` and
+        ``unit_of_measurement="K"`` can still propagate K through the
+        mirror entity. 289.82 K = 16.67 °C, so with 74.4 % RH the VPD
+        should still land near 0.49 kPa.
+        """
+        from homeassistant.util.unit_system import METRIC_SYSTEM
+
+        hass.config.units = METRIC_SYSTEM
+        hass.states.async_set(
+            "sensor.test_temperature",
+            "289.82",
+            {"unit_of_measurement": "K", "device_class": "temperature"},
         )
         hass.states.async_set(
             "sensor.test_humidity",

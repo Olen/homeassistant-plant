@@ -713,7 +713,8 @@ class PlantCurrentVpd(RestoreSensor):
 
         The mirror entity inherits its unit of measurement from the source
         sensor (and from HA's system unit), so the published state may be
-        in °C or °F. Convert to °C before returning.
+        in °C, °F, or K. Convert to °C before returning. Unknown or
+        missing units fall through unconverted (treated as already °C).
         """
         if self._plant.sensor_temperature is None:
             return None
@@ -724,13 +725,12 @@ class PlantCurrentVpd(RestoreSensor):
             temp = float(state_obj.state)
         except (ValueError, TypeError):
             return None
+        unit = state_obj.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
         if (
-            state_obj.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
-            == UnitOfTemperature.FAHRENHEIT
+            unit in TemperatureConverter.VALID_UNITS
+            and unit != UnitOfTemperature.CELSIUS
         ):
-            temp = TemperatureConverter.convert(
-                temp, UnitOfTemperature.FAHRENHEIT, UnitOfTemperature.CELSIUS
-            )
+            temp = TemperatureConverter.convert(temp, unit, UnitOfTemperature.CELSIUS)
         return temp
 
     def _get_humidity(self) -> float | None:
