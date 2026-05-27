@@ -1049,3 +1049,86 @@ class TestProblemDetectionWithPpfdSource:
         # Plant state should not be "problem" due to illuminance
         # (it may still be unknown if no other sensors have values)
         assert plant.illuminance_status is None
+
+
+class TestVpdSensor:
+    """Tests for the VPD sensor calculation.
+
+    The Fahrenheit test mirrors the real bug condition for #440: when HA's
+    system unit is °F, the plant-owned mirror temperature sensor (device
+    class ``temperature``) publishes its state in °F to ``hass.states``,
+    and ``_get_temperature_celsius`` reads it back without converting.
+    """
+
+    async def test_vpd_when_system_unit_is_celsius(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+    ) -> None:
+        """Baseline: HA system in °C, external sensor in °C → correct VPD."""
+        from homeassistant.util.unit_system import METRIC_SYSTEM
+
+        hass.config.units = METRIC_SYSTEM
+        hass.states.async_set(
+            "sensor.test_temperature",
+            "16.67",
+            {"unit_of_measurement": "°C", "device_class": "temperature"},
+        )
+        hass.states.async_set(
+            "sensor.test_humidity",
+            "74.4",
+            {"unit_of_measurement": "%", "device_class": "humidity"},
+        )
+        mock_config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][mock_config_entry.entry_id][ATTR_PLANT]
+        await plant.sensor_temperature.async_update()
+        plant.sensor_temperature.async_write_ha_state()
+        await plant.sensor_humidity.async_update()
+        plant.sensor_humidity.async_write_ha_state()
+        await hass.async_block_till_done()
+        await plant.vpd.async_update()
+
+        # SVP(16.67°C) * (1 - 74.4/100) ≈ 1.897 * 0.256 ≈ 0.486 kPa
+        assert plant.vpd.native_value == pytest.approx(0.49, abs=0.01)
+
+    async def test_vpd_when_system_unit_is_fahrenheit(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+    ) -> None:
+        """Regression test for #440.
+
+        HA system unit is °F; the external sensor reports 62 °F (= 16.67 °C).
+        VPD must come out near 0.49 kPa. Before the fix, the mirror sensor
+        published "62.0 °F" to hass.states, ``_get_temperature_celsius``
+        returned 62 (treating °F as °C), and VPD landed near 5.6 kPa.
+        """
+        from homeassistant.util.unit_system import US_CUSTOMARY_SYSTEM
+
+        hass.config.units = US_CUSTOMARY_SYSTEM
+        hass.states.async_set(
+            "sensor.test_temperature",
+            "62.0",
+            {"unit_of_measurement": "°F", "device_class": "temperature"},
+        )
+        hass.states.async_set(
+            "sensor.test_humidity",
+            "74.4",
+            {"unit_of_measurement": "%", "device_class": "humidity"},
+        )
+        mock_config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][mock_config_entry.entry_id][ATTR_PLANT]
+        await plant.sensor_temperature.async_update()
+        plant.sensor_temperature.async_write_ha_state()
+        await plant.sensor_humidity.async_update()
+        plant.sensor_humidity.async_write_ha_state()
+        await hass.async_block_till_done()
+        await plant.vpd.async_update()
+
+        assert plant.vpd.native_value == pytest.approx(0.49, abs=0.01)

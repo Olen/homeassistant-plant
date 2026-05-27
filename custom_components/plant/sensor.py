@@ -50,6 +50,7 @@ from homeassistant.helpers.entity_registry import (
 from homeassistant.helpers.event import (
     async_track_state_change_event,
 )
+from homeassistant.util.unit_conversion import TemperatureConverter
 
 from . import SETUP_DUMMY_SENSORS
 from .const import (
@@ -708,21 +709,28 @@ class PlantCurrentVpd(RestoreSensor):
         return svp * (1 - humidity / 100.0)
 
     def _get_temperature_celsius(self) -> float | None:
-        """Get the current temperature in Celsius from the plant's temperature sensor."""
+        """Read the plant's temperature sensor and return the value in Celsius.
+
+        The mirror entity inherits its unit of measurement from the source
+        sensor (and from HA's system unit), so the published state may be
+        in °C or °F. Convert to °C before returning.
+        """
         if self._plant.sensor_temperature is None:
             return None
-        state = getattr(
-            self.hass.states.get(self._plant.sensor_temperature.entity_id),
-            "state",
-            None,
-        )
-        if state is None or state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
+        state_obj = self.hass.states.get(self._plant.sensor_temperature.entity_id)
+        if state_obj is None or state_obj.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
             return None
         try:
-            temp = float(state)
+            temp = float(state_obj.state)
         except (ValueError, TypeError):
             return None
-        # The plant sensor stores values in Celsius
+        if (
+            state_obj.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
+            == UnitOfTemperature.FAHRENHEIT
+        ):
+            temp = TemperatureConverter.convert(
+                temp, UnitOfTemperature.FAHRENHEIT, UnitOfTemperature.CELSIUS
+            )
         return temp
 
     def _get_humidity(self) -> float | None:
