@@ -110,7 +110,9 @@ from .const import (
     READING_TEMPERATURE,
     READING_VPD,
     TEMPERATURE_MAX_VALUE,
+    TEMPERATURE_MAX_VALUE_FAHRENHEIT,
     TEMPERATURE_MIN_VALUE,
+    TEMPERATURE_MIN_VALUE_FAHRENHEIT,
     TRANSLATION_KEY_LUX_TO_PPFD,
     TRANSLATION_KEY_MAX_CO2,
     TRANSLATION_KEY_MAX_CONDUCTIVITY,
@@ -501,6 +503,9 @@ class PlantMaxTemperature(PlantMinMax):
             ),
             hass.config.units.temperature_unit,
         )
+        if hass.config.units.temperature_unit == UnitOfTemperature.FAHRENHEIT:
+            self._attr_native_max_value = TEMPERATURE_MAX_VALUE_FAHRENHEIT
+            self._attr_native_min_value = TEMPERATURE_MIN_VALUE_FAHRENHEIT
         super().__init__(hass, config, plantdevice)
         self._attr_native_unit_of_measurement = self.hass.config.units.temperature_unit
 
@@ -597,6 +602,9 @@ class PlantMinTemperature(PlantMinMax):
             hass.config.units.temperature_unit,
         )
         self._attr_unique_id = f"{config.entry_id}-min-temperature"
+        if hass.config.units.temperature_unit == UnitOfTemperature.FAHRENHEIT:
+            self._attr_native_max_value = TEMPERATURE_MAX_VALUE_FAHRENHEIT
+            self._attr_native_min_value = TEMPERATURE_MIN_VALUE_FAHRENHEIT
         super().__init__(hass, config, plantdevice)
         self._attr_native_unit_of_measurement = self.hass.config.units.temperature_unit
 
@@ -963,6 +971,9 @@ class PlantMaxSoilTemperature(PlantMinMax):
             ),
             hass.config.units.temperature_unit,
         )
+        if hass.config.units.temperature_unit == UnitOfTemperature.FAHRENHEIT:
+            self._attr_native_max_value = TEMPERATURE_MAX_VALUE_FAHRENHEIT
+            self._attr_native_min_value = TEMPERATURE_MIN_VALUE_FAHRENHEIT
         super().__init__(hass, config, plantdevice)
         self._attr_native_unit_of_measurement = self.hass.config.units.temperature_unit
 
@@ -1043,6 +1054,9 @@ class PlantMinSoilTemperature(PlantMinMax):
             hass.config.units.temperature_unit,
         )
         self._attr_unique_id = f"{config.entry_id}-min-soil-temperature"
+        if hass.config.units.temperature_unit == UnitOfTemperature.FAHRENHEIT:
+            self._attr_native_max_value = TEMPERATURE_MAX_VALUE_FAHRENHEIT
+            self._attr_native_min_value = TEMPERATURE_MIN_VALUE_FAHRENHEIT
         super().__init__(hass, config, plantdevice)
         self._attr_native_unit_of_measurement = self.hass.config.units.temperature_unit
 

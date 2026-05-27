@@ -864,13 +864,18 @@ class TestThresholdRestoreState:
 
 
 class TestThresholdImperialDefaults:
-    """Tests for #438a: temperature defaults must be converted at creation time.
+    """Tests for the temperature threshold setup behavior in imperial mode.
 
-    Defaults in const.py and from OpenPlantbook are in °C. When HA's system
-    unit is °F, the four temperature threshold entities used to stamp the
-    °F unit onto the unconverted °C numeric, producing nonsensical limits
-    (e.g. a 40 °F max-temperature ceiling). They must convert °C → °F when
-    the system is imperial.
+    Covers two related defects from #438:
+
+    * #438a — defaults in ``const.py`` and from OpenPlantbook are in °C; the
+      four temperature threshold entities must convert them to the system
+      unit before stamping the °F label, otherwise a 40 °C default becomes
+      "40 °F" instead of "104 °F".
+    * #438b — the slider bounds (``native_min_value`` / ``native_max_value``)
+      must widen to °F-appropriate values in imperial mode; otherwise the
+      100 °C cap silently becomes a 100 °F cap (≈ 37.8 °C), too low for
+      heat-tolerant species.
     """
 
     async def test_temperature_thresholds_converted_when_system_imperial(
@@ -919,3 +924,51 @@ class TestThresholdImperialDefaults:
         assert plant.min_temperature.native_value == 10
         assert plant.max_soil_temperature.native_value == 40
         assert plant.min_soil_temperature.native_value == 10
+
+    async def test_temperature_slider_bounds_widen_when_system_imperial(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+    ) -> None:
+        """Slider bounds for the four temperature thresholds are 200 / -50 °F."""
+        from homeassistant.util.unit_system import US_CUSTOMARY_SYSTEM
+
+        hass.config.units = US_CUSTOMARY_SYSTEM
+        mock_config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][mock_config_entry.entry_id][ATTR_PLANT]
+
+        for threshold in (
+            plant.max_temperature,
+            plant.min_temperature,
+            plant.max_soil_temperature,
+            plant.min_soil_temperature,
+        ):
+            assert threshold.native_max_value == 200
+            assert threshold.native_min_value == -50
+
+    async def test_temperature_slider_bounds_unchanged_when_system_metric(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+    ) -> None:
+        """Baseline: metric system leaves the existing -50 / 100 °C bounds."""
+        from homeassistant.util.unit_system import METRIC_SYSTEM
+
+        hass.config.units = METRIC_SYSTEM
+        mock_config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][mock_config_entry.entry_id][ATTR_PLANT]
+
+        for threshold in (
+            plant.max_temperature,
+            plant.min_temperature,
+            plant.max_soil_temperature,
+            plant.min_soil_temperature,
+        ):
+            assert threshold.native_max_value == 100
+            assert threshold.native_min_value == -50
