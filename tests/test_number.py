@@ -861,3 +861,61 @@ class TestThresholdRestoreState:
 
         await hass.config_entries.async_unload(config_entry.entry_id)
         await hass.async_block_till_done()
+
+
+class TestThresholdImperialDefaults:
+    """Tests for #438a: temperature defaults must be converted at creation time.
+
+    Defaults in const.py and from OpenPlantbook are in °C. When HA's system
+    unit is °F, the four temperature threshold entities used to stamp the
+    °F unit onto the unconverted °C numeric, producing nonsensical limits
+    (e.g. a 40 °F max-temperature ceiling). They must convert °C → °F when
+    the system is imperial.
+    """
+
+    async def test_temperature_thresholds_converted_when_system_imperial(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+    ) -> None:
+        """All four temperature thresholds use °F values when system is imperial."""
+        from homeassistant.util.unit_system import US_CUSTOMARY_SYSTEM
+
+        hass.config.units = US_CUSTOMARY_SYSTEM
+        mock_config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][mock_config_entry.entry_id][ATTR_PLANT]
+
+        # Defaults in conftest: max=40°C, min=10°C, max_soil=40°C, min_soil=10°C
+        # Converted: 40°C → 104°F, 10°C → 50°F
+        assert plant.max_temperature.native_value == 104
+        assert plant.min_temperature.native_value == 50
+        assert plant.max_soil_temperature.native_value == 104
+        assert plant.min_soil_temperature.native_value == 50
+
+        assert plant.max_temperature._attr_native_unit_of_measurement == "°F"
+        assert plant.min_temperature._attr_native_unit_of_measurement == "°F"
+        assert plant.max_soil_temperature._attr_native_unit_of_measurement == "°F"
+        assert plant.min_soil_temperature._attr_native_unit_of_measurement == "°F"
+
+    async def test_temperature_thresholds_unchanged_when_system_metric(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+    ) -> None:
+        """Baseline: metric system leaves the °C defaults alone."""
+        from homeassistant.util.unit_system import METRIC_SYSTEM
+
+        hass.config.units = METRIC_SYSTEM
+        mock_config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][mock_config_entry.entry_id][ATTR_PLANT]
+
+        assert plant.max_temperature.native_value == 40
+        assert plant.min_temperature.native_value == 10
+        assert plant.max_soil_temperature.native_value == 40
+        assert plant.min_soil_temperature.native_value == 10
