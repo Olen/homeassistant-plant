@@ -245,7 +245,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
-def _convert_default_temp(value_c: float, target_unit: str) -> float:
+def _convert_default_temp(value_c: float, target_unit: UnitOfTemperature) -> float:
     """Convert a Celsius default value to ``target_unit``, rounded.
 
     Defaults in ``const.py`` and from OpenPlantbook are expressed in °C.
