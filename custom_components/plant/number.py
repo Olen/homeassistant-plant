@@ -727,7 +727,7 @@ class PlantMaxDli(PlantMinMax):
     _attr_native_unit_of_measurement = UNIT_DLI
     _attr_native_max_value = 100
     _attr_native_min_value = 0
-    _attr_native_step = 1
+    _attr_native_step = 0.1
     _attr_translation_key = TRANSLATION_KEY_MAX_DLI
     _entity_id_key = f"{ATTR_MAX} {READING_DLI}"
 
@@ -750,7 +750,7 @@ class PlantMinDli(PlantMinMax):
     _attr_native_unit_of_measurement = UNIT_DLI
     _attr_native_max_value = 100
     _attr_native_min_value = 0
-    _attr_native_step = 1
+    _attr_native_step = 0.1
     _attr_translation_key = TRANSLATION_KEY_MIN_DLI
     _entity_id_key = f"{ATTR_MIN} {READING_DLI}"
 
