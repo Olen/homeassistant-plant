@@ -350,25 +350,14 @@ class PlantCurrentStatus(RestoreSensor):
             self._tracker.append(entity_id)
 
     async def async_added_to_hass(self) -> None:
-        """Restore state and set up tracking when added to Home Assistant."""
+        """Handle entity which will be added."""
         await super().async_added_to_hass()
         state = await self.async_get_last_state()
 
+        # We do not restore the state for these.
+        # They are read from the external sensor anyway
+        self._attr_native_value = None
         if state:
-            # Restore the last known state on startup until the external sensor
-            # provides a fresh value. Without this, entities remain unknown after
-            # Home Assistant restart until the source sensor updates again.
-            if state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE):
-                try:
-                    self._attr_native_value = float(state.state)
-                except (ValueError, TypeError):
-                    self._attr_native_value = state.state
-
-            if ATTR_UNIT_OF_MEASUREMENT in state.attributes:
-                self._attr_native_unit_of_measurement = state.attributes[
-                    ATTR_UNIT_OF_MEASUREMENT
-                ]
-
             if "external_sensor" in state.attributes:
                 _LOGGER.debug(
                     "Restoring %s external sensor from state: %s",
@@ -383,7 +372,6 @@ class PlantCurrentStatus(RestoreSensor):
                 )
         else:
             _LOGGER.debug("No restore data for %s", self.entity_id)
-
         _LOGGER.debug(
             "Sensor %s setup complete: external_sensor=%s, enabled=%s",
             self.entity_id,
@@ -436,44 +424,42 @@ class PlantCurrentStatus(RestoreSensor):
         )
 
     async def async_update(self) -> None:
-        """Update state and unit from the external sensor when available."""
+        """Set state and unit to the parent sensor state and unit"""
         if self.external_sensor:
-            external_state = self.hass.states.get(self.external_sensor)
-
-            if (
-                external_state is not None
-                and external_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
-            ):
-                try:
-                    self._attr_native_value = float(external_state.state)
-
-                    if ATTR_UNIT_OF_MEASUREMENT in external_state.attributes:
-                        self._attr_native_unit_of_measurement = (
-                            external_state.attributes[
-                                ATTR_UNIT_OF_MEASUREMENT
-                            ]
-                        )
-
-                except ValueError:
-                    _LOGGER.debug(
-                        "External sensor for %s has non-numeric value: %s = %s",
-                        self.entity_id,
-                        self.external_sensor,
-                        external_state.state,
-                    )
-            else:
+            try:
+                self._attr_native_value = float(
+                    self.hass.states.get(self.external_sensor).state
+                )
+                if (
+                    ATTR_UNIT_OF_MEASUREMENT
+                    in self.hass.states.get(self.external_sensor).attributes
+                ):
+                    self._attr_native_unit_of_measurement = self.hass.states.get(
+                        self.external_sensor
+                    ).attributes[ATTR_UNIT_OF_MEASUREMENT]
+            except AttributeError:
                 _LOGGER.debug(
-                    "External sensor for %s is not available yet: %s",
+                    "Unknown external sensor for %s: %s, setting to default: %s",
                     self.entity_id,
                     self.external_sensor,
+                    self._default_state,
                 )
+                self._attr_native_value = self._default_state
+            except ValueError:
+                _LOGGER.debug(
+                    "Unknown external value for %s: %s = %s, setting to default: %s",
+                    self.entity_id,
+                    self.external_sensor,
+                    self.hass.states.get(self.external_sensor).state,
+                    self._default_state,
+                )
+                self._attr_native_value = self._default_state
 
         else:
-            # Only clear the value when the external sensor has been
-            # intentionally removed from the entity configuration.
             _LOGGER.debug(
-                "External sensor removed for %s, clearing state",
+                "External sensor not set for %s, setting to default: %s",
                 self.entity_id,
+                self._default_state,
             )
             self._attr_native_value = self._default_state
 
@@ -511,17 +497,12 @@ class PlantCurrentStatus(RestoreSensor):
             and new_state.state != STATE_UNKNOWN
             and new_state.state != STATE_UNAVAILABLE
         ):
-            try:
-                self._attr_native_value = float(new_state.state)
-            except (ValueError, TypeError):
-                self._attr_native_value = new_state.state
+            self._attr_native_value = new_state.state
             if ATTR_UNIT_OF_MEASUREMENT in new_state.attributes:
                 self._attr_native_unit_of_measurement = new_state.attributes[
                     ATTR_UNIT_OF_MEASUREMENT
                 ]
-        elif not self.external_sensor:
-            # Only clear the state when the external sensor has been
-            # intentionally removed from the entity configuration.
+        else:
             self._attr_native_value = self._default_state
 
 
@@ -769,29 +750,17 @@ class PlantCurrentVpd(RestoreSensor):
             return None
 
     def _update_vpd(self) -> None:
-        """Recalculate VPD from current temperature and humidity when available."""
+        """Recalculate VPD from current temperature and humidity."""
         temp_c = self._get_temperature_celsius()
         humidity = self._get_humidity()
-
         if temp_c is not None and humidity is not None:
             self._attr_native_value = round(self.calculate_vpd(temp_c, humidity), 2)
-            return
-
-        _LOGGER.debug(
-            "VPD source values unavailable for %s; keeping current value",
-            self.entity_id,
-        )
+        else:
+            self._attr_native_value = None
 
     async def async_added_to_hass(self) -> None:
         """Restore state and subscribe to temperature and humidity changes."""
         await super().async_added_to_hass()
-
-        if state := await self.async_get_last_state():
-            if state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE):
-                try:
-                    self._attr_native_value = float(state.state)
-                except (ValueError, TypeError):
-                    self._attr_native_value = state.state
 
         # Track temperature sensor state changes
         if self._plant.sensor_temperature is not None:
@@ -933,24 +902,11 @@ class PlantCurrentPpfd(PlantCurrentStatus):
 
         if self.external_sensor:
             external_sensor = self.hass.states.get(self.external_sensor)
-
-            if (
-                external_sensor is not None
-                and external_sensor.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
-            ):
+            if external_sensor:
                 self._attr_native_value = self.ppfd(external_sensor.state)
             else:
-                _LOGGER.debug(
-                    "PPFD source unavailable for %s; keeping current value",
-                    self.entity_id,
-                )
+                self._attr_native_value = None
         else:
-            # Only clear the value when the external sensor has been
-            # intentionally removed from the entity configuration.
-            _LOGGER.debug(
-                "PPFD source removed for %s, clearing state",
-                self.entity_id,
-            )
             self._attr_native_value = None
 
     @callback
@@ -966,24 +922,11 @@ class PlantCurrentPpfd(PlantCurrentStatus):
 
         if self.external_sensor:
             external_sensor = self.hass.states.get(self.external_sensor)
-
-            if (
-                external_sensor is not None
-                and external_sensor.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
-            ):
+            if external_sensor:
                 self._attr_native_value = self.ppfd(external_sensor.state)
             else:
-                _LOGGER.debug(
-                    "PPFD source unavailable for %s; keeping current value",
-                    self.entity_id,
-                )
+                self._attr_native_value = None
         else:
-            # Only clear the value when the external sensor has been
-            # intentionally removed from the entity configuration.
-            _LOGGER.debug(
-                "PPFD source removed for %s, clearing state",
-                self.entity_id,
-            )
             self._attr_native_value = None
 
 
