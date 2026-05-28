@@ -406,6 +406,7 @@ class PlantCurrentStatus(RestoreSensor):
             """Handle entity registry updates."""
             action = event.data["action"]
             if action == "update":
+                # Check if this is our external sensor being renamed
                 if "old_entity_id" not in event.data:
                     return
                 old_entity_id = event.data["old_entity_id"]
@@ -418,6 +419,7 @@ class PlantCurrentStatus(RestoreSensor):
                     )
                     self.replace_external_sensor(new_entity_id)
             elif action == "remove":
+                # Check if our external sensor was deleted
                 entity_id = event.data["entity_id"]
                 if self._external_sensor and entity_id == self._external_sensor:
                     _LOGGER.info(
