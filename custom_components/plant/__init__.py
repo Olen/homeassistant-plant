@@ -34,6 +34,7 @@ from homeassistant.helpers import (
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity, async_generate_entity_id
 from homeassistant.helpers.entity_component import EntityComponent
+from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.util import dt as dt_util
 
 from . import group as group  # noqa: F401 - needed for HA group discovery
@@ -297,8 +298,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         )
         return False
 
-    plant.async_schedule_update_ha_state(True)
-
     # Lets add the dummy sensors automatically if we are testing stuff
     if USE_DUMMY_SENSORS is True:
         for sensor in plant.meter_entities:
@@ -475,7 +474,7 @@ def ws_get_info(
     return
 
 
-class PlantDevice(Entity):
+class PlantDevice(RestoreEntity):
     """Base device for plants"""
 
     def __init__(self, hass: HomeAssistant, config: ConfigEntry) -> None:
@@ -1424,4 +1423,22 @@ class PlantDevice(Entity):
             self._device_id = device.id
 
     async def async_added_to_hass(self) -> None:
+        """Restore plant state and status attributes on startup."""
+        
+        await super().async_added_to_hass()
         self.update_registry()
+    
+        if last_state := await self.async_get_last_state():
+            if last_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE):
+                self._attr_state = last_state.state
+    
+            attrs = last_state.attributes
+            self.moisture_status = attrs.get(f"{ATTR_MOISTURE}_status")
+            self.temperature_status = attrs.get(f"{ATTR_TEMPERATURE}_status")
+            self.conductivity_status = attrs.get(f"{ATTR_CONDUCTIVITY}_status")
+            self.illuminance_status = attrs.get(f"{ATTR_ILLUMINANCE}_status")
+            self.humidity_status = attrs.get(f"{ATTR_HUMIDITY}_status")
+            self.co2_status = attrs.get(f"{ATTR_CO2}_status")
+            self.soil_temperature_status = attrs.get(f"{ATTR_SOIL_TEMPERATURE}_status")
+            self.dli_status = attrs.get(f"{ATTR_DLI}_status")
+            self.vpd_status = attrs.get(f"{ATTR_VPD}_status")
