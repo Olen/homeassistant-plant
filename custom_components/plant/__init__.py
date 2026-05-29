@@ -298,6 +298,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         )
         return False
 
+    plant.async_schedule_update_ha_state(True)
+    
     # Lets add the dummy sensors automatically if we are testing stuff
     if USE_DUMMY_SENSORS is True:
         for sensor in plant.meter_entities:
