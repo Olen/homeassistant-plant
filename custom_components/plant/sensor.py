@@ -224,6 +224,7 @@ class PlantCurrentStatus(RestoreSensor):
         self._plant = plantdevice
         self._tracker = []
         self._follow_external = True
+        self._restored_value_active = False
         # Only force entity_id for existing entities (backwards compat).
         # New entities let has_entity_name derive the entity_id automatically.
         ent_reg = er_async_get(hass)
@@ -362,7 +363,13 @@ class PlantCurrentStatus(RestoreSensor):
                 try:
                     self._attr_native_value = float(state.state)
                 except (ValueError, TypeError):
-                    self._attr_native_value = state.state
+                    _LOGGER.debug(
+                        "Ignoring non-numeric restored value for %s: %s",
+                        self.entity_id,
+                        state.state,
+                    )
+                else:
+                    self._restored_value_active = True
 
             if ATTR_UNIT_OF_MEASUREMENT in state.attributes:
                 self._attr_native_unit_of_measurement = state.attributes[
@@ -393,6 +400,7 @@ class PlantCurrentStatus(RestoreSensor):
         self.async_track_entity(self.entity_id)
         if self.external_sensor:
             self.async_track_entity(self.external_sensor)
+            self.async_schedule_update_ha_state(True)
 
         async_dispatcher_connect(
             self.hass, DATA_UPDATED, self._schedule_immediate_update
@@ -437,45 +445,64 @@ class PlantCurrentStatus(RestoreSensor):
 
     async def async_update(self) -> None:
         """Update state and unit from the external sensor when available."""
-        if self.external_sensor:
-            external_state = self.hass.states.get(self.external_sensor)
-
-            if (
-                external_state is not None
-                and external_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
-            ):
-                try:
-                    self._attr_native_value = float(external_state.state)
-
-                    if ATTR_UNIT_OF_MEASUREMENT in external_state.attributes:
-                        self._attr_native_unit_of_measurement = (
-                            external_state.attributes[
-                                ATTR_UNIT_OF_MEASUREMENT
-                            ]
-                        )
-
-                except ValueError:
-                    _LOGGER.debug(
-                        "External sensor for %s has non-numeric value: %s = %s",
-                        self.entity_id,
-                        self.external_sensor,
-                        external_state.state,
-                    )
-            else:
-                _LOGGER.debug(
-                    "External sensor for %s is not available yet: %s",
-                    self.entity_id,
-                    self.external_sensor,
-                )
-
-        else:
-            # Only clear the value when the external sensor has been
-            # intentionally removed from the entity configuration.
+        if not self.external_sensor:
             _LOGGER.debug(
                 "External sensor removed for %s, clearing state",
                 self.entity_id,
             )
             self._attr_native_value = self._default_state
+            self._restored_value_active = False
+            return
+
+        external_state = self.hass.states.get(self.external_sensor)
+
+        if (
+            external_state is not None
+            and external_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
+        ):
+            try:
+                self._attr_native_value = float(external_state.state)
+            except (ValueError, TypeError):
+                if self._restored_value_active:
+                    _LOGGER.debug(
+                        "External sensor for %s has non-numeric value during "
+                        "startup restore window; keeping restored value: %s = %s",
+                        self.entity_id,
+                        self.external_sensor,
+                        external_state.state,
+                    )
+                    return
+
+                _LOGGER.debug(
+                    "External sensor for %s has non-numeric value: %s = %s",
+                    self.entity_id,
+                    self.external_sensor,
+                    external_state.state,
+                )
+                self._attr_native_value = self._default_state
+                return
+
+            self._restored_value_active = False
+
+            if ATTR_UNIT_OF_MEASUREMENT in external_state.attributes:
+                self._attr_native_unit_of_measurement = external_state.attributes[
+                    ATTR_UNIT_OF_MEASUREMENT
+                ]
+            return
+
+        if self._restored_value_active:
+            _LOGGER.debug(
+                "External sensor for %s is not available yet; keeping restored value",
+                self.entity_id,
+            )
+            return
+
+        _LOGGER.debug(
+            "External sensor for %s is unavailable, clearing state: %s",
+            self.entity_id,
+            self.external_sensor,
+        )
+        self._attr_native_value = self._default_state
 
     @callback
     def _schedule_immediate_update(self) -> None:
@@ -494,31 +521,52 @@ class PlantCurrentStatus(RestoreSensor):
         """Handle state changes from GUI and service calls."""
         if not self.hass.states.get(self.entity_id):
             return
+
         if entity_id == self.entity_id:
             current_attrs = self.hass.states.get(self.entity_id).attributes
             if current_attrs.get("external_sensor") != self.external_sensor:
                 self.replace_external_sensor(current_attrs.get("external_sensor"))
 
             if (
-                ATTR_ICON in new_state.attributes
+                new_state is not None
+                and ATTR_ICON in new_state.attributes
                 and self.icon != new_state.attributes[ATTR_ICON]
             ):
                 self._attr_icon = new_state.attributes[ATTR_ICON]
+                self.async_write_ha_state()
+            return
 
-        if (
-            self.external_sensor
-            and new_state
-            and new_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
-        ):
+        if not self.external_sensor:
+            self._attr_native_value = self._default_state
+            self._restored_value_active = False
+            self.async_write_ha_state()
+            return
+
+        if new_state is None:
+            return
+
+        if new_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE):
             try:
                 self._attr_native_value = float(new_state.state)
             except (ValueError, TypeError):
+                if self._restored_value_active:
+                    _LOGGER.debug(
+                        "Ignoring non-numeric value from external sensor %s for %s "
+                        "during startup restore window: %s",
+                        self.external_sensor,
+                        self.entity_id,
+                        new_state.state,
+                    )
+                    return
+
                 _LOGGER.debug(
-                    "Ignoring non-numeric value from external sensor %s for %s: %s",
-                    self.external_sensor,
+                    "Clearing %s due to non-numeric value from external sensor %s: %s",
                     self.entity_id,
+                    self.external_sensor,
                     new_state.state,
                 )
+                self._attr_native_value = self._default_state
+                self.async_write_ha_state()
                 return
 
             self._restored_value_active = False
@@ -527,10 +575,26 @@ class PlantCurrentStatus(RestoreSensor):
                 self._attr_native_unit_of_measurement = new_state.attributes[
                     ATTR_UNIT_OF_MEASUREMENT
                 ]
-        elif not self.external_sensor:
-            # Only clear the state when the external sensor has been
-            # intentionally removed from the entity configuration.
-            self._attr_native_value = self._default_state
+
+            self.async_write_ha_state()
+            return
+
+        if self._restored_value_active:
+            _LOGGER.debug(
+                "External sensor %s unavailable for %s during startup restore "
+                "window; keeping restored value",
+                self.external_sensor,
+                self.entity_id,
+            )
+            return
+
+        _LOGGER.debug(
+            "External sensor %s unavailable for %s; clearing state",
+            self.external_sensor,
+            self.entity_id,
+        )
+        self._attr_native_value = self._default_state
+        self.async_write_ha_state()
 
 
 class PlantCurrentIlluminance(PlantCurrentStatus):
@@ -708,6 +772,7 @@ class PlantCurrentVpd(RestoreSensor):
         self.hass = hass
         self._config = config
         self._tracker = []
+        self._restored_value_active = False
 
         # Only force entity_id for existing entities (backwards compat)
         ent_reg = er_async_get(hass)
@@ -783,12 +848,22 @@ class PlantCurrentVpd(RestoreSensor):
 
         if temp_c is not None and humidity is not None:
             self._attr_native_value = round(self.calculate_vpd(temp_c, humidity), 2)
+            self._restored_value_active = False
+            return
+
+        if self._restored_value_active:
+            _LOGGER.debug(
+                "VPD source values unavailable for %s during startup restore "
+                "window; keeping restored value",
+                self.entity_id,
+            )
             return
 
         _LOGGER.debug(
-            "VPD source values unavailable for %s; keeping current value",
+            "VPD source values unavailable for %s; clearing state",
             self.entity_id,
         )
+        self._attr_native_value = None
 
     async def async_added_to_hass(self) -> None:
         """Restore state and subscribe to temperature and humidity changes."""
@@ -799,7 +874,13 @@ class PlantCurrentVpd(RestoreSensor):
                 try:
                     self._attr_native_value = float(state.state)
                 except (ValueError, TypeError):
-                    self._attr_native_value = state.state
+                    _LOGGER.debug(
+                        "Ignoring non-numeric restored value for %s: %s",
+                        self.entity_id,
+                        state.state,
+                    )
+                else:
+                    self._restored_value_active = True
 
         # Track temperature sensor state changes
         if self._plant.sensor_temperature is not None:
@@ -930,69 +1011,129 @@ class PlantCurrentPpfd(PlantCurrentStatus):
         return numeric_value * lux_to_ppfd / 1000000
 
     async def async_update(self) -> None:
-        """Run on every update to allow for changes from the GUI and service call"""
+        """Run on every update to allow for changes from the GUI and service call."""
         if not self.hass.states.get(self.entity_id):
             return
+
         if self.external_sensor != self._plant.sensor_illuminance.entity_id:
             self.replace_external_sensor(self._plant.sensor_illuminance.entity_id)
 
-        # Detect source type on each update (in case sensor changes)
         self._source_is_ppfd = self._is_ppfd_source()
 
-        if self.external_sensor:
-            external_sensor = self.hass.states.get(self.external_sensor)
-
-            if (
-                external_sensor is not None
-                and external_sensor.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
-            ):
-                self._attr_native_value = self.ppfd(external_sensor.state)
-            else:
-                _LOGGER.debug(
-                    "PPFD source unavailable for %s; keeping current value",
-                    self.entity_id,
-                )
-        else:
-            # Only clear the value when the external sensor has been
-            # intentionally removed from the entity configuration.
+        if not self.external_sensor:
             _LOGGER.debug(
                 "PPFD source removed for %s, clearing state",
                 self.entity_id,
             )
             self._attr_native_value = None
+            self._restored_value_active = False
+            return
+
+        external_sensor = self.hass.states.get(self.external_sensor)
+
+        if (
+            external_sensor is not None
+            and external_sensor.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
+        ):
+            value = self.ppfd(external_sensor.state)
+            if value is not None:
+                self._attr_native_value = value
+                self._restored_value_active = False
+                return
+
+            if self._restored_value_active:
+                _LOGGER.debug(
+                    "PPFD source has invalid value for %s during startup restore "
+                    "window; keeping restored value",
+                    self.entity_id,
+                )
+                return
+
+            _LOGGER.debug(
+                "PPFD source has invalid value for %s; clearing state",
+                self.entity_id,
+            )
+            self._attr_native_value = None
+            return
+
+        if self._restored_value_active:
+            _LOGGER.debug(
+                "PPFD source unavailable for %s during startup restore window; "
+                "keeping restored value",
+                self.entity_id,
+            )
+            return
+
+        _LOGGER.debug(
+            "PPFD source unavailable for %s; clearing state",
+            self.entity_id,
+        )
+        self._attr_native_value = None
 
     @callback
     def state_changed(self, entity_id: str | None, new_state: State | None) -> None:
         """Handle state changes from GUI and service calls."""
         if not self.hass.states.get(self.entity_id):
             return
+
         if self._external_sensor != self._plant.sensor_illuminance.entity_id:
             self.replace_external_sensor(self._plant.sensor_illuminance.entity_id)
 
-        # Detect source type
         self._source_is_ppfd = self._is_ppfd_source()
 
-        if self.external_sensor:
-            external_sensor = self.hass.states.get(self.external_sensor)
-
-            if (
-                external_sensor is not None
-                and external_sensor.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
-            ):
-                self._attr_native_value = self.ppfd(external_sensor.state)
-            else:
-                _LOGGER.debug(
-                    "PPFD source unavailable for %s; keeping current value",
-                    self.entity_id,
-                )
-        else:
-            # Only clear the value when the external sensor has been
-            # intentionally removed from the entity configuration.
+        if not self.external_sensor:
             _LOGGER.debug(
                 "PPFD source removed for %s, clearing state",
                 self.entity_id,
             )
             self._attr_native_value = None
+            self._restored_value_active = False
+            self.async_write_ha_state()
+            return
+
+        external_sensor = self.hass.states.get(self.external_sensor)
+
+        if (
+            external_sensor is not None
+            and external_sensor.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
+        ):
+            value = self.ppfd(external_sensor.state)
+            if value is not None:
+                self._attr_native_value = value
+                self._restored_value_active = False
+                self.async_write_ha_state()
+                return
+
+            if self._restored_value_active:
+                _LOGGER.debug(
+                    "PPFD source has invalid value for %s during startup restore "
+                    "window; keeping restored value",
+                    self.entity_id,
+                )
+                return
+
+            _LOGGER.debug(
+                "PPFD source has invalid value for %s; clearing state",
+                self.entity_id,
+            )
+            self._attr_native_value = None
+            self.async_write_ha_state()
+            return
+
+        if self._restored_value_active:
+            _LOGGER.debug(
+                "PPFD source unavailable for %s during startup restore window; "
+                "keeping restored value",
+                self.entity_id,
+            )
+            return
+
+        _LOGGER.debug(
+            "PPFD source unavailable for %s; clearing state",
+            self.entity_id,
+        )
+        self._attr_native_value = None
+        self.async_write_ha_state()
 
 
 class PlantTotalLightIntegral(IntegrationSensor):
