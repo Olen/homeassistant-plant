@@ -508,13 +508,21 @@ class PlantCurrentStatus(RestoreSensor):
         if (
             self.external_sensor
             and new_state
-            and new_state.state != STATE_UNKNOWN
-            and new_state.state != STATE_UNAVAILABLE
+            and new_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
         ):
             try:
                 self._attr_native_value = float(new_state.state)
             except (ValueError, TypeError):
-                self._attr_native_value = new_state.state
+                _LOGGER.debug(
+                    "Ignoring non-numeric value from external sensor %s for %s: %s",
+                    self.external_sensor,
+                    self.entity_id,
+                    new_state.state,
+                )
+                return
+
+            self._restored_value_active = False
+
             if ATTR_UNIT_OF_MEASUREMENT in new_state.attributes:
                 self._attr_native_unit_of_measurement = new_state.attributes[
                     ATTR_UNIT_OF_MEASUREMENT
