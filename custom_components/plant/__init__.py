@@ -298,6 +298,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         )
         return False
 
+    plant.async_schedule_update_ha_state(True)
+
     # Lets add the dummy sensors automatically if we are testing stuff
     if USE_DUMMY_SENSORS is True:
         for sensor in plant.meter_entities:
@@ -1433,12 +1435,7 @@ class PlantDevice(RestoreEntity):
                 self._attr_state = last_state.state
     
             attrs = last_state.attributes
-            self.moisture_status = attrs.get(f"{ATTR_MOISTURE}_status")
-            self.temperature_status = attrs.get(f"{ATTR_TEMPERATURE}_status")
-            self.conductivity_status = attrs.get(f"{ATTR_CONDUCTIVITY}_status")
-            self.illuminance_status = attrs.get(f"{ATTR_ILLUMINANCE}_status")
-            self.humidity_status = attrs.get(f"{ATTR_HUMIDITY}_status")
-            self.co2_status = attrs.get(f"{ATTR_CO2}_status")
-            self.soil_temperature_status = attrs.get(f"{ATTR_SOIL_TEMPERATURE}_status")
-            self.dli_status = attrs.get(f"{ATTR_DLI}_status")
-            self.vpd_status = attrs.get(f"{ATTR_VPD}_status")
+            for attr in (ATTR_MOISTURE, ATTR_TEMPERATURE, ATTR_CONDUCTIVITY,
+                         ATTR_ILLUMINANCE, ATTR_HUMIDITY, ATTR_CO2,
+                         ATTR_SOIL_TEMPERATURE, ATTR_DLI, ATTR_VPD):
+                setattr(self, f"{attr}_status", attrs.get(f"{attr}_status"))
