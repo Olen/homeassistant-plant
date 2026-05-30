@@ -1426,7 +1426,6 @@ class PlantDevice(RestoreEntity):
 
     async def async_added_to_hass(self) -> None:
         """Restore plant state and status attributes on startup."""
-
         await super().async_added_to_hass()
         self.update_registry()
 
