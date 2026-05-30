@@ -317,14 +317,14 @@ class TestPlantHelperGenerateConfigentry:
 
         limits = result[FLOW_PLANT_INFO][ATTR_LIMITS]
 
-        # DLI should be calculated from mmol
+        # DLI should be calculated from mmol with one decimal place.
         # max_light_mmol = 6000, PPFD_DLI_FACTOR = 0.0036
-        # expected_max_dli = round(6000 * 0.0036) = 22
-        assert limits[CONF_MAX_DLI] == 22
+        # expected_max_dli = round(6000 * 0.0036, 1) = 21.6
+        assert limits[CONF_MAX_DLI] == 21.6
 
         # min_light_mmol = 1500
-        # expected_min_dli = round(1500 * 0.0036) = 5
-        assert limits[CONF_MIN_DLI] == 5
+        # expected_min_dli = round(1500 * 0.0036, 1) = 5.4
+        assert limits[CONF_MIN_DLI] == 5.4
 
     async def test_generate_configentry_dli_from_opb_precomputed(
         self,
@@ -343,12 +343,13 @@ class TestPlantHelperGenerateConfigentry:
 
         limits = result[FLOW_PLANT_INFO][ATTR_LIMITS]
 
-        # Should use pre-computed DLI values from openplantbook (rounded)
-        # max_dli = 43.2 → round = 43
-        assert limits[CONF_MAX_DLI] == 43
+        # Should use pre-computed DLI values from openplantbook, rounded to one
+        # decimal place to match the DLI threshold slider precision.
+        # max_dli = 43.2 → round(43.2, 1) = 43.2
+        assert limits[CONF_MAX_DLI] == 43.2
 
-        # min_dli = 12.6 → round = 13
-        assert limits[CONF_MIN_DLI] == 13
+        # min_dli = 12.6 → round(12.6, 1) = 12.6
+        assert limits[CONF_MIN_DLI] == 12.6
 
 
 class TestPlantHelperEdgeCases:
