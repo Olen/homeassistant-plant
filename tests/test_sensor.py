@@ -7,10 +7,13 @@ from homeassistant.const import (
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
 )
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, State
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_registry import EVENT_ENTITY_REGISTRY_UPDATED
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.common import (
+    MockConfigEntry,
+    mock_restore_cache_with_extra_data,
+)
 
 from custom_components.plant.const import (
     ATTR_PLANT,
@@ -284,6 +287,155 @@ class TestPlantCurrentSensors:
         assert (
             sensor.native_value is None or sensor.native_value == sensor._default_state
         )
+
+
+class TestSensorRestoreState:
+    """Tests for RestoreState behavior of current sensor entities."""
+
+    async def _setup_with_restored_temperature(
+        self,
+        hass: HomeAssistant,
+        plant_config_data: dict,
+        restored_state: str,
+        source_state: str,
+    ) -> MockConfigEntry:
+        """Set up an entry with restored temperature sensor state."""
+        entry_id = "sensor_restore_entry"
+        entity_id = "sensor.test_plant_temperature"
+
+        mock_restore_cache_with_extra_data(
+            hass,
+            [
+                (
+                    State(
+                        entity_id,
+                        restored_state,
+                        {
+                            "external_sensor": "sensor.test_temperature",
+                            "unit_of_measurement": "°C",
+                        },
+                    ),
+                    {},
+                ),
+            ],
+        )
+
+        hass.states.async_set(
+            "sensor.test_temperature",
+            source_state,
+            {"unit_of_measurement": "°C"},
+        )
+
+        config_entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=plant_config_data,
+            entry_id=entry_id,
+            title="Test Plant",
+        )
+        config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        return config_entry
+
+    async def test_restored_value_kept_until_source_available(
+        self,
+        hass: HomeAssistant,
+        plant_config_data: dict,
+        mock_external_sensors,
+        mock_no_openplantbook,
+    ) -> None:
+        """Restored value is kept while source sensor is unavailable at startup."""
+        config_entry = await self._setup_with_restored_temperature(
+            hass,
+            plant_config_data,
+            restored_state="21.5",
+            source_state=STATE_UNAVAILABLE,
+        )
+
+        plant = hass.data[DOMAIN][config_entry.entry_id][ATTR_PLANT]
+        sensor = plant.sensor_temperature
+
+        assert sensor.native_value == 21.5
+
+        await hass.config_entries.async_unload(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+    async def test_valid_source_replaces_restored_value_on_startup(
+        self,
+        hass: HomeAssistant,
+        plant_config_data: dict,
+        mock_external_sensors,
+        mock_no_openplantbook,
+    ) -> None:
+        """Valid source value replaces restored value during startup."""
+        config_entry = await self._setup_with_restored_temperature(
+            hass,
+            plant_config_data,
+            restored_state="21.5",
+            source_state="25.5",
+        )
+
+        plant = hass.data[DOMAIN][config_entry.entry_id][ATTR_PLANT]
+        sensor = plant.sensor_temperature
+
+        assert sensor.native_value == 25.5
+        assert sensor._restored_value_active is False
+
+        await hass.config_entries.async_unload(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+    async def test_source_unavailable_clears_after_restore_recovery(
+        self,
+        hass: HomeAssistant,
+        plant_config_data: dict,
+        mock_external_sensors,
+        mock_no_openplantbook,
+    ) -> None:
+        """Unavailable source clears after first valid live value is received."""
+        config_entry = await self._setup_with_restored_temperature(
+            hass,
+            plant_config_data,
+            restored_state="21.5",
+            source_state="25.5",
+        )
+
+        plant = hass.data[DOMAIN][config_entry.entry_id][ATTR_PLANT]
+        sensor = plant.sensor_temperature
+
+        assert sensor.native_value == 25.5
+        assert sensor._restored_value_active is False
+
+        hass.states.async_set("sensor.test_temperature", STATE_UNAVAILABLE)
+        await hass.async_block_till_done()
+
+        await sensor.async_update()
+
+        assert sensor.native_value is None or sensor.native_value == sensor._default_state
+
+        await hass.config_entries.async_unload(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+    async def test_non_numeric_source_does_not_store_string(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Non-numeric source values must not be stored as literal strings."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        sensor = plant.sensor_temperature
+
+        hass.states.async_set(
+            "sensor.test_temperature",
+            "invalid",
+            {"unit_of_measurement": "°C"},
+        )
+        await hass.async_block_till_done()
+
+        await sensor.async_update()
+
+        assert sensor.native_value != "invalid"
+        assert sensor.native_value is None or sensor.native_value == sensor._default_state
 
 
 class TestPpfdSensor:
