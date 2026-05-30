@@ -223,7 +223,6 @@ class PlantCurrentStatus(RestoreSensor):
         self._default_state = None
         self._plant = plantdevice
         self._tracker = []
-        self._follow_external = True
         self._restored_value_active = False
         # Only force entity_id for existing entities (backwards compat).
         # New entities let has_entity_name derive the entity_id automatically.
