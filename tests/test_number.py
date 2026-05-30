@@ -317,6 +317,25 @@ class TestDliThresholds:
         assert plant.max_dli.native_value == 30
         assert plant.min_dli.native_value == 2
 
+    async def test_dli_threshold_step(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test DLI thresholds expose 0.1 step precision."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+
+        assert plant.max_dli.native_step == 0.1
+        assert plant.min_dli.native_step == 0.1
+
+        max_state = hass.states.get(plant.max_dli.entity_id)
+        min_state = hass.states.get(plant.min_dli.entity_id)
+
+        assert max_state is not None
+        assert min_state is not None
+        assert max_state.attributes["step"] == 0.1
+        assert min_state.attributes["step"] == 0.1
+
 
 class TestThresholdEntityProperties:
     """Tests for common threshold entity properties."""
