@@ -1426,14 +1426,14 @@ class PlantDevice(RestoreEntity):
 
     async def async_added_to_hass(self) -> None:
         """Restore plant state and status attributes on startup."""
-        
+
         await super().async_added_to_hass()
         self.update_registry()
-    
+
         if last_state := await self.async_get_last_state():
             if last_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE):
                 self._attr_state = last_state.state
-    
+
             attrs = last_state.attributes
             for attr in (ATTR_MOISTURE, ATTR_TEMPERATURE, ATTR_CONDUCTIVITY,
                          ATTR_ILLUMINANCE, ATTR_HUMIDITY, ATTR_CO2,
