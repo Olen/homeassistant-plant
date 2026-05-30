@@ -412,7 +412,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_MAX_DLI
                     ),
                 )
-            ] = vol.Coerce(int)
+            ] = vol.Coerce(float)
             data_schema[
                 vol.Required(
                     CONF_MIN_DLI,
@@ -420,7 +420,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_MIN_DLI
                     ),
                 )
-            ] = vol.Coerce(int)
+            ] = vol.Coerce(float)
 
         if show_all or selected_sensors["temperature"]:
             data_schema[
