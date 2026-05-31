@@ -535,7 +535,7 @@ class TestSensorRestoreState:
 
         plant = hass.data[DOMAIN][config_entry.entry_id][ATTR_PLANT]
 
-        assert plant.ppfd.native_value == 0.0002
+        assert plant.ppfd.native_value is None
 
         hass.states.async_set(
             "sensor.test_illuminance",
