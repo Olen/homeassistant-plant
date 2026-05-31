@@ -405,11 +405,8 @@ class PlantCurrentStatus(RestoreSensor):
         self.async_track_entity(self.entity_id)
         if self.external_sensor:
             self.async_track_entity(self.external_sensor)
-
-            # Only refresh immediately when we do NOT have a restored value.
-            if not self._restored_value_active:
-                await self.async_update()
-                self.async_write_ha_state()
+            await self.async_update()
+            self.async_write_ha_state()
 
         async_dispatcher_connect(
             self.hass, DATA_UPDATED, self._schedule_immediate_update
@@ -473,16 +470,6 @@ class PlantCurrentStatus(RestoreSensor):
             try:
                 self._attr_native_value = float(external_state.state)
             except (ValueError, TypeError):
-                if self._restored_value_active:
-                    _LOGGER.debug(
-                        "External sensor for %s has non-numeric value during "
-                        "startup restore window; keeping restored value: %s = %s",
-                        self.entity_id,
-                        self.external_sensor,
-                        external_state.state,
-                    )
-                    return
-
                 _LOGGER.debug(
                     "External sensor for %s has non-numeric value: %s = %s",
                     self.entity_id,
@@ -490,6 +477,7 @@ class PlantCurrentStatus(RestoreSensor):
                     external_state.state,
                 )
                 self._attr_native_value = self._default_state
+                self._restored_value_active = False
                 return
 
             self._restored_value_active = False
@@ -563,16 +551,6 @@ class PlantCurrentStatus(RestoreSensor):
             try:
                 self._attr_native_value = float(new_state.state)
             except (ValueError, TypeError):
-                if self._restored_value_active:
-                    _LOGGER.debug(
-                        "Ignoring non-numeric value from external sensor %s for %s "
-                        "during startup restore window: %s",
-                        self.external_sensor,
-                        self.entity_id,
-                        new_state.state,
-                    )
-                    return
-
                 _LOGGER.debug(
                     "Clearing %s due to non-numeric value from external sensor %s: %s",
                     self.entity_id,
@@ -580,9 +558,9 @@ class PlantCurrentStatus(RestoreSensor):
                     new_state.state,
                 )
                 self._attr_native_value = self._default_state
+                self._restored_value_active = False
                 self.async_write_ha_state()
                 return
-
             self._restored_value_active = False
 
             if ATTR_UNIT_OF_MEASUREMENT in new_state.attributes:
@@ -1054,27 +1032,13 @@ class PlantCurrentPpfd(PlantCurrentStatus):
                 self._restored_value_active = False
                 return
 
-            if self._restored_value_active:
-                _LOGGER.debug(
-                    "PPFD source has invalid value for %s during startup restore "
-                    "window; keeping restored value",
-                    self.entity_id,
-                )
-                return
-
             _LOGGER.debug(
                 "PPFD source has invalid value for %s; clearing state",
                 self.entity_id,
             )
             self._attr_native_value = None
-            return
-
-        if self._restored_value_active:
-            _LOGGER.debug(
-                "PPFD source unavailable for %s during startup restore window; "
-                "keeping restored value",
-                self.entity_id,
-            )
+            self._restored_value_active = False
+            self.async_write_ha_state()
             return
 
         _LOGGER.debug(
@@ -1082,6 +1046,7 @@ class PlantCurrentPpfd(PlantCurrentStatus):
             self.entity_id,
         )
         self._attr_native_value = None
+        self._restored_value_active = False
 
     @callback
     def state_changed(self, entity_id: str | None, new_state: State | None) -> None:
@@ -1117,35 +1082,19 @@ class PlantCurrentPpfd(PlantCurrentStatus):
                 self.async_write_ha_state()
                 return
 
-            if self._restored_value_active:
-                _LOGGER.debug(
-                    "PPFD source has invalid value for %s during startup restore "
-                    "window; keeping restored value",
-                    self.entity_id,
-                )
-                return
-
             _LOGGER.debug(
                 "PPFD source has invalid value for %s; clearing state",
                 self.entity_id,
             )
             self._attr_native_value = None
-            self.async_write_ha_state()
+            self._restored_value_active = False
             return
-
-        if self._restored_value_active:
-            _LOGGER.debug(
-                "PPFD source unavailable for %s during startup restore window; "
-                "keeping restored value",
-                self.entity_id,
-            )
-            return
-
         _LOGGER.debug(
             "PPFD source unavailable for %s; clearing state",
             self.entity_id,
         )
         self._attr_native_value = None
+        self._restored_value_active = False
         self.async_write_ha_state()
 
 
