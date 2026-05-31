@@ -566,10 +566,9 @@ class TestSensorRestoreState:
         self,
         hass: HomeAssistant,
         plant_config_data: dict,
-        mock_external_sensors,
         mock_no_openplantbook,
     ) -> None:
-        """Main plant entity restores previous state and status attributes."""
+        """Main plant entity restores until live sensor data is available."""
         entry_id = "plant_restore_entry"
 
         mock_restore_cache_with_extra_data(
@@ -596,6 +595,19 @@ class TestSensorRestoreState:
             ],
         )
 
+        # Sources are unavailable during startup, so the plant entity should keep
+        # its restored state/status attributes instead of recomputing to unknown.
+        for source_entity_id in (
+            "sensor.test_moisture",
+            "sensor.test_temperature",
+            "sensor.test_conductivity",
+            "sensor.test_illuminance",
+            "sensor.test_humidity",
+            "sensor.test_co2",
+            "sensor.test_soil_temperature",
+        ):
+            hass.states.async_set(source_entity_id, STATE_UNAVAILABLE)
+
         config_entry = MockConfigEntry(
             domain=DOMAIN,
             data=plant_config_data,
@@ -616,16 +628,61 @@ class TestSensorRestoreState:
         assert plant.dli_status == "ok"
         assert plant.vpd_status == "ok"
 
-        state = hass.states.get(plant.entity_id)
+        restored_state = hass.states.get(plant.entity_id)
 
-        assert state is not None
-        assert state.state == "problem"
-        assert state.attributes["moisture_status"] == "Low"
-        assert state.attributes["temperature_status"] == "ok"
-        assert state.attributes["illuminance_status"] == "ok"
-        assert state.attributes["humidity_status"] == "ok"
-        assert state.attributes["dli_status"] == "ok"
-        assert state.attributes["vpd_status"] == "ok"
+        assert restored_state is not None
+        assert restored_state.state == "problem"
+        assert restored_state.attributes["moisture_status"] == "Low"
+        assert restored_state.attributes["temperature_status"] == "ok"
+        assert restored_state.attributes["illuminance_status"] == "ok"
+        assert restored_state.attributes["humidity_status"] == "ok"
+        assert restored_state.attributes["dli_status"] == "ok"
+        assert restored_state.attributes["vpd_status"] == "ok"
+
+        # Once valid live data arrives, normal recomputation should resume and
+        # the restored problem state should be replaced by the live ok state.
+        live_source_states = {
+            "sensor.test_moisture": ("45", {"unit_of_measurement": "%"}),
+            "sensor.test_temperature": ("22", {"unit_of_measurement": "°C"}),
+            "sensor.test_conductivity": (
+                "1000",
+                {"unit_of_measurement": "µS/cm"},
+            ),
+            "sensor.test_illuminance": ("10000", {"unit_of_measurement": "lx"}),
+            "sensor.test_humidity": ("50", {"unit_of_measurement": "%"}),
+            "sensor.test_co2": ("400", {"unit_of_measurement": "ppm"}),
+            "sensor.test_soil_temperature": ("22", {"unit_of_measurement": "°C"}),
+        }
+
+        for source_entity_id, (state, attrs) in live_source_states.items():
+            hass.states.async_set(source_entity_id, state, attrs)
+        await hass.async_block_till_done()
+
+        for sensor in plant.meter_entities:
+            await sensor.async_update()
+            sensor.async_write_ha_state()
+        await hass.async_block_till_done()
+
+        await plant.vpd.async_update()
+        plant.vpd.async_write_ha_state()
+        await hass.async_block_till_done()
+
+        plant.update()
+        plant.async_write_ha_state()
+        await hass.async_block_till_done()
+
+        live_state = hass.states.get(plant.entity_id)
+
+        assert plant.state == "ok"
+        assert plant.moisture_status == "ok"
+        assert plant.temperature_status == "ok"
+        assert plant.conductivity_status == "ok"
+        assert plant.illuminance_status == "ok"
+        assert plant.humidity_status == "ok"
+        assert plant.co2_status == "ok"
+        assert plant.soil_temperature_status == "ok"
+        assert live_state is not None
+        assert live_state.state == "ok"
 
         await hass.config_entries.async_unload(config_entry.entry_id)
         await hass.async_block_till_done()
