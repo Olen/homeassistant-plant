@@ -543,6 +543,10 @@ class PlantCurrentStatus(RestoreSensor):
             return
 
         if new_state is None:
+            if entity_id == self.external_sensor:
+                self._attr_native_value = self._default_state
+                self._restored_value_active = False
+                self.async_write_ha_state()
             return
 
         if new_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE):
