@@ -405,8 +405,11 @@ class PlantCurrentStatus(RestoreSensor):
         self.async_track_entity(self.entity_id)
         if self.external_sensor:
             self.async_track_entity(self.external_sensor)
-            await self.async_update()
-            self.async_write_ha_state()
+
+            # Only refresh immediately when we do NOT have a restored value.
+            if not self._restored_value_active:
+                await self.async_update()
+                self.async_write_ha_state()
 
         async_dispatcher_connect(
             self.hass, DATA_UPDATED, self._schedule_immediate_update
