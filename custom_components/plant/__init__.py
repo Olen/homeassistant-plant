@@ -1092,7 +1092,7 @@ class PlantDevice(RestoreEntity):
         return new_status
 
     def _has_live_source_data(self) -> bool:
-        """True once at least one tracked source sensor reports a numeric value."""
+        """True once at least one upstream source sensor reports a numeric value."""
         for sensor in (
             self.sensor_moisture,
             self.sensor_conductivity,
@@ -1104,11 +1104,19 @@ class PlantDevice(RestoreEntity):
         ):
             if sensor is None:
                 continue
-            state = self.hass.states.get(sensor.entity_id)
-            if state is not None and self._safe_float(state.state, sensor.entity_id) is not None:
-                return True
-        return False
 
+            external_sensor = getattr(sensor, "external_sensor", None)
+            if not external_sensor:
+                continue
+
+            state = self.hass.states.get(external_sensor)
+            if (
+                state is not None
+                and self._safe_float(state.state, external_sensor) is not None
+            ):
+                return True
+
+        return False
     def update(self) -> None:
         """Run on every update of the entities"""
 
