@@ -354,10 +354,13 @@ class PlantCurrentStatus(RestoreSensor):
             self._tracker.append(entity_id)
 
     async def async_added_to_hass(self) -> None:
-        """Restore state and set up tracking when added to Home Assistant."""
+        """Handle entity which will be added."""
         await super().async_added_to_hass()
         state = await self.async_get_last_state()
 
+        # We do not restore the state for these.
+        # They are read from the external sensor anyway
+        self._attr_native_value = None
         if state:
             # Restore the last known state on startup until the external sensor
             # provides a fresh value. Without this, entities remain unknown after
@@ -393,7 +396,6 @@ class PlantCurrentStatus(RestoreSensor):
                 )
         else:
             _LOGGER.debug("No restore data for %s", self.entity_id)
-
         _LOGGER.debug(
             "Sensor %s setup complete: external_sensor=%s, enabled=%s",
             self.entity_id,
@@ -451,8 +453,9 @@ class PlantCurrentStatus(RestoreSensor):
         """Update state and unit from the external sensor when available."""
         if not self.external_sensor:
             _LOGGER.debug(
-                "External sensor removed for %s, clearing state",
+                "External sensor not set for %s, setting to default: %s",
                 self.entity_id,
+                self._default_state,
             )
             self._attr_native_value = self._default_state
             self._restored_value_active = False
@@ -850,10 +853,9 @@ class PlantCurrentVpd(RestoreSensor):
             return None
 
     def _update_vpd(self) -> None:
-        """Recalculate VPD from current temperature and humidity when available."""
+        """Recalculate VPD from current temperature and humidity."""
         temp_c = self._get_temperature_celsius()
         humidity = self._get_humidity()
-
         if temp_c is not None and humidity is not None:
             self._attr_native_value = round(self.calculate_vpd(temp_c, humidity), 2)
             self._restored_value_active = False
