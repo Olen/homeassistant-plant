@@ -449,7 +449,7 @@ class TestSensorRestoreState:
 
         mock_restore_cache_with_extra_data(
             hass,
-            [(State("sensor.test_plant_vpd", "0.72"), {})],
+            [(State("sensor.test_plant_vapour_pressure_deficit", "0.72"), {})],
         )
 
         hass.states.async_set("sensor.test_temperature", STATE_UNAVAILABLE)
