@@ -279,6 +279,10 @@ class PlantCurrentStatus(RestoreSensor):
         # pylint: disable=attribute-defined-outside-init
         self._external_sensor = new_sensor
 
+        if new_sensor is None:
+            self._attr_native_value = self._default_state
+            self._restored_value_active = False
+
         # Disabled entities have self.hass = None; use the plant's hass reference
         # for operations that need it (config updates, registry changes)
         hass = self.hass or (self._plant.hass if self._plant else None)
