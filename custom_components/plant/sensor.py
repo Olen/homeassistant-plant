@@ -358,9 +358,6 @@ class PlantCurrentStatus(RestoreSensor):
         await super().async_added_to_hass()
         state = await self.async_get_last_state()
 
-        # We do not restore the state for these.
-        # They are read from the external sensor anyway
-        self._attr_native_value = None
         if state:
             # Restore the last known state on startup until the external sensor
             # provides a fresh value. Without this, entities remain unknown after
@@ -1003,9 +1000,6 @@ class PlantCurrentPpfd(PlantCurrentStatus):
 
     async def async_update(self) -> None:
         """Run on every update to allow for changes from the GUI and service call"""
-        if not self.hass.states.get(self.entity_id):
-            return
-
         if self.external_sensor != self._plant.sensor_illuminance.entity_id:
             self.replace_external_sensor(self._plant.sensor_illuminance.entity_id)
 
@@ -1059,6 +1053,16 @@ class PlantCurrentPpfd(PlantCurrentStatus):
 
         self._source_is_ppfd = self._is_ppfd_source()
 
+        if new_state is None or new_state.state in (STATE_UNKNOWN, STATE_UNAVAILABLE):
+            _LOGGER.debug(
+                "PPFD source unavailable for %s; clearing state",
+                self.entity_id,
+            )
+            self._attr_native_value = None
+            self._restored_value_active = False
+            self.async_write_ha_state()
+            return
+
         if not self.external_sensor:
             _LOGGER.debug(
                 "PPFD source removed for %s, clearing state",
@@ -1075,7 +1079,7 @@ class PlantCurrentPpfd(PlantCurrentStatus):
             STATE_UNKNOWN,
             STATE_UNAVAILABLE,
         ):
-            value = self.ppfd(external_sensor.state)
+            value = self.ppfd(new_state.state)
             if value is not None:
                 self._attr_native_value = value
                 self._restored_value_active = False
