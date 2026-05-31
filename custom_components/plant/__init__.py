@@ -1479,6 +1479,7 @@ class PlantDevice(RestoreEntity):
                 ATTR_HUMIDITY,
                 ATTR_CO2,
                 ATTR_SOIL_TEMPERATURE,
-                ATTR_DLI, ATTR_VPD
+                ATTR_DLI,
+                ATTR_VPD
             ):
                 setattr(self, f"{attr}_status", attrs.get(f"{attr}_status"))
