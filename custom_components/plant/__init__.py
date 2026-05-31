@@ -1111,7 +1111,7 @@ class PlantDevice(RestoreEntity):
 
     def update(self) -> None:
         """Run on every update of the entities"""
-    
+
         # Startup restore window: until a source delivers live data, keep the values
         # restored in async_added_to_hass instead of recomputing them to UNKNOWN/None.
         # Must sit ABOVE the per-sensor logic below -- that loop overwrites each
@@ -1120,7 +1120,7 @@ class PlantDevice(RestoreEntity):
             if not self._has_live_source_data():
                 return
             self._restored_state_active = False   # first live reading -> resume normal
-    
+
         new_state = STATE_OK
         known_state = False
 
