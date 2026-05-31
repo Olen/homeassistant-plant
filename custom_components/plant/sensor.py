@@ -463,9 +463,9 @@ class PlantCurrentStatus(RestoreSensor):
 
         external_state = self.hass.states.get(self.external_sensor)
 
-        if (
-            external_state is not None
-            and external_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
+        if external_state is not None and external_state.state not in (
+            STATE_UNKNOWN,
+            STATE_UNAVAILABLE,
         ):
             try:
                 self._attr_native_value = float(external_state.state)
@@ -1041,9 +1041,9 @@ class PlantCurrentPpfd(PlantCurrentStatus):
 
         external_sensor = self.hass.states.get(self.external_sensor)
 
-        if (
-            external_sensor is not None
-            and external_sensor.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
+        if external_sensor is not None and external_sensor.state not in (
+            STATE_UNKNOWN,
+            STATE_UNAVAILABLE,
         ):
             value = self.ppfd(external_sensor.state)
             if value is not None:
@@ -1103,9 +1103,9 @@ class PlantCurrentPpfd(PlantCurrentStatus):
 
         external_sensor = self.hass.states.get(self.external_sensor)
 
-        if (
-            external_sensor is not None
-            and external_sensor.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
+        if external_sensor is not None and external_sensor.state not in (
+            STATE_UNKNOWN,
+            STATE_UNAVAILABLE,
         ):
             value = self.ppfd(external_sensor.state)
             if value is not None:

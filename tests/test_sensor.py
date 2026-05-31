@@ -411,7 +411,9 @@ class TestSensorRestoreState:
 
         await sensor.async_update()
 
-        assert sensor.native_value is None or sensor.native_value == sensor._default_state
+        assert (
+            sensor.native_value is None or sensor.native_value == sensor._default_state
+        )
 
         await hass.config_entries.async_unload(config_entry.entry_id)
         await hass.async_block_till_done()
@@ -435,7 +437,9 @@ class TestSensorRestoreState:
         await sensor.async_update()
 
         assert sensor.native_value != "invalid"
-        assert sensor.native_value is None or sensor.native_value == sensor._default_state
+        assert (
+            sensor.native_value is None or sensor.native_value == sensor._default_state
+        )
 
     async def test_vpd_restores_until_sources_recover(
         self,

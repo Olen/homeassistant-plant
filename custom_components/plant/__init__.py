@@ -514,7 +514,9 @@ class PlantDevice(Entity):
             f"{DOMAIN}.{{}}", self.name, current_ids={}
         )
 
-        self._restored_state_active = False  # True while showing restored startup values
+        self._restored_state_active = (
+            False  # True while showing restored startup values
+        )
         self.plant_complete = False
         self._device_id = None
 
@@ -1116,6 +1118,7 @@ class PlantDevice(Entity):
                 return True
 
         return False
+
     def update(self) -> None:
         """Run on every update of the entities"""
 
@@ -1126,7 +1129,7 @@ class PlantDevice(Entity):
         if self._restored_state_active:
             if not self._has_live_source_data():
                 return
-            self._restored_state_active = False   # first live reading -> resume normal
+            self._restored_state_active = False  # first live reading -> resume normal
 
         new_state = STATE_OK
         known_state = False
@@ -1479,6 +1482,6 @@ class PlantDevice(Entity):
                 ATTR_CO2,
                 ATTR_SOIL_TEMPERATURE,
                 ATTR_DLI,
-                ATTR_VPD
+                ATTR_VPD,
             ):
                 setattr(self, f"{attr}_status", attrs.get(f"{attr}_status"))
