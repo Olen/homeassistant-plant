@@ -4,9 +4,12 @@ on:
   push:
   pull_request:
     branches:
-      - master
+      - main
   schedule:
     - cron: "0 0 15 * *"
+
+permissions:
+  contents: read
 
 jobs:
   lint:
