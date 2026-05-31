@@ -1468,7 +1468,7 @@ class PlantDevice(RestoreEntity):
         if last_state := await self.async_get_last_state():
             if last_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE):
                 self._attr_state = last_state.state
-                self._restored_state_active = True          # only latch on a real restore
+                self._restored_state_active = True  # only latch on a real restore
 
             attrs = last_state.attributes
             for attr in (
