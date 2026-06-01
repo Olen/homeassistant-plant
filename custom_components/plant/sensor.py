@@ -1035,6 +1035,15 @@ class PlantCurrentPpfd(PlantCurrentStatus):
             self.async_write_ha_state()
             return
 
+        if self._restored_value_active:
+            _LOGGER.debug(
+                "PPFD source %s unavailable for %s during startup restore "
+                "window; keeping restored value",
+                self.external_sensor,
+                self.entity_id,
+            )
+            return
+
         _LOGGER.debug(
             "PPFD source unavailable for %s; clearing state",
             self.entity_id,
@@ -1048,12 +1057,26 @@ class PlantCurrentPpfd(PlantCurrentStatus):
         if not self.hass.states.get(self.entity_id):
             return
 
+        # Ignore our own state writes; only react to source-sensor changes
+        # (mirrors PlantCurrentStatus). Without this, the entity's own
+        # "unavailable" write during startup would clear the restored value.
+        if entity_id == self.entity_id:
+            return
+
         if self._external_sensor != self._plant.sensor_illuminance.entity_id:
             self.replace_external_sensor(self._plant.sensor_illuminance.entity_id)
 
         self._source_is_ppfd = self._is_ppfd_source()
 
         if new_state is None or new_state.state in (STATE_UNKNOWN, STATE_UNAVAILABLE):
+            if self._restored_value_active and new_state is not None:
+                _LOGGER.debug(
+                    "PPFD source %s unavailable for %s during startup restore "
+                    "window; keeping restored value",
+                    self.external_sensor,
+                    self.entity_id,
+                )
+                return
             _LOGGER.debug(
                 "PPFD source unavailable for %s; clearing state",
                 self.entity_id,
@@ -1092,6 +1115,7 @@ class PlantCurrentPpfd(PlantCurrentStatus):
             )
             self._attr_native_value = None
             self._restored_value_active = False
+            self.async_write_ha_state()
             return
         _LOGGER.debug(
             "PPFD source unavailable for %s; clearing state",
