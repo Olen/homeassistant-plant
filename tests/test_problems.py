@@ -135,8 +135,11 @@ class TestProblemsAttribute:
         assert "current" in problem
         assert "min" in problem
         assert "max" in problem
-        # current should be a string representation of the sensor value
+        # current/min/max are string representations (the dashboard templates
+        # concatenate them, so non-str would raise a Jinja2 TypeError).
         assert isinstance(problem["current"], str)
+        assert isinstance(problem["min"], str)
+        assert isinstance(problem["max"], str)
 
     async def test_multiple_problems_listed(
         self,
@@ -317,3 +320,118 @@ class TestLogbookIntegration:
 
         await hass.config_entries.async_unload(config_entry.entry_id)
         await hass.async_block_till_done()
+
+    async def test_problem_resolved_after_restart_logs_recovery(
+        self,
+        hass: HomeAssistant,
+        plant_config_data: dict,
+        mock_no_openplantbook,
+    ) -> None:
+        """A problem active before a restart but healthy after logs one recovery.
+
+        The inverse of the no-relog case: the restored _logged_problem_types must
+        still allow the recovery ("back in range") to fire once the live reading
+        shows the problem has cleared.
+        """
+        mock_restore_cache_with_extra_data(
+            hass,
+            [
+                (
+                    State(
+                        "plant.test_plant",
+                        STATE_PROBLEM,
+                        {
+                            "moisture_status": STATE_LOW,
+                            ATTR_PROBLEMS: [
+                                {
+                                    "sensor_type": ATTR_MOISTURE,
+                                    "status": STATE_LOW,
+                                    "current": "5.0",
+                                    "min": "20",
+                                    "max": "60",
+                                }
+                            ],
+                        },
+                    ),
+                    {},
+                )
+            ],
+        )
+        for source_entity_id in (
+            "sensor.test_moisture",
+            "sensor.test_temperature",
+            "sensor.test_conductivity",
+            "sensor.test_illuminance",
+            "sensor.test_humidity",
+            "sensor.test_co2",
+            "sensor.test_soil_temperature",
+        ):
+            hass.states.async_set(source_entity_id, STATE_UNAVAILABLE)
+
+        config_entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=plant_config_data,
+            entry_id="problems_recovery_entry",
+            title="Test Plant",
+        )
+        config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][config_entry.entry_id][ATTR_PLANT]
+        assert plant._logged_problem_types == {ATTR_MOISTURE}
+
+        # Live reading shows moisture is now healthy -> log one recovery.
+        with patch("custom_components.plant.log_entry") as mock_log:
+            await set_external_sensor_states(
+                hass, moisture=50.0, temperature=25.0, conductivity=1000
+            )
+            await update_plant_sensors(hass, config_entry.entry_id)
+
+        assert mock_log.called
+        message = mock_log.call_args[0][2]
+        assert "moisture" in message
+        assert "back in range" in message
+        assert plant._problems == []
+        assert plant._logged_problem_types == set()
+
+        await hass.config_entries.async_unload(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+    async def test_no_recovery_log_when_sources_drop_out(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """A sensor dropout (no live data) must not be logged as a recovery.
+
+        When all sources go unavailable, update() has no live data (known_state
+        is False), so an already-logged problem must be held, not reported as
+        "back in range".
+        """
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+
+        # Cause and log a moisture problem.
+        await set_external_sensor_states(
+            hass, moisture=5.0, temperature=25.0, conductivity=1000
+        )
+        await update_plant_sensors(hass, init_integration.entry_id)
+        assert plant._logged_problem_types == {ATTR_MOISTURE}
+
+        # All sources drop out -> no live data -> no recovery entry.
+        with patch("custom_components.plant.log_entry") as mock_log:
+            for source_entity_id in (
+                "sensor.test_moisture",
+                "sensor.test_temperature",
+                "sensor.test_conductivity",
+                "sensor.test_illuminance",
+                "sensor.test_humidity",
+                "sensor.test_co2",
+                "sensor.test_soil_temperature",
+            ):
+                hass.states.async_set(source_entity_id, STATE_UNAVAILABLE)
+            await update_plant_sensors(hass, init_integration.entry_id)
+
+        assert not mock_log.called
+        # The logged problem is held, not cleared.
+        assert plant._logged_problem_types == {ATTR_MOISTURE}

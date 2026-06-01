@@ -532,9 +532,10 @@ class PlantDevice(RestoreEntity):
         self.plant_complete = False
         self._device_id = None
         self._problems = []
-        # In-memory only — resets on HA restart, causing active problems to re-log as new onsets.
-        # Future fix: restore from last state via RestoreEntity.async_get_last_state(), or
-        # by reading self.hass.states.get(self.entity_id) in async_added_to_hass.
+        # Problem sensor_types already written to the logbook, used to
+        # de-duplicate onset/recovery entries. Restored in async_added_to_hass
+        # from the persisted `problems` attribute so active problems are not
+        # re-logged as new onsets after a restart / reload.
         self._logged_problem_types: set[str] = set()
 
         self._check_days = None
@@ -1119,20 +1120,46 @@ class PlantDevice(RestoreEntity):
         silent when the same problems persist across updates (avoids repeated entries).
         problem_sensors maps sensor_type -> (current_val, status, min_entity, max_entity).
         """
+
+        def _threshold_str(threshold_entity) -> str:
+            """Stringify a min/max threshold value, or 'unknown' if not numeric.
+
+            A threshold entity can momentarily be unavailable/unknown; avoid
+            writing a raw 'unavailable' into the problem entry or logbook.
+            """
+            raw = threshold_entity.state
+            try:
+                float(raw)
+            except (ValueError, TypeError):
+                return "unknown"
+            return str(raw)
+
         self._problems = [
             {
                 "sensor_type": st,
                 "status": info[1],
                 "current": str(info[0]),
-                "min": str(info[2].state),
-                "max": str(info[3].state),
+                "min": _threshold_str(info[2]),
+                "max": _threshold_str(info[3]),
             }
             for st, info in problem_sensors.items()
         ]
 
         new_problem_types = {p["sensor_type"] for p in self._problems}
         appeared = new_problem_types - self._logged_problem_types
-        resolved = self._logged_problem_types - new_problem_types
+
+        # A previously-logged problem is only "resolved" if its sensor now has a
+        # reading (status not None) and is back in range. A sensor that dropped
+        # out (unavailable -> status None) is *held*: not reported "back in
+        # range" (we don't know if it recovered) and kept tracked so it isn't
+        # re-logged as a new onset when it returns.
+        cleared = self._logged_problem_types - new_problem_types
+        resolved = {
+            sensor_type
+            for sensor_type in cleared
+            if getattr(self, f"{sensor_type}_status", None) is not None
+        }
+        held = cleared - resolved
 
         # Log each newly appeared problem — result: one logbook entry per sensor per onset,
         # e.g. "moisture low — current: 15, min: 20"
@@ -1160,7 +1187,7 @@ class PlantDevice(RestoreEntity):
                 entity_id=self.entity_id,
             )
 
-        self._logged_problem_types = new_problem_types
+        self._logged_problem_types = new_problem_types | held
 
     def _has_live_source_data(self) -> bool:
         """True once at least one upstream source sensor reports a numeric value."""
@@ -1556,8 +1583,6 @@ class PlantDevice(RestoreEntity):
         else:
             self.vpd_status = None
 
-        self._log_problem_changes(_problem_sensors)
-
         if not known_state:
             new_state = STATE_UNKNOWN
 
@@ -1569,6 +1594,16 @@ class PlantDevice(RestoreEntity):
                 new_state,
             )
         self._attr_state = new_state
+
+        # Reconcile problems / write logbook entries only when we have live data.
+        # When known_state is False (a sensor dropout, or the restore window
+        # ending with no live reading), _problem_sensors is empty and running the
+        # diff would treat every active problem as resolved and emit false
+        # "back in range" entries. Skipping leaves _problems and
+        # _logged_problem_types untouched (last known state held). Runs after the
+        # state write so a logbook failure can never suppress the plant's state.
+        if known_state:
+            self._log_problem_changes(_problem_sensors)
         # Note: do NOT call self.update_registry() here. update() runs in
         # an executor thread (HA's polling), and device_registry.async_get_or_create
         # raises in HA 2026.5+ when called off the event loop. Device-registry
@@ -1626,8 +1661,8 @@ class PlantDevice(RestoreEntity):
             # Restore the active problems and which problem types were already
             # logged, so they survive the restore window and active problems are
             # not re-logged as new onsets after a restart / reload.
-            restored_problems = attrs.get(ATTR_PROBLEMS) or []
-            if restored_problems:
+            restored_problems = attrs.get(ATTR_PROBLEMS)
+            if isinstance(restored_problems, list) and restored_problems:
                 self._problems = list(restored_problems)
                 self._logged_problem_types = {
                     problem["sensor_type"]
