@@ -1594,15 +1594,16 @@ class TestHysteresis:
         hass: HomeAssistant,
         init_integration: MockConfigEntry,
     ) -> None:
-        """Test that hysteresis does not apply when state is fresh (None).
+        """Test that hysteresis does not hold a value LOW without a prior LOW.
 
-        A value within the hysteresis band but above the min threshold
-        should be OK on first check, not held as LOW.
+        With no previous LOW status, a value within the hysteresis band but
+        above the min threshold should read OK, not be held as LOW. (The plant
+        may already read OK at startup from the live external sensor.)
         """
         plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
 
-        # Ensure fresh state (moisture_status is None before any reading)
-        assert plant.moisture_status is None
+        # Ensure no LOW state before reading (live refresh may have set ok already)
+        assert plant.moisture_status != STATE_LOW
 
         # Set moisture within hysteresis band (21 is > min=20 but < min+band=22)
         await set_external_sensor_states(

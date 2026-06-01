@@ -2,20 +2,28 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
+
 import pytest
 from homeassistant.const import (
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
 )
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, State
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_registry import EVENT_ENTITY_REGISTRY_UPDATED
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from homeassistant.util import dt as dt_util
+from pytest_homeassistant_custom_component.common import (
+    MockConfigEntry,
+    async_fire_time_changed,
+    mock_restore_cache_with_extra_data,
+)
 
 from custom_components.plant.const import (
     ATTR_PLANT,
     DEFAULT_LUX_TO_PPFD,
     DOMAIN,
+    RESTORE_GRACE_PERIOD,
     UNIT_DLI,
     UNIT_PPFD,
     UNIT_TOTAL_LIGHT_INTEGRAL,
@@ -284,6 +292,444 @@ class TestPlantCurrentSensors:
         assert (
             sensor.native_value is None or sensor.native_value == sensor._default_state
         )
+
+
+class TestSensorRestoreState:
+    """Tests for RestoreState behavior of current sensor entities."""
+
+    async def _setup_with_restored_temperature(
+        self,
+        hass: HomeAssistant,
+        plant_config_data: dict,
+        restored_state: str,
+        source_state: str,
+    ) -> MockConfigEntry:
+        """Set up an entry with restored temperature sensor state."""
+        entry_id = "sensor_restore_entry"
+        entity_id = "sensor.test_plant_temperature"
+
+        mock_restore_cache_with_extra_data(
+            hass,
+            [
+                (
+                    State(
+                        entity_id,
+                        restored_state,
+                        {
+                            "external_sensor": "sensor.test_temperature",
+                            "unit_of_measurement": "°C",
+                        },
+                    ),
+                    {},
+                ),
+            ],
+        )
+
+        hass.states.async_set(
+            "sensor.test_temperature",
+            source_state,
+            {"unit_of_measurement": "°C"},
+        )
+
+        config_entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=plant_config_data,
+            entry_id=entry_id,
+            title="Test Plant",
+        )
+        config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        return config_entry
+
+    async def test_restored_value_kept_until_source_available(
+        self,
+        hass: HomeAssistant,
+        plant_config_data: dict,
+        mock_external_sensors,
+        mock_no_openplantbook,
+    ) -> None:
+        """Restored value is kept while source sensor is unavailable at startup."""
+        config_entry = await self._setup_with_restored_temperature(
+            hass,
+            plant_config_data,
+            restored_state="21.5",
+            source_state=STATE_UNAVAILABLE,
+        )
+
+        plant = hass.data[DOMAIN][config_entry.entry_id][ATTR_PLANT]
+        sensor = plant.sensor_temperature
+
+        assert sensor.native_value == 21.5
+
+        await hass.config_entries.async_unload(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+    async def test_restore_window_expires_after_grace(
+        self,
+        hass: HomeAssistant,
+        plant_config_data: dict,
+        mock_external_sensors,
+        mock_no_openplantbook,
+    ) -> None:
+        """Restored value is dropped once the grace period elapses with no live data."""
+        config_entry = await self._setup_with_restored_temperature(
+            hass,
+            plant_config_data,
+            restored_state="21.5",
+            source_state=STATE_UNAVAILABLE,
+        )
+
+        plant = hass.data[DOMAIN][config_entry.entry_id][ATTR_PLANT]
+        sensor = plant.sensor_temperature
+
+        # Within the grace window, the restored value is held.
+        assert sensor.native_value == 21.5
+
+        # After the grace period elapses while the source is still unavailable,
+        # the window closes and the restored value is dropped.
+        async_fire_time_changed(
+            hass, dt_util.utcnow() + RESTORE_GRACE_PERIOD + timedelta(seconds=1)
+        )
+        await hass.async_block_till_done()
+
+        assert sensor.native_value is None
+
+        await hass.config_entries.async_unload(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+    async def test_valid_source_replaces_restored_value_on_startup(
+        self,
+        hass: HomeAssistant,
+        plant_config_data: dict,
+        mock_external_sensors,
+        mock_no_openplantbook,
+    ) -> None:
+        """Valid source value replaces restored value during startup."""
+        config_entry = await self._setup_with_restored_temperature(
+            hass,
+            plant_config_data,
+            restored_state="21.5",
+            source_state="25.5",
+        )
+
+        plant = hass.data[DOMAIN][config_entry.entry_id][ATTR_PLANT]
+        sensor = plant.sensor_temperature
+
+        assert sensor.native_value == 25.5
+        assert sensor._restored_value_active is False
+
+        await hass.config_entries.async_unload(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+    async def test_source_unavailable_clears_after_restore_recovery(
+        self,
+        hass: HomeAssistant,
+        plant_config_data: dict,
+        mock_external_sensors,
+        mock_no_openplantbook,
+    ) -> None:
+        """Unavailable source clears after first valid live value is received."""
+        config_entry = await self._setup_with_restored_temperature(
+            hass,
+            plant_config_data,
+            restored_state="21.5",
+            source_state="25.5",
+        )
+
+        plant = hass.data[DOMAIN][config_entry.entry_id][ATTR_PLANT]
+        sensor = plant.sensor_temperature
+
+        assert sensor.native_value == 25.5
+        assert sensor._restored_value_active is False
+
+        hass.states.async_set("sensor.test_temperature", STATE_UNAVAILABLE)
+        await hass.async_block_till_done()
+
+        await sensor.async_update()
+
+        assert (
+            sensor.native_value is None or sensor.native_value == sensor._default_state
+        )
+
+        await hass.config_entries.async_unload(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+    async def test_non_numeric_source_does_not_store_string(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Non-numeric source values must not be stored as literal strings."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        sensor = plant.sensor_temperature
+
+        hass.states.async_set(
+            "sensor.test_temperature",
+            "invalid",
+            {"unit_of_measurement": "°C"},
+        )
+        await hass.async_block_till_done()
+
+        await sensor.async_update()
+
+        assert sensor.native_value != "invalid"
+        assert (
+            sensor.native_value is None or sensor.native_value == sensor._default_state
+        )
+
+    async def test_vpd_restores_until_sources_recover(
+        self,
+        hass: HomeAssistant,
+        plant_config_data: dict,
+        mock_external_sensors,
+        mock_no_openplantbook,
+    ) -> None:
+        """Restored VPD is kept until temperature and humidity recover."""
+        entry_id = "vpd_restore_entry"
+
+        mock_restore_cache_with_extra_data(
+            hass,
+            [(State("sensor.test_plant_vapour_pressure_deficit", "0.72"), {})],
+        )
+
+        hass.states.async_set("sensor.test_temperature", STATE_UNAVAILABLE)
+        hass.states.async_set("sensor.test_humidity", STATE_UNAVAILABLE)
+
+        config_entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=plant_config_data,
+            entry_id=entry_id,
+            title="Test Plant",
+        )
+        config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][config_entry.entry_id][ATTR_PLANT]
+
+        assert plant.vpd.native_value == 0.72
+
+        hass.states.async_set(
+            "sensor.test_temperature",
+            "22.0",
+            {"unit_of_measurement": "°C"},
+        )
+        hass.states.async_set(
+            "sensor.test_humidity",
+            "60.0",
+            {"unit_of_measurement": "%"},
+        )
+        await hass.async_block_till_done()
+
+        await plant.sensor_temperature.async_update()
+        plant.sensor_temperature.async_write_ha_state()
+        await plant.sensor_humidity.async_update()
+        plant.sensor_humidity.async_write_ha_state()
+        await hass.async_block_till_done()
+
+        await plant.vpd.async_update()
+
+        assert plant.vpd.native_value is not None
+        assert plant.vpd.native_value != 0.72
+
+        hass.states.async_set(plant.sensor_temperature.entity_id, STATE_UNAVAILABLE)
+        await hass.async_block_till_done()
+
+        await plant.vpd.async_update()
+
+        assert plant.vpd.native_value is None
+
+        await hass.config_entries.async_unload(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+    async def test_ppfd_restores_until_source_recovers(
+        self,
+        hass: HomeAssistant,
+        plant_config_data: dict,
+        mock_external_sensors,
+        mock_no_openplantbook,
+    ) -> None:
+        """Restored PPFD is kept until illuminance source recovers."""
+        entry_id = "ppfd_restore_entry"
+
+        mock_restore_cache_with_extra_data(
+            hass,
+            [(State("sensor.test_plant_ppfd", "0.0002"), {})],
+        )
+
+        hass.states.async_set("sensor.test_illuminance", STATE_UNAVAILABLE)
+
+        config_entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=plant_config_data,
+            entry_id=entry_id,
+            title="Test Plant",
+        )
+        config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][config_entry.entry_id][ATTR_PLANT]
+
+        # Restored value is kept while the illuminance source is unavailable
+        # during the startup restore window (not wiped to None).
+        assert plant.ppfd.native_value == 0.0002
+
+        hass.states.async_set(
+            "sensor.test_illuminance",
+            "10000",
+            {"unit_of_measurement": "lx"},
+        )
+        await hass.async_block_till_done()
+
+        await plant.sensor_illuminance.async_update()
+        plant.sensor_illuminance.async_write_ha_state()
+        await hass.async_block_till_done()
+
+        await plant.ppfd.async_update()
+
+        assert plant.ppfd.native_value is not None
+        assert plant.ppfd.native_value != 0.0002
+
+        hass.states.async_set(
+            plant.sensor_illuminance.entity_id,
+            STATE_UNAVAILABLE,
+        )
+        await hass.async_block_till_done()
+
+        await plant.ppfd.async_update()
+
+        assert plant.ppfd.native_value is None
+
+        await hass.config_entries.async_unload(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+    async def test_plant_entity_restores_state_and_status_attributes(
+        self,
+        hass: HomeAssistant,
+        plant_config_data: dict,
+        mock_no_openplantbook,
+    ) -> None:
+        """Main plant entity restores until live sensor data is available."""
+        entry_id = "plant_restore_entry"
+
+        mock_restore_cache_with_extra_data(
+            hass,
+            [
+                (
+                    State(
+                        "plant.test_plant",
+                        "problem",
+                        {
+                            "moisture_status": "Low",
+                            "temperature_status": "ok",
+                            "conductivity_status": None,
+                            "illuminance_status": "ok",
+                            "humidity_status": "ok",
+                            "co2_status": None,
+                            "soil_temperature_status": None,
+                            "dli_status": "ok",
+                            "vpd_status": "ok",
+                        },
+                    ),
+                    {},
+                ),
+            ],
+        )
+
+        # Sources are unavailable during startup, so the plant entity should keep
+        # its restored state/status attributes instead of recomputing to unknown.
+        for source_entity_id in (
+            "sensor.test_moisture",
+            "sensor.test_temperature",
+            "sensor.test_conductivity",
+            "sensor.test_illuminance",
+            "sensor.test_humidity",
+            "sensor.test_co2",
+            "sensor.test_soil_temperature",
+        ):
+            hass.states.async_set(source_entity_id, STATE_UNAVAILABLE)
+
+        config_entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=plant_config_data,
+            entry_id=entry_id,
+            title="Test Plant",
+        )
+        config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][config_entry.entry_id][ATTR_PLANT]
+
+        assert plant.state == "problem"
+        assert plant.moisture_status == "Low"
+        assert plant.temperature_status == "ok"
+        assert plant.illuminance_status == "ok"
+        assert plant.humidity_status == "ok"
+        assert plant.dli_status == "ok"
+        assert plant.vpd_status == "ok"
+
+        restored_state = hass.states.get(plant.entity_id)
+
+        assert restored_state is not None
+        assert restored_state.state == "problem"
+        assert restored_state.attributes["moisture_status"] == "Low"
+        assert restored_state.attributes["temperature_status"] == "ok"
+        assert restored_state.attributes["illuminance_status"] == "ok"
+        assert restored_state.attributes["humidity_status"] == "ok"
+        assert restored_state.attributes["dli_status"] == "ok"
+        assert restored_state.attributes["vpd_status"] == "ok"
+
+        # Once valid live data arrives, normal recomputation should resume and
+        # the restored problem state should be replaced by the live ok state.
+        live_source_states = {
+            "sensor.test_moisture": ("45", {"unit_of_measurement": "%"}),
+            "sensor.test_temperature": ("22", {"unit_of_measurement": "°C"}),
+            "sensor.test_conductivity": (
+                "1000",
+                {"unit_of_measurement": "µS/cm"},
+            ),
+            "sensor.test_illuminance": ("10000", {"unit_of_measurement": "lx"}),
+            "sensor.test_humidity": ("50", {"unit_of_measurement": "%"}),
+            "sensor.test_co2": ("400", {"unit_of_measurement": "ppm"}),
+            "sensor.test_soil_temperature": ("22", {"unit_of_measurement": "°C"}),
+        }
+
+        for source_entity_id, (state, attrs) in live_source_states.items():
+            hass.states.async_set(source_entity_id, state, attrs)
+        await hass.async_block_till_done()
+
+        for sensor in plant.meter_entities:
+            await sensor.async_update()
+            sensor.async_write_ha_state()
+        await hass.async_block_till_done()
+
+        await plant.vpd.async_update()
+        plant.vpd.async_write_ha_state()
+        await hass.async_block_till_done()
+
+        plant.update()
+        plant.async_write_ha_state()
+        await hass.async_block_till_done()
+
+        live_state = hass.states.get(plant.entity_id)
+
+        assert plant.state == "ok"
+        assert plant.moisture_status == "ok"
+        assert plant.temperature_status == "ok"
+        assert plant.conductivity_status == "ok"
+        assert plant.illuminance_status == "ok"
+        assert plant.humidity_status == "ok"
+        assert plant.co2_status == "ok"
+        assert plant.soil_temperature_status == "ok"
+        assert live_state is not None
+        assert live_state.state == "ok"
+
+        await hass.config_entries.async_unload(config_entry.entry_id)
+        await hass.async_block_till_done()
 
 
 class TestPpfdSensor:

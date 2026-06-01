@@ -34,6 +34,8 @@ from homeassistant.helpers import (
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity, async_generate_entity_id
 from homeassistant.helpers.entity_component import EntityComponent
+from homeassistant.helpers.event import async_call_later
+from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.util import dt as dt_util
 
 from . import group as group  # noqa: F401 - needed for HA group discovery
@@ -87,6 +89,7 @@ from .const import (
     HYSTERESIS_FRACTION,
     MOISTURE_INCREASE_THRESHOLD,
     OPB_DISPLAY_PID,
+    RESTORE_GRACE_PERIOD,
     SERVICE_REPLACE_SENSOR,
     STATE_HIGH,
     STATE_LOW,
@@ -477,7 +480,7 @@ def ws_get_info(
     return
 
 
-class PlantDevice(Entity):
+class PlantDevice(RestoreEntity):
     """Base device for plants"""
 
     def __init__(self, hass: HomeAssistant, config: ConfigEntry) -> None:
@@ -521,6 +524,9 @@ class PlantDevice(Entity):
             f"{DOMAIN}.{{}}", self.name, current_ids={}
         )
 
+        self._restored_state_active = (
+            False  # True while showing restored startup values
+        )
         self.plant_complete = False
         self._device_id = None
 
@@ -1098,8 +1104,44 @@ class PlantDevice(Entity):
             )
         return new_status
 
+    def _has_live_source_data(self) -> bool:
+        """True once at least one upstream source sensor reports a numeric value."""
+        for sensor in (
+            self.sensor_moisture,
+            self.sensor_conductivity,
+            self.sensor_temperature,
+            self.sensor_humidity,
+            self.sensor_co2,
+            self.sensor_soil_temperature,
+            self.sensor_illuminance,
+        ):
+            if sensor is None:
+                continue
+
+            external_sensor = getattr(sensor, "external_sensor", None)
+            if not external_sensor:
+                continue
+
+            state = self.hass.states.get(external_sensor)
+            if (
+                state is not None
+                and self._safe_float(state.state, external_sensor) is not None
+            ):
+                return True
+
+        return False
+
     def update(self) -> None:
         """Run on every update of the entities"""
+
+        # Startup restore window: until a source delivers live data, keep the values
+        # restored in async_added_to_hass instead of recomputing them to UNKNOWN/None.
+        # Must sit ABOVE the per-sensor logic below -- that loop overwrites each
+        # *_status to None as it runs, so a guard at the bottom would be too late.
+        if self._restored_state_active:
+            if not self._has_live_source_data():
+                return
+            self._restored_state_active = False  # first live reading -> resume normal
 
         new_state = STATE_OK
         known_state = False
@@ -1433,4 +1475,47 @@ class PlantDevice(Entity):
             self._device_id = device.id
 
     async def async_added_to_hass(self) -> None:
+        """Restore plant state and status attributes on startup."""
+        await super().async_added_to_hass()
         self.update_registry()
+
+        if last_state := await self.async_get_last_state():
+            if last_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE):
+                self._attr_state = last_state.state
+                self._restored_state_active = True  # only latch on a real restore
+
+            attrs = last_state.attributes
+            for attr in (
+                ATTR_MOISTURE,
+                ATTR_TEMPERATURE,
+                ATTR_CONDUCTIVITY,
+                ATTR_ILLUMINANCE,
+                ATTR_HUMIDITY,
+                ATTR_CO2,
+                ATTR_SOIL_TEMPERATURE,
+                ATTR_DLI,
+                ATTR_VPD,
+            ):
+                setattr(self, f"{attr}_status", attrs.get(f"{attr}_status"))
+
+        # Bound the startup restore window: if no source ever delivers live
+        # data, end the window after the grace period so the restored plant
+        # state is not held indefinitely.
+        if self._restored_state_active:
+            self.async_on_remove(
+                async_call_later(
+                    self.hass, RESTORE_GRACE_PERIOD, self._end_restore_window
+                )
+            )
+
+    @callback
+    def _end_restore_window(self, _now: datetime | None = None) -> None:
+        """End the startup restore window once the grace period elapses."""
+        if not self._restored_state_active:
+            return
+        _LOGGER.debug(
+            "Restore grace period elapsed for %s; resuming live state",
+            self.entity_id,
+        )
+        self._restored_state_active = False
+        self.async_schedule_update_ha_state(True)
