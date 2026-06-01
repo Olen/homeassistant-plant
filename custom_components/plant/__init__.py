@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 
 import voluptuous as vol
 from homeassistant.components import websocket_api
+from homeassistant.components.logbook import log_entry
 from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
 from homeassistant.components.utility_meter.const import (
     DATA_TARIFF_SENSORS,
@@ -57,6 +58,7 @@ from .const import (
     ATTR_MOISTURE,
     ATTR_NEW_SENSOR,
     ATTR_PLANT,
+    ATTR_PROBLEMS,
     ATTR_SENSOR,
     ATTR_SENSORS,
     ATTR_SOIL_TEMPERATURE,
@@ -529,6 +531,12 @@ class PlantDevice(RestoreEntity):
         )
         self.plant_complete = False
         self._device_id = None
+        self._problems = []
+        # Problem sensor_types already written to the logbook, used to
+        # de-duplicate onset/recovery entries. Restored in async_added_to_hass
+        # from the persisted `problems` attribute so active problems are not
+        # re-logged as new onsets after a restart / reload.
+        self._logged_problem_types: set[str] = set()
 
         self._check_days = None
 
@@ -691,6 +699,7 @@ class PlantDevice(RestoreEntity):
             f"{ATTR_DLI}_status": self.dli_status,
             f"{ATTR_VPD}_status": self.vpd_status,
             f"{ATTR_SPECIES}_original": self.species,
+            ATTR_PROBLEMS: self._problems,
         }
         for field, value in self.care.items():
             attributes[f"{ATTR_CARE_PREFIX}{field}"] = value
@@ -1104,6 +1113,82 @@ class PlantDevice(RestoreEntity):
             )
         return new_status
 
+    def _log_problem_changes(self, problem_sensors: dict[str, tuple]) -> None:
+        """Build self._problems from triggered sensors and log new/resolved problems to the HA logbook.
+
+        Writes to the activity feed when a problem first appears or clears, but stays
+        silent when the same problems persist across updates (avoids repeated entries).
+        problem_sensors maps sensor_type -> (current_val, status, min_entity, max_entity).
+        """
+
+        def _threshold_str(threshold_entity) -> str:
+            """Stringify a min/max threshold value, or 'unknown' if not numeric.
+
+            A threshold entity can momentarily be unavailable/unknown; avoid
+            writing a raw 'unavailable' into the problem entry or logbook.
+            """
+            raw = threshold_entity.state
+            try:
+                float(raw)
+            except (ValueError, TypeError):
+                return "unknown"
+            return str(raw)
+
+        self._problems = [
+            {
+                "sensor_type": st,
+                "status": info[1],
+                "current": str(info[0]),
+                "min": _threshold_str(info[2]),
+                "max": _threshold_str(info[3]),
+            }
+            for st, info in problem_sensors.items()
+        ]
+
+        new_problem_types = {p["sensor_type"] for p in self._problems}
+        appeared = new_problem_types - self._logged_problem_types
+
+        # A previously-logged problem is only "resolved" if its sensor now has a
+        # reading (status not None) and is back in range. A sensor that dropped
+        # out (unavailable -> status None) is *held*: not reported "back in
+        # range" (we don't know if it recovered) and kept tracked so it isn't
+        # re-logged as a new onset when it returns.
+        cleared = self._logged_problem_types - new_problem_types
+        resolved = {
+            sensor_type
+            for sensor_type in cleared
+            if getattr(self, f"{sensor_type}_status", None) is not None
+        }
+        held = cleared - resolved
+
+        # Log each newly appeared problem — result: one logbook entry per sensor per onset,
+        # e.g. "moisture low — current: 15, min: 20"
+        for p in self._problems:
+            if p["sensor_type"] in appeared:
+                threshold_label = "min" if p["status"] == STATE_LOW else "max"
+                threshold_value = p["min"] if p["status"] == STATE_LOW else p["max"]
+                log_entry(
+                    self.hass,
+                    self.name,
+                    f"{p['sensor_type'].replace('_', ' ')} {p['status'].lower()}"
+                    f" — current: {p['current']}, {threshold_label}: {threshold_value}",
+                    domain=DOMAIN,
+                    entity_id=self.entity_id,
+                )
+
+        # Log each resolved problem — result: one logbook entry per sensor per recovery,
+        # e.g. "moisture back in range"
+        for sensor_type in resolved:
+            log_entry(
+                self.hass,
+                self.name,
+                f"{sensor_type.replace('_', ' ')} back in range",
+                domain=DOMAIN,
+                entity_id=self.entity_id,
+            )
+
+        self._logged_problem_types = new_problem_types | held
+
     def _has_live_source_data(self) -> bool:
         """True once at least one upstream source sensor reports a numeric value."""
         for sensor in (
@@ -1145,6 +1230,11 @@ class PlantDevice(RestoreEntity):
 
         new_state = STATE_OK
         known_state = False
+        # Collects one compact tuple per triggered sensor: (current_val, status, min_entity, max_entity).
+        # Converted to self._problems at the end of update() — adding a new sensor type
+        # only requires one extra line at the trigger site.
+        # TODO: document "how to add a new sensor type" in DEVELOPMENT.md and reference it here.
+        _problem_sensors: dict[str, tuple] = {}
 
         if self.sensor_moisture is not None:
             moisture = getattr(
@@ -1187,6 +1277,12 @@ class PlantDevice(RestoreEntity):
                 if self.moisture_trigger:
                     if self.moisture_status == STATE_LOW:
                         new_state = STATE_PROBLEM
+                        _problem_sensors[ATTR_MOISTURE] = (
+                            moisture_val,
+                            self.moisture_status,
+                            self.min_moisture,
+                            self.max_moisture,
+                        )
                     elif self.moisture_status == STATE_HIGH:
                         now = dt_util.now()
                         if (
@@ -1206,6 +1302,12 @@ class PlantDevice(RestoreEntity):
                         else:
                             # Grace period expired or not active - report problem
                             new_state = STATE_PROBLEM
+                            _problem_sensors[ATTR_MOISTURE] = (
+                                moisture_val,
+                                self.moisture_status,
+                                self.min_moisture,
+                                self.max_moisture,
+                            )
                             if self._moisture_grace_end_time is not None:
                                 _LOGGER.debug(
                                     "Moisture grace period expired for %s - "
@@ -1244,6 +1346,12 @@ class PlantDevice(RestoreEntity):
                     and self.conductivity_trigger
                 ):
                     new_state = STATE_PROBLEM
+                    _problem_sensors[ATTR_CONDUCTIVITY] = (
+                        conductivity_val,
+                        self.conductivity_status,
+                        self.min_conductivity,
+                        self.max_conductivity,
+                    )
             else:
                 # Reset status when sensor is unavailable or non-numeric
                 self.conductivity_status = None
@@ -1271,6 +1379,12 @@ class PlantDevice(RestoreEntity):
                     and self.temperature_trigger
                 ):
                     new_state = STATE_PROBLEM
+                    _problem_sensors[ATTR_TEMPERATURE] = (
+                        temperature_val,
+                        self.temperature_status,
+                        self.min_temperature,
+                        self.max_temperature,
+                    )
             else:
                 # Reset status when sensor is unavailable or non-numeric
                 self.temperature_status = None
@@ -1296,6 +1410,12 @@ class PlantDevice(RestoreEntity):
                     and self.humidity_trigger
                 ):
                     new_state = STATE_PROBLEM
+                    _problem_sensors[ATTR_HUMIDITY] = (
+                        humidity_val,
+                        self.humidity_status,
+                        self.min_humidity,
+                        self.max_humidity,
+                    )
             else:
                 # Reset status when sensor is unavailable or non-numeric
                 self.humidity_status = None
@@ -1315,6 +1435,12 @@ class PlantDevice(RestoreEntity):
                 )
                 if self.co2_status in (STATE_LOW, STATE_HIGH) and self.co2_trigger:
                     new_state = STATE_PROBLEM
+                    _problem_sensors[ATTR_CO2] = (
+                        co2_val,
+                        self.co2_status,
+                        self.min_co2,
+                        self.max_co2,
+                    )
             else:
                 # Reset status when sensor is unavailable or non-numeric
                 self.co2_status = None
@@ -1344,6 +1470,12 @@ class PlantDevice(RestoreEntity):
                     and self.soil_temperature_trigger
                 ):
                     new_state = STATE_PROBLEM
+                    _problem_sensors[ATTR_SOIL_TEMPERATURE] = (
+                        soil_temp_val,
+                        self.soil_temperature_status,
+                        self.min_soil_temperature,
+                        self.max_soil_temperature,
+                    )
             else:
                 # Reset status when sensor is unavailable or non-numeric
                 self.soil_temperature_status = None
@@ -1382,6 +1514,12 @@ class PlantDevice(RestoreEntity):
                         and self.illuminance_trigger
                     ):
                         new_state = STATE_PROBLEM
+                        _problem_sensors[ATTR_ILLUMINANCE] = (
+                            illuminance_val,
+                            self.illuminance_status,
+                            self.min_illuminance,
+                            self.max_illuminance,
+                        )
                 else:
                     # Reset status when sensor is unavailable or non-numeric
                     self.illuminance_status = None
@@ -1414,6 +1552,12 @@ class PlantDevice(RestoreEntity):
                 self.dli_status = STATE_OK
             if self.dli_status in (STATE_LOW, STATE_HIGH) and self.dli_trigger:
                 new_state = STATE_PROBLEM
+                _problem_sensors[ATTR_DLI] = (
+                    dli_value,
+                    self.dli_status,
+                    self.min_dli,
+                    self.max_dli,
+                )
         else:
             # Reset DLI status when sensor is unavailable or removed
             self.dli_status = None
@@ -1428,6 +1572,12 @@ class PlantDevice(RestoreEntity):
                 )
                 if self.vpd_status in (STATE_LOW, STATE_HIGH) and self.vpd_trigger:
                     new_state = STATE_PROBLEM
+                    _problem_sensors[ATTR_VPD] = (
+                        vpd_val,
+                        self.vpd_status,
+                        self.min_vpd,
+                        self.max_vpd,
+                    )
             else:
                 self.vpd_status = None
         else:
@@ -1444,6 +1594,18 @@ class PlantDevice(RestoreEntity):
                 new_state,
             )
         self._attr_state = new_state
+
+        # Reconcile problems / write logbook entries only when we have live data.
+        # When known_state is False (a sensor dropout, or the restore window
+        # ending with no live reading), _problem_sensors is empty and running the
+        # diff would treat every active problem as resolved and emit false
+        # "back in range" entries. Skipping leaves _problems and
+        # _logged_problem_types untouched (last known state held). Placed after
+        # self._attr_state is set so the computed state is already stored for the
+        # next cycle even if a logbook write were to raise (which would otherwise
+        # make HA skip this cycle's state write).
+        if known_state:
+            self._log_problem_changes(_problem_sensors)
         # Note: do NOT call self.update_registry() here. update() runs in
         # an executor thread (HA's polling), and device_registry.async_get_or_create
         # raises in HA 2026.5+ when called off the event loop. Device-registry
@@ -1497,6 +1659,18 @@ class PlantDevice(RestoreEntity):
                 ATTR_VPD,
             ):
                 setattr(self, f"{attr}_status", attrs.get(f"{attr}_status"))
+
+            # Restore the active problems and which problem types were already
+            # logged, so they survive the restore window and active problems are
+            # not re-logged as new onsets after a restart / reload.
+            restored_problems = attrs.get(ATTR_PROBLEMS)
+            if isinstance(restored_problems, list) and restored_problems:
+                self._problems = list(restored_problems)
+                self._logged_problem_types = {
+                    problem["sensor_type"]
+                    for problem in restored_problems
+                    if isinstance(problem, dict) and problem.get("sensor_type")
+                }
 
         # Bound the startup restore window: if no source ever delivers live
         # data, end the window after the grace period so the restored plant

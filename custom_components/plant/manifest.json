@@ -3,6 +3,7 @@
   "name": "Plant Monitor",
   "after_dependencies": [
     "recorder",
+    "logbook",
     "openplantbook",
     "integration",
     "statistics",
