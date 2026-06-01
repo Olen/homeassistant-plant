@@ -34,6 +34,7 @@ from homeassistant.helpers import (
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity, async_generate_entity_id
 from homeassistant.helpers.entity_component import EntityComponent
+from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.util import dt as dt_util
 
@@ -88,6 +89,7 @@ from .const import (
     HYSTERESIS_FRACTION,
     MOISTURE_INCREASE_THRESHOLD,
     OPB_DISPLAY_PID,
+    RESTORE_GRACE_PERIOD,
     SERVICE_REPLACE_SENSOR,
     STATE_HIGH,
     STATE_LOW,
@@ -1495,3 +1497,25 @@ class PlantDevice(RestoreEntity):
                 ATTR_VPD,
             ):
                 setattr(self, f"{attr}_status", attrs.get(f"{attr}_status"))
+
+        # Bound the startup restore window: if no source ever delivers live
+        # data, end the window after the grace period so the restored plant
+        # state is not held indefinitely.
+        if self._restored_state_active:
+            self.async_on_remove(
+                async_call_later(
+                    self.hass, RESTORE_GRACE_PERIOD, self._end_restore_window
+                )
+            )
+
+    @callback
+    def _end_restore_window(self, _now: datetime | None = None) -> None:
+        """End the startup restore window once the grace period elapses."""
+        if not self._restored_state_active:
+            return
+        _LOGGER.debug(
+            "Restore grace period elapsed for %s; resuming live state",
+            self.entity_id,
+        )
+        self._restored_state_active = False
+        self.async_schedule_update_ha_state(True)

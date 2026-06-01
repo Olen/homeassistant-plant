@@ -48,6 +48,7 @@ from homeassistant.helpers.entity_registry import (
     async_get as er_async_get,
 )
 from homeassistant.helpers.event import (
+    async_call_later,
     async_track_state_change_event,
 )
 from homeassistant.util.unit_conversion import TemperatureConverter
@@ -91,6 +92,7 @@ from .const import (
     READING_SOIL_TEMPERATURE,
     READING_TEMPERATURE,
     READING_VPD,
+    RESTORE_GRACE_PERIOD,
     TRANSLATION_KEY_CO2,
     TRANSLATION_KEY_CONDUCTIVITY,
     TRANSLATION_KEY_DAILY_LIGHT_INTEGRAL,
@@ -445,6 +447,28 @@ class PlantCurrentStatus(RestoreSensor):
                 _handle_entity_registry_update,
             )
         )
+
+        # Bound the startup restore window: if the source never delivers a live
+        # value, end the window after the grace period so a stale restored value
+        # is not held indefinitely.
+        if self._restored_value_active:
+            self.async_on_remove(
+                async_call_later(
+                    self.hass, RESTORE_GRACE_PERIOD, self._end_restore_window
+                )
+            )
+
+    @callback
+    def _end_restore_window(self, _now: datetime | None = None) -> None:
+        """End the startup restore window once the grace period elapses."""
+        if not self._restored_value_active:
+            return
+        _LOGGER.debug(
+            "Restore grace period elapsed for %s; resuming live behavior",
+            self.entity_id,
+        )
+        self._restored_value_active = False
+        self.async_schedule_update_ha_state(True)
 
     async def async_update(self) -> None:
         """Update state and unit from the external sensor when available."""
@@ -892,6 +916,27 @@ class PlantCurrentVpd(RestoreSensor):
 
         # Calculate initial value
         self._update_vpd()
+
+        # Bound the startup restore window (see PlantCurrentStatus).
+        if self._restored_value_active:
+            self.async_on_remove(
+                async_call_later(
+                    self.hass, RESTORE_GRACE_PERIOD, self._end_restore_window
+                )
+            )
+
+    @callback
+    def _end_restore_window(self, _now: datetime | None = None) -> None:
+        """End the startup restore window once the grace period elapses."""
+        if not self._restored_value_active:
+            return
+        _LOGGER.debug(
+            "Restore grace period elapsed for %s; resuming live behavior",
+            self.entity_id,
+        )
+        self._restored_value_active = False
+        self._update_vpd()
+        self.async_write_ha_state()
 
     @callback
     def _state_changed_event(self, event: Event) -> None:

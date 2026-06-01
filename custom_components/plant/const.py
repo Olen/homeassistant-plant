@@ -1,5 +1,7 @@
 """Constants"""
 
+from datetime import timedelta
+
 DOMAIN = "plant"
 DOMAIN_PLANTBOOK = "openplantbook"
 
@@ -9,6 +11,14 @@ URL_SCHEME_MEDIA_SOURCE = "media-source://"
 PLANTBOOK_DOMAIN = "plantbook.io"
 
 REQUEST_TIMEOUT = 30
+
+# How long, after startup, restored entity values are held while the source
+# sensor has not yet delivered a live reading. Bounds the restore window so a
+# source that never recovers (e.g. a dead sensor) stops masking a stale value.
+# Sized well above the observed worst-case BLE broadcast gap (~3 min across the
+# plant sensors): 10 min gives ample margin while still failing over to the
+# real (unavailable) state promptly for a genuinely dead sensor.
+RESTORE_GRACE_PERIOD = timedelta(minutes=10)
 
 # ATTRs are used by machines
 ATTR_BATTERY = "battery"

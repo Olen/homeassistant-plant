@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
+
 import pytest
 from homeassistant.const import (
     STATE_UNAVAILABLE,
@@ -10,8 +12,10 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant, State
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_registry import EVENT_ENTITY_REGISTRY_UPDATED
+from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
+    async_fire_time_changed,
     mock_restore_cache_with_extra_data,
 )
 
@@ -19,6 +23,7 @@ from custom_components.plant.const import (
     ATTR_PLANT,
     DEFAULT_LUX_TO_PPFD,
     DOMAIN,
+    RESTORE_GRACE_PERIOD,
     UNIT_DLI,
     UNIT_PPFD,
     UNIT_TOTAL_LIGHT_INTEGRAL,
@@ -357,6 +362,39 @@ class TestSensorRestoreState:
         sensor = plant.sensor_temperature
 
         assert sensor.native_value == 21.5
+
+        await hass.config_entries.async_unload(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+    async def test_restore_window_expires_after_grace(
+        self,
+        hass: HomeAssistant,
+        plant_config_data: dict,
+        mock_external_sensors,
+        mock_no_openplantbook,
+    ) -> None:
+        """Restored value is dropped once the grace period elapses with no live data."""
+        config_entry = await self._setup_with_restored_temperature(
+            hass,
+            plant_config_data,
+            restored_state="21.5",
+            source_state=STATE_UNAVAILABLE,
+        )
+
+        plant = hass.data[DOMAIN][config_entry.entry_id][ATTR_PLANT]
+        sensor = plant.sensor_temperature
+
+        # Within the grace window, the restored value is held.
+        assert sensor.native_value == 21.5
+
+        # After the grace period elapses while the source is still unavailable,
+        # the window closes and the restored value is dropped.
+        async_fire_time_changed(
+            hass, dt_util.utcnow() + RESTORE_GRACE_PERIOD + timedelta(seconds=1)
+        )
+        await hass.async_block_till_done()
+
+        assert sensor.native_value is None
 
         await hass.config_entries.async_unload(config_entry.entry_id)
         await hass.async_block_till_done()
