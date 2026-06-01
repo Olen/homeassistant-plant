@@ -1665,8 +1665,8 @@ class TestOptionsFlow:
         await hass.async_block_till_done()
 
         # Live object must have care populated from OPB.
-        assert plant.care["watering"] == CARE_MONSTERA_DELICIOSA["watering"]
+        assert plant.care == CARE_MONSTERA_DELICIOSA
 
         # Entry.data must also have care persisted so it survives a reload.
         stored = entry.data[FLOW_PLANT_INFO][ATTR_CARE]
-        assert stored["watering"] == CARE_MONSTERA_DELICIOSA["watering"]
+        assert stored == CARE_MONSTERA_DELICIOSA
