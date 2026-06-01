@@ -1600,8 +1600,10 @@ class PlantDevice(RestoreEntity):
         # ending with no live reading), _problem_sensors is empty and running the
         # diff would treat every active problem as resolved and emit false
         # "back in range" entries. Skipping leaves _problems and
-        # _logged_problem_types untouched (last known state held). Runs after the
-        # state write so a logbook failure can never suppress the plant's state.
+        # _logged_problem_types untouched (last known state held). Placed after
+        # self._attr_state is set so the computed state is already stored for the
+        # next cycle even if a logbook write were to raise (which would otherwise
+        # make HA skip this cycle's state write).
         if known_state:
             self._log_problem_changes(_problem_sensors)
         # Note: do NOT call self.update_registry() here. update() runs in
