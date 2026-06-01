@@ -498,7 +498,9 @@ class PlantDevice(Entity):
         )
         # Static per-species care text from OpenPlantbook (include: care).
         # Stored at config/refresh time; only fields OPB returned are present.
-        self.care = self._config.data[FLOW_PLANT_INFO].get(ATTR_CARE, {})
+        # Copy on read: ConfigEntry.data is treated as immutable, so avoid sharing
+        # a reference to the entry's internal care dict.
+        self.care = dict(self._config.data[FLOW_PLANT_INFO].get(ATTR_CARE, {}))
         # Get display_species from options or from initial config
         # Capitalize first letter for proper binomial nomenclature (genus capitalized)
         raw_display_species = (

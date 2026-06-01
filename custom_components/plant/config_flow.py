@@ -334,9 +334,10 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 ATTR_SENSORS: {},
             }
         )
-        care = plant_config[FLOW_PLANT_INFO].get(ATTR_CARE)
-        if care:
-            self.plant_info[ATTR_CARE] = care
+        # Always overwrite (do not guard on truthiness): if the user switches to a
+        # species with no care via the "wrong plant" path, stale care from the
+        # previous species must be cleared, not left behind.
+        self.plant_info[ATTR_CARE] = plant_config[FLOW_PLANT_INFO].get(ATTR_CARE, {})
         extra_desc = ""
         if plant_config[FLOW_PLANT_INFO].get(OPB_DISPLAY_PID):
             # We got data from OPB.  Display a "wrong plant" switch

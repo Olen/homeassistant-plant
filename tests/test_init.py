@@ -428,6 +428,44 @@ class TestPlantDevice:
             if field not in present:
                 assert f"care_{field}" not in attrs
 
+    async def test_plant_device_care_is_copy_not_alias(
+        self,
+        hass: HomeAssistant,
+    ) -> None:
+        """plant.care must be a distinct copy of the entry's care dict.
+
+        Regression test for: PlantDevice.__init__ assigned self.care directly
+        from ConfigEntry.data (shared reference).  Mutating self.care would
+        silently corrupt the immutable entry data, and vice-versa.
+        """
+        from tests.conftest import create_plant_config_data
+
+        care = {
+            "watering": "Water every 7 days.",
+            "sunlight": "Full sun preferred.",
+        }
+        data = create_plant_config_data(care=care)
+        entry = MockConfigEntry(domain=DOMAIN, data=data, options={})
+        entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][entry.entry_id][ATTR_PLANT]
+        entry_care = entry.data[FLOW_PLANT_INFO]["care"]
+
+        # The live attribute must be a DISTINCT object from the entry's dict.
+        assert plant.care is not entry_care, (
+            "plant.care shares the same object reference as "
+            "entry.data[FLOW_PLANT_INFO]['care']; it should be a copy."
+        )
+
+        # Mutating plant.care must not corrupt entry.data.
+        plant.care["watering"] = "MUTATED"
+        assert entry_care.get("watering") == "Water every 7 days.", (
+            "Mutating plant.care unexpectedly modified entry.data['care']; "
+            "the two objects are aliased."
+        )
+
     async def test_plant_device_device_info(
         self,
         hass: HomeAssistant,
