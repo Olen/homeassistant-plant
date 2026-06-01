@@ -111,6 +111,34 @@ class TestPlantHelperSearch:
 class TestPlantHelperGet:
     """Tests for OpenPlantbook get functionality."""
 
+    async def test_openplantbook_get_requests_care(
+        self,
+        hass: HomeAssistant,
+    ) -> None:
+        """Every OPB get must request the care category via include=care."""
+        from unittest.mock import AsyncMock, patch
+
+        from custom_components.plant.const import DOMAIN_PLANTBOOK
+        from tests.fixtures.openplantbook_responses import (
+            GET_RESULT_MONSTERA_DELICIOSA,
+        )
+
+        helper = PlantHelper(hass)
+        mock_call = AsyncMock(return_value=GET_RESULT_MONSTERA_DELICIOSA)
+        with patch(
+            "homeassistant.core.ServiceRegistry.async_services",
+            return_value={DOMAIN_PLANTBOOK: {"search": None, "get": None}},
+        ):
+            with patch(
+                "homeassistant.core.ServiceRegistry.async_call",
+                new=mock_call,
+            ):
+                await helper.openplantbook_get("monstera deliciosa")
+
+        assert mock_call.await_count == 1
+        service_data = mock_call.await_args.kwargs["service_data"]
+        assert service_data["include"] == "care"
+
     async def test_openplantbook_get_success(
         self,
         hass: HomeAssistant,

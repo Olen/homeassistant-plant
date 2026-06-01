@@ -82,8 +82,10 @@ from .const import (
     FLOW_SENSOR_MOISTURE,
     FLOW_SENSOR_SOIL_TEMPERATURE,
     FLOW_SENSOR_TEMPERATURE,
+    OPB_ATTR_INCLUDE,
     OPB_DISPLAY_PID,
     OPB_GET,
+    OPB_INCLUDE_CARE,
     OPB_SEARCH,
     PLANTBOOK_DOMAIN,
     PPFD_DLI_FACTOR,
@@ -174,7 +176,10 @@ class PlantHelper:
         if not species or species == "":
             return None
 
-        service_data = {ATTR_SPECIES: species.lower()}
+        service_data = {
+            ATTR_SPECIES: species.lower(),
+            OPB_ATTR_INCLUDE: OPB_INCLUDE_CARE,
+        }
         if not cache:
             service_data["cache"] = False
 
