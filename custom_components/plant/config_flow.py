@@ -23,6 +23,7 @@ from homeassistant.helpers.network import NoURLAvailableError, get_url
 from homeassistant.helpers.selector import selector
 
 from .const import (
+    ATTR_CARE,
     ATTR_ENTITY,
     ATTR_LIMITS,
     ATTR_OPTIONS,
@@ -333,6 +334,9 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 ATTR_SENSORS: {},
             }
         )
+        care = plant_config[FLOW_PLANT_INFO].get(ATTR_CARE)
+        if care:
+            self.plant_info[ATTR_CARE] = care
         extra_desc = ""
         if plant_config[FLOW_PLANT_INFO].get(OPB_DISPLAY_PID):
             # We got data from OPB.  Display a "wrong plant" switch

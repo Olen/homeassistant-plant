@@ -39,6 +39,7 @@ from custom_components.plant.const import (
 
 from .conftest import create_plant_config_data
 from .fixtures.openplantbook_responses import (
+    CARE_MONSTERA_DELICIOSA,
     GET_RESULT_MONSTERA_DELICIOSA,
 )
 
@@ -870,6 +871,72 @@ class TestConfigFlowFullFlow:
 
         assert result["type"] == FlowResultType.CREATE_ENTRY
         assert result["title"] == "My Monstera"
+
+    async def test_full_flow_with_opb_persists_care(
+        self,
+        hass: HomeAssistant,
+        mock_openplantbook_services,
+    ) -> None:
+        """Test that care data from OPB is persisted in the created entry."""
+        from custom_components.plant.const import ATTR_CARE
+
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_USER}
+        )
+        assert result["step_id"] == "user"
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                ATTR_NAME: "My Monstera",
+                ATTR_SPECIES: "monstera",
+            },
+        )
+        assert result["step_id"] == "select_species"
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                ATTR_SEARCH_FOR: "monstera",
+                ATTR_SPECIES: "monstera deliciosa",
+            },
+        )
+        assert result["step_id"] == "sensors"
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {},
+        )
+        assert result["step_id"] == "limits"
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                FLOW_RIGHT_PLANT: True,
+                OPB_DISPLAY_PID: "Monstera deliciosa",
+                CONF_MAX_MOISTURE: 60,
+                CONF_MIN_MOISTURE: 20,
+                CONF_MAX_TEMPERATURE: 30,
+                CONF_MIN_TEMPERATURE: 15,
+                CONF_MAX_CONDUCTIVITY: 2000,
+                CONF_MIN_CONDUCTIVITY: 350,
+                CONF_MAX_ILLUMINANCE: 35000,
+                CONF_MIN_ILLUMINANCE: 1500,
+                CONF_MAX_HUMIDITY: 80,
+                CONF_MIN_HUMIDITY: 50,
+                CONF_MAX_DLI: 22,
+                CONF_MIN_DLI: 5,
+                CONF_MAX_VPD: 1.6,
+                CONF_MIN_VPD: 0.4,
+                ATTR_ENTITY_PICTURE: GET_RESULT_MONSTERA_DELICIOSA["image_url"],
+            },
+        )
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert result["title"] == "My Monstera"
+
+        care = result["data"][FLOW_PLANT_INFO][ATTR_CARE]
+        assert care["watering"] == CARE_MONSTERA_DELICIOSA["watering"]
 
 
 class TestConfigFlowImport:
