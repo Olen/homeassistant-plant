@@ -595,3 +595,29 @@ class TestImageValidation:
                 "https://unreachable.example.com/plant.jpg"
             )
         assert result is False
+
+
+class TestCareConstants:
+    """Tests for the care-field constants."""
+
+    def test_care_fields_canonical_list(self) -> None:
+        from custom_components.plant.const import CARE_FIELDS
+
+        assert CARE_FIELDS == [
+            "watering",
+            "sunlight",
+            "soil",
+            "pruning",
+            "fertilization",
+        ]
+
+    def test_include_constants(self) -> None:
+        from custom_components.plant.const import (
+            ATTR_CARE,
+            OPB_ATTR_INCLUDE,
+            OPB_INCLUDE_CARE,
+        )
+
+        assert OPB_ATTR_INCLUDE == "include"
+        assert OPB_INCLUDE_CARE == "care"
+        assert ATTR_CARE == "care"
