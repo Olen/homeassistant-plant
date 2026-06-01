@@ -18,6 +18,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.plant import async_setup
 from custom_components.plant.const import (
     ATTR_PLANT,
+    CARE_FIELDS,
     DOMAIN,
     FLOW_PLANT_INFO,
     STATE_HIGH,
@@ -422,9 +423,10 @@ class TestPlantDevice:
         attrs = plant.extra_state_attributes
         assert attrs["care_watering"] == "Water weekly."
         assert attrs["care_sunlight"] == "Bright indirect light."
-        assert "care_soil" not in attrs
-        assert "care_pruning" not in attrs
-        assert "care_fertilization" not in attrs
+        present = {"watering", "sunlight"}
+        for field in CARE_FIELDS:
+            if field not in present:
+                assert f"care_{field}" not in attrs
 
     async def test_plant_device_device_info(
         self,
