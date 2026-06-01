@@ -20,6 +20,7 @@ from homeassistant.helpers.temperature import display_temp
 
 from .const import (
     ATTR_BRIGHTNESS,
+    ATTR_CARE,
     ATTR_CO2,
     ATTR_CONDUCTIVITY,
     ATTR_ILLUMINANCE,
@@ -30,6 +31,7 @@ from .const import (
     ATTR_SOIL_TEMPERATURE,
     ATTR_SPECIES,
     ATTR_TEMPERATURE,
+    CARE_FIELDS,
     CONF_MAX_BRIGHTNESS,
     CONF_MAX_CO2,
     CONF_MAX_CONDUCTIVITY,
@@ -299,6 +301,7 @@ class PlantHelper:
         entity_picture = None
         display_species = None
         data_source = DATA_SOURCE_DEFAULT
+        care_data: dict[str, Any] = {}
 
         # If we have image defined in the config, or a local file
         # prefer that.  If neither, image will be set to openplantbook
@@ -428,6 +431,9 @@ class PlantHelper:
                 opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MIN_HUMIDITY]),
                 DEFAULT_MIN_HUMIDITY,
             )
+            care_data = {
+                field: opb_plant[field] for field in CARE_FIELDS if opb_plant.get(field)
+            }
             _LOGGER.info("Picture: %s", entity_picture)
             if (
                 entity_picture is None
@@ -471,6 +477,7 @@ class PlantHelper:
                 ATTR_SPECIES: config.get(ATTR_SPECIES) or "",
                 ATTR_ENTITY_PICTURE: entity_picture or "",
                 OPB_DISPLAY_PID: display_species or "",
+                ATTR_CARE: care_data,
                 ATTR_LIMITS: {
                     CONF_MAX_ILLUMINANCE: config.get(
                         CONF_MAX_BRIGHTNESS,

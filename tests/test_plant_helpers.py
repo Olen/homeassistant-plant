@@ -9,6 +9,7 @@ from homeassistant.const import ATTR_ENTITY_PICTURE, ATTR_NAME
 from homeassistant.core import HomeAssistant
 
 from custom_components.plant.const import (
+    ATTR_CARE,
     ATTR_LIMITS,
     ATTR_SENSORS,
     ATTR_SPECIES,
@@ -31,6 +32,7 @@ from custom_components.plant.const import (
 from custom_components.plant.plant_helpers import PlantHelper
 
 from .fixtures.openplantbook_responses import (
+    CARE_MONSTERA_DELICIOSA,
     GET_RESULT_MONSTERA_DELICIOSA,
 )
 
@@ -378,6 +380,63 @@ class TestPlantHelperGenerateConfigentry:
 
         # min_dli = 12.6 → round(12.6, 1) = 12.6
         assert limits[CONF_MIN_DLI] == 12.6
+
+    async def test_generate_configentry_stores_care(
+        self,
+        hass: HomeAssistant,
+        mock_openplantbook_services,
+    ) -> None:
+        """Care fields from OPB are stored under FLOW_PLANT_INFO['care']."""
+        helper = PlantHelper(hass)
+        config = {
+            ATTR_NAME: "My Monstera",
+            ATTR_SPECIES: "monstera deliciosa",
+            ATTR_SENSORS: {},
+        }
+
+        result = await helper.generate_configentry(config)
+
+        care = result[FLOW_PLANT_INFO][ATTR_CARE]
+        assert care["watering"] == CARE_MONSTERA_DELICIOSA["watering"]
+        assert care["sunlight"] == CARE_MONSTERA_DELICIOSA["sunlight"]
+        assert care["soil"] == CARE_MONSTERA_DELICIOSA["soil"]
+        assert care["pruning"] == CARE_MONSTERA_DELICIOSA["pruning"]
+        assert care["fertilization"] == CARE_MONSTERA_DELICIOSA["fertilization"]
+
+    async def test_generate_configentry_omits_absent_care_fields(
+        self,
+        hass: HomeAssistant,
+        mock_openplantbook_services,
+        monkeypatch,
+    ) -> None:
+        """Care fields OPB does not return are not stored (no empty strings)."""
+        import custom_components.plant.plant_helpers as ph
+
+        async def partial_care_get(self, species, cache=True):
+            return {
+                "pid": "monstera deliciosa",
+                "display_pid": "Monstera deliciosa",
+                "max_soil_moist": 60,
+                "min_soil_moist": 20,
+                "max_light_lux": 35000,
+                "min_light_lux": 1500,
+                "watering": "Water weekly.",
+                # sunlight/soil/pruning/fertilization deliberately absent
+            }
+
+        monkeypatch.setattr(ph.PlantHelper, "openplantbook_get", partial_care_get)
+
+        helper = ph.PlantHelper(hass)
+        config = {
+            ATTR_NAME: "My Monstera",
+            ATTR_SPECIES: "monstera deliciosa",
+            ATTR_SENSORS: {},
+        }
+
+        result = await helper.generate_configentry(config)
+
+        care = result[FLOW_PLANT_INFO][ATTR_CARE]
+        assert care == {"watering": "Water weekly."}
 
 
 class TestPlantHelperEdgeCases:

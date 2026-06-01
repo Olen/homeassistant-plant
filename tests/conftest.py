@@ -58,6 +58,7 @@ from custom_components.plant.const import (
 )
 
 from .fixtures.openplantbook_responses import (
+    CARE_MONSTERA_DELICIOSA,
     GET_RESULT_MONSTERA_DELICIOSA,
     GET_RESULT_WITH_DLI,
     SEARCH_RESULT_MONSTERA,
@@ -239,7 +240,10 @@ def mock_openplantbook_services() -> Generator[MagicMock, None, None]:
         """Mock get service."""
         species = service_data.get("species", "").lower()
         if species == "monstera deliciosa":
-            return GET_RESULT_MONSTERA_DELICIOSA
+            result = dict(GET_RESULT_MONSTERA_DELICIOSA)
+            if service_data.get("include") == "care":
+                result.update(CARE_MONSTERA_DELICIOSA)
+            return result
         return None
 
     async def mock_service_call(
