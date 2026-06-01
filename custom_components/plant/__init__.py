@@ -1623,6 +1623,18 @@ class PlantDevice(RestoreEntity):
             ):
                 setattr(self, f"{attr}_status", attrs.get(f"{attr}_status"))
 
+            # Restore the active problems and which problem types were already
+            # logged, so they survive the restore window and active problems are
+            # not re-logged as new onsets after a restart / reload.
+            restored_problems = attrs.get(ATTR_PROBLEMS) or []
+            if restored_problems:
+                self._problems = list(restored_problems)
+                self._logged_problem_types = {
+                    problem["sensor_type"]
+                    for problem in restored_problems
+                    if isinstance(problem, dict) and problem.get("sensor_type")
+                }
+
         # Bound the startup restore window: if no source ever delivers live
         # data, end the window after the grace period so the restored plant
         # state is not held indefinitely.

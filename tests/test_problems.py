@@ -10,14 +10,19 @@ from __future__ import annotations
 from unittest.mock import patch
 
 import pytest
-from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from homeassistant.const import STATE_PROBLEM, STATE_UNAVAILABLE
+from homeassistant.core import HomeAssistant, State
+from pytest_homeassistant_custom_component.common import (
+    MockConfigEntry,
+    mock_restore_cache_with_extra_data,
+)
 
 from custom_components.plant.const import (
     ATTR_CONDUCTIVITY,
     ATTR_HUMIDITY,
     ATTR_MOISTURE,
     ATTR_PLANT,
+    ATTR_PROBLEMS,
     ATTR_TEMPERATURE,
     DOMAIN,
     STATE_HIGH,
@@ -233,3 +238,82 @@ class TestLogbookIntegration:
             await update_plant_sensors(hass, init_integration.entry_id)
 
         assert not mock_log.called
+
+    async def test_active_problems_not_relogged_after_restart(
+        self,
+        hass: HomeAssistant,
+        plant_config_data: dict,
+        mock_no_openplantbook,
+    ) -> None:
+        """Problems still active after a restart are not re-logged as new onsets.
+
+        On restart ``_logged_problem_types`` is restored from the persisted
+        ``problems`` attribute, so a problem that was already logged before the
+        restart is not written to the logbook again.
+        """
+        # Simulate a restart: the plant was in PROBLEM with moisture already low.
+        mock_restore_cache_with_extra_data(
+            hass,
+            [
+                (
+                    State(
+                        "plant.test_plant",
+                        STATE_PROBLEM,
+                        {
+                            "moisture_status": STATE_LOW,
+                            ATTR_PROBLEMS: [
+                                {
+                                    "sensor_type": ATTR_MOISTURE,
+                                    "status": STATE_LOW,
+                                    "current": "5.0",
+                                    "min": "20",
+                                    "max": "60",
+                                }
+                            ],
+                        },
+                    ),
+                    {},
+                )
+            ],
+        )
+
+        # Sources unavailable during startup, so the restore window holds the
+        # restored problem state instead of recomputing it away immediately.
+        for source_entity_id in (
+            "sensor.test_moisture",
+            "sensor.test_temperature",
+            "sensor.test_conductivity",
+            "sensor.test_illuminance",
+            "sensor.test_humidity",
+            "sensor.test_co2",
+            "sensor.test_soil_temperature",
+        ):
+            hass.states.async_set(source_entity_id, STATE_UNAVAILABLE)
+
+        config_entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=plant_config_data,
+            entry_id="problems_restore_entry",
+            title="Test Plant",
+        )
+        config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][config_entry.entry_id][ATTR_PLANT]
+        # The active problem was restored as already-logged.
+        assert plant._logged_problem_types == {ATTR_MOISTURE}
+
+        # A live reading arrives with the same problem still active -> the
+        # restore window ends and update() runs, but moisture must NOT be
+        # re-logged as a new onset.
+        with patch("custom_components.plant.log_entry") as mock_log:
+            await set_external_sensor_states(
+                hass, moisture=5.0, temperature=25.0, conductivity=1000
+            )
+            await update_plant_sensors(hass, config_entry.entry_id)
+
+        assert not mock_log.called
+
+        await hass.config_entries.async_unload(config_entry.entry_id)
+        await hass.async_block_till_done()
