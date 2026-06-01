@@ -9,6 +9,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.plant.const import (
+    ATTR_CARE,
     ATTR_SEARCH_FOR,
     ATTR_SPECIES,
     CONF_MAX_CONDUCTIVITY,
@@ -878,8 +879,6 @@ class TestConfigFlowFullFlow:
         mock_openplantbook_services,
     ) -> None:
         """Test that care data from OPB is persisted in the created entry."""
-        from custom_components.plant.const import ATTR_CARE
-
         result = await hass.config_entries.flow.async_init(
             DOMAIN, context={"source": config_entries.SOURCE_USER}
         )
