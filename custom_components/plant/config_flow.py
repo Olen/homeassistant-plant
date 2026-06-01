@@ -23,6 +23,7 @@ from homeassistant.helpers.network import NoURLAvailableError, get_url
 from homeassistant.helpers.selector import selector
 
 from .const import (
+    ATTR_CARE,
     ATTR_ENTITY,
     ATTR_LIMITS,
     ATTR_OPTIONS,
@@ -333,6 +334,10 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 ATTR_SENSORS: {},
             }
         )
+        # Always overwrite (do not guard on truthiness): if the user switches to a
+        # species with no care via the "wrong plant" path, stale care from the
+        # previous species must be cleared, not left behind.
+        self.plant_info[ATTR_CARE] = plant_config[FLOW_PLANT_INFO].get(ATTR_CARE, {})
         extra_desc = ""
         if plant_config[FLOW_PLANT_INFO].get(OPB_DISPLAY_PID):
             # We got data from OPB.  Display a "wrong plant" switch
@@ -908,6 +913,7 @@ async def refresh_plant_from_openplantbook(
     plant.display_species = (
         opb_display_raw[0].upper() + opb_display_raw[1:] if opb_display_raw else ""
     )
+    plant.care = plant_config[FLOW_PLANT_INFO].get(ATTR_CARE, {})
 
     limits = plant_config[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS]
     _LOGGER.debug("Updating %d threshold entities from OPB data", len(limits))
@@ -946,6 +952,7 @@ async def refresh_plant_from_openplantbook(
     data = dict(entry.data)
     plant_info = dict(data.get(FLOW_PLANT_INFO, {}))
     plant_info[FLOW_PLANT_LIMITS] = dict(limits)
+    plant_info[ATTR_CARE] = dict(plant.care)
     data[FLOW_PLANT_INFO] = plant_info
     options = dict(entry.options)
     options[OPB_DISPLAY_PID] = plant.display_species

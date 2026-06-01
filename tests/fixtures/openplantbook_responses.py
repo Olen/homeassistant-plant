@@ -83,3 +83,12 @@ SEARCH_RESULT_EMPTY = {}
 
 # Result when species not found
 GET_RESULT_NOT_FOUND = None
+
+# Care fields returned by OPB only when include=care is requested.
+CARE_MONSTERA_DELICIOSA = {
+    "watering": "Likes wet envs; reduce watering in winter.",
+    "sunlight": "Relatively shade-tolerant, prefers half-shade.",
+    "soil": "Well-draining, peat-based potting mix.",
+    "pruning": "Timely remove dead and yellowish leaves.",
+    "fertilization": "Dilute fertilizer once every 15 days.",
+}
