@@ -188,6 +188,31 @@ class TestPlantHelperGet:
 
         assert result is None
 
+    async def test_openplantbook_get_timeout_returns_none(
+        self,
+        hass: HomeAssistant,
+    ) -> None:
+        """A timeout must return None, not raise UnboundLocalError.
+
+        Mirrors openplantbook_search's timeout handling.
+        """
+        from unittest.mock import AsyncMock, patch
+
+        from custom_components.plant.const import DOMAIN_PLANTBOOK
+
+        helper = PlantHelper(hass)
+        with patch(
+            "homeassistant.core.ServiceRegistry.async_services",
+            return_value={DOMAIN_PLANTBOOK: {"search": None, "get": None}},
+        ):
+            with patch(
+                "homeassistant.core.ServiceRegistry.async_call",
+                new=AsyncMock(side_effect=TimeoutError),
+            ):
+                result = await helper.openplantbook_get("monstera deliciosa")
+
+        assert result is None
+
 
 class TestPlantHelperGenerateConfigentry:
     """Tests for generate_configentry functionality."""

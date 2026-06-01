@@ -41,6 +41,7 @@ from .config_flow import update_plant_options
 from .const import (
     ATTR_BRIGHTNESS,
     ATTR_CARE,
+    ATTR_CARE_PREFIX,
     ATTR_CO2,
     ATTR_CONDUCTIVITY,
     ATTR_CURRENT,
@@ -686,7 +687,7 @@ class PlantDevice(Entity):
             f"{ATTR_SPECIES}_original": self.species,
         }
         for field, value in self.care.items():
-            attributes[f"care_{field}"] = value
+            attributes[f"{ATTR_CARE_PREFIX}{field}"] = value
         return attributes
 
     def _get_entity_icon(self, entity: Entity) -> str | None:

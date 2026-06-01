@@ -202,6 +202,7 @@ class PlantHelper:
                 )
         except TimeoutError:
             _LOGGER.warning("OpenPlantbook request timed out")
+            return None
         except Exception as ex:
             _LOGGER.warning("OpenPlantbook does not work, error: %s", ex)
             return None

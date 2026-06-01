@@ -40,6 +40,10 @@ ATTR_SPECIES = "species"
 ATTR_IMAGE = "image"
 ATTR_SEARCH_FOR = "search_for"
 ATTR_CARE = "care"
+# Public state-attribute prefix for per-field care guidance (e.g. care_watering).
+# Kept separate from ATTR_CARE (the internal storage key) so the public attribute
+# names stay stable even if the storage key is ever renamed.
+ATTR_CARE_PREFIX = "care_"
 
 # Readings are used by humans
 READING_BATTERY = "battery"
