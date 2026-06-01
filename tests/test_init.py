@@ -1603,8 +1603,6 @@ class TestHysteresis:
         plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
 
         # Ensure no LOW state before reading (live refresh may have set ok already)
-        from custom_components.plant.const import STATE_LOW
-
         assert plant.moisture_status != STATE_LOW
 
         # Set moisture within hysteresis band (21 is > min=20 but < min+band=22)
