@@ -3,12 +3,15 @@ name: HACS Validation
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
     branches:
-      - master
+      - main
   schedule:
     - cron: "0 0 16 * *"
+
+permissions:
+  contents: read
 
 jobs:
   hacs:

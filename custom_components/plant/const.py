@@ -1,5 +1,7 @@
 """Constants"""
 
+from datetime import timedelta
+
 DOMAIN = "plant"
 DOMAIN_PLANTBOOK = "openplantbook"
 
@@ -9,6 +11,14 @@ URL_SCHEME_MEDIA_SOURCE = "media-source://"
 PLANTBOOK_DOMAIN = "plantbook.io"
 
 REQUEST_TIMEOUT = 30
+
+# How long, after startup, restored entity values are held while the source
+# sensor has not yet delivered a live reading. Bounds the restore window so a
+# source that never recovers (e.g. a dead sensor) stops masking a stale value.
+# Sized well above the observed worst-case BLE broadcast gap (~3 min across the
+# plant sensors): 10 min gives ample margin while still failing over to the
+# real (unavailable) state promptly for a genuinely dead sensor.
+RESTORE_GRACE_PERIOD = timedelta(minutes=10)
 
 # ATTRs are used by machines
 ATTR_BATTERY = "battery"
@@ -40,6 +50,11 @@ ATTR_PROBLEMS = "problems"
 ATTR_SPECIES = "species"
 ATTR_IMAGE = "image"
 ATTR_SEARCH_FOR = "search_for"
+ATTR_CARE = "care"
+# Public state-attribute prefix for per-field care guidance (e.g. care_watering).
+# Kept separate from ATTR_CARE (the internal storage key) so the public attribute
+# names stay stable even if the storage key is ever renamed.
+ATTR_CARE_PREFIX = "care_"
 
 # Readings are used by humans
 READING_BATTERY = "battery"
@@ -100,9 +115,14 @@ ATTR_CURRENT = "current"
 DEFAULT_MIN_BATTERY_LEVEL = 20
 DEFAULT_MIN_TEMPERATURE = 10
 DEFAULT_MAX_TEMPERATURE = 40
-# Absolute minimum/maximum allowed temperature values for thresholds
+# Absolute minimum/maximum allowed temperature values for thresholds, in °C.
 TEMPERATURE_MIN_VALUE = -50
 TEMPERATURE_MAX_VALUE = 100
+# Imperial counterparts. Chosen as round numbers in °F rather than literal
+# conversions of the °C bounds, so the slider extremes don't look like
+# "obviously converted from Celsius" (212, -58).
+TEMPERATURE_MIN_VALUE_FAHRENHEIT = -50
+TEMPERATURE_MAX_VALUE_FAHRENHEIT = 200
 DEFAULT_MIN_MOISTURE = 20
 DEFAULT_MAX_MOISTURE = 60
 DEFAULT_MIN_CONDUCTIVITY = 500
@@ -192,6 +212,8 @@ OPB_SEARCH = "search"
 OPB_SEARCH_RESULT = "search_result"
 OPB_PID = "pid"
 OPB_DISPLAY_PID = "display_pid"
+OPB_ATTR_INCLUDE = "include"
+OPB_INCLUDE_CARE = "care"
 
 # Hysteresis: fraction of (max - min) range that the value must clear
 # before a problem state is removed. Prevents flapping when a sensor
@@ -276,3 +298,7 @@ CONF_PLANTBOOK_MAPPING = {
     CONF_MIN_SOIL_TEMPERATURE: "min_soil_temp",
     CONF_MAX_SOIL_TEMPERATURE: "max_soil_temp",
 }
+
+# OpenPlantbook `include: care` returns these free-text fields per species.
+# Order is the canonical attribute order used when exposing them.
+CARE_FIELDS = ["watering", "sunlight", "soil", "pruning", "fertilization"]

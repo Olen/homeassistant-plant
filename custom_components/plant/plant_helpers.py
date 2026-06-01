@@ -20,6 +20,7 @@ from homeassistant.helpers.temperature import display_temp
 
 from .const import (
     ATTR_BRIGHTNESS,
+    ATTR_CARE,
     ATTR_CO2,
     ATTR_CONDUCTIVITY,
     ATTR_ILLUMINANCE,
@@ -30,6 +31,7 @@ from .const import (
     ATTR_SOIL_TEMPERATURE,
     ATTR_SPECIES,
     ATTR_TEMPERATURE,
+    CARE_FIELDS,
     CONF_MAX_BRIGHTNESS,
     CONF_MAX_CO2,
     CONF_MAX_CONDUCTIVITY,
@@ -82,8 +84,10 @@ from .const import (
     FLOW_SENSOR_MOISTURE,
     FLOW_SENSOR_SOIL_TEMPERATURE,
     FLOW_SENSOR_TEMPERATURE,
+    OPB_ATTR_INCLUDE,
     OPB_DISPLAY_PID,
     OPB_GET,
+    OPB_INCLUDE_CARE,
     OPB_SEARCH,
     PLANTBOOK_DOMAIN,
     PPFD_DLI_FACTOR,
@@ -174,7 +178,10 @@ class PlantHelper:
         if not species or species == "":
             return None
 
-        service_data = {ATTR_SPECIES: species.lower()}
+        service_data = {
+            ATTR_SPECIES: species.lower(),
+            OPB_ATTR_INCLUDE: OPB_INCLUDE_CARE,
+        }
         if not cache:
             service_data["cache"] = False
 
@@ -195,6 +202,7 @@ class PlantHelper:
                 )
         except TimeoutError:
             _LOGGER.warning("OpenPlantbook request timed out")
+            return None
         except Exception as ex:
             _LOGGER.warning("OpenPlantbook does not work, error: %s", ex)
             return None
@@ -294,6 +302,7 @@ class PlantHelper:
         entity_picture = None
         display_species = None
         data_source = DATA_SOURCE_DEFAULT
+        care_data: dict[str, Any] = {}
 
         # If we have image defined in the config, or a local file
         # prefer that.  If neither, image will be set to openplantbook
@@ -391,20 +400,20 @@ class PlantHelper:
             # ratio-based detection). Fall back to mmol × PPFD_DLI_FACTOR.
             opb_max_dli = opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MAX_DLI])
             if opb_max_dli is not None:
-                max_dli = round(float(opb_max_dli))
+                max_dli = round(float(opb_max_dli), 1)
             else:
                 opb_mmol = opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MAX_MMOL])
                 if opb_mmol:
-                    max_dli = round(float(opb_mmol) * PPFD_DLI_FACTOR)
+                    max_dli = round(float(opb_mmol) * PPFD_DLI_FACTOR, 1)
                 else:
                     max_dli = DEFAULT_MAX_DLI
             opb_min_dli = opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MIN_DLI])
             if opb_min_dli is not None:
-                min_dli = round(float(opb_min_dli))
+                min_dli = round(float(opb_min_dli), 1)
             else:
                 opb_mmol = opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MIN_MMOL])
                 if opb_mmol:
-                    min_dli = round(float(opb_mmol) * PPFD_DLI_FACTOR)
+                    min_dli = round(float(opb_mmol) * PPFD_DLI_FACTOR, 1)
                 else:
                     min_dli = DEFAULT_MIN_DLI
             max_conductivity = _to_int(
@@ -423,6 +432,9 @@ class PlantHelper:
                 opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MIN_HUMIDITY]),
                 DEFAULT_MIN_HUMIDITY,
             )
+            care_data = {
+                field: opb_plant[field] for field in CARE_FIELDS if opb_plant.get(field)
+            }
             _LOGGER.info("Picture: %s", entity_picture)
             if (
                 entity_picture is None
@@ -466,6 +478,7 @@ class PlantHelper:
                 ATTR_SPECIES: config.get(ATTR_SPECIES) or "",
                 ATTR_ENTITY_PICTURE: entity_picture or "",
                 OPB_DISPLAY_PID: display_species or "",
+                ATTR_CARE: care_data,
                 ATTR_LIMITS: {
                     CONF_MAX_ILLUMINANCE: config.get(
                         CONF_MAX_BRIGHTNESS,

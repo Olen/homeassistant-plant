@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from unittest.mock import patch
+
 from homeassistant import config_entries
 from homeassistant.const import ATTR_ENTITY_PICTURE, ATTR_NAME
 from homeassistant.core import HomeAssistant
@@ -9,6 +11,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.plant.const import (
+    ATTR_CARE,
     ATTR_SEARCH_FOR,
     ATTR_SPECIES,
     CONF_MAX_CONDUCTIVITY,
@@ -39,7 +42,10 @@ from custom_components.plant.const import (
 
 from .conftest import create_plant_config_data
 from .fixtures.openplantbook_responses import (
+    CARE_MONSTERA_DELICIOSA,
+    GET_RESULT_FICUS_LYRATA,
     GET_RESULT_MONSTERA_DELICIOSA,
+    SEARCH_RESULT_FICUS,
 )
 
 
@@ -871,6 +877,259 @@ class TestConfigFlowFullFlow:
         assert result["type"] == FlowResultType.CREATE_ENTRY
         assert result["title"] == "My Monstera"
 
+    async def test_full_flow_with_opb_persists_care(
+        self,
+        hass: HomeAssistant,
+        mock_openplantbook_services,
+    ) -> None:
+        """Test that care data from OPB is persisted in the created entry."""
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_USER}
+        )
+        assert result["step_id"] == "user"
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                ATTR_NAME: "My Monstera",
+                ATTR_SPECIES: "monstera",
+            },
+        )
+        assert result["step_id"] == "select_species"
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                ATTR_SEARCH_FOR: "monstera",
+                ATTR_SPECIES: "monstera deliciosa",
+            },
+        )
+        assert result["step_id"] == "sensors"
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {},
+        )
+        assert result["step_id"] == "limits"
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                FLOW_RIGHT_PLANT: True,
+                OPB_DISPLAY_PID: "Monstera deliciosa",
+                CONF_MAX_MOISTURE: 60,
+                CONF_MIN_MOISTURE: 20,
+                CONF_MAX_TEMPERATURE: 30,
+                CONF_MIN_TEMPERATURE: 15,
+                CONF_MAX_CONDUCTIVITY: 2000,
+                CONF_MIN_CONDUCTIVITY: 350,
+                CONF_MAX_ILLUMINANCE: 35000,
+                CONF_MIN_ILLUMINANCE: 1500,
+                CONF_MAX_HUMIDITY: 80,
+                CONF_MIN_HUMIDITY: 50,
+                CONF_MAX_DLI: 22,
+                CONF_MIN_DLI: 5,
+                CONF_MAX_VPD: 1.6,
+                CONF_MIN_VPD: 0.4,
+                ATTR_ENTITY_PICTURE: GET_RESULT_MONSTERA_DELICIOSA["image_url"],
+            },
+        )
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert result["title"] == "My Monstera"
+
+        care = result["data"][FLOW_PLANT_INFO][ATTR_CARE]
+        assert care["watering"] == CARE_MONSTERA_DELICIOSA["watering"]
+
+    async def test_species_switch_via_wrong_plant_clears_stale_care(
+        self,
+        hass: HomeAssistant,
+    ) -> None:
+        """Stale care from a previous species is cleared when the user switches
+        to a no-care species via the wrong-plant path.
+
+        Regression test for: async_step_limits used ``if care:`` before writing
+        to self.plant_info[ATTR_CARE], so switching to a no-OPB species left the
+        previous species' care dict behind in the created entry.
+
+        Uses a custom two-species mock:
+          - "monstera deliciosa": has OPB data + care (watering etc.)
+          - "ficus lyrata": has OPB threshold data but NO care fields
+        """
+        from custom_components.plant.const import DOMAIN_PLANTBOOK
+
+        # Custom mock that supports monstera (with care) and ficus (no care).
+        async def mock_service_call(
+            domain,
+            service,
+            service_data=None,
+            blocking=False,
+            return_response=False,
+        ):
+            if domain != DOMAIN_PLANTBOOK:
+                return None
+            if service == "search":
+                alias = (service_data or {}).get("alias", "").lower()
+                if "monstera" in alias:
+                    return {
+                        "monstera deliciosa": "Monstera deliciosa",
+                        "monstera adansonii": "Monstera adansonii",
+                    }
+                if "ficus" in alias:
+                    return SEARCH_RESULT_FICUS
+                return {}
+            if service == "get":
+                species = (service_data or {}).get("species", "").lower()
+                if species == "monstera deliciosa":
+                    result = dict(GET_RESULT_MONSTERA_DELICIOSA)
+                    if service_data.get("include") == "care":
+                        result.update(CARE_MONSTERA_DELICIOSA)
+                    return result
+                if species == "ficus lyrata":
+                    # OPB data exists but the API returned NO care fields.
+                    return dict(GET_RESULT_FICUS_LYRATA)
+            return None
+
+        async def mock_validate_image_url(self, url):
+            return url is not None and url != ""
+
+        with (
+            patch(
+                "homeassistant.core.ServiceRegistry.async_services",
+                return_value={DOMAIN_PLANTBOOK: {"search": None, "get": None}},
+            ),
+            patch(
+                "homeassistant.core.ServiceRegistry.async_call",
+                side_effect=mock_service_call,
+            ),
+            patch(
+                "custom_components.plant.plant_helpers.PlantHelper.validate_image_url",
+                mock_validate_image_url,
+            ),
+        ):
+            # --- Step 1: name + species (monstera, which HAS care) ---
+            result = await hass.config_entries.flow.async_init(
+                DOMAIN, context={"source": config_entries.SOURCE_USER}
+            )
+            assert result["step_id"] == "user"
+
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {
+                    ATTR_NAME: "My Monstera",
+                    ATTR_SPECIES: "monstera",
+                },
+            )
+            assert result["step_id"] == "select_species"
+
+            # --- Step 2: select monstera deliciosa (has OPB care) ---
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {
+                    ATTR_SEARCH_FOR: "monstera",
+                    ATTR_SPECIES: "monstera deliciosa",
+                },
+            )
+            assert result["step_id"] == "sensors"
+
+            # --- Step 3: sensors (no sensors selected) ---
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {},
+            )
+            assert result["step_id"] == "limits"
+
+            # --- Step 4a: limits (1st visit) — reject with FLOW_RIGHT_PLANT=False ---
+            # This bounces the flow back to select_species.
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {
+                    FLOW_RIGHT_PLANT: False,
+                    OPB_DISPLAY_PID: "Monstera deliciosa",
+                    CONF_MAX_MOISTURE: 60,
+                    CONF_MIN_MOISTURE: 20,
+                    CONF_MAX_TEMPERATURE: 30,
+                    CONF_MIN_TEMPERATURE: 15,
+                    CONF_MAX_CONDUCTIVITY: 2000,
+                    CONF_MIN_CONDUCTIVITY: 350,
+                    CONF_MAX_ILLUMINANCE: 35000,
+                    CONF_MIN_ILLUMINANCE: 1500,
+                    CONF_MAX_HUMIDITY: 80,
+                    CONF_MIN_HUMIDITY: 50,
+                    CONF_MAX_DLI: 22,
+                    CONF_MIN_DLI: 5,
+                    CONF_MAX_VPD: 1.6,
+                    CONF_MIN_VPD: 0.4,
+                    ATTR_ENTITY_PICTURE: GET_RESULT_MONSTERA_DELICIOSA["image_url"],
+                },
+            )
+            assert result["step_id"] == "select_species"
+
+            # --- Step 4b: select_species — re-search for ficus ---
+            # Submit ATTR_SEARCH_FOR="ficus" (different from "monstera").
+            # The new-search branch fires, re-searches for "ficus", gets
+            # SEARCH_RESULT_FICUS, and shows the ficus dropdown.
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {
+                    ATTR_SEARCH_FOR: "ficus",
+                    ATTR_SPECIES: "monstera deliciosa",  # must pass schema; ignored
+                },
+            )
+            # After re-searching "ficus", the dropdown shows ficus species.
+            assert result["step_id"] == "select_species"
+
+            # --- Step 4c: select ficus lyrata from the dropdown ---
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {
+                    ATTR_SEARCH_FOR: "ficus",
+                    ATTR_SPECIES: "ficus lyrata",
+                },
+            )
+            assert result["step_id"] == "sensors"
+
+            # --- Step 5: sensors (2nd trip, no sensors selected) ---
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {},
+            )
+            assert result["step_id"] == "limits"
+
+            # --- Step 6: limits (2nd visit) — ficus lyrata has OPB data (no care)
+            # so the form DOES show FLOW_RIGHT_PLANT.  Accept it.
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {
+                    FLOW_RIGHT_PLANT: True,
+                    OPB_DISPLAY_PID: "Ficus lyrata",
+                    CONF_MAX_MOISTURE: 55,
+                    CONF_MIN_MOISTURE: 25,
+                    CONF_MAX_TEMPERATURE: 28,
+                    CONF_MIN_TEMPERATURE: 12,
+                    CONF_MAX_CONDUCTIVITY: 1800,
+                    CONF_MIN_CONDUCTIVITY: 400,
+                    CONF_MAX_ILLUMINANCE: 50000,
+                    CONF_MIN_ILLUMINANCE: 2500,
+                    CONF_MAX_HUMIDITY: 70,
+                    CONF_MIN_HUMIDITY: 40,
+                    CONF_MAX_DLI: 28,
+                    CONF_MIN_DLI: 7,
+                    CONF_MAX_VPD: 1.6,
+                    CONF_MIN_VPD: 0.4,
+                    ATTR_ENTITY_PICTURE: GET_RESULT_FICUS_LYRATA["image_url"],
+                },
+            )
+
+            assert result["type"] == FlowResultType.CREATE_ENTRY
+
+        # The stale monstera care must NOT appear in the created entry.
+        care = result["data"][FLOW_PLANT_INFO][ATTR_CARE]
+        assert care == {}, (
+            f"Expected empty care after species switch to ficus lyrata, got: {care!r}. "
+            "Stale care from monstera deliciosa was not cleared."
+        )
+
 
 class TestConfigFlowImport:
     """Tests for config import from YAML."""
@@ -1562,3 +1821,45 @@ class TestOptionsFlow:
         await hass.async_block_till_done()
 
         assert FLOW_FORCE_SPECIES_UPDATE not in entry.options
+
+    async def test_force_refresh_updates_care_on_plant_and_in_entry(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+        mock_openplantbook_services,
+    ) -> None:
+        """Force refresh must populate care on the live plant object AND
+        persist it in entry.data[FLOW_PLANT_INFO][ATTR_CARE].
+
+        Before the fix, refresh_plant_from_openplantbook mutated limits and
+        species but left plant.care untouched and never wrote ATTR_CARE to
+        plant_info — so the attributes were stale until a full reload.
+        """
+        entry = init_integration
+        plant = hass.data[DOMAIN][entry.entry_id]["plant"]
+
+        # The plant was created with empty care (default from conftest).
+        assert plant.care == {}
+
+        result = await hass.config_entries.options.async_init(entry.entry_id)
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"], {"next_step_id": "plant_properties"}
+        )
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            {
+                ATTR_SPECIES: "monstera deliciosa",
+                FLOW_FORCE_SPECIES_UPDATE: True,
+                OPB_DISPLAY_PID: "Monstera deliciosa",
+                ATTR_ENTITY_PICTURE: "https://example.com/monstera.jpg",
+            },
+        )
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        await hass.async_block_till_done()
+
+        # Live object must have care populated from OPB.
+        assert plant.care == CARE_MONSTERA_DELICIOSA
+
+        # Entry.data must also have care persisted so it survives a reload.
+        stored = entry.data[FLOW_PLANT_INFO][ATTR_CARE]
+        assert stored == CARE_MONSTERA_DELICIOSA
