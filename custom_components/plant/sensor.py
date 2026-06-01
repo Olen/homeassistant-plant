@@ -1464,9 +1464,16 @@ class PlantDailyLightIntegral24h(StatisticsSensor):
         registers it with async_on_remove. Once a sample has been ingested the
         timer outlives the entity and is flagged as a lingering timer. Cancel
         it explicitly here.
+
+        ``_async_cancel_update_listener`` is a private StatisticsSensor API, so
+        guard the call: a future HA rename must not break entity unload/reload.
+        If it ever goes missing the lingering-timer regression would resurface
+        and be caught by the test suite in CI rather than at a user's teardown.
         """
         await super().async_will_remove_from_hass()
-        self._async_cancel_update_listener()
+        cancel_update_listener = getattr(self, "_async_cancel_update_listener", None)
+        if cancel_update_listener is not None:
+            cancel_update_listener()
 
 
 class PlantDummyStatus(SensorEntity):
