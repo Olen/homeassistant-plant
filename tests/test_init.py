@@ -398,6 +398,34 @@ class TestPlantDevice:
         # First letter should be uppercase, rest preserved
         assert species == "Solanum lycopersicum"
 
+    async def test_plant_device_care_attributes(
+        self,
+        hass: HomeAssistant,
+    ) -> None:
+        """Care fields are exposed as separate care_* attributes."""
+        from tests.conftest import create_plant_config_data
+
+        care = {
+            "watering": "Water weekly.",
+            "sunlight": "Bright indirect light.",
+            # soil/pruning/fertilization absent on purpose
+        }
+        data = create_plant_config_data(care=care)
+        entry = MockConfigEntry(domain=DOMAIN, data=data, options={})
+        entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][entry.entry_id][ATTR_PLANT]
+        plant.plant_complete = True
+
+        attrs = plant.extra_state_attributes
+        assert attrs["care_watering"] == "Water weekly."
+        assert attrs["care_sunlight"] == "Bright indirect light."
+        assert "care_soil" not in attrs
+        assert "care_pruning" not in attrs
+        assert "care_fertilization" not in attrs
+
     async def test_plant_device_device_info(
         self,
         hass: HomeAssistant,
