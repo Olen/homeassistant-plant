@@ -39,6 +39,11 @@ ATTR_PLANT = "plant"
 ATTR_SPECIES = "species"
 ATTR_IMAGE = "image"
 ATTR_SEARCH_FOR = "search_for"
+ATTR_CARE = "care"
+# Public state-attribute prefix for per-field care guidance (e.g. care_watering).
+# Kept separate from ATTR_CARE (the internal storage key) so the public attribute
+# names stay stable even if the storage key is ever renamed.
+ATTR_CARE_PREFIX = "care_"
 
 # Readings are used by humans
 READING_BATTERY = "battery"
@@ -196,6 +201,8 @@ OPB_SEARCH = "search"
 OPB_SEARCH_RESULT = "search_result"
 OPB_PID = "pid"
 OPB_DISPLAY_PID = "display_pid"
+OPB_ATTR_INCLUDE = "include"
+OPB_INCLUDE_CARE = "care"
 
 # Hysteresis: fraction of (max - min) range that the value must clear
 # before a problem state is removed. Prevents flapping when a sensor
@@ -280,3 +287,7 @@ CONF_PLANTBOOK_MAPPING = {
     CONF_MIN_SOIL_TEMPERATURE: "min_soil_temp",
     CONF_MAX_SOIL_TEMPERATURE: "max_soil_temp",
 }
+
+# OpenPlantbook `include: care` returns these free-text fields per species.
+# Order is the canonical attribute order used when exposing them.
+CARE_FIELDS = ["watering", "sunlight", "soil", "pruning", "fertilization"]

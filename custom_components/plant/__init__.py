@@ -40,6 +40,8 @@ from . import group as group  # noqa: F401 - needed for HA group discovery
 from .config_flow import update_plant_options
 from .const import (
     ATTR_BRIGHTNESS,
+    ATTR_CARE,
+    ATTR_CARE_PREFIX,
     ATTR_CO2,
     ATTR_CONDUCTIVITY,
     ATTR_CURRENT,
@@ -495,6 +497,11 @@ class PlantDevice(Entity):
         self.species = self._config.options.get(
             ATTR_SPECIES, self._config.data[FLOW_PLANT_INFO].get(ATTR_SPECIES)
         )
+        # Static per-species care text from OpenPlantbook (include: care).
+        # Stored at config/refresh time; only fields OPB returned are present.
+        # Copy on read: ConfigEntry.data is treated as immutable, so avoid sharing
+        # a reference to the entry's internal care dict.
+        self.care = dict(self._config.data[FLOW_PLANT_INFO].get(ATTR_CARE, {}))
         # Get display_species from options or from initial config
         # Capitalize first letter for proper binomial nomenclature (genus capitalized)
         raw_display_species = (
@@ -679,6 +686,8 @@ class PlantDevice(Entity):
             f"{ATTR_VPD}_status": self.vpd_status,
             f"{ATTR_SPECIES}_original": self.species,
         }
+        for field, value in self.care.items():
+            attributes[f"{ATTR_CARE_PREFIX}{field}"] = value
         return attributes
 
     def _get_entity_icon(self, entity: Entity) -> str | None:

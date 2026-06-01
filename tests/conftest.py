@@ -21,6 +21,7 @@ pytest_plugins = "pytest_homeassistant_custom_component"
 
 
 from custom_components.plant.const import (
+    ATTR_CARE,
     ATTR_LIMITS,
     ATTR_SPECIES,
     CONF_MAX_CO2,
@@ -58,6 +59,7 @@ from custom_components.plant.const import (
 )
 
 from .fixtures.openplantbook_responses import (
+    CARE_MONSTERA_DELICIOSA,
     GET_RESULT_MONSTERA_DELICIOSA,
     GET_RESULT_WITH_DLI,
     SEARCH_RESULT_MONSTERA,
@@ -92,6 +94,7 @@ def create_plant_config_data(
     soil_temperature_sensor: str | None = "sensor.test_soil_temperature",
     data_source: str = DATA_SOURCE_DEFAULT,
     limits: dict | None = None,
+    care: dict | None = None,
 ) -> dict[str, Any]:
     """Create plant configuration data for testing."""
     if limits is None:
@@ -124,6 +127,7 @@ def create_plant_config_data(
             OPB_DISPLAY_PID: display_species,
             ATTR_ENTITY_PICTURE: entity_picture,
             ATTR_LIMITS: limits,
+            ATTR_CARE: care or {},
             FLOW_SENSOR_TEMPERATURE: temperature_sensor,
             FLOW_SENSOR_MOISTURE: moisture_sensor,
             FLOW_SENSOR_CONDUCTIVITY: conductivity_sensor,
@@ -239,7 +243,10 @@ def mock_openplantbook_services() -> Generator[MagicMock, None, None]:
         """Mock get service."""
         species = service_data.get("species", "").lower()
         if species == "monstera deliciosa":
-            return GET_RESULT_MONSTERA_DELICIOSA
+            result = dict(GET_RESULT_MONSTERA_DELICIOSA)
+            if service_data.get("include") == "care":
+                result.update(CARE_MONSTERA_DELICIOSA)
+            return result
         return None
 
     async def mock_service_call(

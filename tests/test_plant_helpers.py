@@ -9,6 +9,7 @@ from homeassistant.const import ATTR_ENTITY_PICTURE, ATTR_NAME
 from homeassistant.core import HomeAssistant
 
 from custom_components.plant.const import (
+    ATTR_CARE,
     ATTR_LIMITS,
     ATTR_SENSORS,
     ATTR_SPECIES,
@@ -31,6 +32,7 @@ from custom_components.plant.const import (
 from custom_components.plant.plant_helpers import PlantHelper
 
 from .fixtures.openplantbook_responses import (
+    CARE_MONSTERA_DELICIOSA,
     GET_RESULT_MONSTERA_DELICIOSA,
 )
 
@@ -111,6 +113,34 @@ class TestPlantHelperSearch:
 class TestPlantHelperGet:
     """Tests for OpenPlantbook get functionality."""
 
+    async def test_openplantbook_get_requests_care(
+        self,
+        hass: HomeAssistant,
+    ) -> None:
+        """Every OPB get must request the care category via include=care."""
+        from unittest.mock import AsyncMock, patch
+
+        from custom_components.plant.const import DOMAIN_PLANTBOOK
+        from tests.fixtures.openplantbook_responses import (
+            GET_RESULT_MONSTERA_DELICIOSA,
+        )
+
+        helper = PlantHelper(hass)
+        mock_call = AsyncMock(return_value=GET_RESULT_MONSTERA_DELICIOSA)
+        with patch(
+            "homeassistant.core.ServiceRegistry.async_services",
+            return_value={DOMAIN_PLANTBOOK: {"search": None, "get": None}},
+        ):
+            with patch(
+                "homeassistant.core.ServiceRegistry.async_call",
+                new=mock_call,
+            ):
+                await helper.openplantbook_get("monstera deliciosa")
+
+        assert mock_call.await_count == 1
+        service_data = mock_call.await_args.kwargs["service_data"]
+        assert service_data["include"] == "care"
+
     async def test_openplantbook_get_success(
         self,
         hass: HomeAssistant,
@@ -155,6 +185,31 @@ class TestPlantHelperGet:
         """Test get with unknown species returns None."""
         helper = PlantHelper(hass)
         result = await helper.openplantbook_get("unknown plant species")
+
+        assert result is None
+
+    async def test_openplantbook_get_timeout_returns_none(
+        self,
+        hass: HomeAssistant,
+    ) -> None:
+        """A timeout must return None, not raise UnboundLocalError.
+
+        Mirrors openplantbook_search's timeout handling.
+        """
+        from unittest.mock import AsyncMock, patch
+
+        from custom_components.plant.const import DOMAIN_PLANTBOOK
+
+        helper = PlantHelper(hass)
+        with patch(
+            "homeassistant.core.ServiceRegistry.async_services",
+            return_value={DOMAIN_PLANTBOOK: {"search": None, "get": None}},
+        ):
+            with patch(
+                "homeassistant.core.ServiceRegistry.async_call",
+                new=AsyncMock(side_effect=TimeoutError),
+            ):
+                result = await helper.openplantbook_get("monstera deliciosa")
 
         assert result is None
 
@@ -350,6 +405,63 @@ class TestPlantHelperGenerateConfigentry:
 
         # min_dli = 12.6 → round(12.6, 1) = 12.6
         assert limits[CONF_MIN_DLI] == 12.6
+
+    async def test_generate_configentry_stores_care(
+        self,
+        hass: HomeAssistant,
+        mock_openplantbook_services,
+    ) -> None:
+        """Care fields from OPB are stored under FLOW_PLANT_INFO['care']."""
+        helper = PlantHelper(hass)
+        config = {
+            ATTR_NAME: "My Monstera",
+            ATTR_SPECIES: "monstera deliciosa",
+            ATTR_SENSORS: {},
+        }
+
+        result = await helper.generate_configentry(config)
+
+        care = result[FLOW_PLANT_INFO][ATTR_CARE]
+        assert care["watering"] == CARE_MONSTERA_DELICIOSA["watering"]
+        assert care["sunlight"] == CARE_MONSTERA_DELICIOSA["sunlight"]
+        assert care["soil"] == CARE_MONSTERA_DELICIOSA["soil"]
+        assert care["pruning"] == CARE_MONSTERA_DELICIOSA["pruning"]
+        assert care["fertilization"] == CARE_MONSTERA_DELICIOSA["fertilization"]
+
+    async def test_generate_configentry_omits_absent_care_fields(
+        self,
+        hass: HomeAssistant,
+        mock_openplantbook_services,
+        monkeypatch,
+    ) -> None:
+        """Care fields OPB does not return are not stored (no empty strings)."""
+        import custom_components.plant.plant_helpers as ph
+
+        async def partial_care_get(self, species, cache=True):
+            return {
+                "pid": "monstera deliciosa",
+                "display_pid": "Monstera deliciosa",
+                "max_soil_moist": 60,
+                "min_soil_moist": 20,
+                "max_light_lux": 35000,
+                "min_light_lux": 1500,
+                "watering": "Water weekly.",
+                # sunlight/soil/pruning/fertilization deliberately absent
+            }
+
+        monkeypatch.setattr(ph.PlantHelper, "openplantbook_get", partial_care_get)
+
+        helper = ph.PlantHelper(hass)
+        config = {
+            ATTR_NAME: "My Monstera",
+            ATTR_SPECIES: "monstera deliciosa",
+            ATTR_SENSORS: {},
+        }
+
+        result = await helper.generate_configentry(config)
+
+        care = result[FLOW_PLANT_INFO][ATTR_CARE]
+        assert care == {"watering": "Water weekly."}
 
 
 class TestPlantHelperEdgeCases:
@@ -595,3 +707,29 @@ class TestImageValidation:
                 "https://unreachable.example.com/plant.jpg"
             )
         assert result is False
+
+
+class TestCareConstants:
+    """Tests for the care-field constants."""
+
+    def test_care_fields_canonical_list(self) -> None:
+        from custom_components.plant.const import CARE_FIELDS
+
+        assert CARE_FIELDS == [
+            "watering",
+            "sunlight",
+            "soil",
+            "pruning",
+            "fertilization",
+        ]
+
+    def test_include_constants(self) -> None:
+        from custom_components.plant.const import (
+            ATTR_CARE,
+            OPB_ATTR_INCLUDE,
+            OPB_INCLUDE_CARE,
+        )
+
+        assert OPB_ATTR_INCLUDE == "include"
+        assert OPB_INCLUDE_CARE == "care"
+        assert ATTR_CARE == "care"

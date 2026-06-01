@@ -302,6 +302,19 @@ Go to **Settings** → **Devices & Services** → **Plant Monitor** → *Your Pl
 > [!NOTE]
 > If the current image points to a local file or non-OpenPlantbook URL, it is **not** replaced unless "Force refresh" is checked.
 
+### 🪴 Care Guidance *(OpenPlantbook)*
+
+When OpenPlantbook has care information for a species, the plant device exposes it as free-text **attributes** you can show on a dashboard or use in automations and templates. Only the fields OpenPlantbook provides for a given species appear:
+
+- `care_watering`
+- `care_sunlight`
+- `care_soil`
+- `care_pruning`
+- `care_fertilization`
+
+> [!NOTE]
+> Care guidance is fetched together with the species data, so **existing plants only get it after a refresh** — use **Force refresh** (above) or change the species. Newly added plants get it automatically.
+
 ---
 
 ## 🃏 Lovelace Card
