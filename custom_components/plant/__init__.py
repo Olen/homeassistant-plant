@@ -34,6 +34,7 @@ from homeassistant.helpers import (
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity, async_generate_entity_id
 from homeassistant.helpers.entity_component import EntityComponent
+from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.util import dt as dt_util
 
 from . import group as group  # noqa: F401 - needed for HA group discovery
@@ -477,7 +478,7 @@ def ws_get_info(
     return
 
 
-class PlantDevice(Entity):
+class PlantDevice(RestoreEntity):
     """Base device for plants"""
 
     def __init__(self, hass: HomeAssistant, config: ConfigEntry) -> None:

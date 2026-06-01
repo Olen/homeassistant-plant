@@ -1387,6 +1387,18 @@ class PlantDailyLightIntegral24h(StatisticsSensor):
             name=self._plant.name,
         )
 
+    async def async_will_remove_from_hass(self) -> None:
+        """Cancel the scheduled purge/update timer on removal.
+
+        HA's StatisticsSensor schedules its purge/update timer via
+        async_track_point_in_utc_time but, unlike its state listeners, never
+        registers it with async_on_remove. Once a sample has been ingested the
+        timer outlives the entity and is flagged as a lingering timer. Cancel
+        it explicitly here.
+        """
+        await super().async_will_remove_from_hass()
+        self._async_cancel_update_listener()
+
 
 class PlantDummyStatus(SensorEntity):
     """Simple dummy sensors. Parent class"""
