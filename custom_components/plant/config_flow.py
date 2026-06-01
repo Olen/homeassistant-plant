@@ -912,6 +912,7 @@ async def refresh_plant_from_openplantbook(
     plant.display_species = (
         opb_display_raw[0].upper() + opb_display_raw[1:] if opb_display_raw else ""
     )
+    plant.care = plant_config[FLOW_PLANT_INFO].get(ATTR_CARE, {})
 
     limits = plant_config[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS]
     _LOGGER.debug("Updating %d threshold entities from OPB data", len(limits))
@@ -950,6 +951,7 @@ async def refresh_plant_from_openplantbook(
     data = dict(entry.data)
     plant_info = dict(data.get(FLOW_PLANT_INFO, {}))
     plant_info[FLOW_PLANT_LIMITS] = dict(limits)
+    plant_info[ATTR_CARE] = dict(plant.care)
     data[FLOW_PLANT_INFO] = plant_info
     options = dict(entry.options)
     options[OPB_DISPLAY_PID] = plant.display_species

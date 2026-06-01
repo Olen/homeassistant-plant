@@ -1628,3 +1628,45 @@ class TestOptionsFlow:
         await hass.async_block_till_done()
 
         assert FLOW_FORCE_SPECIES_UPDATE not in entry.options
+
+    async def test_force_refresh_updates_care_on_plant_and_in_entry(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+        mock_openplantbook_services,
+    ) -> None:
+        """Force refresh must populate care on the live plant object AND
+        persist it in entry.data[FLOW_PLANT_INFO][ATTR_CARE].
+
+        Before the fix, refresh_plant_from_openplantbook mutated limits and
+        species but left plant.care untouched and never wrote ATTR_CARE to
+        plant_info — so the attributes were stale until a full reload.
+        """
+        entry = init_integration
+        plant = hass.data[DOMAIN][entry.entry_id]["plant"]
+
+        # The plant was created with empty care (default from conftest).
+        assert plant.care == {}
+
+        result = await hass.config_entries.options.async_init(entry.entry_id)
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"], {"next_step_id": "plant_properties"}
+        )
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            {
+                ATTR_SPECIES: "monstera deliciosa",
+                FLOW_FORCE_SPECIES_UPDATE: True,
+                OPB_DISPLAY_PID: "Monstera deliciosa",
+                ATTR_ENTITY_PICTURE: "https://example.com/monstera.jpg",
+            },
+        )
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        await hass.async_block_till_done()
+
+        # Live object must have care populated from OPB.
+        assert plant.care["watering"] == CARE_MONSTERA_DELICIOSA["watering"]
+
+        # Entry.data must also have care persisted so it survives a reload.
+        stored = entry.data[FLOW_PLANT_INFO][ATTR_CARE]
+        assert stored["watering"] == CARE_MONSTERA_DELICIOSA["watering"]
