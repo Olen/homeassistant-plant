@@ -34,6 +34,7 @@ from custom_components.plant.const import (
     FLOW_PLANT_LIMITS,
     FLOW_RIGHT_PLANT,
     FLOW_SENSOR_CO2,
+    FLOW_SENSOR_CONDUCTIVITY,
     FLOW_SENSOR_ILLUMINANCE,
     FLOW_SENSOR_MOISTURE,
     FLOW_SENSOR_TEMPERATURE,
@@ -306,6 +307,47 @@ class TestConfigFlowSensorsStep:
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
             {},
+        )
+
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "limits"
+
+    async def test_sensors_step_accepts_conductivity_unit_without_device_class(
+        self,
+        hass: HomeAssistant,
+        mock_no_openplantbook,
+    ) -> None:
+        """Test conductivity sensors are accepted when identified by unit only.
+
+        Regression test for soil_fertility sensors (e.g. Zigbee2MQTT Arteco ZS-SF00),
+        which expose μS/cm but do not set SensorDeviceClass.CONDUCTIVITY.
+        """
+
+        hass.states.async_set(
+            "sensor.soil_fertility",
+            "337",
+            {"unit_of_measurement": "µS/cm"},
+        )
+
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_USER}
+        )
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                ATTR_NAME: "My Plant",
+                ATTR_SPECIES: "ficus",
+            },
+        )
+
+        assert result["step_id"] == "sensors"
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                FLOW_SENSOR_CONDUCTIVITY: "sensor.soil_fertility",
+            },
         )
 
         assert result["type"] == FlowResultType.FORM
