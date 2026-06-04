@@ -16,6 +16,8 @@ from homeassistant.const import (
     ATTR_DOMAIN,
     ATTR_ENTITY_PICTURE,
     ATTR_NAME,
+    ATTR_UNIT_OF_MEASUREMENT,
+    UnitOfConductivity,
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
@@ -106,8 +108,64 @@ SENSOR_SCHEMA_FIELDS = [
     (FLOW_SENSOR_SOIL_TEMPERATURE, SensorDeviceClass.TEMPERATURE),
 ]
 
+CONDUCTIVITY_UNITS = {
+    UnitOfConductivity.MICROSIEMENS_PER_CM,
+    "µS/cm",
+    "μS/cm",
+    "uS/cm",
+}
+CONDUCTIVITY_UNITS_NORMALIZED = {
+    unit.replace("μ", "µ").replace("u", "µ").lower()
+    for unit in CONDUCTIVITY_UNITS
+}
 
-def _build_sensor_schema(defaults: dict[str, Any] | None = None) -> dict:
+
+def _normalize_unit(unit: str | None) -> str:
+    """Normalize equivalent micro-siemens unit spellings for comparison."""
+    if unit is None:
+        return ""
+    return unit.replace("μ", "µ").replace("u", "µ").lower()
+
+
+def _is_conductivity_sensor(state) -> bool:
+    """Return true for conductivity sensors, including unit-only entities.
+
+    Some integrations expose soil conductivity with a valid conductivity unit,
+    but without a Home Assistant conductivity device class. Zigbee2MQTT's
+    Arteco ZS-SF00 soil_fertility entity is one example.
+    """
+    attrs = state.attributes
+    if attrs.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.CONDUCTIVITY:
+        return True
+
+    unit = attrs.get(ATTR_UNIT_OF_MEASUREMENT)
+    return _normalize_unit(unit) in CONDUCTIVITY_UNITS_NORMALIZED
+
+
+def _conductivity_entities(hass: HomeAssistant, current: str | None = None) -> list[str]:
+    """Return conductivity sensor entity IDs.
+
+    Home Assistant's entity selector cannot express "device class is
+    conductivity OR unit is µS/cm" using only selector filters. Build an explicit
+    include list instead, then still use the normal entity selector UI.
+    """
+    entities = {
+        state.entity_id
+        for state in hass.states.async_all(SENSOR_DOMAIN)
+        if _is_conductivity_sensor(state)
+    }
+
+    # Preserve the currently configured entity even if it is temporarily
+    # unavailable or no longer matches the relaxed conductivity filter.
+    if current:
+        entities.add(current)
+
+    return sorted(entities)
+
+
+def _build_sensor_schema(
+    hass: HomeAssistant, defaults: dict[str, Any] | None = None
+) -> dict:
     """Build sensor selection schema, optionally pre-filled with current values."""
     defaults = defaults or {}
     schema = {}
@@ -117,6 +175,20 @@ def _build_sensor_schema(defaults: dict[str, Any] | None = None) -> dict:
             vol_key = vol.Optional(key, description={"suggested_value": current})
         else:
             vol_key = vol.Optional(key)
+
+        if key == FLOW_SENSOR_CONDUCTIVITY:
+            conductivity_entities = _conductivity_entities(hass, current)
+            if conductivity_entities:
+                schema[vol_key] = selector(
+                    {
+                        ATTR_ENTITY: {
+                            ATTR_DOMAIN: SENSOR_DOMAIN,
+                            "include_entities": conductivity_entities,
+                        }
+                    }
+                )
+                continue
+
         schema[vol_key] = selector(
             {
                 ATTR_ENTITY: {
@@ -267,7 +339,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="sensors",
-            data_schema=vol.Schema(_build_sensor_schema()),
+            data_schema=vol.Schema(_build_sensor_schema(self.hass)),
         )
 
     async def async_step_limits(
@@ -762,7 +834,9 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         plant_info = self.config_entry.data.get(FLOW_PLANT_INFO, {})
         return self.async_show_form(
             step_id="replace_sensor",
-            data_schema=vol.Schema(_build_sensor_schema(defaults=plant_info)),
+            data_schema=vol.Schema(
+                _build_sensor_schema(self.hass, defaults=plant_info)
+            ),
             description_placeholders={"plant_name": self.plant.name},
         )
 
