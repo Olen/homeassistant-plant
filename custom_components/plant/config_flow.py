@@ -115,8 +115,7 @@ CONDUCTIVITY_UNITS = {
     "uS/cm",
 }
 CONDUCTIVITY_UNITS_NORMALIZED = {
-    unit.replace("μ", "µ").replace("u", "µ").lower()
-    for unit in CONDUCTIVITY_UNITS
+    unit.replace("μ", "µ").replace("u", "µ").lower() for unit in CONDUCTIVITY_UNITS
 }
 
 
@@ -142,7 +141,9 @@ def _is_conductivity_sensor(state) -> bool:
     return _normalize_unit(unit) in CONDUCTIVITY_UNITS_NORMALIZED
 
 
-def _conductivity_entities(hass: HomeAssistant, current: str | None = None) -> list[str]:
+def _conductivity_entities(
+    hass: HomeAssistant, current: str | None = None
+) -> list[str]:
     """Return conductivity sensor entity IDs.
 
     Home Assistant's entity selector cannot express "device class is
