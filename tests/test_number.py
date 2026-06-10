@@ -991,3 +991,220 @@ class TestThresholdImperialDefaults:
         ):
             assert threshold.native_max_value == 100
             assert threshold.native_min_value == -50
+
+
+class TestPreConvertedFahrenheitLimits:
+    """Tests that pre-converted Fahrenheit limits from generate_configentry are not double-converted.
+
+    Covers the double-conversion bug where temperature limits stored in FLOW_PLANT_LIMITS
+    (already converted to Fahrenheit by generate_configentry via display_temp()) were
+    being converted again by _convert_default_temp() in the threshold entity __init__.
+
+    Example bug: OpenPlantbook returns min_temp=7°C, generate_configentry converts to 45°F,
+    but the entity __init__ then treated 45 as Celsius and converted again to 113°F.
+    """
+
+    async def test_preconverted_fahrenheit_limits_not_double_converted(
+        self,
+        hass: HomeAssistant,
+    ) -> None:
+        """Temperature thresholds with pre-converted °F values are used as-is."""
+        from homeassistant.util.unit_system import US_CUSTOMARY_SYSTEM
+
+        from custom_components.plant.const import DOMAIN_PLANTBOOK
+
+        from .conftest import (
+            CONF_MAX_SOIL_TEMPERATURE,
+            CONF_MAX_TEMPERATURE,
+            CONF_MIN_SOIL_TEMPERATURE,
+            CONF_MIN_TEMPERATURE,
+            TEST_PLANT_NAME,
+            create_plant_config_data,
+        )
+
+        hass.config.units = US_CUSTOMARY_SYSTEM
+
+        # Simulate limits that are ALREADY in Fahrenheit (as generate_configentry would produce)
+        # OpenPlantbook: min=7°C, max=32°C  →  after display_temp(): min=45°F, max=90°F
+        preconverted_fahrenheit_limits = {
+            CONF_MAX_TEMPERATURE: 90,  # Already 90°F, not 90°C
+            CONF_MIN_TEMPERATURE: 45,  # Already 45°F, not 45°C
+            CONF_MAX_SOIL_TEMPERATURE: 86,  # Already 86°F (30°C)
+            CONF_MIN_SOIL_TEMPERATURE: 50,  # Already 50°F (10°C)
+            # Include other required limits
+            "max_moisture": 60,
+            "min_moisture": 20,
+            "max_conductivity": 2000,
+            "min_conductivity": 350,
+            "max_illuminance": 7000,
+            "min_illuminance": 2000,
+            "max_humidity": 85,
+            "min_humidity": 30,
+            "max_dli": 9.0,
+            "min_dli": 4.0,
+            "max_co2": 2000,
+            "min_co2": 400,
+            "max_vpd": 1.6,
+            "min_vpd": 0.4,
+        }
+
+        # Specify data_source=DOMAIN_PLANTBOOK to indicate values are pre-converted
+        config_data = create_plant_config_data(
+            limits=preconverted_fahrenheit_limits,
+            data_source=DOMAIN_PLANTBOOK,
+        )
+        config_entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=config_data,
+            entry_id="test_preconverted_f",
+            unique_id="test_preconverted_f",
+            title=TEST_PLANT_NAME,
+        )
+        config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][config_entry.entry_id][ATTR_PLANT]
+
+        # The values should be used AS-IS, not converted again
+        # Bug behavior: 45°F treated as 45°C → converted to 113°F
+        # Fixed behavior: 45°F stays 45°F
+        assert plant.max_temperature.native_value == 90
+        assert plant.min_temperature.native_value == 45
+        assert plant.max_soil_temperature.native_value == 86
+        assert plant.min_soil_temperature.native_value == 50
+
+        # Unit should still be Fahrenheit
+        assert plant.max_temperature._attr_native_unit_of_measurement == "°F"
+        assert plant.min_temperature._attr_native_unit_of_measurement == "°F"
+
+        await hass.config_entries.async_unload(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+    async def test_missing_limits_fall_back_to_converted_defaults(
+        self,
+        hass: HomeAssistant,
+    ) -> None:
+        """When limits are missing, fallback defaults are converted from Celsius."""
+        from homeassistant.util.unit_system import US_CUSTOMARY_SYSTEM
+
+        from .conftest import TEST_PLANT_NAME, create_plant_config_data
+
+        hass.config.units = US_CUSTOMARY_SYSTEM
+
+        # Create limits WITHOUT temperature values to test fallback behavior
+        limits_without_temp = {
+            "max_moisture": 60,
+            "min_moisture": 20,
+            "max_conductivity": 2000,
+            "min_conductivity": 350,
+            "max_illuminance": 7000,
+            "min_illuminance": 2000,
+            "max_humidity": 85,
+            "min_humidity": 30,
+            "max_dli": 9.0,
+            "min_dli": 4.0,
+            "max_co2": 2000,
+            "min_co2": 400,
+            "max_vpd": 1.6,
+            "min_vpd": 0.4,
+            # Explicitly omit temperature keys to test fallback
+        }
+
+        config_data = create_plant_config_data(limits=limits_without_temp)
+        config_entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=config_data,
+            entry_id="test_missing_temp",
+            unique_id="test_missing_temp",
+            title=TEST_PLANT_NAME,
+        )
+        config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][config_entry.entry_id][ATTR_PLANT]
+
+        # Fallback defaults are in Celsius (from const.py) and SHOULD be converted
+        # DEFAULT_MAX_TEMPERATURE = 40°C → 104°F
+        # DEFAULT_MIN_TEMPERATURE = 10°C → 50°F
+        # DEFAULT_MAX_SOIL_TEMPERATURE = 40°C → 104°F
+        # DEFAULT_MIN_SOIL_TEMPERATURE = 10°C → 50°F
+        assert plant.max_temperature.native_value == 104
+        assert plant.min_temperature.native_value == 50
+        assert plant.max_soil_temperature.native_value == 104
+        assert plant.min_soil_temperature.native_value == 50
+
+        await hass.config_entries.async_unload(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+    async def test_manual_celsius_limits_converted_when_imperial(
+        self,
+        hass: HomeAssistant,
+    ) -> None:
+        """Manual/non-OpenPlantbook Celsius values ARE converted to Fahrenheit."""
+        from homeassistant.util.unit_system import US_CUSTOMARY_SYSTEM
+
+        from custom_components.plant.const import DATA_SOURCE_MANUAL
+
+        from .conftest import (
+            CONF_MAX_SOIL_TEMPERATURE,
+            CONF_MAX_TEMPERATURE,
+            CONF_MIN_SOIL_TEMPERATURE,
+            CONF_MIN_TEMPERATURE,
+            TEST_PLANT_NAME,
+            create_plant_config_data,
+        )
+
+        hass.config.units = US_CUSTOMARY_SYSTEM
+
+        # Manual entry: user types Celsius values (not pre-converted by generate_configentry)
+        manual_celsius_limits = {
+            CONF_MAX_TEMPERATURE: 32,  # 32°C → should become 90°F
+            CONF_MIN_TEMPERATURE: 7,   # 7°C → should become 45°F
+            CONF_MAX_SOIL_TEMPERATURE: 30,  # 30°C → should become 86°F
+            CONF_MIN_SOIL_TEMPERATURE: 10,  # 10°C → should become 50°F
+            "max_moisture": 60,
+            "min_moisture": 20,
+            "max_conductivity": 2000,
+            "min_conductivity": 350,
+            "max_illuminance": 7000,
+            "min_illuminance": 2000,
+            "max_humidity": 85,
+            "min_humidity": 30,
+            "max_dli": 9.0,
+            "min_dli": 4.0,
+            "max_co2": 2000,
+            "min_co2": 400,
+            "max_vpd": 1.6,
+            "min_vpd": 0.4,
+        }
+
+        # data_source=DATA_SOURCE_MANUAL means values are NOT pre-converted
+        config_data = create_plant_config_data(
+            limits=manual_celsius_limits,
+            data_source=DATA_SOURCE_MANUAL,
+        )
+        config_entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=config_data,
+            entry_id="test_manual_celsius",
+            unique_id="test_manual_celsius",
+            title=TEST_PLANT_NAME,
+        )
+        config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][config_entry.entry_id][ATTR_PLANT]
+
+        # Manual Celsius values SHOULD be converted to Fahrenheit
+        # 32°C → 90°F, 7°C → 45°F, 30°C → 86°F, 10°C → 50°F
+        assert plant.max_temperature.native_value == 90
+        assert plant.min_temperature.native_value == 45
+        assert plant.max_soil_temperature.native_value == 86
+        assert plant.min_soil_temperature.native_value == 50
+
+        await hass.config_entries.async_unload(config_entry.entry_id)
+        await hass.async_block_till_done()
+
