@@ -174,6 +174,7 @@ FLOW_PLANT_SPECIES = "plant_species"
 FLOW_PLANT_NAME = "plant_name"
 FLOW_PLANT_IMAGE = "image_url"
 FLOW_PLANT_LIMITS = "limits"
+FLOW_LIMITS_TEMPERATURE_UNIT = "limits_temperature_unit"
 
 FLOW_SENSOR_TEMPERATURE = "temperature_sensor"
 FLOW_SENSOR_MOISTURE = "moisture_sensor"

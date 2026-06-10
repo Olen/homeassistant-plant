@@ -993,12 +993,14 @@ class TestThresholdImperialDefaults:
             assert threshold.native_min_value == -50
 
 
-class TestPreConvertedFahrenheitLimits:
-    """Tests that pre-converted Fahrenheit limits from generate_configentry are not double-converted.
+class TestTemperatureLimitsUnitHandling:
+    """Tests for temperature limits unit conversion and storage.
 
-    Covers the double-conversion bug where temperature limits stored in FLOW_PLANT_LIMITS
-    (already converted to Fahrenheit by generate_configentry via display_temp()) were
-    being converted again by _convert_default_temp() in the threshold entity __init__.
+    Covers:
+    - The double-conversion bug where pre-converted Fahrenheit limits were converted again
+    - Explicit unit marker behavior (limits_temperature_unit)
+    - Cross-unit conversion when stored unit differs from system unit
+    - Legacy fallback behavior using data_source check
 
     Example bug: OpenPlantbook returns min_temp=7°C, generate_configentry converts to 45°F,
     but the entity __init__ then treated 45 as Celsius and converted again to 113°F.
@@ -1009,9 +1011,8 @@ class TestPreConvertedFahrenheitLimits:
         hass: HomeAssistant,
     ) -> None:
         """Temperature thresholds with pre-converted °F values are used as-is."""
+        from homeassistant.const import UnitOfTemperature
         from homeassistant.util.unit_system import US_CUSTOMARY_SYSTEM
-
-        from custom_components.plant.const import DOMAIN_PLANTBOOK
 
         from .conftest import (
             CONF_MAX_SOIL_TEMPERATURE,
@@ -1048,10 +1049,10 @@ class TestPreConvertedFahrenheitLimits:
             "min_vpd": 0.4,
         }
 
-        # Specify data_source=DOMAIN_PLANTBOOK to indicate values are pre-converted
+        # New config entries use explicit limits_temperature_unit
         config_data = create_plant_config_data(
             limits=preconverted_fahrenheit_limits,
-            data_source=DOMAIN_PLANTBOOK,
+            limits_temperature_unit=UnitOfTemperature.FAHRENHEIT,
         )
         config_entry = MockConfigEntry(
             domain=DOMAIN,
@@ -1066,9 +1067,7 @@ class TestPreConvertedFahrenheitLimits:
 
         plant = hass.data[DOMAIN][config_entry.entry_id][ATTR_PLANT]
 
-        # The values should be used AS-IS, not converted again
-        # Bug behavior: 45°F treated as 45°C → converted to 113°F
-        # Fixed behavior: 45°F stays 45°F
+        # The values should be used AS-IS since stored unit matches system unit
         assert plant.max_temperature.native_value == 90
         assert plant.min_temperature.native_value == 45
         assert plant.max_soil_temperature.native_value == 86
@@ -1145,7 +1144,7 @@ class TestPreConvertedFahrenheitLimits:
         """Manual/non-OpenPlantbook Celsius values ARE converted to Fahrenheit."""
         from homeassistant.util.unit_system import US_CUSTOMARY_SYSTEM
 
-        from custom_components.plant.const import DATA_SOURCE_MANUAL
+        from homeassistant.const import UnitOfTemperature
 
         from .conftest import (
             CONF_MAX_SOIL_TEMPERATURE,
@@ -1158,8 +1157,9 @@ class TestPreConvertedFahrenheitLimits:
 
         hass.config.units = US_CUSTOMARY_SYSTEM
 
-        # Manual entry: user types Celsius values (not pre-converted by generate_configentry)
-        manual_celsius_limits = {
+        # Config entry with Celsius limits and explicit Celsius unit marker
+        # These need to be converted to Fahrenheit for display
+        celsius_limits = {
             CONF_MAX_TEMPERATURE: 32,  # 32°C → should become 90°F
             CONF_MIN_TEMPERATURE: 7,   # 7°C → should become 45°F
             CONF_MAX_SOIL_TEMPERATURE: 30,  # 30°C → should become 86°F
@@ -1180,16 +1180,16 @@ class TestPreConvertedFahrenheitLimits:
             "min_vpd": 0.4,
         }
 
-        # data_source=DATA_SOURCE_MANUAL means values are NOT pre-converted
+        # Explicit Celsius unit - values will be converted to Fahrenheit
         config_data = create_plant_config_data(
-            limits=manual_celsius_limits,
-            data_source=DATA_SOURCE_MANUAL,
+            limits=celsius_limits,
+            limits_temperature_unit=UnitOfTemperature.CELSIUS,
         )
         config_entry = MockConfigEntry(
             domain=DOMAIN,
             data=config_data,
-            entry_id="test_manual_celsius",
-            unique_id="test_manual_celsius",
+            entry_id="test_celsius_to_f",
+            unique_id="test_celsius_to_f",
             title=TEST_PLANT_NAME,
         )
         config_entry.add_to_hass(hass)
@@ -1198,7 +1198,7 @@ class TestPreConvertedFahrenheitLimits:
 
         plant = hass.data[DOMAIN][config_entry.entry_id][ATTR_PLANT]
 
-        # Manual Celsius values SHOULD be converted to Fahrenheit
+        # Celsius values converted to Fahrenheit since system is imperial
         # 32°C → 90°F, 7°C → 45°F, 30°C → 86°F, 10°C → 50°F
         assert plant.max_temperature.native_value == 90
         assert plant.min_temperature.native_value == 45
@@ -1208,3 +1208,203 @@ class TestPreConvertedFahrenheitLimits:
         await hass.config_entries.async_unload(config_entry.entry_id)
         await hass.async_block_till_done()
 
+    async def test_legacy_data_source_fallback(
+        self,
+        hass: HomeAssistant,
+    ) -> None:
+        """Legacy config entries without explicit unit marker use data_source fallback."""
+        from homeassistant.util.unit_system import US_CUSTOMARY_SYSTEM
+
+        from custom_components.plant.const import DOMAIN_PLANTBOOK
+
+        from .conftest import (
+            CONF_MAX_TEMPERATURE,
+            CONF_MIN_TEMPERATURE,
+            TEST_PLANT_NAME,
+            create_plant_config_data,
+        )
+
+        hass.config.units = US_CUSTOMARY_SYSTEM
+
+        # Legacy config: no limits_temperature_unit, uses data_source=DOMAIN_PLANTBOOK
+        # Values are already in Fahrenheit (pre-converted by old generate_configentry)
+        legacy_limits = {
+            CONF_MAX_TEMPERATURE: 90,  # Already °F
+            CONF_MIN_TEMPERATURE: 45,  # Already °F
+            "max_moisture": 60,
+            "min_moisture": 20,
+            "max_conductivity": 2000,
+            "min_conductivity": 350,
+            "max_illuminance": 7000,
+            "min_illuminance": 2000,
+            "max_humidity": 85,
+            "min_humidity": 30,
+            "max_dli": 9.0,
+            "min_dli": 4.0,
+            "max_co2": 2000,
+            "min_co2": 400,
+            "max_soil_temperature": 86,
+            "min_soil_temperature": 50,
+            "max_vpd": 1.6,
+            "min_vpd": 0.4,
+        }
+
+        # No limits_temperature_unit - falls back to checking data_source
+        config_data = create_plant_config_data(
+            limits=legacy_limits,
+            data_source=DOMAIN_PLANTBOOK,
+            # Note: no limits_temperature_unit - legacy behavior
+        )
+        config_entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=config_data,
+            entry_id="test_legacy",
+            unique_id="test_legacy",
+            title=TEST_PLANT_NAME,
+        )
+        config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][config_entry.entry_id][ATTR_PLANT]
+
+        # Legacy DOMAIN_PLANTBOOK values are used as-is (pre-converted)
+        assert plant.max_temperature.native_value == 90
+        assert plant.min_temperature.native_value == 45
+
+        await hass.config_entries.async_unload(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+    async def test_metric_system_with_celsius_marker_unchanged(
+        self,
+        hass: HomeAssistant,
+    ) -> None:
+        """Celsius values with explicit Celsius marker are unchanged on metric systems."""
+        from homeassistant.const import UnitOfTemperature
+        from homeassistant.util.unit_system import METRIC_SYSTEM
+
+        from .conftest import (
+            CONF_MAX_SOIL_TEMPERATURE,
+            CONF_MAX_TEMPERATURE,
+            CONF_MIN_SOIL_TEMPERATURE,
+            CONF_MIN_TEMPERATURE,
+            TEST_PLANT_NAME,
+            create_plant_config_data,
+        )
+
+        hass.config.units = METRIC_SYSTEM
+
+        celsius_limits = {
+            CONF_MAX_TEMPERATURE: 32,
+            CONF_MIN_TEMPERATURE: 7,
+            CONF_MAX_SOIL_TEMPERATURE: 30,
+            CONF_MIN_SOIL_TEMPERATURE: 10,
+            "max_moisture": 60,
+            "min_moisture": 20,
+            "max_conductivity": 2000,
+            "min_conductivity": 350,
+            "max_illuminance": 7000,
+            "min_illuminance": 2000,
+            "max_humidity": 85,
+            "min_humidity": 30,
+            "max_dli": 9.0,
+            "min_dli": 4.0,
+            "max_co2": 2000,
+            "min_co2": 400,
+            "max_vpd": 1.6,
+            "min_vpd": 0.4,
+        }
+
+        config_data = create_plant_config_data(
+            limits=celsius_limits,
+            limits_temperature_unit=UnitOfTemperature.CELSIUS,
+        )
+        config_entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=config_data,
+            entry_id="test_metric_celsius",
+            unique_id="test_metric_celsius",
+            title=TEST_PLANT_NAME,
+        )
+        config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][config_entry.entry_id][ATTR_PLANT]
+
+        # Celsius values unchanged on metric system
+        assert plant.max_temperature.native_value == 32
+        assert plant.min_temperature.native_value == 7
+        assert plant.max_soil_temperature.native_value == 30
+        assert plant.min_soil_temperature.native_value == 10
+
+        await hass.config_entries.async_unload(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+    async def test_legacy_manual_values_used_as_system_unit(
+        self,
+        hass: HomeAssistant,
+    ) -> None:
+        """Legacy manual config entries use stored values as-is (assumed system unit)."""
+        from homeassistant.util.unit_system import US_CUSTOMARY_SYSTEM
+
+        from custom_components.plant.const import DATA_SOURCE_DEFAULT
+
+        from .conftest import (
+            CONF_MAX_TEMPERATURE,
+            CONF_MIN_TEMPERATURE,
+            TEST_PLANT_NAME,
+            create_plant_config_data,
+        )
+
+        hass.config.units = US_CUSTOMARY_SYSTEM
+
+        # Legacy manual config: no limits_temperature_unit
+        # Values are assumed to be in the user's system unit (°F here)
+        manual_fahrenheit_limits = {
+            CONF_MAX_TEMPERATURE: 90,  # User typed 90°F, stays 90
+            CONF_MIN_TEMPERATURE: 45,  # User typed 45°F, stays 45
+            "max_moisture": 60,
+            "min_moisture": 20,
+            "max_conductivity": 2000,
+            "min_conductivity": 350,
+            "max_illuminance": 7000,
+            "min_illuminance": 2000,
+            "max_humidity": 85,
+            "min_humidity": 30,
+            "max_dli": 9.0,
+            "min_dli": 4.0,
+            "max_co2": 2000,
+            "min_co2": 400,
+            "max_soil_temperature": 86,  # User typed 86°F, stays 86
+            "min_soil_temperature": 50,  # User typed 50°F, stays 50
+            "max_vpd": 1.6,
+            "min_vpd": 0.4,
+        }
+
+        # No limits_temperature_unit - legacy behavior assumes system unit
+        config_data = create_plant_config_data(
+            limits=manual_fahrenheit_limits,
+            data_source=DATA_SOURCE_DEFAULT,
+        )
+        config_entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=config_data,
+            entry_id="test_legacy_manual",
+            unique_id="test_legacy_manual",
+            title=TEST_PLANT_NAME,
+        )
+        config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][config_entry.entry_id][ATTR_PLANT]
+
+        # Legacy manual values used as-is (assumed to be in user's system unit)
+        assert plant.max_temperature.native_value == 90
+        assert plant.min_temperature.native_value == 45
+        assert plant.max_soil_temperature.native_value == 86
+        assert plant.min_soil_temperature.native_value == 50
+
+        await hass.config_entries.async_unload(config_entry.entry_id)
+        await hass.async_block_till_done()

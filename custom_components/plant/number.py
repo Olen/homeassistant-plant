@@ -43,8 +43,6 @@ from .const import (
     ATTR_THRESHOLDS,
     ATTR_VPD,
     CONF_LUX_TO_PPFD,
-    DATA_SOURCE,
-    DOMAIN_PLANTBOOK,
     CONF_MAX_CO2,
     CONF_MAX_CONDUCTIVITY,
     CONF_MAX_DLI,
@@ -83,6 +81,7 @@ from .const import (
     DEFAULT_MIN_TEMPERATURE,
     DEFAULT_MIN_VPD,
     DOMAIN,
+    FLOW_LIMITS_TEMPERATURE_UNIT,
     FLOW_PLANT_INFO,
     FLOW_PLANT_LIMITS,
     FLOW_SENSOR_CO2,
@@ -268,11 +267,15 @@ def _get_temperature_default(
     config_key: str,
     fallback_default: float,
 ) -> float:
-    """Get the temperature default value, handling OpenPlantbook pre-conversion.
+    """Get the temperature default value, handling unit conversion.
 
-    OpenPlantbook values are already converted to the user's unit system by
-    generate_configentry. Other sources (manual entry, defaults) are in Celsius
-    and need conversion when the system uses Fahrenheit.
+    Config entries created with the updated flow store `limits_temperature_unit`
+    explicitly. When present, we compare it to the system unit and convert if
+    they differ.
+
+    Legacy entries (without `limits_temperature_unit`) assume stored values are
+    already in the user's system unit — both OpenPlantbook (pre-converted by
+    generate_configentry) and manual configs (user typed values in their unit).
 
     Args:
         hass: Home Assistant instance
@@ -283,18 +286,32 @@ def _get_temperature_default(
     Returns:
         Temperature value in the user's configured unit system
     """
-    data_source = config.data[FLOW_PLANT_INFO].get(DATA_SOURCE)
-    stored = config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(config_key)
+    plant_info = config.data[FLOW_PLANT_INFO]
+    stored = plant_info[FLOW_PLANT_LIMITS].get(config_key)
+    system_unit = hass.config.units.temperature_unit
 
-    if stored is not None and data_source == DOMAIN_PLANTBOOK:
-        # OpenPlantbook values are already converted by generate_configentry
+    # Check for explicit unit marker (new config entries)
+    stored_unit = plant_info.get(FLOW_LIMITS_TEMPERATURE_UNIT)
+    if stored_unit is not None:
+        if stored is not None:
+            # Value exists - convert if units differ
+            if stored_unit == system_unit:
+                return stored
+            # Convert from stored unit to system unit
+            return round(
+                TemperatureConverter.convert(stored, stored_unit, system_unit)
+            )
+        # No stored value - convert fallback default from Celsius
+        return _convert_default_temp(fallback_default, system_unit)
+
+    # Legacy fallback: stored values are assumed to be in user's system unit
+    # - OpenPlantbook: pre-converted by generate_configentry via display_temp()
+    # - Manual: user typed values in their configured unit
+    if stored is not None:
         return stored
 
-    # Manual/default values are in Celsius - convert if needed
-    return _convert_default_temp(
-        stored if stored is not None else fallback_default,
-        hass.config.units.temperature_unit,
-    )
+    # No stored value - convert fallback default from Celsius
+    return _convert_default_temp(fallback_default, system_unit)
 
 
 class PlantMinMax(RestoreNumber):
