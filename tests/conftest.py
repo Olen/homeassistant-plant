@@ -120,8 +120,8 @@ def create_plant_config_data(
         }
 
     return {
-        DATA_SOURCE: data_source,
         FLOW_PLANT_INFO: {
+            DATA_SOURCE: data_source,
             ATTR_NAME: name,
             ATTR_SPECIES: species,
             OPB_DISPLAY_PID: display_species,
