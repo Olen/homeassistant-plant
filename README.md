@@ -214,19 +214,22 @@ By default, any sensor reading outside its configured threshold triggers a **"pr
 
 Configure via **Settings** → **Devices & Services** → **Plant Monitor** → *Your Plant* → **Configure** → **Plant properties**.
 
+> [!NOTE]
+> Disabling a trigger only removes that sensor from the plant's ok/problem calculation — it does **not** stop the sensor being evaluated. Each `*_status` attribute (e.g. `illuminance_status: Low`) always reflects the latest reading against the plant's thresholds regardless of its trigger, and is `null` only when no value is available (sensor missing or unavailable). Use the **`problems`** attribute — which lists only sensors that are out of range *and* have their trigger enabled — as the source of truth for active problems.
+
 <!-- TODO: screenshot of the plant_properties form showing trigger toggles -->
 
 ### Hysteresis
 
-All threshold checks include a **hysteresis band** equal to 5% of the min–max range. This prevents rapid flapping between OK and PROBLEM when a sensor value hovers near a threshold.
+All threshold checks include a **hysteresis band** equal to 5% of the threshold being crossed (capped so it never exceeds 5% of the min–max range). This prevents rapid flapping between OK and PROBLEM when a sensor value hovers near a threshold.
 
-A plant enters PROBLEM when a value crosses its threshold, but does not return to OK until the value clears the threshold by the band amount. For example, with moisture min=20 and max=60 (range 40, band 2.0):
+A plant enters PROBLEM when a value crosses a threshold, but does not return to OK until the value clears that threshold by the band amount. For example, with moisture min=20 (band = 20 × 5% = 1.0):
 
 - Moisture drops below 20% — enters PROBLEM
-- Moisture rises to 21% — **stays in PROBLEM** (below min + band = 22%)
-- Moisture rises to 23% — clears to OK
+- Moisture rises to 20.5% — **stays in PROBLEM** (not yet past min + band = 21%)
+- Moisture rises to 22% — clears to OK
 
-The band scales proportionally with your configured thresholds. No configuration is needed — hysteresis is always active.
+The band is relative to each threshold, so the margin stays proportional whether a value is near the min or the max. No configuration is needed — hysteresis is always active.
 
 > [!NOTE]
 > When a sensor becomes unavailable, the hysteresis state resets. The next valid reading is evaluated fresh against the thresholds.
