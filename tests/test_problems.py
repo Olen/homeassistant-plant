@@ -176,7 +176,7 @@ class TestProblemsAttribute:
         plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
         assert len(plant._problems) == 1
 
-        # Fix it (clear hysteresis: min=20, band=2.0, so need > 22)
+        # Fix it (clear hysteresis: min=20, band_low=1.0, so need > 21)
         await set_external_sensor_states(hass, moisture=50.0)
         await update_plant_sensors(hass, init_integration.entry_id)
 
