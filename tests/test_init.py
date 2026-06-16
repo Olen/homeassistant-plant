@@ -1497,8 +1497,9 @@ class TestHysteresis:
     ) -> None:
         """Test that moisture HIGH state holds when value is within hysteresis band.
 
-        Default moisture: min=20, max=60, range=40, band=2.0.
-        Enters PROBLEM at >60, should stay PROBLEM until <58.
+        Default moisture: min=20, max=60. Band is relative to the threshold
+        being crossed: band_high = 60 * 5% = 3.0.
+        Enters PROBLEM at >60, should stay PROBLEM until <57.
         """
         plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
 
@@ -1515,7 +1516,7 @@ class TestHysteresis:
         assert plant.moisture_status == STATE_HIGH
         assert plant.state == STATE_PROBLEM
 
-        # Step 2: Drop to just below max but within band (59.0 >= 60 - 2 = 58)
+        # Step 2: Drop to just below max but within band (59.0 >= 60 - 3 = 57)
         await set_external_sensor_states(
             hass,
             temperature=25.0,
@@ -1528,11 +1529,11 @@ class TestHysteresis:
         assert plant.moisture_status == STATE_HIGH  # Still held
         assert plant.state == STATE_PROBLEM
 
-        # Step 3: Drop below band (57.0 < 58) → clears to OK
+        # Step 3: Drop below band (56.0 < 57) → clears to OK
         await set_external_sensor_states(
             hass,
             temperature=25.0,
-            moisture=57.0,
+            moisture=56.0,
             conductivity=1000.0,
             illuminance=5000.0,
             humidity=40.0,
@@ -1548,8 +1549,9 @@ class TestHysteresis:
     ) -> None:
         """Test temperature LOW hysteresis.
 
-        Default temperature: min=10, max=40, range=30, band=1.5.
-        Enters at <10, clears at >11.5.
+        Default temperature: min=10, max=40. Band is relative to the threshold
+        being crossed: band_low = 10 * 5% = 0.5.
+        Enters at <10, clears at >10.5.
         """
         plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
 
@@ -1565,10 +1567,10 @@ class TestHysteresis:
         await update_plant_sensors(hass, init_integration.entry_id)
         assert plant.temperature_status == STATE_LOW
 
-        # Rise within band (11.0 <= 10 + 1.5 = 11.5)
+        # Rise within band (10.3 <= 10 + 0.5 = 10.5)
         await set_external_sensor_states(
             hass,
-            temperature=11.0,
+            temperature=10.3,
             moisture=40.0,
             conductivity=1000.0,
             illuminance=5000.0,
@@ -1577,7 +1579,7 @@ class TestHysteresis:
         await update_plant_sensors(hass, init_integration.entry_id)
         assert plant.temperature_status == STATE_LOW  # held
 
-        # Rise above band (12.0 > 11.5)
+        # Rise above band (12.0 > 10.5)
         await set_external_sensor_states(
             hass,
             temperature=12.0,
@@ -1719,8 +1721,9 @@ class TestHysteresis:
     ) -> None:
         """Test DLI LOW hysteresis.
 
-        Default DLI: min=2, max=30, range=28, band=1.4.
-        Enters at <2, clears at >3.4.
+        Default DLI: min=2, max=30. Band is relative to the threshold being
+        crossed: band_low = 2 * 5% = 0.1.
+        Enters at <2, clears at >2.1.
         """
         from unittest.mock import PropertyMock, patch
 
@@ -1768,14 +1771,14 @@ class TestHysteresis:
         assert plant.dli_status == STATE_LOW
         assert plant.state == STATE_PROBLEM
 
-        # Step 2: Rise within band (2.5 <= 2 + 1.4 = 3.4) → still LOW
-        p1, p2, p3 = mock_dli(2.5)
+        # Step 2: Rise within band (2.05 <= 2 + 0.1 = 2.1) → still LOW
+        p1, p2, p3 = mock_dli(2.05)
         with p1, p2, p3:
             plant.update()
         assert plant.dli_status == STATE_LOW
         assert plant.state == STATE_PROBLEM
 
-        # Step 3: Rise above band (4.0 > 3.4) → clears
+        # Step 3: Rise above band (4.0 > 2.1) → clears
         p1, p2, p3 = mock_dli(4.0)
         with p1, p2, p3:
             plant.update()
@@ -1789,8 +1792,9 @@ class TestHysteresis:
     ) -> None:
         """Test conductivity hysteresis.
 
-        Default conductivity: min=500, max=3000, range=2500, band=125.
-        Enters LOW at <500, clears at >625.
+        Default conductivity: min=500, max=3000. Band is relative to the
+        threshold being crossed: band_low = 500 * 5% = 25.
+        Enters LOW at <500, clears at >525.
         """
         plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
 
@@ -1806,19 +1810,19 @@ class TestHysteresis:
         await update_plant_sensors(hass, init_integration.entry_id)
         assert plant.conductivity_status == STATE_LOW
 
-        # Rise within band (600 <= 500 + 125 = 625)
+        # Rise within band (510 <= 500 + 25 = 525)
         await set_external_sensor_states(
             hass,
             temperature=25.0,
             moisture=40.0,
-            conductivity=600.0,
+            conductivity=510.0,
             illuminance=5000.0,
             humidity=40.0,
         )
         await update_plant_sensors(hass, init_integration.entry_id)
         assert plant.conductivity_status == STATE_LOW  # held
 
-        # Rise above band (650 > 625)
+        # Rise above band (650 > 525)
         await set_external_sensor_states(
             hass,
             temperature=25.0,
@@ -1829,6 +1833,52 @@ class TestHysteresis:
         )
         await update_plant_sensors(hass, init_integration.entry_id)
         assert plant.conductivity_status == STATE_OK
+
+    async def test_low_recovery_clears_near_threshold(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Regression test for issue #465.
+
+        The hysteresis band must be relative to the threshold being crossed,
+        not the full (max - min) span. With conductivity min=500, max=3000 a
+        span-based 5% band is 125, which would hold a LOW problem until the
+        reading climbs above 625 -- far above the 500 minimum. A value that has
+        clearly recovered above the minimum then stays stuck as a problem.
+
+        This mirrors the issue's real numbers (min=350, max=2000, current=386:
+        above the min, but trapped in the old span-based band). With a
+        threshold-relative band (min * 5%), conductivity clears at >525.
+        """
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+
+        # Drop below min → PROBLEM
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=40.0,
+            conductivity=400.0,
+            illuminance=5000.0,
+            humidity=40.0,
+        )
+        await update_plant_sensors(hass, init_integration.entry_id)
+        assert plant.conductivity_status == STATE_LOW
+        assert plant.state == STATE_PROBLEM
+
+        # Recover to clearly above the minimum (560 > 525), but within the old
+        # span-based band (560 <= 625). Must clear under the threshold-relative band.
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=40.0,
+            conductivity=560.0,
+            illuminance=5000.0,
+            humidity=40.0,
+        )
+        await update_plant_sensors(hass, init_integration.entry_id)
+        assert plant.conductivity_status == STATE_OK
+        assert plant.state == STATE_OK
 
     async def test_threshold_unavailable_preserves_status(
         self,

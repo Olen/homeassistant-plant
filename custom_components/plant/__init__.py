@@ -1087,15 +1087,23 @@ class PlantDevice(RestoreEntity):
                 max_entity.state,
             )
             return current_status
-        band = (max_val - min_val) * HYSTERESIS_FRACTION
+        # Band is relative to the threshold being crossed, not the full
+        # (max - min) span. A span-based band over-inflates the LOW margin for
+        # wide-range sensors with a small minimum (e.g. conductivity 500-3000:
+        # span band = 125, so a LOW would only clear above 625 -- far above the
+        # 500 minimum, trapping clearly-recovered readings as a problem; see
+        # issue #465). A threshold-relative band keeps a consistent ~5% margin
+        # around each edge regardless of where the other bound sits.
+        band_low = min_val * HYSTERESIS_FRACTION
+        band_high = max_val * HYSTERESIS_FRACTION
 
         if value < min_val:
             new_status = STATE_LOW
         elif value > max_val:
             new_status = STATE_HIGH
-        elif current_status == STATE_LOW and value <= min_val + band:
+        elif current_status == STATE_LOW and value <= min_val + band_low:
             new_status = STATE_LOW
-        elif current_status == STATE_HIGH and value >= max_val - band:
+        elif current_status == STATE_HIGH and value >= max_val - band_high:
             new_status = STATE_HIGH
         else:
             new_status = STATE_OK
