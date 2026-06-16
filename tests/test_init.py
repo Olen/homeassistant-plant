@@ -1890,7 +1890,7 @@ class TestHysteresis:
         Temperature minimums can be sub-zero. The band is the magnitude of the
         crossed threshold times the fraction; without abs() a negative min would
         produce a negative band, removing low-side hysteresis entirely (a LOW
-        would clear the instant it crossed back above min). See PR #466 review.
+        would clear the instant it crossed back above min).
 
         min=-10 → band_low = |-10| * 5% = 0.5 → LOW clears at > -9.5.
         """
@@ -1907,6 +1907,41 @@ class TestHysteresis:
         # Above the band (-9.4 > -9.5) → clears
         assert (
             plant._check_threshold(-9.4, min_entity, max_entity, STATE_LOW) == STATE_OK
+        )
+
+    async def test_hysteresis_band_capped_by_span_for_tight_range(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """The band must not exceed the span for tight ranges at large values.
+
+        A threshold-relative band can be wider than the whole OK range when the
+        range is narrow but the values are large (e.g. min=98, max=100:
+        band_high = 100 * 5% = 5, but the span is only 2). Without a span cap a
+        HIGH could never clear to OK -- its clear point (95) sits below the min,
+        so an in-range value (99) stays HIGH or flips straight to LOW. Capping
+        each band at span * fraction (0.1 here) keeps clear points inside the
+        OK range.
+        """
+        from types import SimpleNamespace
+
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        min_entity = SimpleNamespace(state="98", entity_id="number.min")
+        max_entity = SimpleNamespace(state="100", entity_id="number.max")
+
+        # In-range value below max must clear a HIGH (99 < 100 - 0.1 = 99.9)
+        assert (
+            plant._check_threshold(99.0, min_entity, max_entity, STATE_HIGH) == STATE_OK
+        )
+        # In-range value above min must clear a LOW (98.5 > 98 + 0.1 = 98.1)
+        assert (
+            plant._check_threshold(98.5, min_entity, max_entity, STATE_LOW) == STATE_OK
+        )
+        # Just inside the (capped) band still holds: 99.95 >= 99.9 → HIGH
+        assert (
+            plant._check_threshold(99.95, min_entity, max_entity, STATE_HIGH)
+            == STATE_HIGH
         )
 
     async def test_threshold_unavailable_preserves_status(
