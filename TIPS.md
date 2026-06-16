@@ -156,17 +156,18 @@ automation:
             {{ trigger.to_state.attributes.friendly_name }} has a problem!
 ```
 
-To include which specific sensor triggered the issue, check the plant's attributes:
+To include which specific sensor(s) triggered the issue, iterate over the plant's **`problems`** attribute. It is a list of exactly the sensors that are currently out of range *and* have their problem trigger enabled — each entry has `sensor_type`, `status` (`Low`/`High`), `current`, `min`, and `max`:
 
 ```yaml
           message: >
             {{ trigger.to_state.attributes.friendly_name }} has a problem.
-            {% for attr in ['moisture_status', 'temperature_status', 'conductivity_status', 'illuminance_status', 'humidity_status', 'dli_status'] %}
-              {% if trigger.to_state.attributes.get(attr) in ['Low', 'High'] %}
-              - {{ attr | replace('_status', '') | title }}: {{ trigger.to_state.attributes[attr] }}
-              {% endif %}
+            {% for p in trigger.to_state.attributes.get('problems', []) %}
+            - {{ p.sensor_type | replace('_', ' ') | title }}: {{ p.status }} (current {{ p.current }}, range {{ p.min }}–{{ p.max }})
             {% endfor %}
 ```
+
+> [!TIP]
+> Use `problems` rather than the individual `*_status` attributes here. A `*_status` can read `Low`/`High` even when that sensor's trigger is disabled, so looping over the status attributes would report sensors you've intentionally chosen not to treat as problems. See [Problem Reports](README.md#️-problem-reports).
 
 ---
 
