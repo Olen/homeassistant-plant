@@ -1094,8 +1094,11 @@ class PlantDevice(RestoreEntity):
         # 500 minimum, trapping clearly-recovered readings as a problem; see
         # issue #465). A threshold-relative band keeps a consistent ~5% margin
         # around each edge regardless of where the other bound sits.
-        band_low = min_val * HYSTERESIS_FRACTION
-        band_high = max_val * HYSTERESIS_FRACTION
+        # Use the magnitude of the threshold so a negative threshold (e.g. a
+        # sub-zero temperature minimum) still yields a positive band rather than
+        # removing/reversing the hysteresis.
+        band_low = abs(min_val) * HYSTERESIS_FRACTION
+        band_high = abs(max_val) * HYSTERESIS_FRACTION
 
         if value < min_val:
             new_status = STATE_LOW

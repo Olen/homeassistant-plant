@@ -1880,6 +1880,35 @@ class TestHysteresis:
         assert plant.conductivity_status == STATE_OK
         assert plant.state == STATE_OK
 
+    async def test_hysteresis_band_positive_for_negative_threshold(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Negative thresholds must still yield a positive hysteresis band.
+
+        Temperature minimums can be sub-zero. The band is the magnitude of the
+        crossed threshold times the fraction; without abs() a negative min would
+        produce a negative band, removing low-side hysteresis entirely (a LOW
+        would clear the instant it crossed back above min). See PR #466 review.
+
+        min=-10 → band_low = |-10| * 5% = 0.5 → LOW clears at > -9.5.
+        """
+        from types import SimpleNamespace
+
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        min_entity = SimpleNamespace(state="-10", entity_id="number.min")
+        max_entity = SimpleNamespace(state="40", entity_id="number.max")
+
+        # Recovered just above min but within the band (-9.8 <= -10 + 0.5 = -9.5)
+        assert (
+            plant._check_threshold(-9.8, min_entity, max_entity, STATE_LOW) == STATE_LOW
+        )
+        # Above the band (-9.4 > -9.5) → clears
+        assert (
+            plant._check_threshold(-9.4, min_entity, max_entity, STATE_LOW) == STATE_OK
+        )
+
     async def test_threshold_unavailable_preserves_status(
         self,
         hass: HomeAssistant,
