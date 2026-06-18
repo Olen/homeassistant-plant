@@ -7,7 +7,7 @@ Practical tips, template examples, and workarounds for common situations with th
 ## 📑 Table of Contents
 
 - [💡 Tips & Tricks](#-tips--tricks)
-  - [🔧 Fixing Sensors with Wrong or Missing Device Class](#-fixing-sensors-with-wrong-or-missing-device-class)
+  - [🔍 A sensor is missing from the dropdown? → MISSING_SENSORS.md](MISSING_SENSORS.md)
   - [💧 Auto-Watering with Averaged Moisture](#-auto-watering-with-averaged-moisture)
   - [🚨 Problem Notification Automation](#-problem-notification-automation)
   - [🌤️ Weather Forecast Warnings for Outdoor Plants](#️-weather-forecast-warnings-for-outdoor-plants)
@@ -17,70 +17,11 @@ Practical tips, template examples, and workarounds for common situations with th
 
 ---
 
-## 🔧 Fixing Sensors with Wrong or Missing Device Class
+## 🔍 A Sensor Is Missing From the Dropdown? (Wrong/Missing `device_class`)
 
-This is the most common issue users run into. The sensor dropdowns in the config flow filter by `device_class`, and many integrations (especially Zigbee and BLE sensors) don't set it correctly. A humidity sensor might report soil moisture, or a soil sensor might have no `device_class` at all.
+The most common issue: a sensor exists but isn't listed in a config-flow dropdown because the source integration (often Zigbee2MQTT or a BLE sensor) didn't set its `device_class`. **The permanent fix is to report it to that integration**; several local workarounds are also available.
 
-There are three ways to work around this:
-
-### Option 1: Use `customize.yaml` *(simplest)*
-
-Override the device class directly in your HA configuration. No new entities created.
-
-```yaml
-# In customize.yaml
-sensor.my_zigbee_soil_sensor:
-  device_class: moisture
-
-sensor.my_humidity_sensor_used_for_soil:
-  device_class: moisture
-```
-
-Restart Home Assistant after editing. The sensor will now appear in the correct dropdown.
-
-### Option 2: Create a Template Sensor
-
-Create a new sensor with the correct `device_class`. Useful when you also want to rename the sensor or add processing.
-
-```yaml
-# In configuration.yaml (or a templates/ file)
-template:
-  - sensor:
-      - name: "Garden Soil Moisture"
-        unique_id: "garden_soil_moisture_fixed"
-        state: "{{ states('sensor.zigbee_soil_sensor_humidity') }}"
-        unit_of_measurement: "%"
-        device_class: moisture
-        state_class: measurement
-```
-
-### Option 3: Use `replace_sensor` After Setup
-
-The `plant.replace_sensor` action has **more relaxed** validation than the setup flow and the **Configure** → **Replace sensors** UI — it does not filter by `device_class`, so it accepts any `sensor.*` entity. You can:
-
-1. Set up the plant **without** the problematic sensor
-2. Use **Developer Tools** → **Actions** → `plant.replace_sensor` to assign it
-
-```yaml
-action: plant.replace_sensor
-data:
-  meter_entity: sensor.my_plant_soil_moisture
-  new_sensor: sensor.zigbee_sensor_with_wrong_device_class
-```
-
-> [!NOTE]
-> If the plant sensor entity is disabled (because no source was configured during setup), you must **enable** it first on the device page before it appears in the entity picker. See [Adding a sensor to an existing plant](README.md#adding-a-sensor-to-an-existing-plant).
-
-### Which Option to Choose?
-
-| Option | Pros | Cons |
-|--------|------|------|
-| `customize.yaml` | Simple, no extra entities | Affects the sensor globally |
-| Template sensor | Full control, can rename/process | Extra entity to maintain |
-| `replace_sensor` | No config changes needed, available from UI | Sensor must be enabled first |
-
-> [!TIP]
-> Regardless of the workaround, **report the missing `device_class` to the integration that owns the physical sensor**. That's the only way to fix it permanently for everyone.
+➡️ Full explanation and workarounds: **[MISSING_SENSORS.md](MISSING_SENSORS.md)**
 
 ---
 

@@ -25,6 +25,7 @@ A comprehensive plant monitoring integration for Home Assistant that treats each
   - [🌻 OpenPlantbook Integration](#-openplantbook-integration)
   - [🃏 Lovelace Card](#-lovelace-card)
   - [💡 Tips & Tricks](TIPS.md)
+  - [🔍 Missing Sensor in Dropdown?](MISSING_SENSORS.md)
   - [❓ FAQ](#-faq)
   - [☕ Support](#-support)
 
@@ -335,7 +336,10 @@ The card supports both °C and °F:
 
 ## 💡 Tips & Tricks
 
-For practical tips, template examples, and workarounds — including fixing sensors with wrong `device_class`, auto-watering automations, problem notifications, and battery/stuck sensor monitoring — see **[TIPS.md](TIPS.md)**.
+> [!IMPORTANT]
+> **A sensor doesn't show up in a dropdown?** This is the most common problem, and it's almost always a missing `device_class` on the *source* integration (often Zigbee2MQTT or BLE) — not a Plant Monitor bug. **Please report it to that integration** (the only permanent fix); local workarounds are in **[MISSING_SENSORS.md](MISSING_SENSORS.md)**.
+
+For other practical tips, template examples, and workarounds — auto-watering, problem notifications, battery/stuck sensor monitoring — see **[TIPS.md](TIPS.md)**.
 
 ---
 
@@ -348,24 +352,13 @@ Home Assistant remembers old entity configurations. Instead of removing and re-a
 </details>
 
 <details>
-<summary><strong>I can't select the correct sensor type (e.g. Moisture, Humidity) from the dropdown</strong></summary>
+<summary><strong>A sensor is missing from the dropdown (e.g. conductivity, moisture, humidity)</strong></summary>
 
-The sensor dropdowns filter by `device_class`. Some integrations don't set the correct device class on their sensors.
+The dropdowns filter by `device_class`, and some integrations (often Zigbee2MQTT or BLE sensors) create the entity without one — so it isn't listed.
 
-**Solutions:**
-1. Report the issue to the physical sensor's integration maintainer
-2. Add the plant without that sensor, then use the `plant.replace_sensor` action (it doesn't filter by `device_class`)
-3. Create a template sensor with the correct device class:
+**The permanent fix is upstream:** report the missing `device_class`/`state_class` to the integration that owns the sensor (e.g. Zigbee2MQTT). Once fixed there, the sensor appears automatically — for you and everyone else with that device. Plant Monitor deliberately does not work around missing device classes.
 
-```yaml
-template:
-  - sensor:
-      - name: "Soil Moisture"
-        unique_id: "soil_sensor_moisture"
-        state: "{{ states('sensor.soil_sensor_soil_moisture') }}"
-        unit_of_measurement: "%"
-        device_class: "moisture"
-```
+Local workarounds (Zigbee2MQTT `devices.yaml` override, `customize.yaml`, a template sensor, or `plant.replace_sensor`) are documented in **[MISSING_SENSORS.md](MISSING_SENSORS.md)**.
 </details>
 
 <details>
