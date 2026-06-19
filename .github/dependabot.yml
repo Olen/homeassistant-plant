@@ -1,11 +1,43 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
-
 version: 2
 updates:
-  - package-ecosystem: "github-actions" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  # GitHub Actions — all action bumps grouped into one weekly PR to limit noise.
+  - package-ecosystem: "github-actions"
+    directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: "ci"
+    labels:
+      - "dependencies"
+      - "github-actions"
+
+  # Python dev/test tooling from the "test" extra in pyproject.toml, grouped
+  # so patch/minor updates land together rather than as many PRs.
+  #
+  # Runtime requirements live in custom_components/plant/manifest.json, which
+  # Dependabot cannot parse. async-timeout is also declared in pyproject.toml
+  # but is ignored here so a pip bump never drifts from the manifest (the
+  # source of truth for the integration's runtime deps).
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "async-timeout"
+    groups:
+      python-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    commit-message:
+      prefix: "build"
+    labels:
+      - "dependencies"
+      - "python"
