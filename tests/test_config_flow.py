@@ -30,6 +30,7 @@ from custom_components.plant.const import (
     CONF_MIN_VPD,
     DOMAIN,
     FLOW_FORCE_SPECIES_UPDATE,
+    FLOW_LIMITS_TEMPERATURE_UNIT,
     FLOW_PLANT_INFO,
     FLOW_PLANT_LIMITS,
     FLOW_RIGHT_PLANT,
@@ -1863,3 +1864,58 @@ class TestOptionsFlow:
         # Entry.data must also have care persisted so it survives a reload.
         stored = entry.data[FLOW_PLANT_INFO][ATTR_CARE]
         assert stored == CARE_MONSTERA_DELICIOSA
+
+    async def test_force_refresh_updates_temperature_unit_marker(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+        mock_openplantbook_services,
+    ) -> None:
+        """Force refresh must keep the temperature-unit marker coupled to the
+        refreshed limits.
+
+        refresh_plant_from_openplantbook re-runs generate_configentry, which
+        converts the OPB Celsius limits to the system unit and stamps
+        FLOW_LIMITS_TEMPERATURE_UNIT. If the refresh persisted the limits but
+        left a stale marker, a later read would re-convert already-converted
+        values — the double conversion this fix prevents.
+
+        Here the plant was created under metric (marker=°C, from conftest) but
+        the system is switched to imperial before the refresh. The persisted
+        marker must end up as the *current* system unit (°F).
+        """
+        from homeassistant.const import UnitOfTemperature
+        from homeassistant.util.unit_system import US_CUSTOMARY_SYSTEM
+
+        entry = init_integration
+
+        # Plant was created on metric; marker is currently °C.
+        assert (
+            entry.data[FLOW_PLANT_INFO][FLOW_LIMITS_TEMPERATURE_UNIT]
+            == UnitOfTemperature.CELSIUS
+        )
+
+        # User switches HA to imperial, then forces a species refresh.
+        hass.config.units = US_CUSTOMARY_SYSTEM
+
+        result = await hass.config_entries.options.async_init(entry.entry_id)
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"], {"next_step_id": "plant_properties"}
+        )
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            {
+                ATTR_SPECIES: "monstera deliciosa",
+                FLOW_FORCE_SPECIES_UPDATE: True,
+                OPB_DISPLAY_PID: "Monstera deliciosa",
+                ATTR_ENTITY_PICTURE: "https://example.com/monstera.jpg",
+            },
+        )
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        await hass.async_block_till_done()
+
+        # The marker must now match the system unit the limits were converted to.
+        assert (
+            entry.data[FLOW_PLANT_INFO][FLOW_LIMITS_TEMPERATURE_UNIT]
+            == UnitOfTemperature.FAHRENHEIT
+        )

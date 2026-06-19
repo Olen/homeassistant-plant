@@ -16,11 +16,13 @@ from homeassistant.const import (
     ATTR_DOMAIN,
     ATTR_ENTITY_PICTURE,
     ATTR_NAME,
+    UnitOfTemperature,
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.network import NoURLAvailableError, get_url
 from homeassistant.helpers.selector import selector
+from homeassistant.util.unit_conversion import TemperatureConverter
 
 from .const import (
     ATTR_CARE,
@@ -36,6 +38,7 @@ from .const import (
     CONF_MAX_HUMIDITY,
     CONF_MAX_ILLUMINANCE,
     CONF_MAX_MOISTURE,
+    CONF_MAX_SOIL_TEMPERATURE,
     CONF_MAX_TEMPERATURE,
     CONF_MAX_VPD,
     CONF_MIN_CONDUCTIVITY,
@@ -43,6 +46,7 @@ from .const import (
     CONF_MIN_HUMIDITY,
     CONF_MIN_ILLUMINANCE,
     CONF_MIN_MOISTURE,
+    CONF_MIN_SOIL_TEMPERATURE,
     CONF_MIN_TEMPERATURE,
     CONF_MIN_VPD,
     DATA_SOURCE,
@@ -52,6 +56,7 @@ from .const import (
     DEFAULT_MAX_HUMIDITY,
     DEFAULT_MAX_ILLUMINANCE,
     DEFAULT_MAX_MOISTURE,
+    DEFAULT_MAX_SOIL_TEMPERATURE,
     DEFAULT_MAX_TEMPERATURE,
     DEFAULT_MAX_VPD,
     DEFAULT_MIN_CONDUCTIVITY,
@@ -59,6 +64,7 @@ from .const import (
     DEFAULT_MIN_HUMIDITY,
     DEFAULT_MIN_ILLUMINANCE,
     DEFAULT_MIN_MOISTURE,
+    DEFAULT_MIN_SOIL_TEMPERATURE,
     DEFAULT_MIN_TEMPERATURE,
     DEFAULT_MIN_VPD,
     DEFAULT_MOISTURE_GRACE_PERIOD,
@@ -71,6 +77,7 @@ from .const import (
     FLOW_FORCE_SPECIES_UPDATE,
     FLOW_HUMIDITY_TRIGGER,
     FLOW_ILLUMINANCE_TRIGGER,
+    FLOW_LIMITS_TEMPERATURE_UNIT,
     FLOW_MOISTURE_GRACE_PERIOD,
     FLOW_MOISTURE_TRIGGER,
     FLOW_PLANT_INFO,
@@ -301,11 +308,31 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
                 # Fill in default values for hidden thresholds to keep data structure complete
                 limits = dict(user_input)
+
+                # Temperature defaults are in Celsius - convert if system is imperial
+                temp_unit = self.hass.config.units.temperature_unit
+
+                def convert_temp_default(value_c: float) -> float:
+                    """Convert Celsius default to system unit."""
+                    if temp_unit == UnitOfTemperature.CELSIUS:
+                        return value_c
+                    return round(
+                        TemperatureConverter.convert(
+                            value_c, UnitOfTemperature.CELSIUS, temp_unit
+                        )
+                    )
+
                 all_threshold_defaults = {
                     CONF_MAX_MOISTURE: DEFAULT_MAX_MOISTURE,
                     CONF_MIN_MOISTURE: DEFAULT_MIN_MOISTURE,
-                    CONF_MAX_TEMPERATURE: DEFAULT_MAX_TEMPERATURE,
-                    CONF_MIN_TEMPERATURE: DEFAULT_MIN_TEMPERATURE,
+                    CONF_MAX_TEMPERATURE: convert_temp_default(DEFAULT_MAX_TEMPERATURE),
+                    CONF_MIN_TEMPERATURE: convert_temp_default(DEFAULT_MIN_TEMPERATURE),
+                    CONF_MAX_SOIL_TEMPERATURE: convert_temp_default(
+                        DEFAULT_MAX_SOIL_TEMPERATURE
+                    ),
+                    CONF_MIN_SOIL_TEMPERATURE: convert_temp_default(
+                        DEFAULT_MIN_SOIL_TEMPERATURE
+                    ),
                     CONF_MAX_CONDUCTIVITY: DEFAULT_MAX_CONDUCTIVITY,
                     CONF_MIN_CONDUCTIVITY: DEFAULT_MIN_CONDUCTIVITY,
                     CONF_MAX_ILLUMINANCE: DEFAULT_MAX_ILLUMINANCE,
@@ -322,6 +349,8 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         limits[key] = default_val
 
                 self.plant_info[FLOW_PLANT_LIMITS] = limits
+                # Record the unit that temperature limits are stored in
+                self.plant_info[FLOW_LIMITS_TEMPERATURE_UNIT] = temp_unit
                 _LOGGER.debug("Plant_info: %s", self.plant_info)
                 # Return the form of the next step
                 return await self.async_step_limits_done()
@@ -953,6 +982,13 @@ async def refresh_plant_from_openplantbook(
     plant_info = dict(data.get(FLOW_PLANT_INFO, {}))
     plant_info[FLOW_PLANT_LIMITS] = dict(limits)
     plant_info[ATTR_CARE] = dict(plant.care)
+    # Keep the temperature-unit marker coupled to the refreshed limits.
+    # generate_configentry converts temps to the system unit and stamps the
+    # marker; persisting the limits without the marker would let a later
+    # unit switch re-convert already-converted values (double conversion).
+    plant_info[FLOW_LIMITS_TEMPERATURE_UNIT] = plant_config[FLOW_PLANT_INFO].get(
+        FLOW_LIMITS_TEMPERATURE_UNIT, hass.config.units.temperature_unit
+    )
     data[FLOW_PLANT_INFO] = plant_info
     options = dict(entry.options)
     options[OPB_DISPLAY_PID] = plant.display_species

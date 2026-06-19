@@ -81,6 +81,7 @@ from .const import (
     DEFAULT_MIN_TEMPERATURE,
     DEFAULT_MIN_VPD,
     DOMAIN,
+    FLOW_LIMITS_TEMPERATURE_UNIT,
     FLOW_PLANT_INFO,
     FLOW_PLANT_LIMITS,
     FLOW_SENSOR_CO2,
@@ -258,6 +259,57 @@ def _convert_default_temp(value_c: float, target_unit: UnitOfTemperature) -> flo
     return round(
         TemperatureConverter.convert(value_c, UnitOfTemperature.CELSIUS, target_unit)
     )
+
+
+def _get_temperature_default(
+    hass: HomeAssistant,
+    config: ConfigEntry,
+    config_key: str,
+    fallback_default: float,
+) -> float:
+    """Get the temperature default value, handling unit conversion.
+
+    Config entries created with the updated flow store `limits_temperature_unit`
+    explicitly. When present, we compare it to the system unit and convert if
+    they differ.
+
+    Legacy entries (without `limits_temperature_unit`) assume stored values are
+    already in the user's system unit — both OpenPlantbook (pre-converted by
+    generate_configentry) and manual configs (user typed values in their unit).
+
+    Args:
+        hass: Home Assistant instance
+        config: Config entry containing plant data
+        config_key: The CONF_*_TEMPERATURE key to look up
+        fallback_default: The DEFAULT_*_TEMPERATURE value to use if not stored
+
+    Returns:
+        Temperature value in the user's configured unit system
+    """
+    plant_info = config.data[FLOW_PLANT_INFO]
+    stored = plant_info[FLOW_PLANT_LIMITS].get(config_key)
+    system_unit = hass.config.units.temperature_unit
+
+    # Check for explicit unit marker (new config entries)
+    stored_unit = plant_info.get(FLOW_LIMITS_TEMPERATURE_UNIT)
+    if stored_unit is not None:
+        if stored is not None:
+            # Value exists - convert if units differ
+            if stored_unit == system_unit:
+                return stored
+            # Convert from stored unit to system unit
+            return round(TemperatureConverter.convert(stored, stored_unit, system_unit))
+        # No stored value - convert fallback default from Celsius
+        return _convert_default_temp(fallback_default, system_unit)
+
+    # Legacy fallback: stored values are assumed to be in user's system unit
+    # - OpenPlantbook: pre-converted by generate_configentry via display_temp()
+    # - Manual: user typed values in their configured unit
+    if stored is not None:
+        return stored
+
+    # No stored value - convert fallback default from Celsius
+    return _convert_default_temp(fallback_default, system_unit)
 
 
 class PlantMinMax(RestoreNumber):
@@ -497,11 +549,8 @@ class PlantMaxTemperature(PlantMinMax):
     ) -> None:
         """Initialize the Plant component."""
         self._attr_unique_id = f"{config.entry_id}-max-temperature"
-        self._default_value = _convert_default_temp(
-            config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
-                CONF_MAX_TEMPERATURE, DEFAULT_MAX_TEMPERATURE
-            ),
-            hass.config.units.temperature_unit,
+        self._default_value = _get_temperature_default(
+            hass, config, CONF_MAX_TEMPERATURE, DEFAULT_MAX_TEMPERATURE
         )
         if hass.config.units.temperature_unit == UnitOfTemperature.FAHRENHEIT:
             self._attr_native_max_value = TEMPERATURE_MAX_VALUE_FAHRENHEIT
@@ -595,13 +644,10 @@ class PlantMinTemperature(PlantMinMax):
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the component."""
-        self._default_value = _convert_default_temp(
-            config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
-                CONF_MIN_TEMPERATURE, DEFAULT_MIN_TEMPERATURE
-            ),
-            hass.config.units.temperature_unit,
-        )
         self._attr_unique_id = f"{config.entry_id}-min-temperature"
+        self._default_value = _get_temperature_default(
+            hass, config, CONF_MIN_TEMPERATURE, DEFAULT_MIN_TEMPERATURE
+        )
         if hass.config.units.temperature_unit == UnitOfTemperature.FAHRENHEIT:
             self._attr_native_max_value = TEMPERATURE_MAX_VALUE_FAHRENHEIT
             self._attr_native_min_value = TEMPERATURE_MIN_VALUE_FAHRENHEIT
@@ -965,11 +1011,8 @@ class PlantMaxSoilTemperature(PlantMinMax):
     ) -> None:
         """Initialize the Plant component."""
         self._attr_unique_id = f"{config.entry_id}-max-soil-temperature"
-        self._default_value = _convert_default_temp(
-            config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
-                CONF_MAX_SOIL_TEMPERATURE, DEFAULT_MAX_SOIL_TEMPERATURE
-            ),
-            hass.config.units.temperature_unit,
+        self._default_value = _get_temperature_default(
+            hass, config, CONF_MAX_SOIL_TEMPERATURE, DEFAULT_MAX_SOIL_TEMPERATURE
         )
         if hass.config.units.temperature_unit == UnitOfTemperature.FAHRENHEIT:
             self._attr_native_max_value = TEMPERATURE_MAX_VALUE_FAHRENHEIT
@@ -1047,13 +1090,10 @@ class PlantMinSoilTemperature(PlantMinMax):
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
     ) -> None:
         """Initialize the component."""
-        self._default_value = _convert_default_temp(
-            config.data[FLOW_PLANT_INFO][FLOW_PLANT_LIMITS].get(
-                CONF_MIN_SOIL_TEMPERATURE, DEFAULT_MIN_SOIL_TEMPERATURE
-            ),
-            hass.config.units.temperature_unit,
-        )
         self._attr_unique_id = f"{config.entry_id}-min-soil-temperature"
+        self._default_value = _get_temperature_default(
+            hass, config, CONF_MIN_SOIL_TEMPERATURE, DEFAULT_MIN_SOIL_TEMPERATURE
+        )
         if hass.config.units.temperature_unit == UnitOfTemperature.FAHRENHEIT:
             self._attr_native_max_value = TEMPERATURE_MAX_VALUE_FAHRENHEIT
             self._attr_native_min_value = TEMPERATURE_MIN_VALUE_FAHRENHEIT

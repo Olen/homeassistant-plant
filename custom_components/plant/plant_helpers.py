@@ -76,6 +76,7 @@ from .const import (
     DEFAULT_MIN_TEMPERATURE,
     DOMAIN_PLANTBOOK,
     FLOW_FORCE_SPECIES_UPDATE,
+    FLOW_LIMITS_TEMPERATURE_UNIT,
     FLOW_PLANT_IMAGE,
     FLOW_PLANT_INFO,
     FLOW_SENSOR_CO2,
@@ -511,6 +512,9 @@ class PlantHelper:
                     CONF_MAX_DLI: config.get(CONF_MAX_DLI, max_dli),
                     CONF_MIN_DLI: config.get(CONF_MIN_DLI, min_dli),
                 },
+                # Record the unit that temperature limits are stored in.
+                # generate_configentry converts temps to the user's system unit.
+                FLOW_LIMITS_TEMPERATURE_UNIT: self.hass.config.units.temperature_unit,
                 FLOW_SENSOR_TEMPERATURE: config[ATTR_SENSORS].get(ATTR_TEMPERATURE),
                 FLOW_SENSOR_MOISTURE: config[ATTR_SENSORS].get(ATTR_MOISTURE),
                 FLOW_SENSOR_CONDUCTIVITY: config[ATTR_SENSORS].get(ATTR_CONDUCTIVITY),

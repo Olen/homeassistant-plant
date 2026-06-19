@@ -10,6 +10,7 @@ import pytest
 from homeassistant.const import (
     ATTR_ENTITY_PICTURE,
     ATTR_NAME,
+    UnitOfTemperature,
 )
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import (
@@ -47,6 +48,7 @@ from custom_components.plant.const import (
     DATA_SOURCE_PLANTBOOK,
     DOMAIN,
     DOMAIN_PLANTBOOK,
+    FLOW_LIMITS_TEMPERATURE_UNIT,
     FLOW_PLANT_INFO,
     FLOW_SENSOR_CO2,
     FLOW_SENSOR_CONDUCTIVITY,
@@ -94,9 +96,17 @@ def create_plant_config_data(
     soil_temperature_sensor: str | None = "sensor.test_soil_temperature",
     data_source: str = DATA_SOURCE_DEFAULT,
     limits: dict | None = None,
+    limits_temperature_unit: str | None = None,
     care: dict | None = None,
 ) -> dict[str, Any]:
-    """Create plant configuration data for testing."""
+    """Create plant configuration data for testing.
+
+    Args:
+        limits_temperature_unit: The unit that temperature limits are stored in.
+            If None (legacy), stored values are used as-is — assumed to already
+            be in the user's system unit. Pass UnitOfTemperature.FAHRENHEIT or
+            UnitOfTemperature.CELSIUS to explicitly specify the unit.
+    """
     if limits is None:
         limits = {
             CONF_MAX_MOISTURE: 60,
@@ -119,30 +129,39 @@ def create_plant_config_data(
             CONF_MIN_VPD: 0.4,
         }
 
-    return {
+    plant_info = {
         DATA_SOURCE: data_source,
-        FLOW_PLANT_INFO: {
-            ATTR_NAME: name,
-            ATTR_SPECIES: species,
-            OPB_DISPLAY_PID: display_species,
-            ATTR_ENTITY_PICTURE: entity_picture,
-            ATTR_LIMITS: limits,
-            ATTR_CARE: care or {},
-            FLOW_SENSOR_TEMPERATURE: temperature_sensor,
-            FLOW_SENSOR_MOISTURE: moisture_sensor,
-            FLOW_SENSOR_CONDUCTIVITY: conductivity_sensor,
-            FLOW_SENSOR_ILLUMINANCE: illuminance_sensor,
-            FLOW_SENSOR_HUMIDITY: humidity_sensor,
-            FLOW_SENSOR_CO2: co2_sensor,
-            FLOW_SENSOR_SOIL_TEMPERATURE: soil_temperature_sensor,
-        },
+        ATTR_NAME: name,
+        ATTR_SPECIES: species,
+        OPB_DISPLAY_PID: display_species,
+        ATTR_ENTITY_PICTURE: entity_picture,
+        ATTR_LIMITS: limits,
+        ATTR_CARE: care or {},
+        FLOW_SENSOR_TEMPERATURE: temperature_sensor,
+        FLOW_SENSOR_MOISTURE: moisture_sensor,
+        FLOW_SENSOR_CONDUCTIVITY: conductivity_sensor,
+        FLOW_SENSOR_ILLUMINANCE: illuminance_sensor,
+        FLOW_SENSOR_HUMIDITY: humidity_sensor,
+        FLOW_SENSOR_CO2: co2_sensor,
+        FLOW_SENSOR_SOIL_TEMPERATURE: soil_temperature_sensor,
     }
+
+    # Add explicit temperature unit if provided (new config entries)
+    if limits_temperature_unit is not None:
+        plant_info[FLOW_LIMITS_TEMPERATURE_UNIT] = limits_temperature_unit
+
+    return {FLOW_PLANT_INFO: plant_info}
 
 
 @pytest.fixture
 def plant_config_data() -> dict[str, Any]:
-    """Return standard plant configuration data."""
-    return create_plant_config_data()
+    """Return standard plant configuration data.
+
+    Simulates new config entries which always have limits_temperature_unit set.
+    """
+    return create_plant_config_data(
+        limits_temperature_unit=UnitOfTemperature.CELSIUS,
+    )
 
 
 @pytest.fixture
