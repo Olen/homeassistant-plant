@@ -103,9 +103,9 @@ def create_plant_config_data(
 
     Args:
         limits_temperature_unit: The unit that temperature limits are stored in.
-            If None (legacy), the data_source is used to infer unit handling.
-            Pass UnitOfTemperature.FAHRENHEIT or UnitOfTemperature.CELSIUS
-            to explicitly specify the unit.
+            If None (legacy), stored values are used as-is — assumed to already
+            be in the user's system unit. Pass UnitOfTemperature.FAHRENHEIT or
+            UnitOfTemperature.CELSIUS to explicitly specify the unit.
     """
     if limits is None:
         limits = {

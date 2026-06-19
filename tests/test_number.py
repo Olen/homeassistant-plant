@@ -2,8 +2,16 @@
 
 from __future__ import annotations
 
+from types import SimpleNamespace
+
+import pytest
 from homeassistant.components.number import NumberMode
-from homeassistant.const import LIGHT_LUX, PERCENTAGE, UnitOfConductivity
+from homeassistant.const import (
+    LIGHT_LUX,
+    PERCENTAGE,
+    UnitOfConductivity,
+    UnitOfTemperature,
+)
 from homeassistant.core import HomeAssistant, State
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity import EntityCategory
@@ -15,11 +23,19 @@ from pytest_homeassistant_custom_component.common import (
 from custom_components.plant.const import (
     ATTR_PLANT,
     ATTR_THRESHOLDS,
+    CONF_MIN_TEMPERATURE,
     DOMAIN,
+    FLOW_LIMITS_TEMPERATURE_UNIT,
+    FLOW_PLANT_INFO,
+    FLOW_PLANT_LIMITS,
     UNIT_DLI,
 )
+from custom_components.plant.number import _get_temperature_default
 
 from .conftest import TEST_PLANT_NAME
+
+_C = UnitOfTemperature.CELSIUS
+_F = UnitOfTemperature.FAHRENHEIT
 
 
 class TestThresholdEntitiesCreation:
@@ -1000,7 +1016,7 @@ class TestTemperatureLimitsUnitHandling:
     - The double-conversion bug where pre-converted Fahrenheit limits were converted again
     - Explicit unit marker behavior (limits_temperature_unit)
     - Cross-unit conversion when stored unit differs from system unit
-    - Legacy fallback behavior using data_source check
+    - Legacy fallback behavior (no unit marker → stored values used as-is)
 
     Example bug: OpenPlantbook returns min_temp=7°C, generate_configentry converts to 45°F,
     but the entity __init__ then treated 45 as Celsius and converted again to 113°F.
@@ -1142,9 +1158,8 @@ class TestTemperatureLimitsUnitHandling:
         hass: HomeAssistant,
     ) -> None:
         """Manual/non-OpenPlantbook Celsius values ARE converted to Fahrenheit."""
-        from homeassistant.util.unit_system import US_CUSTOMARY_SYSTEM
-
         from homeassistant.const import UnitOfTemperature
+        from homeassistant.util.unit_system import US_CUSTOMARY_SYSTEM
 
         from .conftest import (
             CONF_MAX_SOIL_TEMPERATURE,
@@ -1161,7 +1176,7 @@ class TestTemperatureLimitsUnitHandling:
         # These need to be converted to Fahrenheit for display
         celsius_limits = {
             CONF_MAX_TEMPERATURE: 32,  # 32°C → should become 90°F
-            CONF_MIN_TEMPERATURE: 7,   # 7°C → should become 45°F
+            CONF_MIN_TEMPERATURE: 7,  # 7°C → should become 45°F
             CONF_MAX_SOIL_TEMPERATURE: 30,  # 30°C → should become 86°F
             CONF_MIN_SOIL_TEMPERATURE: 10,  # 10°C → should become 50°F
             "max_moisture": 60,
@@ -1208,11 +1223,11 @@ class TestTemperatureLimitsUnitHandling:
         await hass.config_entries.async_unload(config_entry.entry_id)
         await hass.async_block_till_done()
 
-    async def test_legacy_data_source_fallback(
+    async def test_legacy_no_unit_marker_uses_stored_as_is(
         self,
         hass: HomeAssistant,
     ) -> None:
-        """Legacy config entries without explicit unit marker use data_source fallback."""
+        """Legacy entries without a unit marker use stored values as-is."""
         from homeassistant.util.unit_system import US_CUSTOMARY_SYSTEM
 
         from custom_components.plant.const import DOMAIN_PLANTBOOK
@@ -1226,7 +1241,7 @@ class TestTemperatureLimitsUnitHandling:
 
         hass.config.units = US_CUSTOMARY_SYSTEM
 
-        # Legacy config: no limits_temperature_unit, uses data_source=DOMAIN_PLANTBOOK
+        # Legacy config: no limits_temperature_unit marker.
         # Values are already in Fahrenheit (pre-converted by old generate_configentry)
         legacy_limits = {
             CONF_MAX_TEMPERATURE: 90,  # Already °F
@@ -1249,7 +1264,9 @@ class TestTemperatureLimitsUnitHandling:
             "min_vpd": 0.4,
         }
 
-        # No limits_temperature_unit - falls back to checking data_source
+        # No limits_temperature_unit marker - stored values are used as-is.
+        # data_source is set only to mimic a real legacy plantbook entry; the
+        # conversion logic never inspects it.
         config_data = create_plant_config_data(
             limits=legacy_limits,
             data_source=DOMAIN_PLANTBOOK,
@@ -1408,3 +1425,79 @@ class TestTemperatureLimitsUnitHandling:
 
         await hass.config_entries.async_unload(config_entry.entry_id)
         await hass.async_block_till_done()
+
+
+def _temp_default(marker, system_unit, stored, fallback=10):
+    """Call _get_temperature_default with lightweight fakes.
+
+    _get_temperature_default reads only ``hass.config.units.temperature_unit``
+    and ``config.data[FLOW_PLANT_INFO]``, so we can exercise the full C/F
+    truth table without standing up a config entry.
+
+    Args:
+        marker: value for FLOW_LIMITS_TEMPERATURE_UNIT, or None to omit it
+            (legacy entry).
+        system_unit: HA's configured temperature unit.
+        stored: the stored limit value, or None to omit it (fall back to
+            default).
+        fallback: the Celsius DEFAULT_* value used when nothing is stored.
+    """
+    plant_info = {FLOW_PLANT_LIMITS: {}}
+    if stored is not None:
+        plant_info[FLOW_PLANT_LIMITS][CONF_MIN_TEMPERATURE] = stored
+    if marker is not None:
+        plant_info[FLOW_LIMITS_TEMPERATURE_UNIT] = marker
+
+    hass = SimpleNamespace(
+        config=SimpleNamespace(units=SimpleNamespace(temperature_unit=system_unit))
+    )
+    config = SimpleNamespace(data={FLOW_PLANT_INFO: plant_info})
+    return _get_temperature_default(hass, config, CONF_MIN_TEMPERATURE, fallback)
+
+
+class TestGetTemperatureDefaultMatrix:
+    """Exhaustive C/F truth table for _get_temperature_default.
+
+    Three axes fully determine the result:
+      - marker:  None (legacy) | °C | °F   (the stored unit of the value)
+      - system:  °C | °F                    (HA's configured unit)
+      - stored:  present | absent           (absent → fall back to default)
+
+    Stored values are converted only when an explicit marker is present AND it
+    differs from the system unit. Defaults are always Celsius and are converted
+    to the system unit. Legacy entries (no marker) use stored values as-is.
+    """
+
+    # 50°C == 122°F, 50°F == 10°C — chosen so every conversion is a clean int.
+    @pytest.mark.parametrize(
+        ("marker", "system", "stored", "expected", "note"),
+        [
+            # --- stored value present ---
+            (_C, _C, 50, 50, "marker=sys: as-is"),
+            (_C, _F, 50, 122, "C stored, F system: 50C->122F"),
+            (_F, _C, 50, 10, "F stored, C system: 50F->10C"),
+            (_F, _F, 50, 50, "marker=sys: as-is"),
+            (None, _C, 50, 50, "legacy: as-is on metric"),
+            (None, _F, 50, 50, "legacy: as-is on imperial (pre-converted)"),
+            # --- stored value absent -> default (10C) converted to system ---
+            (_C, _C, None, 10, "default 10C on metric"),
+            (_C, _F, None, 50, "default 10C -> 50F"),
+            (_F, _C, None, 10, "default always Celsius -> 10C"),
+            (_F, _F, None, 50, "default 10C -> 50F"),
+            (None, _C, None, 10, "legacy default 10C on metric"),
+            (None, _F, None, 50, "legacy default 10C -> 50F"),
+        ],
+    )
+    def test_matrix(self, marker, system, stored, expected, note):
+        """Every (marker, system, stored) combination yields the right value."""
+        assert _temp_default(marker, system, stored) == expected, note
+
+    def test_round_trip_celsius_to_fahrenheit_and_back(self):
+        """A value stored as °C and read on °F, then re-stored as °F and read
+        on °C, must return to the original — no drift, no double conversion."""
+        # Created on metric (marker=°C), value 32°C.
+        on_imperial = _temp_default(_C, _F, 32)
+        assert on_imperial == 90  # 32°C -> 90°F
+        # Re-stamped as °F (e.g. after a refresh), read back on metric.
+        back_on_metric = _temp_default(_F, _C, on_imperial)
+        assert back_on_metric == 32  # 90°F -> 32°C

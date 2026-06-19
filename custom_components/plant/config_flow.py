@@ -327,8 +327,12 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     CONF_MIN_MOISTURE: DEFAULT_MIN_MOISTURE,
                     CONF_MAX_TEMPERATURE: convert_temp_default(DEFAULT_MAX_TEMPERATURE),
                     CONF_MIN_TEMPERATURE: convert_temp_default(DEFAULT_MIN_TEMPERATURE),
-                    CONF_MAX_SOIL_TEMPERATURE: convert_temp_default(DEFAULT_MAX_SOIL_TEMPERATURE),
-                    CONF_MIN_SOIL_TEMPERATURE: convert_temp_default(DEFAULT_MIN_SOIL_TEMPERATURE),
+                    CONF_MAX_SOIL_TEMPERATURE: convert_temp_default(
+                        DEFAULT_MAX_SOIL_TEMPERATURE
+                    ),
+                    CONF_MIN_SOIL_TEMPERATURE: convert_temp_default(
+                        DEFAULT_MIN_SOIL_TEMPERATURE
+                    ),
                     CONF_MAX_CONDUCTIVITY: DEFAULT_MAX_CONDUCTIVITY,
                     CONF_MIN_CONDUCTIVITY: DEFAULT_MIN_CONDUCTIVITY,
                     CONF_MAX_ILLUMINANCE: DEFAULT_MAX_ILLUMINANCE,
@@ -978,6 +982,13 @@ async def refresh_plant_from_openplantbook(
     plant_info = dict(data.get(FLOW_PLANT_INFO, {}))
     plant_info[FLOW_PLANT_LIMITS] = dict(limits)
     plant_info[ATTR_CARE] = dict(plant.care)
+    # Keep the temperature-unit marker coupled to the refreshed limits.
+    # generate_configentry converts temps to the system unit and stamps the
+    # marker; persisting the limits without the marker would let a later
+    # unit switch re-convert already-converted values (double conversion).
+    plant_info[FLOW_LIMITS_TEMPERATURE_UNIT] = plant_config[FLOW_PLANT_INFO].get(
+        FLOW_LIMITS_TEMPERATURE_UNIT, hass.config.units.temperature_unit
+    )
     data[FLOW_PLANT_INFO] = plant_info
     options = dict(entry.options)
     options[OPB_DISPLAY_PID] = plant.display_species

@@ -298,9 +298,7 @@ def _get_temperature_default(
             if stored_unit == system_unit:
                 return stored
             # Convert from stored unit to system unit
-            return round(
-                TemperatureConverter.convert(stored, stored_unit, system_unit)
-            )
+            return round(TemperatureConverter.convert(stored, stored_unit, system_unit))
         # No stored value - convert fallback default from Celsius
         return _convert_default_temp(fallback_default, system_unit)
 
