@@ -997,7 +997,7 @@ class PlantCurrentPpfd(PlantCurrentStatus):
         # Check if unit contains 'mol' (covers µmol/s⋅m², mol/s⋅m², etc.)
         return "mol" in unit.lower()
 
-    def ppfd(self, value: float | int | str) -> float | str:
+    def ppfd(self, value: float | int | str | None) -> float | None:
         """
         Returns PPFD value - either passed through or converted from lux.
 
