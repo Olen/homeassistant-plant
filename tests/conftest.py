@@ -277,7 +277,7 @@ def mock_openplantbook_services() -> Generator[MagicMock, None, None]:
                 return await mock_search(
                     domain, service, service_data, blocking, return_response
                 )
-            elif service == "get":
+            if service == "get":
                 return await mock_get(
                     domain, service, service_data, blocking, return_response
                 )
@@ -287,19 +287,21 @@ def mock_openplantbook_services() -> Generator[MagicMock, None, None]:
         """Mock image URL validation - always return True for test URLs."""
         return url is not None and url != ""
 
-    with patch(
-        "homeassistant.core.ServiceRegistry.async_services",
-        return_value={DOMAIN_PLANTBOOK: {"search": None, "get": None}},
-    ):
-        with patch(
+    with (
+        patch(
+            "homeassistant.core.ServiceRegistry.async_services",
+            return_value={DOMAIN_PLANTBOOK: {"search": None, "get": None}},
+        ),
+        patch(
             "homeassistant.core.ServiceRegistry.async_call",
             side_effect=mock_service_call,
-        ):
-            with patch(
-                "custom_components.plant.plant_helpers.PlantHelper.validate_image_url",
-                mock_validate_image_url,
-            ):
-                yield
+        ),
+        patch(
+            "custom_components.plant.plant_helpers.PlantHelper.validate_image_url",
+            mock_validate_image_url,
+        ),
+    ):
+        yield
 
 
 @pytest.fixture
@@ -326,7 +328,7 @@ def mock_openplantbook_with_dli() -> Generator[MagicMock, None, None]:
                 return await mock_search(
                     domain, service, service_data, blocking, return_response
                 )
-            elif service == "get":
+            if service == "get":
                 return await mock_get(
                     domain, service, service_data, blocking, return_response
                 )
@@ -335,19 +337,21 @@ def mock_openplantbook_with_dli() -> Generator[MagicMock, None, None]:
     async def mock_validate_image_url(self, url):
         return url is not None and url != ""
 
-    with patch(
-        "homeassistant.core.ServiceRegistry.async_services",
-        return_value={DOMAIN_PLANTBOOK: {"search": None, "get": None}},
-    ):
-        with patch(
+    with (
+        patch(
+            "homeassistant.core.ServiceRegistry.async_services",
+            return_value={DOMAIN_PLANTBOOK: {"search": None, "get": None}},
+        ),
+        patch(
             "homeassistant.core.ServiceRegistry.async_call",
             side_effect=mock_service_call,
-        ):
-            with patch(
-                "custom_components.plant.plant_helpers.PlantHelper.validate_image_url",
-                mock_validate_image_url,
-            ):
-                yield
+        ),
+        patch(
+            "custom_components.plant.plant_helpers.PlantHelper.validate_image_url",
+            mock_validate_image_url,
+        ),
+    ):
+        yield
 
 
 @pytest.fixture

@@ -51,7 +51,7 @@ def parse_constraints(text: str) -> dict[str, str]:
             continue
         try:
             req = Requirement(line)
-        except Exception:  # noqa: BLE001 - skip anything non-standard
+        except Exception:
             continue
         specs = list(req.specifier)
         if len(specs) == 1 and specs[0].operator == "==":

@@ -246,14 +246,14 @@ class PlantHelper:
 
         try:
             session = async_get_clientsession(self.hass)
-            async with timeout(IMAGE_VALIDATION_TIMEOUT):
-                async with session.head(url, allow_redirects=True) as response:
-                    if response.status == 200:
-                        return True
-                    _LOGGER.warning(
-                        "Image URL %s returned status %s", url, response.status
-                    )
-                    return False
+            async with (
+                timeout(IMAGE_VALIDATION_TIMEOUT),
+                session.head(url, allow_redirects=True) as response,
+            ):
+                if response.status == 200:
+                    return True
+                _LOGGER.warning("Image URL %s returned status %s", url, response.status)
+                return False
         except TimeoutError:
             _LOGGER.warning("Image URL validation timed out for %s", url)
             return False

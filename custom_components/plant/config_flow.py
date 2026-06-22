@@ -542,7 +542,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             try:
                 entity_picture = f"{get_url(self.hass, require_current_request=True)}{urllib.parse.quote(entity_picture)}"
             except NoURLAvailableError:
-                _LOGGER.error(
+                _LOGGER.exception(
                     "No internal or external url found. Please configure these in HA General Settings"
                 )
                 entity_picture = ""

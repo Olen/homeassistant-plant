@@ -57,15 +57,33 @@ target-version = "py312"
 line-length = 88
 
 [tool.ruff.lint]
+# Aligned with the rule groups Home Assistant core enforces via ruff. The
+# HA-specific *pylint* plugins (type-hint/layout/translation checks) live in
+# the core repo and aren't usable here, so this is the portable equivalent.
 select = [
     "E",      # pycodestyle errors
     "W",      # pycodestyle warnings
     "F",      # pyflakes
     "I",      # isort
     "UP",     # pyupgrade
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "SIM",    # flake8-simplify
+    "RET",    # flake8-return
+    "RUF",    # ruff-specific rules
+    "ASYNC",  # flake8-async (blocking calls in async code)
+    "PTH",    # flake8-use-pathlib
+    "LOG",    # flake8-logging
+    "G",      # flake8-logging-format
+    "T20",    # flake8-print
+    "INP",    # flake8-no-pep420 (missing __init__)
+    "TRY",    # tryceratops
 ]
 ignore = [
-    "E501",   # line too long (handled by black)
+    "E501",    # line too long (handled by black)
+    "TRY003",  # long messages in exceptions (HA core disables this too)
+    "RUF002",  # ambiguous unicode in docstrings (intentional, e.g. « » °)
+    "RUF003",  # ambiguous unicode in comments (intentional)
 ]
 
 [tool.ruff.lint.isort]
@@ -74,3 +92,4 @@ combine-as-imports = true
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["E402"]  # Allow imports not at top of file in tests
+"scripts/*" = ["T201"]  # CLI helper scripts print to stdout by design
