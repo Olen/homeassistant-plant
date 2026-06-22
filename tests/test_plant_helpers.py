@@ -127,15 +127,17 @@ class TestPlantHelperGet:
 
         helper = PlantHelper(hass)
         mock_call = AsyncMock(return_value=GET_RESULT_MONSTERA_DELICIOSA)
-        with patch(
-            "homeassistant.core.ServiceRegistry.async_services",
-            return_value={DOMAIN_PLANTBOOK: {"search": None, "get": None}},
-        ):
-            with patch(
+        with (
+            patch(
+                "homeassistant.core.ServiceRegistry.async_services",
+                return_value={DOMAIN_PLANTBOOK: {"search": None, "get": None}},
+            ),
+            patch(
                 "homeassistant.core.ServiceRegistry.async_call",
                 new=mock_call,
-            ):
-                await helper.openplantbook_get("monstera deliciosa")
+            ),
+        ):
+            await helper.openplantbook_get("monstera deliciosa")
 
         assert mock_call.await_count == 1
         service_data = mock_call.await_args.kwargs["service_data"]
@@ -201,15 +203,17 @@ class TestPlantHelperGet:
         from custom_components.plant.const import DOMAIN_PLANTBOOK
 
         helper = PlantHelper(hass)
-        with patch(
-            "homeassistant.core.ServiceRegistry.async_services",
-            return_value={DOMAIN_PLANTBOOK: {"search": None, "get": None}},
-        ):
-            with patch(
+        with (
+            patch(
+                "homeassistant.core.ServiceRegistry.async_services",
+                return_value={DOMAIN_PLANTBOOK: {"search": None, "get": None}},
+            ),
+            patch(
                 "homeassistant.core.ServiceRegistry.async_call",
                 new=AsyncMock(side_effect=TimeoutError),
-            ):
-                result = await helper.openplantbook_get("monstera deliciosa")
+            ),
+        ):
+            result = await helper.openplantbook_get("monstera deliciosa")
 
         assert result is None
 

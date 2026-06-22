@@ -1191,25 +1191,27 @@ class TestPlantDevice:
         # Mock DLI sensor to have a low last_period value
         # min_dli is 2, so set last_period to 1 (below threshold)
         mock_attrs = {"last_period": 1.0}
-        with patch.object(
-            type(plant.dli),
-            "extra_state_attributes",
-            new_callable=PropertyMock,
-            return_value=mock_attrs,
-        ):
-            with patch.object(
+        with (
+            patch.object(
+                type(plant.dli),
+                "extra_state_attributes",
+                new_callable=PropertyMock,
+                return_value=mock_attrs,
+            ),
+            patch.object(
                 type(plant.dli),
                 "native_value",
                 new_callable=PropertyMock,
                 return_value=1.0,
-            ):
-                with patch.object(
-                    type(plant.dli),
-                    "state",
-                    new_callable=PropertyMock,
-                    return_value="1.0",
-                ):
-                    plant.update()
+            ),
+            patch.object(
+                type(plant.dli),
+                "state",
+                new_callable=PropertyMock,
+                return_value="1.0",
+            ),
+        ):
+            plant.update()
 
         assert plant.dli_status == STATE_LOW
         assert plant.state == STATE_PROBLEM
@@ -1238,25 +1240,27 @@ class TestPlantDevice:
         # Mock DLI sensor to have a high last_period value
         # max_dli is 30, so set last_period to 40 (above threshold)
         mock_attrs = {"last_period": 40.0}
-        with patch.object(
-            type(plant.dli),
-            "extra_state_attributes",
-            new_callable=PropertyMock,
-            return_value=mock_attrs,
-        ):
-            with patch.object(
+        with (
+            patch.object(
+                type(plant.dli),
+                "extra_state_attributes",
+                new_callable=PropertyMock,
+                return_value=mock_attrs,
+            ),
+            patch.object(
                 type(plant.dli),
                 "native_value",
                 new_callable=PropertyMock,
                 return_value=40.0,
-            ):
-                with patch.object(
-                    type(plant.dli),
-                    "state",
-                    new_callable=PropertyMock,
-                    return_value="40.0",
-                ):
-                    plant.update()
+            ),
+            patch.object(
+                type(plant.dli),
+                "state",
+                new_callable=PropertyMock,
+                return_value="40.0",
+            ),
+        ):
+            plant.update()
 
         assert plant.dli_status == STATE_HIGH
         assert plant.state == STATE_PROBLEM
@@ -1285,25 +1289,27 @@ class TestPlantDevice:
         # Mock DLI sensor to have a normal last_period value
         # min_dli is 2, max_dli is 30, so set last_period to 15 (within threshold)
         mock_attrs = {"last_period": 15.0}
-        with patch.object(
-            type(plant.dli),
-            "extra_state_attributes",
-            new_callable=PropertyMock,
-            return_value=mock_attrs,
-        ):
-            with patch.object(
+        with (
+            patch.object(
+                type(plant.dli),
+                "extra_state_attributes",
+                new_callable=PropertyMock,
+                return_value=mock_attrs,
+            ),
+            patch.object(
                 type(plant.dli),
                 "native_value",
                 new_callable=PropertyMock,
                 return_value=15.0,
-            ):
-                with patch.object(
-                    type(plant.dli),
-                    "state",
-                    new_callable=PropertyMock,
-                    return_value="15.0",
-                ):
-                    plant.update()
+            ),
+            patch.object(
+                type(plant.dli),
+                "state",
+                new_callable=PropertyMock,
+                return_value="15.0",
+            ),
+        ):
+            plant.update()
 
         assert plant.dli_status == STATE_OK
         assert plant.state == STATE_OK
@@ -1397,25 +1403,27 @@ class TestPlantDevice:
 
         # Mock DLI sensor to trigger problem
         mock_attrs = {"last_period": 1.0}  # Below min_dli of 2
-        with patch.object(
-            type(plant.dli),
-            "extra_state_attributes",
-            new_callable=PropertyMock,
-            return_value=mock_attrs,
-        ):
-            with patch.object(
+        with (
+            patch.object(
+                type(plant.dli),
+                "extra_state_attributes",
+                new_callable=PropertyMock,
+                return_value=mock_attrs,
+            ),
+            patch.object(
                 type(plant.dli),
                 "native_value",
                 new_callable=PropertyMock,
                 return_value=1.0,
-            ):
-                with patch.object(
-                    type(plant.dli),
-                    "state",
-                    new_callable=PropertyMock,
-                    return_value="1.0",
-                ):
-                    plant.update()
+            ),
+            patch.object(
+                type(plant.dli),
+                "state",
+                new_callable=PropertyMock,
+                return_value="1.0",
+            ),
+        ):
+            plant.update()
 
         # Verify problem state
         assert plant.dli_status == STATE_LOW

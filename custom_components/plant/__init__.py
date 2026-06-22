@@ -39,7 +39,7 @@ from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.util import dt as dt_util
 
-from . import group as group  # noqa: F401 - needed for HA group discovery
+from . import group as group
 from .config_flow import update_plant_options
 from .const import (
     ATTR_BRIGHTNESS,
@@ -158,6 +158,7 @@ def _async_find_matching_config_entry(hass: HomeAssistant) -> ConfigEntry | None
     for entry in hass.config_entries.async_entries(DOMAIN):
         if entry.source == SOURCE_IMPORT:
             return entry
+    return None
 
 
 async def async_migrate_plant(hass: HomeAssistant, plant_id: str, config: dict) -> None:
@@ -258,24 +259,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             _LOGGER.warning(
                 "Refuse to update non-%s entities: %s", DOMAIN, meter_entity
             )
-            return False
+            return
         if (
             new_sensor
             and new_sensor != ""
             and not new_sensor.startswith(f"{SENSOR_DOMAIN}.")
         ):
             _LOGGER.warning("%s is not a sensor", new_sensor)
-            return False
+            return
 
         if new_sensor and new_sensor != "":
             try:
                 test = hass.states.get(new_sensor)
             except AttributeError:
-                _LOGGER.error("New sensor entity %s not found", new_sensor)
-                return False
+                _LOGGER.exception("New sensor entity %s not found", new_sensor)
+                return
             if test is None:
                 _LOGGER.error("New sensor entity %s not found", new_sensor)
-                return False
+                return
         else:
             new_sensor = None
 
@@ -397,15 +398,17 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             # Skip internal settings keys
             if entry_id.startswith("_") or entry_id.endswith("_store"):
                 continue
-            if isinstance(hass.data[DOMAIN][entry_id], dict):
-                if len(hass.data[DOMAIN][entry_id]) == 0:
-                    _LOGGER.debug("Removing empty entry %s", entry_id)
-                    del hass.data[DOMAIN][entry_id]
+            if (
+                isinstance(hass.data[DOMAIN][entry_id], dict)
+                and len(hass.data[DOMAIN][entry_id]) == 0
+            ):
+                _LOGGER.debug("Removing empty entry %s", entry_id)
+                del hass.data[DOMAIN][entry_id]
 
         # Check if only settings keys remain (no actual plant entries)
         remaining_plant_entries = [
             k
-            for k in hass.data[DOMAIN].keys()
+            for k in hass.data[DOMAIN]
             if not k.startswith("_") and not k.endswith("_store")
         ]
         if len(remaining_plant_entries) == 0:
@@ -720,15 +723,16 @@ class PlantDevice(RestoreEntity):
             return False
         try:
             has_state = self.hass.states.get(sensor.entity_id) is not None
+        except (AttributeError, TypeError) as e:
+            _LOGGER.debug("Error checking sensor availability for %s: %s", sensor, e)
+            return False
+        else:
             if not has_state:
                 _LOGGER.debug(
                     "Sensor %s has no hass state (disabled or not loaded), skipping",
                     sensor.entity_id,
                 )
             return has_state
-        except (AttributeError, TypeError) as e:
-            _LOGGER.debug("Error checking sensor availability for %s: %s", sensor, e)
-            return False
 
     def _sensor_info(self, attr_name, sensor, max_entity, min_entity) -> dict | None:
         """Build websocket info dict for a single sensor, or None if unavailable."""

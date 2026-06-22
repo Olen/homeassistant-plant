@@ -263,12 +263,10 @@ class PlantCurrentStatus(RestoreSensor):
     @property
     def extra_state_attributes(self) -> dict:
         if self._external_sensor:
-            attributes = {
+            return {
                 "external_sensor": self.external_sensor,
-                # "history_max": self._history.max,
-                # "history_min": self._history.min,
             }
-            return attributes
+        return {}
 
     @property
     def external_sensor(self) -> str:
@@ -881,18 +879,20 @@ class PlantCurrentVpd(RestoreSensor):
         """Restore state and subscribe to temperature and humidity changes."""
         await super().async_added_to_hass()
 
-        if state := await self.async_get_last_state():
-            if state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE):
-                try:
-                    self._attr_native_value = float(state.state)
-                except (ValueError, TypeError):
-                    _LOGGER.debug(
-                        "Ignoring non-numeric restored value for %s: %s",
-                        self.entity_id,
-                        state.state,
-                    )
-                else:
-                    self._restored_value_active = True
+        if (state := await self.async_get_last_state()) and state.state not in (
+            STATE_UNKNOWN,
+            STATE_UNAVAILABLE,
+        ):
+            try:
+                self._attr_native_value = float(state.state)
+            except (ValueError, TypeError):
+                _LOGGER.debug(
+                    "Ignoring non-numeric restored value for %s: %s",
+                    self.entity_id,
+                    state.state,
+                )
+            else:
+                self._restored_value_active = True
 
         # Track temperature sensor state changes
         if self._plant.sensor_temperature is not None:
@@ -997,7 +997,7 @@ class PlantCurrentPpfd(PlantCurrentStatus):
         # Check if unit contains 'mol' (covers µmol/s⋅m², mol/s⋅m², etc.)
         return "mol" in unit.lower()
 
-    def ppfd(self, value: float | int | str) -> float | str:
+    def ppfd(self, value: float | int | str | None) -> float | None:
         """
         Returns PPFD value - either passed through or converted from lux.
 
@@ -1008,7 +1008,7 @@ class PlantCurrentPpfd(PlantCurrentStatus):
         The conversion factor is configurable per plant to account for different
         light sources (sunlight ~0.0185, LED grow lights ~0.014-0.020, HPS ~0.013).
         """
-        if value is None or value == STATE_UNAVAILABLE or value == STATE_UNKNOWN:
+        if value is None or value in (STATE_UNAVAILABLE, STATE_UNKNOWN):
             return None
 
         try:

@@ -621,7 +621,7 @@ class TestConfigFlowLimitsStep:
         assert result["step_id"] == "limits"
 
         # Check that the schema only contains moisture thresholds (not temperature, etc.)
-        schema_keys = [str(k) for k in result["data_schema"].schema.keys()]
+        schema_keys = [str(k) for k in result["data_schema"].schema]
         assert CONF_MAX_MOISTURE in schema_keys
         assert CONF_MIN_MOISTURE in schema_keys
         # Temperature thresholds should NOT be present
@@ -660,7 +660,7 @@ class TestConfigFlowLimitsStep:
 
         assert result["step_id"] == "limits"
 
-        schema_keys = [str(k) for k in result["data_schema"].schema.keys()]
+        schema_keys = [str(k) for k in result["data_schema"].schema]
         assert CONF_MAX_ILLUMINANCE in schema_keys
         assert CONF_MIN_ILLUMINANCE in schema_keys
         assert CONF_MAX_DLI in schema_keys
@@ -694,7 +694,7 @@ class TestConfigFlowLimitsStep:
 
         assert result["step_id"] == "limits"
 
-        schema_keys = [str(k) for k in result["data_schema"].schema.keys()]
+        schema_keys = [str(k) for k in result["data_schema"].schema]
         # All thresholds should be present
         assert CONF_MAX_MOISTURE in schema_keys
         assert CONF_MAX_TEMPERATURE in schema_keys
