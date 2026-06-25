@@ -91,7 +91,6 @@ from .const import (
     OPB_INCLUDE_CARE,
     OPB_SEARCH,
     PLANTBOOK_DOMAIN,
-    PPFD_DLI_FACTOR,
     REQUEST_TIMEOUT,
 )
 
@@ -398,14 +397,18 @@ class PlantHelper:
                 0,
             )
             # Prefer pre-computed DLI from openplantbook integration (includes
-            # ratio-based detection). Fall back to mmol × PPFD_DLI_FACTOR.
+            # ratio-based detection). Fall back to mmol / 1000 to convert
+            # daily mmol/m²/d → mol/m²/d.
+            # NOTE: PPFD_DLI_FACTOR is for instantaneous PPFD→hourly DLI
+            # (µmol/s/m² × 3600 / 1000000) and is NOT correct for daily mmol
+            # values which only need a mmol→mol unit conversion (/1000).
             opb_max_dli = opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MAX_DLI])
             if opb_max_dli is not None:
                 max_dli = round(float(opb_max_dli), 1)
             else:
                 opb_mmol = opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MAX_MMOL])
                 if opb_mmol:
-                    max_dli = round(float(opb_mmol) * PPFD_DLI_FACTOR, 1)
+                    max_dli = round(float(opb_mmol) / 1000, 1)
                 else:
                     max_dli = DEFAULT_MAX_DLI
             opb_min_dli = opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MIN_DLI])
@@ -414,7 +417,7 @@ class PlantHelper:
             else:
                 opb_mmol = opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MIN_MMOL])
                 if opb_mmol:
-                    min_dli = round(float(opb_mmol) * PPFD_DLI_FACTOR, 1)
+                    min_dli = round(float(opb_mmol) / 1000, 1)
                 else:
                     min_dli = DEFAULT_MIN_DLI
             max_conductivity = _to_int(

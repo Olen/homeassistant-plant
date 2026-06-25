@@ -377,13 +377,12 @@ class TestPlantHelperGenerateConfigentry:
         limits = result[FLOW_PLANT_INFO][ATTR_LIMITS]
 
         # DLI should be calculated from mmol with one decimal place.
-        # max_light_mmol = 6000, PPFD_DLI_FACTOR = 0.0036
-        # expected_max_dli = round(6000 * 0.0036, 1) = 21.6
-        assert limits[CONF_MAX_DLI] == 21.6
+        # Conversion: mmol/m²/d → mol/m²/d by dividing by 1000.
+        # max_light_mmol = 6000 → round(6000 / 1000, 1) = 6.0
+        assert limits[CONF_MAX_DLI] == 6.0
 
-        # min_light_mmol = 1500
-        # expected_min_dli = round(1500 * 0.0036, 1) = 5.4
-        assert limits[CONF_MIN_DLI] == 5.4
+        # min_light_mmol = 1500 → round(1500 / 1000, 1) = 1.5
+        assert limits[CONF_MIN_DLI] == 1.5
 
     async def test_generate_configentry_dli_from_opb_precomputed(
         self,
