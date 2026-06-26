@@ -141,6 +141,11 @@ DEFAULT_MIN_MOL = 2
 DEFAULT_MAX_MOL = 30
 DEFAULT_MIN_DLI = 2
 DEFAULT_MAX_DLI = 30
+# Physical ceiling for DLI (mol/d⋅m²): ~65 is the maximum daily light integral
+# attainable at Earth's surface. A converted OpenPlantbook value above this is
+# biologically impossible and signals suspect source data, so it is clamped.
+# No lower guard: legitimate deep-shade minimums round toward 0.
+DLI_SANITY_MAX = 65.0
 DEFAULT_MIN_VPD = 0.4
 DEFAULT_MAX_VPD = 1.6
 

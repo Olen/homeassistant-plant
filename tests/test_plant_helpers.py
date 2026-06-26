@@ -26,10 +26,11 @@ from custom_components.plant.const import (
     DEFAULT_MAX_MOISTURE,
     DEFAULT_MIN_ILLUMINANCE,
     DEFAULT_MIN_MOISTURE,
+    DLI_SANITY_MAX,
     FLOW_PLANT_INFO,
     OPB_DISPLAY_PID,
 )
-from custom_components.plant.plant_helpers import PlantHelper
+from custom_components.plant.plant_helpers import PlantHelper, _clamp_dli, _to_float
 
 from .fixtures.openplantbook_responses import (
     CARE_MONSTERA_DELICIOSA,
@@ -409,6 +410,27 @@ class TestPlantHelperGenerateConfigentry:
         # min_dli = 12.6 → round(12.6, 1) = 12.6
         assert limits[CONF_MIN_DLI] == 12.6
 
+    async def test_generate_configentry_clamps_config_provided_dli(
+        self,
+        hass: HomeAssistant,
+        mock_openplantbook_services,
+    ) -> None:
+        """A config-provided DLI above the physical max is clamped on persist."""
+        helper = PlantHelper(hass)
+        config = {
+            ATTR_NAME: "My Monstera",
+            ATTR_SPECIES: "monstera deliciosa",
+            ATTR_SENSORS: {},
+            CONF_MAX_DLI: 100,  # physically impossible — must be clamped
+            CONF_MIN_DLI: 1.5,  # valid — must pass through
+        }
+
+        result = await helper.generate_configentry(config)
+
+        limits = result[FLOW_PLANT_INFO][ATTR_LIMITS]
+        assert limits[CONF_MAX_DLI] == DLI_SANITY_MAX
+        assert limits[CONF_MIN_DLI] == 1.5
+
     async def test_generate_configentry_stores_care(
         self,
         hass: HomeAssistant,
@@ -736,3 +758,44 @@ class TestCareConstants:
         assert OPB_ATTR_INCLUDE == "include"
         assert OPB_INCLUDE_CARE == "care"
         assert ATTR_CARE == "care"
+
+
+class TestClampDli:
+    """Tests for the DLI sanity clamp."""
+
+    def test_value_in_band_unchanged(self) -> None:
+        """A plausible DLI passes through untouched."""
+        assert _clamp_dli(12.0, "max", "Capsicum annuum") == 12.0
+        assert _clamp_dli(0.7, "min", "Pellaea rotundifolia") == 0.7
+
+    def test_near_zero_minimum_not_clamped(self) -> None:
+        """Legitimate deep-shade minimums (rounding toward 0) are preserved."""
+        assert _clamp_dli(0.0, "min", "Pellaea rotundifolia") == 0.0
+
+    def test_above_max_is_clamped(self, caplog) -> None:
+        """An impossibly high DLI (e.g. ×0.0036-inflated) is clamped + warned."""
+        # 22000 mmol mishandled as ×0.0036 → 79.2, above Earth's physical max.
+        result = _clamp_dli(79.2, "max", "Lycopersicon esculentum")
+        assert result == DLI_SANITY_MAX
+        assert "exceeds the plausible maximum" in caplog.text
+
+    def test_handles_missing_species_name(self) -> None:
+        """Clamping still works when no species name is available."""
+        assert _clamp_dli(999.0, "max", None) == DLI_SANITY_MAX
+
+
+class TestToFloat:
+    """Tests for the safe float conversion used on OPB/config DLI values."""
+
+    def test_numeric_values(self) -> None:
+        assert _to_float(43.2, 30) == 43.2
+        assert _to_float("12.5", 30) == 12.5
+        assert _to_float(0, 30) == 0.0  # legitimate zero preserved
+
+    def test_missing_falls_back(self) -> None:
+        assert _to_float(None, 30) == 30
+        assert _to_float("", 30) == 30
+
+    def test_non_numeric_falls_back_without_raising(self, caplog) -> None:
+        assert _to_float("not-a-number", 30) == 30
+        assert "Could not convert" in caplog.text
