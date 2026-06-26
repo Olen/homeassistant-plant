@@ -26,10 +26,11 @@ from custom_components.plant.const import (
     DEFAULT_MAX_MOISTURE,
     DEFAULT_MIN_ILLUMINANCE,
     DEFAULT_MIN_MOISTURE,
+    DLI_SANITY_MAX,
     FLOW_PLANT_INFO,
     OPB_DISPLAY_PID,
 )
-from custom_components.plant.plant_helpers import PlantHelper
+from custom_components.plant.plant_helpers import PlantHelper, _clamp_dli
 
 from .fixtures.openplantbook_responses import (
     CARE_MONSTERA_DELICIOSA,
@@ -736,3 +737,27 @@ class TestCareConstants:
         assert OPB_ATTR_INCLUDE == "include"
         assert OPB_INCLUDE_CARE == "care"
         assert ATTR_CARE == "care"
+
+
+class TestClampDli:
+    """Tests for the DLI sanity clamp."""
+
+    def test_value_in_band_unchanged(self) -> None:
+        """A plausible DLI passes through untouched."""
+        assert _clamp_dli(12.0, "max", "Capsicum annuum") == 12.0
+        assert _clamp_dli(0.7, "min", "Pellaea rotundifolia") == 0.7
+
+    def test_near_zero_minimum_not_clamped(self) -> None:
+        """Legitimate deep-shade minimums (rounding toward 0) are preserved."""
+        assert _clamp_dli(0.0, "min", "Pellaea rotundifolia") == 0.0
+
+    def test_above_max_is_clamped(self, caplog) -> None:
+        """An impossibly high DLI (e.g. ×0.0036-inflated) is clamped + warned."""
+        # 22000 mmol mishandled as ×0.0036 → 79.2, above Earth's physical max.
+        result = _clamp_dli(79.2, "max", "Lycopersicon esculentum")
+        assert result == DLI_SANITY_MAX
+        assert "exceeds the plausible maximum" in caplog.text
+
+    def test_handles_missing_species_name(self) -> None:
+        """Clamping still works when no species name is available."""
+        assert _clamp_dli(999.0, "max", None) == DLI_SANITY_MAX

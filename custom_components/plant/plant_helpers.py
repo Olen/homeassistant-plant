@@ -74,6 +74,7 @@ from .const import (
     DEFAULT_MIN_MOISTURE,
     DEFAULT_MIN_SOIL_TEMPERATURE,
     DEFAULT_MIN_TEMPERATURE,
+    DLI_SANITY_MAX,
     DOMAIN_PLANTBOOK,
     FLOW_FORCE_SPECIES_UPDATE,
     FLOW_LIMITS_TEMPERATURE_UNIT,
@@ -122,6 +123,28 @@ def _to_int(value: Any, default: int) -> int:
             "Could not convert '%s' to int, using default %s", value, default
         )
         return default
+
+
+def _clamp_dli(value: float, bound: str, species: str | None) -> float:
+    """Clamp a DLI threshold to the physical maximum, warning if exceeded.
+
+    OpenPlantbook aggregates loosely validated data from several sources, and a
+    stray unit mix-up (or an older OPB version that still inflated DLI) can yield
+    a threshold above ~65 mol/d⋅m², which is biologically impossible. Rather than
+    persist an absurd value, clamp to DLI_SANITY_MAX and log it. There is
+    deliberately no lower guard — legitimate deep-shade minimums round toward 0.
+    """
+    if value > DLI_SANITY_MAX:
+        _LOGGER.warning(
+            "%s DLI %s mol/d⋅m² for '%s' exceeds the plausible maximum %s; "
+            "clamping (check the OpenPlantbook source data)",
+            bound,
+            value,
+            species or "unknown",
+            DLI_SANITY_MAX,
+        )
+        return DLI_SANITY_MAX
+    return value
 
 
 class PlantHelper:
@@ -396,18 +419,19 @@ class PlantHelper:
                 UnitOfTemperature.CELSIUS,
                 0,
             )
-            # Prefer pre-computed DLI from openplantbook integration (includes
-            # ratio-based detection). Fall back to mmol / 1000 to convert
-            # daily mmol/m²/d → mol/m²/d.
-            # NOTE: PPFD_DLI_FACTOR is for instantaneous PPFD→hourly DLI
-            # (µmol/s/m² × 3600 / 1000000) and is NOT correct for daily mmol
-            # values which only need a mmol→mol unit conversion (/1000).
+            # Prefer the pre-computed DLI from the openplantbook integration.
+            # Fall back to mmol / 1000 to convert daily mmol/m²/d → mol/m²/d
+            # (a plain unit conversion; the daily integral is already integrated
+            # over the day, so no PPFD×photoperiod factor applies).
+            # Use an explicit None/"" check so a legitimate 0 is not treated as
+            # missing and silently replaced by the default.
+            dli_species = opb_plant.get(OPB_DISPLAY_PID) or config.get(ATTR_SPECIES)
             opb_max_dli = opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MAX_DLI])
             if opb_max_dli is not None:
                 max_dli = round(float(opb_max_dli), 1)
             else:
                 opb_mmol = opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MAX_MMOL])
-                if opb_mmol:
+                if opb_mmol not in (None, ""):
                     max_dli = round(float(opb_mmol) / 1000, 1)
                 else:
                     max_dli = DEFAULT_MAX_DLI
@@ -416,10 +440,14 @@ class PlantHelper:
                 min_dli = round(float(opb_min_dli), 1)
             else:
                 opb_mmol = opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MIN_MMOL])
-                if opb_mmol:
+                if opb_mmol not in (None, ""):
                     min_dli = round(float(opb_mmol) / 1000, 1)
                 else:
                     min_dli = DEFAULT_MIN_DLI
+            # Guard against absurd thresholds regardless of source (raw mmol
+            # fallback above, or a pre-computed DLI from an older OPB version).
+            max_dli = _clamp_dli(max_dli, "max", dli_species)
+            min_dli = _clamp_dli(min_dli, "min", dli_species)
             max_conductivity = _to_int(
                 opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MAX_CONDUCTIVITY]),
                 DEFAULT_MAX_CONDUCTIVITY,
