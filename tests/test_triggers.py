@@ -4,13 +4,15 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-import homeassistant.helpers.trigger as ha_trigger
 import pytest
+from homeassistant.const import __version__ as HA_VERSION
 
-# The trigger/condition platform API only exists on HA 2026.7+. On older cores
-# (the integration still supports 2025.8+) the platform files are never imported,
-# so skip the whole module rather than fail at collection.
-if not hasattr(ha_trigger, "make_entity_target_state_trigger"):
+# The trigger/condition platform settled into its current shape in HA 2026.7; an
+# earlier Labs form existed in 2026.2-2026.6 with a different API. The integration
+# still supports 2025.8+, and the platform files are never imported on older cores,
+# so skip the whole module below 2026.7 rather than fail at collection/runtime.
+_ha_parts = HA_VERSION.split(".")
+if (int(_ha_parts[0]), int(_ha_parts[1])) < (2026, 7):
     pytest.skip(
         "plant triggers require the HA 2026.7+ trigger platform",
         allow_module_level=True,
