@@ -30,7 +30,7 @@ from custom_components.plant.const import (
     FLOW_PLANT_INFO,
     OPB_DISPLAY_PID,
 )
-from custom_components.plant.plant_helpers import PlantHelper, _clamp_dli
+from custom_components.plant.plant_helpers import PlantHelper, _clamp_dli, _to_float
 
 from .fixtures.openplantbook_responses import (
     CARE_MONSTERA_DELICIOSA,
@@ -782,3 +782,20 @@ class TestClampDli:
     def test_handles_missing_species_name(self) -> None:
         """Clamping still works when no species name is available."""
         assert _clamp_dli(999.0, "max", None) == DLI_SANITY_MAX
+
+
+class TestToFloat:
+    """Tests for the safe float conversion used on OPB/config DLI values."""
+
+    def test_numeric_values(self) -> None:
+        assert _to_float(43.2, 30) == 43.2
+        assert _to_float("12.5", 30) == 12.5
+        assert _to_float(0, 30) == 0.0  # legitimate zero preserved
+
+    def test_missing_falls_back(self) -> None:
+        assert _to_float(None, 30) == 30
+        assert _to_float("", 30) == 30
+
+    def test_non_numeric_falls_back_without_raising(self, caplog) -> None:
+        assert _to_float("not-a-number", 30) == 30
+        assert "Could not convert" in caplog.text

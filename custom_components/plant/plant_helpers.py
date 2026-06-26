@@ -125,6 +125,24 @@ def _to_int(value: Any, default: int) -> int:
         return default
 
 
+def _to_float(value: Any, default: float) -> float:
+    """Safely convert a value to float, returning default on failure.
+
+    OpenPlantbook (and imported config) may carry values as strings or empty
+    placeholders. Mirrors _to_int so a non-numeric value never crashes config
+    entry generation. A legitimate 0 is preserved; None/"" fall back.
+    """
+    if value is None or value == "":
+        return default
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        _LOGGER.warning(
+            "Could not convert '%s' to float, using default %s", value, default
+        )
+        return default
+
+
 def _clamp_dli(value: float, bound: str, species: str | None) -> float:
     """Clamp a DLI threshold to the physical maximum, warning if exceeded.
 
@@ -426,21 +444,25 @@ class PlantHelper:
             # Use an explicit None/"" check so a legitimate 0 is not treated as
             # missing and silently replaced by the default.
             opb_max_dli = opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MAX_DLI])
-            if opb_max_dli is not None:
-                max_dli = round(float(opb_max_dli), 1)
+            if opb_max_dli not in (None, ""):
+                max_dli = round(_to_float(opb_max_dli, DEFAULT_MAX_DLI), 1)
             else:
                 opb_mmol = opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MAX_MMOL])
                 if opb_mmol not in (None, ""):
-                    max_dli = round(float(opb_mmol) / 1000, 1)
+                    max_dli = round(
+                        _to_float(opb_mmol, DEFAULT_MAX_DLI * 1000) / 1000, 1
+                    )
                 else:
                     max_dli = DEFAULT_MAX_DLI
             opb_min_dli = opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MIN_DLI])
-            if opb_min_dli is not None:
-                min_dli = round(float(opb_min_dli), 1)
+            if opb_min_dli not in (None, ""):
+                min_dli = round(_to_float(opb_min_dli, DEFAULT_MIN_DLI), 1)
             else:
                 opb_mmol = opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MIN_MMOL])
                 if opb_mmol not in (None, ""):
-                    min_dli = round(float(opb_mmol) / 1000, 1)
+                    min_dli = round(
+                        _to_float(opb_mmol, DEFAULT_MIN_DLI * 1000) / 1000, 1
+                    )
                 else:
                     min_dli = DEFAULT_MIN_DLI
             max_conductivity = _to_int(
@@ -504,10 +526,10 @@ class PlantHelper:
         # highs, so valid values and defaults pass through untouched.
         dli_species = config.get(ATTR_SPECIES)
         max_dli = _clamp_dli(
-            float(config.get(CONF_MAX_DLI, max_dli)), "max", dli_species
+            _to_float(config.get(CONF_MAX_DLI, max_dli), max_dli), "max", dli_species
         )
         min_dli = _clamp_dli(
-            float(config.get(CONF_MIN_DLI, min_dli)), "min", dli_species
+            _to_float(config.get(CONF_MIN_DLI, min_dli), min_dli), "min", dli_species
         )
 
         ret = {
