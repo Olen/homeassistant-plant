@@ -425,7 +425,6 @@ class PlantHelper:
             # over the day, so no PPFD×photoperiod factor applies).
             # Use an explicit None/"" check so a legitimate 0 is not treated as
             # missing and silently replaced by the default.
-            dli_species = opb_plant.get(OPB_DISPLAY_PID) or config.get(ATTR_SPECIES)
             opb_max_dli = opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MAX_DLI])
             if opb_max_dli is not None:
                 max_dli = round(float(opb_max_dli), 1)
@@ -444,10 +443,6 @@ class PlantHelper:
                     min_dli = round(float(opb_mmol) / 1000, 1)
                 else:
                     min_dli = DEFAULT_MIN_DLI
-            # Guard against absurd thresholds regardless of source (raw mmol
-            # fallback above, or a pre-computed DLI from an older OPB version).
-            max_dli = _clamp_dli(max_dli, "max", dli_species)
-            min_dli = _clamp_dli(min_dli, "min", dli_species)
             max_conductivity = _to_int(
                 opb_plant.get(CONF_PLANTBOOK_MAPPING[CONF_MAX_CONDUCTIVITY]),
                 DEFAULT_MAX_CONDUCTIVITY,
@@ -503,6 +498,18 @@ class PlantHelper:
         _LOGGER.debug("Parsing input config: %s", config)
         _LOGGER.debug("Display pid: %s", display_species)
 
+        # Clamp the persisted DLI thresholds to the physical maximum, covering
+        # every source — OPB-derived, defaults, and any value already in
+        # `config` (e.g. a YAML import). _clamp_dli only lowers impossible
+        # highs, so valid values and defaults pass through untouched.
+        dli_species = config.get(ATTR_SPECIES)
+        max_dli = _clamp_dli(
+            float(config.get(CONF_MAX_DLI, max_dli)), "max", dli_species
+        )
+        min_dli = _clamp_dli(
+            float(config.get(CONF_MIN_DLI, min_dli)), "min", dli_species
+        )
+
         ret = {
             DATA_SOURCE: data_source,
             FLOW_PLANT_INFO: {
@@ -540,8 +547,8 @@ class PlantHelper:
                     CONF_MIN_SOIL_TEMPERATURE: config.get(
                         CONF_MIN_SOIL_TEMPERATURE, min_soil_temperature
                     ),
-                    CONF_MAX_DLI: config.get(CONF_MAX_DLI, max_dli),
-                    CONF_MIN_DLI: config.get(CONF_MIN_DLI, min_dli),
+                    CONF_MAX_DLI: max_dli,
+                    CONF_MIN_DLI: min_dli,
                 },
                 # Record the unit that temperature limits are stored in.
                 # generate_configentry converts temps to the user's system unit.

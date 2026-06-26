@@ -410,6 +410,27 @@ class TestPlantHelperGenerateConfigentry:
         # min_dli = 12.6 → round(12.6, 1) = 12.6
         assert limits[CONF_MIN_DLI] == 12.6
 
+    async def test_generate_configentry_clamps_config_provided_dli(
+        self,
+        hass: HomeAssistant,
+        mock_openplantbook_services,
+    ) -> None:
+        """A config-provided DLI above the physical max is clamped on persist."""
+        helper = PlantHelper(hass)
+        config = {
+            ATTR_NAME: "My Monstera",
+            ATTR_SPECIES: "monstera deliciosa",
+            ATTR_SENSORS: {},
+            CONF_MAX_DLI: 100,  # physically impossible — must be clamped
+            CONF_MIN_DLI: 1.5,  # valid — must pass through
+        }
+
+        result = await helper.generate_configentry(config)
+
+        limits = result[FLOW_PLANT_INFO][ATTR_LIMITS]
+        assert limits[CONF_MAX_DLI] == DLI_SANITY_MAX
+        assert limits[CONF_MIN_DLI] == 1.5
+
     async def test_generate_configentry_stores_care(
         self,
         hass: HomeAssistant,
