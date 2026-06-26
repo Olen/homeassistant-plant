@@ -1,0 +1,39 @@
+# Condition descriptions for the plant integration (Home Assistant 2026.7+).
+# PROTOTYPE — shapes may change based on feedback.
+
+.plant_behavior: &plant_behavior
+  required: true
+  default: any
+  selector:
+    automation_behavior:
+      mode: condition
+
+.plant_for: &plant_for
+  required: true
+  default: 00:00:00
+  selector:
+    duration:
+
+.plant_state_condition: &plant_state_condition
+  target:
+    entity:
+      domain: plant
+  fields:
+    behavior: *plant_behavior
+    for: *plant_for
+
+is_problem: *plant_state_condition
+moisture_is_low: *plant_state_condition
+
+sensor_is_stale:
+  target:
+    device:
+      integration: plant
+    entity:
+      domain: sensor
+  fields:
+    for:
+      required: true
+      default: "24:00:00"
+      selector:
+        duration:
