@@ -68,8 +68,8 @@ The [OpenPlantbook integration](https://github.com/Olen/home-assistant-openplant
 
 #### Via HACS
 
-1. Add this repo as a [Custom Repository](https://hacs.xyz/docs/faq/custom_repositories/) with type **Integration**
-2. Click **Install** in the "Plant Monitor" card
+1. Add [this repo](https://github.com/Olen/homeassistant-plant) as a [Custom Repository](https://hacs.xyz/docs/faq/custom_repositories/) with type **Integration**
+2. Click **Install** in the "Home Assistant Plant" integration
 3. Restart Home Assistant
 
 #### Manual Installation
