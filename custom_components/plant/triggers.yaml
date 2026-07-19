@@ -1,0 +1,45 @@
+# Trigger descriptions for the plant integration (Home Assistant 2026.7+).
+# PROTOTYPE — shapes may change based on feedback.
+
+.plant_behavior: &plant_behavior
+  required: true
+  default: each
+  selector:
+    automation_behavior:
+      mode: trigger
+
+.plant_for: &plant_for
+  required: true
+  default: 00:00:00
+  selector:
+    duration:
+
+# Aggregate plant health + per-measurement (auto-thresholded) triggers target
+# the plant entity itself; the threshold is the plant's own configured min/max.
+.plant_state_trigger: &plant_state_trigger
+  target:
+    entity:
+      domain: plant
+  fields:
+    behavior: *plant_behavior
+    for: *plant_for
+
+became_problem: *plant_state_trigger
+became_ok: *plant_state_trigger
+moisture_became_low: *plant_state_trigger
+moisture_became_high: *plant_state_trigger
+
+# Staleness targets the plant device (expands to its source sensors) or specific
+# sensors. Default window is high because some plant sensors update infrequently.
+sensor_became_stale:
+  target:
+    device:
+      integration: plant
+    entity:
+      domain: sensor
+  fields:
+    for:
+      required: true
+      default: "24:00:00"
+      selector:
+        duration:
