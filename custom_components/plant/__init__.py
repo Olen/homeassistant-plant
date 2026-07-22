@@ -740,8 +740,12 @@ class PlantDevice(RestoreEntity):
             _LOGGER.debug("Skipping %s: sensor %s not available", attr_name, sensor)
             return None
         try:
-            max_val = self._safe_float(max_entity.state, max_entity.entity_id)
-            min_val = self._safe_float(min_entity.state, min_entity.entity_id)
+            max_val = self._safe_float(
+                self._entity_state(max_entity), max_entity.entity_id
+            )
+            min_val = self._safe_float(
+                self._entity_state(min_entity), min_entity.entity_id
+            )
             return {
                 ATTR_MAX: max_val if max_val is not None else max_entity._default_value,
                 ATTR_MIN: min_val if min_val is not None else min_entity._default_value,
@@ -809,8 +813,8 @@ class PlantDevice(RestoreEntity):
         # DLI uses its own entity (not a meter sensor)
         if self._sensor_available(self.dli):
             response[ATTR_DLI] = {
-                ATTR_MAX: self.max_dli.state,
-                ATTR_MIN: self.min_dli.state,
+                ATTR_MAX: self._entity_state(self.max_dli),
+                ATTR_MIN: self._entity_state(self.min_dli),
                 ATTR_CURRENT: STATE_UNAVAILABLE,
                 ATTR_ICON: self._get_entity_icon(self.dli),
                 ATTR_UNIT_OF_MEASUREMENT: self.dli.unit_of_measurement,
@@ -822,9 +826,10 @@ class PlantDevice(RestoreEntity):
 
         # Add rolling 24h DLI if available
         if self.dli_24h is not None and self._sensor_available(self.dli_24h):
+            # Same thresholds as regular DLI
             response[ATTR_DLI_24H] = {
-                ATTR_MAX: self.max_dli.state,  # Same thresholds as regular DLI
-                ATTR_MIN: self.min_dli.state,
+                ATTR_MAX: self._entity_state(self.max_dli),
+                ATTR_MIN: self._entity_state(self.min_dli),
                 ATTR_CURRENT: STATE_UNAVAILABLE,
                 ATTR_ICON: self._get_entity_icon(self.dli_24h),
                 ATTR_UNIT_OF_MEASUREMENT: self.dli_24h.unit_of_measurement,
@@ -1071,6 +1076,27 @@ class PlantDevice(RestoreEntity):
             _LOGGER.debug("Sensor %s has non-numeric value: %s", entity_id, value)
             return None
 
+    def _entity_state(self, entity) -> str | None:
+        """Safely read an entity's current state string.
+
+        Prefers the state machine (hass.states) over the entity's own
+        `.state` property: that property requires the entity to be fully
+        added to hass (self.hass set, entity_id assigned) and can raise
+        AttributeError while the entity is still being set up or is being
+        torn down (see issue #485). Falls back to the property directly,
+        guarded against that AttributeError, for entities not (yet) tracked
+        by the state machine.
+        """
+        entity_id = getattr(entity, "entity_id", None)
+        if entity_id is not None:
+            state = self.hass.states.get(entity_id)
+            if state is not None:
+                return state.state
+        try:
+            return entity.state
+        except AttributeError:
+            return None
+
     def _check_threshold(self, value, min_entity, max_entity, current_status):
         """Check a value against min/max thresholds with hysteresis.
 
@@ -1078,17 +1104,19 @@ class PlantDevice(RestoreEntity):
         When already in a problem state, require the value to cross back
         by a margin (hysteresis band) before clearing.
         """
+        min_state = self._entity_state(min_entity)
+        max_state = self._entity_state(max_entity)
         try:
-            min_val = float(min_entity.state)
-            max_val = float(max_entity.state)
+            min_val = float(min_state)
+            max_val = float(max_state)
         except (ValueError, TypeError):
             _LOGGER.warning(
                 "Threshold entity has non-numeric state "
                 "(min=%s [%s], max=%s [%s]) — skipping check",
-                min_entity.entity_id,
-                min_entity.state,
-                max_entity.entity_id,
-                max_entity.state,
+                getattr(min_entity, "entity_id", None),
+                min_state,
+                getattr(max_entity, "entity_id", None),
+                max_state,
             )
             return current_status
         # Band is relative to the threshold being crossed, not the full
@@ -1147,7 +1175,7 @@ class PlantDevice(RestoreEntity):
             A threshold entity can momentarily be unavailable/unknown; avoid
             writing a raw 'unavailable' into the problem entry or logbook.
             """
-            raw = threshold_entity.state
+            raw = self._entity_state(threshold_entity)
             try:
                 float(raw)
             except (ValueError, TypeError):
