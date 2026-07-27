@@ -5,16 +5,17 @@ from __future__ import annotations
 from datetime import timedelta
 
 import pytest
-from homeassistant.const import __version__ as HA_VERSION
+
+from custom_components.plant.trigger import _has_purpose_trigger_api
 
 # The trigger/condition platform settled into its current shape in HA 2026.7; an
 # earlier Labs form existed in 2026.2-2026.6 with a different API. The integration
 # still supports 2025.8+, and the platform files are never imported on older cores,
-# so skip the whole module below 2026.7 rather than fail at collection/runtime.
-_ha_parts = HA_VERSION.split(".")
-if (int(_ha_parts[0]), int(_ha_parts[1])) < (2026, 7):
+# so skip the whole module unless the full purpose-trigger API is importable
+# (capability-based, not a version-string check).
+if not _has_purpose_trigger_api():
     pytest.skip(
-        "plant triggers require the HA 2026.7+ trigger platform",
+        "plant purpose-trigger API not available on this HA",
         allow_module_level=True,
     )
 

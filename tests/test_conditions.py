@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import pytest
-from homeassistant.const import __version__ as HA_VERSION
 
-_p = HA_VERSION.split(".")
-if (int(_p[0]), int(_p[1])) < (2026, 7):
+from custom_components.plant.condition import _has_purpose_condition_api
+
+if not _has_purpose_condition_api():
     pytest.skip(
-        "plant conditions require the HA 2026.7+ platform",
+        "plant purpose-condition API not available on this HA",
         allow_module_level=True,
     )
 
