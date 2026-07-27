@@ -37,6 +37,27 @@ from .const import ATTR_PLANT, DOMAIN
 DEFAULT_STALE_FOR = timedelta(hours=24)
 _EXCLUDED = {STATE_UNAVAILABLE, STATE_UNKNOWN}
 
+# Per-source status in the stale-detection state machine.
+_HEALTHY = "healthy"  # reporting real values; a freshness timer guards for silence
+_PENDING = "pending"  # stale since attach; a grace timer may promote it to stale
+_STALE = "stale"  # confirmed stale (fired became_stale unless this is a fresh trigger)
+
+_STALE_SCHEMA = vol.Schema(
+    {
+        vol.Required("target"): cv.TARGET_FIELDS,
+        vol.Optional("options", default=dict): vol.Schema(
+            {vol.Optional(CONF_FOR): cv.positive_time_period},
+            extra=vol.ALLOW_EXTRA,
+        ),
+    },
+    extra=vol.ALLOW_EXTRA,
+)
+
+
+def _stale_duration(config: Any) -> timedelta:
+    """Return the configured `for` window, defaulting to DEFAULT_STALE_FOR."""
+    return (config.options or {}).get(CONF_FOR) or DEFAULT_STALE_FOR
+
 
 def resolve_external_sensor(
     hass: HomeAssistant, plant_entity_id: str, device_sensor_attr: str
@@ -57,29 +78,16 @@ def make_stale_trigger(measurement: Measurement, *, fresh: bool) -> type[Trigger
     """Build a stale (fresh=False) or fresh (fresh=True) trigger for a measurement."""
 
     class _PlantStaleTrigger(Trigger):
-        _schema = vol.Schema(
-            {
-                vol.Required("target"): cv.TARGET_FIELDS,
-                vol.Optional("options", default=dict): vol.Schema(
-                    {vol.Optional(CONF_FOR): cv.positive_time_period},
-                    extra=vol.ALLOW_EXTRA,
-                ),
-            },
-            extra=vol.ALLOW_EXTRA,
-        )
-
         @classmethod
         async def async_validate_config(
             cls, hass: HomeAssistant, config: ConfigType
         ) -> ConfigType:
-            return cls._schema(config)
+            return _STALE_SCHEMA(config)
 
         def __init__(self, hass: HomeAssistant, config: TriggerConfig) -> None:
             super().__init__(hass, config)
             self._target = config.target
-            self._duration: timedelta = (config.options or {}).get(
-                CONF_FOR
-            ) or DEFAULT_STALE_FOR
+            self._duration: timedelta = _stale_duration(config)
 
         @callback
         def _sources(self, entities: set[str]) -> set[str]:
@@ -98,8 +106,16 @@ def make_stale_trigger(measurement: Measurement, *, fresh: bool) -> type[Trigger
         async def async_attach_runner(
             self, run_action: TriggerActionRunner, did_not_trigger: Any | None = None
         ) -> CALLBACK_TYPE:
+            # Grace-period state machine, keyed per source entity:
+            #   healthy -> stale        real transition, fires became_stale now
+            #   healthy -> (silence)    freshness timer expires, fires no_update
+            #   pending -> healthy      recovered within grace, no fire
+            #   pending -> (silence)    grace timer expires still dead, fires stale
+            #   stale   -> healthy      real recovery, fires became_fresh
+            # `pending` exists only so a source that is already stale at attach (a
+            # sensor not yet populated after restart) does NOT fire immediately.
             timers: dict[str, CALLBACK_TYPE] = {}
-            stale: set[str] = set()
+            status: dict[str, str] = {}
 
             @callback
             def _fire(entity_id: str, reason: str | None) -> None:
@@ -109,48 +125,73 @@ def make_stale_trigger(measurement: Measurement, *, fresh: bool) -> type[Trigger
                 run_action(data, f"{measurement.key} sensor {entity_id}", None)
 
             @callback
-            def _mark_stale(entity_id: str, reason: str) -> None:
+            def _cancel(entity_id: str) -> None:
+                # Enforce the invariant of at most one live timer per entity.
                 timer = timers.pop(entity_id, None)
                 if timer is not None:
                     timer()
-                if entity_id not in stale:
-                    stale.add(entity_id)
-                    if not fresh:
-                        _fire(entity_id, reason)
 
             @callback
-            def _arm(entity_id: str) -> None:
-                was_stale = entity_id in stale
-                stale.discard(entity_id)
-                timer = timers.pop(entity_id, None)
-                if timer is not None:
-                    timer()
+            def _on_healthy(entity_id: str) -> None:
+                was_stale = status.get(entity_id) == _STALE
+                _cancel(entity_id)
                 if fresh and was_stale:
                     _fire(entity_id, None)
+                status[entity_id] = _HEALTHY
 
                 @callback
-                def _expired(_now: datetime) -> None:
+                def _no_update(_now: datetime) -> None:
                     timers.pop(entity_id, None)
-                    if entity_id not in stale:
-                        stale.add(entity_id)
+                    if status.get(entity_id) != _STALE:
+                        status[entity_id] = _STALE
                         if not fresh:
                             _fire(entity_id, "no_update")
 
                 timers[entity_id] = async_call_later(
-                    self._hass, self._duration, _expired
+                    self._hass, self._duration, _no_update
                 )
 
             @callback
-            def _consider(entity_id: str, state: State | None) -> None:
+            def _on_stale(entity_id: str, *, initial: bool) -> None:
+                current = status.get(entity_id)
+                if not initial and current == _HEALTHY:
+                    # Real healthy -> stale transition: fire immediately.
+                    _cancel(entity_id)
+                    status[entity_id] = _STALE
+                    if not fresh:
+                        _fire(entity_id, "unavailable")
+                    return
+                if current in (_PENDING, _STALE):
+                    # pending: grace timer still running; stale: already fired.
+                    return
+                # Stale at attach / dynamic add (or an untracked transition): hold
+                # as pending under a grace timer instead of firing now.
+                status[entity_id] = _PENDING
+                _cancel(entity_id)
+
+                @callback
+                def _grace(_now: datetime) -> None:
+                    timers.pop(entity_id, None)
+                    if status.get(entity_id) == _PENDING:
+                        status[entity_id] = _STALE
+                        if not fresh:
+                            _fire(entity_id, "unavailable")
+
+                timers[entity_id] = async_call_later(self._hass, self._duration, _grace)
+
+            @callback
+            def _consider(
+                entity_id: str, state: State | None, *, initial: bool
+            ) -> None:
                 if state is None or state.state in _EXCLUDED:
-                    _mark_stale(entity_id, "unavailable")
+                    _on_stale(entity_id, initial=initial)
                 else:
-                    _arm(entity_id)
+                    _on_healthy(entity_id)
 
             @callback
             def _on_state_change(d: TargetStateChangedData) -> None:
                 ev = d.state_change_event
-                _consider(ev.data["entity_id"], ev.data["new_state"])
+                _consider(ev.data["entity_id"], ev.data["new_state"], initial=False)
 
             @callback
             def _on_entities_update(
@@ -159,12 +200,10 @@ def make_stale_trigger(measurement: Measurement, *, fresh: bool) -> type[Trigger
                 entity_states: Mapping[str, State | None],
             ) -> None:
                 for entity_id in removed:
-                    timer = timers.pop(entity_id, None)
-                    if timer is not None:
-                        timer()
-                    stale.discard(entity_id)
+                    _cancel(entity_id)
+                    status.pop(entity_id, None)
                 for entity_id in added:
-                    _consider(entity_id, entity_states.get(entity_id))
+                    _consider(entity_id, entity_states.get(entity_id), initial=True)
 
             unsub = await async_track_target_selector_state_change_event(
                 self._hass,
@@ -180,7 +219,7 @@ def make_stale_trigger(measurement: Measurement, *, fresh: bool) -> type[Trigger
                 for timer in timers.values():
                     timer()
                 timers.clear()
-                stale.clear()
+                status.clear()
 
             return _remove
 
@@ -191,29 +230,16 @@ def make_stale_condition(measurement: Measurement) -> type[Condition]:
     """True when the measurement's external source sensor is currently stale."""
 
     class _PlantStaleCondition(Condition):
-        _schema = vol.Schema(
-            {
-                vol.Required("target"): cv.TARGET_FIELDS,
-                vol.Optional("options", default=dict): vol.Schema(
-                    {vol.Optional(CONF_FOR): cv.positive_time_period},
-                    extra=vol.ALLOW_EXTRA,
-                ),
-            },
-            extra=vol.ALLOW_EXTRA,
-        )
-
         @classmethod
         async def async_validate_config(
             cls, hass: HomeAssistant, config: ConfigType
         ) -> ConfigType:
-            return cls._schema(config)
+            return _STALE_SCHEMA(config)
 
         def __init__(self, hass: HomeAssistant, config: ConditionConfig) -> None:
             super().__init__(hass, config)
             self._target = config.target
-            self._duration: timedelta = (config.options or {}).get(
-                CONF_FOR
-            ) or DEFAULT_STALE_FOR
+            self._duration: timedelta = _stale_duration(config)
 
         def _async_check(self, **kwargs: Any) -> bool:
             from homeassistant.helpers.target import (

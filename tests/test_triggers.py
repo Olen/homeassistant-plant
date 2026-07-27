@@ -137,6 +137,90 @@ def _plant_entity_id(hass, init_integration) -> str:
     return hass.data[PLANT_DOMAIN][init_integration.entry_id][ATTR_PLANT].entity_id
 
 
+async def test_moisture_sensor_no_spurious_stale_when_recovers_in_window(
+    hass: HomeAssistant, init_integration
+) -> None:
+    """A source already stale at attach that recovers within `for` must NOT fire.
+
+    This is the restart case: the integration hasn't populated the sensor yet, so
+    it reads unknown/unavailable at attach. The grace-period state machine holds it
+    as `pending` (not stale) and cancels the grace timer on recovery.
+    """
+    plant_id = _plant_entity_id(hass, init_integration)
+    hass.states.async_set("sensor.test_moisture", "unavailable")
+    await hass.async_block_till_done()
+    events = async_capture_events(hass, "stale")
+    assert await async_setup_component(
+        hass,
+        "automation",
+        {
+            "automation": {
+                "trigger": {
+                    "trigger": "plant.moisture_sensor_became_stale",
+                    "target": {"entity_id": plant_id},
+                    "options": {"for": {"seconds": 30}},
+                },
+                "action": {"event": "stale"},
+            }
+        },
+    )
+    await hass.async_block_till_done()
+    # Part-way through the grace window, still dead -- must not fire yet.
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=15))
+    await hass.async_block_till_done()
+    # Source populates before the grace window elapses -> not a stale event.
+    hass.states.async_set("sensor.test_moisture", "42")
+    await hass.async_block_till_done()
+    assert len(events) == 0
+
+    # Recovery (re)armed a freshness watch timer; detach it before teardown so
+    # pytest-homeassistant-custom-component doesn't flag a lingering callback.
+    automation_entity_id = hass.states.async_entity_ids("automation")[0]
+    await hass.services.async_call(
+        "automation",
+        "turn_off",
+        {"entity_id": automation_entity_id},
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+
+
+async def test_moisture_sensor_became_stale_after_grace_when_dead(
+    hass: HomeAssistant, init_integration
+) -> None:
+    """A source stale at attach that stays dead past `for` fires once (unavailable).
+
+    This catches a source that genuinely died during the restart: the grace timer
+    expires while still `pending`, so it fires became_stale.
+    """
+    plant_id = _plant_entity_id(hass, init_integration)
+    hass.states.async_set("sensor.test_moisture", "unavailable")
+    await hass.async_block_till_done()
+    events = async_capture_events(hass, "stale")
+    assert await async_setup_component(
+        hass,
+        "automation",
+        {
+            "automation": {
+                "trigger": {
+                    "trigger": "plant.moisture_sensor_became_stale",
+                    "target": {"entity_id": plant_id},
+                    "options": {"for": {"seconds": 30}},
+                },
+                "action": {
+                    "event": "stale",
+                    "event_data": {"reason": "{{ trigger.reason }}"},
+                },
+            }
+        },
+    )
+    await hass.async_block_till_done()
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=31))
+    await hass.async_block_till_done()
+    assert len(events) == 1
+    assert events[0].data["reason"] == "unavailable"
+
+
 async def test_moisture_sensor_became_stale_on_unavailable(
     hass: HomeAssistant, init_integration
 ) -> None:
@@ -205,12 +289,20 @@ async def test_moisture_sensor_became_fresh_on_recovery(
                 "trigger": {
                     "trigger": "plant.moisture_sensor_became_fresh",
                     "target": {"entity_id": plant_id},
+                    "options": {"for": {"seconds": 30}},
                 },
                 "action": {"event": "fresh"},
             }
         },
     )
     await hass.async_block_till_done()
+    # Stale at attach -> `pending`. Let the grace window elapse while still dead so
+    # the source becomes genuinely `stale` (no became_fresh yet -- fresh triggers
+    # stay silent on stale transitions).
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=31))
+    await hass.async_block_till_done()
+    assert len(events) == 0
+    # Now it recovers: a real stale->fresh transition fires became_fresh once.
     hass.states.async_set("sensor.test_moisture", "42")
     await hass.async_block_till_done()
     assert len(events) == 1
