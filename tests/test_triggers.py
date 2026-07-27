@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
+
 import pytest
 from homeassistant.const import __version__ as HA_VERSION
 
@@ -16,15 +18,21 @@ if (int(_ha_parts[0]), int(_ha_parts[1])) < (2026, 7):
         allow_module_level=True,
     )
 
+import homeassistant.util.dt as dt_util
 from homeassistant.core import HomeAssistant
 from homeassistant.setup import async_setup_component
-from pytest_homeassistant_custom_component.common import async_capture_events
+from pytest_homeassistant_custom_component.common import (
+    async_capture_events,
+    async_fire_time_changed,
+)
 
 from custom_components.plant.automation_meta import (
     EXTERNAL_MEASUREMENTS,
     STATUS_MEASUREMENTS,
 )
 from custom_components.plant.condition import async_get_conditions
+from custom_components.plant.const import ATTR_PLANT
+from custom_components.plant.const import DOMAIN as PLANT_DOMAIN
 from custom_components.plant.trigger import async_get_triggers
 
 
@@ -123,3 +131,101 @@ async def test_moisture_became_ok_fires_on_recovery(hass: HomeAssistant) -> None
     hass.states.async_set("plant.test", "ok", {"moisture_status": "ok"})
     await hass.async_block_till_done()
     assert len(events) == 1
+
+
+def _plant_entity_id(hass, init_integration) -> str:
+    return hass.data[PLANT_DOMAIN][init_integration.entry_id][ATTR_PLANT].entity_id
+
+
+async def test_moisture_sensor_became_stale_on_unavailable(
+    hass: HomeAssistant, init_integration
+) -> None:
+    plant_id = _plant_entity_id(hass, init_integration)
+    events = async_capture_events(hass, "stale")
+    assert await async_setup_component(
+        hass,
+        "automation",
+        {
+            "automation": {
+                "trigger": {
+                    "trigger": "plant.moisture_sensor_became_stale",
+                    "target": {"entity_id": plant_id},
+                },
+                "action": {
+                    "event": "stale",
+                    "event_data": {"reason": "{{ trigger.reason }}"},
+                },
+            }
+        },
+    )
+    await hass.async_block_till_done()
+    hass.states.async_set("sensor.test_moisture", "unavailable")
+    await hass.async_block_till_done()
+    assert len(events) == 1
+    assert events[0].data["reason"] == "unavailable"
+
+
+async def test_moisture_sensor_became_stale_on_no_update(
+    hass: HomeAssistant, init_integration
+) -> None:
+    plant_id = _plant_entity_id(hass, init_integration)
+    events = async_capture_events(hass, "stale")
+    assert await async_setup_component(
+        hass,
+        "automation",
+        {
+            "automation": {
+                "trigger": {
+                    "trigger": "plant.moisture_sensor_became_stale",
+                    "target": {"entity_id": plant_id},
+                    "options": {"for": {"seconds": 30}},
+                },
+                "action": {"event": "stale"},
+            }
+        },
+    )
+    await hass.async_block_till_done()
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=31))
+    await hass.async_block_till_done()
+    assert len(events) == 1
+
+
+async def test_moisture_sensor_became_fresh_on_recovery(
+    hass: HomeAssistant, init_integration
+) -> None:
+    plant_id = _plant_entity_id(hass, init_integration)
+    hass.states.async_set("sensor.test_moisture", "unavailable")
+    await hass.async_block_till_done()
+    events = async_capture_events(hass, "fresh")
+    assert await async_setup_component(
+        hass,
+        "automation",
+        {
+            "automation": {
+                "trigger": {
+                    "trigger": "plant.moisture_sensor_became_fresh",
+                    "target": {"entity_id": plant_id},
+                },
+                "action": {"event": "fresh"},
+            }
+        },
+    )
+    await hass.async_block_till_done()
+    hass.states.async_set("sensor.test_moisture", "42")
+    await hass.async_block_till_done()
+    assert len(events) == 1
+
+    # A "became_fresh" trigger re-arms its no-update watch timer after every
+    # recovery (so it can detect a *future* stale->fresh transition too).
+    # Turn the automation off so its trigger detaches and cancels that timer
+    # before hass tears down -- otherwise pytest-homeassistant-custom-component
+    # fails the test for a lingering scheduled callback, same as init_integration
+    # explicitly unloads the config entry above for the same reason.
+    automation_entity_id = hass.states.async_entity_ids("automation")[0]
+    await hass.services.async_call(
+        "automation",
+        "turn_off",
+        {"entity_id": automation_entity_id},
+        blocking=True,
+    )
+    await hass.async_block_till_done()
