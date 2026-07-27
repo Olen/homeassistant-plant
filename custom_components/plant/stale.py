@@ -21,6 +21,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant, State, callback
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.condition import Condition, ConditionConfig
 from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.target import (
     TargetStateChangedData,
@@ -28,6 +29,7 @@ from homeassistant.helpers.target import (
 )
 from homeassistant.helpers.trigger import Trigger, TriggerActionRunner, TriggerConfig
 from homeassistant.helpers.typing import ConfigType
+from homeassistant.util import dt as dt_util
 
 from .automation_meta import Measurement
 from .const import ATTR_PLANT, DOMAIN
@@ -183,3 +185,61 @@ def make_stale_trigger(measurement: Measurement, *, fresh: bool) -> type[Trigger
             return _remove
 
     return _PlantStaleTrigger
+
+
+def make_stale_condition(measurement: Measurement) -> type[Condition]:
+    """True when the measurement's external source sensor is currently stale."""
+
+    class _PlantStaleCondition(Condition):
+        _schema = vol.Schema(
+            {
+                vol.Required("target"): cv.TARGET_FIELDS,
+                vol.Optional("options", default=dict): vol.Schema(
+                    {vol.Optional(CONF_FOR): cv.positive_time_period},
+                    extra=vol.ALLOW_EXTRA,
+                ),
+            },
+            extra=vol.ALLOW_EXTRA,
+        )
+
+        @classmethod
+        async def async_validate_config(
+            cls, hass: HomeAssistant, config: ConfigType
+        ) -> ConfigType:
+            return cls._schema(config)
+
+        def __init__(self, hass: HomeAssistant, config: ConditionConfig) -> None:
+            super().__init__(hass, config)
+            self._target = config.target
+            self._duration: timedelta = (config.options or {}).get(
+                CONF_FOR
+            ) or DEFAULT_STALE_FOR
+
+        def _async_check(self, **kwargs: Any) -> bool:
+            from homeassistant.helpers.target import (
+                TargetSelection,
+                async_extract_referenced_entity_ids,
+            )
+
+            selection = TargetSelection(self._target)
+            selected = async_extract_referenced_entity_ids(
+                self._hass, selection, expand_group=False
+            )
+            plant_ids = selected.referenced | selected.indirectly_referenced
+            now = dt_util.utcnow()
+            for plant_id in plant_ids:
+                if not plant_id.startswith(f"{DOMAIN}."):
+                    continue
+                source = resolve_external_sensor(
+                    self._hass, plant_id, measurement.device_sensor_attr
+                )
+                if not source:
+                    continue
+                state = self._hass.states.get(source)
+                if state is None or state.state in _EXCLUDED:
+                    return True
+                if now - state.last_updated > self._duration:
+                    return True
+            return False
+
+    return _PlantStaleCondition

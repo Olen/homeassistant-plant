@@ -6,8 +6,9 @@ from homeassistant.const import STATE_OK, STATE_PROBLEM
 from homeassistant.helpers.automation import DomainSpec
 from homeassistant.helpers.condition import make_entity_state_condition
 
-from .automation_meta import STATUS_MEASUREMENTS
+from .automation_meta import EXTERNAL_MEASUREMENTS, STATUS_MEASUREMENTS
 from .const import DOMAIN, STATE_HIGH, STATE_LOW
+from .stale import make_stale_condition
 
 _STATUS_CONDITIONS = {
     "is_low": STATE_LOW,
@@ -27,4 +28,6 @@ def build_conditions() -> dict[str, type]:
                 {DOMAIN: DomainSpec(value_source=m.status_attr)},
                 state,
             )
+    for m in EXTERNAL_MEASUREMENTS:
+        conditions[f"{m.key}_sensor_is_stale"] = make_stale_condition(m)
     return conditions
