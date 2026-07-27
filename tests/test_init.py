@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from unittest.mock import AsyncMock, patch
 
-from homeassistant.config_entries import SOURCE_IMPORT
+from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntryState
 from homeassistant.const import (
     STATE_OK,
     STATE_PROBLEM,
@@ -126,6 +126,33 @@ class TestIntegrationSetup:
         # Entry data is gone, but the shared component is retained.
         assert init_integration.entry_id not in hass.data.get(DOMAIN, {})
         assert DATA_COMPONENT in hass.data.get(DOMAIN, {})
+
+    async def test_reload_entry(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Reloading a config entry succeeds (regression test).
+
+        The plant.<name> entity is a RestoreEntity added directly to an
+        EntityComponent. On reload it left a stale, non-restored state behind
+        that kept its entity_id "in use", so the re-add aborted with a
+        duplicate unique_id and the entry ended up in SETUP_ERROR. Setup now
+        clears that orphan state before re-adding.
+        """
+        plant_entity_id = er.async_get(hass).async_get_entity_id(
+            DOMAIN, DOMAIN, init_integration.entry_id
+        )
+        assert plant_entity_id is not None
+
+        await hass.config_entries.async_reload(init_integration.entry_id)
+        await hass.async_block_till_done()
+
+        entry = hass.config_entries.async_get_entry(init_integration.entry_id)
+        assert entry.state is ConfigEntryState.LOADED
+        # The plant entity is live again (not a stale/unknown orphan)
+        assert hass.states.get(plant_entity_id) is not None
+        assert ATTR_PLANT in hass.data[DOMAIN][init_integration.entry_id]
 
     async def test_remove_entry(
         self,

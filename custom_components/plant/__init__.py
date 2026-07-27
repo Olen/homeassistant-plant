@@ -255,6 +255,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Add the entities to Hass via the single shared domain-level component
     # (see _get_plant_component), so each entity has a valid platform.
     component = _get_plant_component(hass)
+    # On a reload the previous plant.<name> entity leaves a stale, non-restored
+    # state behind that keeps the entity_id "in use"; core would then abort the
+    # re-add with a duplicate unique_id. Clear any such orphan (no live entity
+    # backing it) right before adding so the id can be reclaimed.
+    erreg = er.async_get(hass)
+    existing_entity_id = erreg.async_get_entity_id(DOMAIN, DOMAIN, entry.entry_id)
+    if existing_entity_id and not hass.states.async_available(existing_entity_id):
+        existing_state = hass.states.get(existing_entity_id)
+        if existing_state is not None and not existing_state.attributes.get("restored"):
+            hass.states.async_remove(existing_entity_id)
     await component.async_add_entities(plant_entities)
 
     # Add the entities to device registry and tie to config entry
