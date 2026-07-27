@@ -1,0 +1,26 @@
+# Configures GitHub's native release-notes generator (used by the Auto Release
+# workflow via `generate_release_notes: true`). PRs are bucketed by their labels;
+# label every PR so it lands in the right category. Unlabeled PRs fall into
+# "Other Changes". See CONTRIBUTING.md.
+changelog:
+  categories:
+    - title: 🚀 Features & Enhancements
+      labels:
+        - enhancement
+        - feature
+    - title: 🐛 Bug Fixes
+      labels:
+        - bug
+        - fix
+    - title: 📚 Documentation
+      labels:
+        - documentation
+    - title: 🧹 Maintenance & CI
+      labels:
+        - dependencies
+        - github_actions
+        - ci
+        - chore
+    - title: Other Changes
+      labels:
+        - "*"
