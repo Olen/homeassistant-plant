@@ -31,8 +31,7 @@ from custom_components.plant.automation_meta import (
     STATUS_MEASUREMENTS,
 )
 from custom_components.plant.condition import async_get_conditions
-from custom_components.plant.const import ATTR_PLANT
-from custom_components.plant.const import DOMAIN as PLANT_DOMAIN
+from custom_components.plant.const import ATTR_PLANT, DOMAIN as PLANT_DOMAIN
 from custom_components.plant.trigger import async_get_triggers
 
 
