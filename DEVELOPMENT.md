@@ -123,7 +123,16 @@ rm -f uv.lock
 The project uses GitHub Actions for CI. The workflow runs:
 
 1. Code formatting check with Black
-2. Full test suite with pytest
+2. Linting with Ruff
+3. Full test suite with pytest against a minimum and the latest Home Assistant
+
+---
+
+## 🏷️ Pull Requests & Releases
+
+The contribution workflow, the **PR label convention** (which drives categorized
+release notes), and the automated release process live in
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
