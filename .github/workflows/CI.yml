@@ -70,11 +70,16 @@ jobs:
         run: |
           rm -f uv.lock  # Prevent editable install from lock file
           uv venv
-          # Install test dependencies except pytest-homeassistant-custom-component
+          # Install the integration's runtime deps AND test deps, except
+          # pytest-homeassistant-custom-component (pinned separately below). The
+          # runtime deps (e.g. async-timeout) must be installed explicitly: newer
+          # HA no longer pulls them transitively, so relying on HA to provide them
+          # breaks on the latest HA.
           # Use --no-cache to ensure clean dependency resolution
           uv pip install --no-cache $(python -c "
           import tomllib
-          deps = tomllib.load(open('pyproject.toml', 'rb'))['project']['optional-dependencies']['test']
+          proj = tomllib.load(open('pyproject.toml', 'rb'))['project']
+          deps = proj.get('dependencies', []) + proj['optional-dependencies']['test']
           filtered = [d for d in deps if not d.startswith('pytest-homeassistant-custom-component')]
           print(' '.join(filtered))
           ")
