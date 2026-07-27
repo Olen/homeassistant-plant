@@ -2013,6 +2013,52 @@ class TestHysteresis:
         await update_plant_sensors(hass, init_integration.entry_id)
         assert plant.moisture_status == STATE_LOW
 
+    async def test_threshold_entity_without_hass_preserves_status(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test a threshold entity with no hass reference doesn't crash _check_threshold.
+
+        Regression test for issue #485: accessing a NumberEntity's `.state`
+        property while its `hass` attribute is None (e.g. entity not yet
+        added to hass, or removed from it) raises AttributeError deep inside
+        Home Assistant core (unit_of_measurement -> self.hass.config...).
+        _check_threshold must treat this the same as an unavailable/unknown
+        threshold and preserve the current status instead of crashing.
+        """
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+
+        await set_external_sensor_states(
+            hass,
+            temperature=25.0,
+            moisture=5.0,  # Below min of 20
+            conductivity=1000.0,
+            illuminance=5000.0,
+            humidity=40.0,
+        )
+        await update_plant_sensors(hass, init_integration.entry_id)
+        assert plant.moisture_status == STATE_LOW
+
+        # Simulate the entity_id being tracked by an entity that has no live
+        # state in hass.states (e.g. not yet added) and whose `.state`
+        # property raises AttributeError, mirroring core's NumberEntity
+        # behavior when self.hass is None.
+        hass.states.async_remove(plant.max_moisture.entity_id)
+
+        class _NoHassEntity:
+            entity_id = plant.max_moisture.entity_id
+
+            @property
+            def state(self):
+                raise AttributeError("'NoneType' object has no attribute 'config'")
+
+        assert plant._entity_state(_NoHassEntity()) is None
+        assert (
+            plant._check_threshold(5.0, plant.min_moisture, _NoHassEntity(), STATE_LOW)
+            == STATE_LOW
+        )
+
 
 class TestYamlImport:
     """Tests for YAML configuration import (async_setup)."""
