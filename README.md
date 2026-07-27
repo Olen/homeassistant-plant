@@ -300,7 +300,7 @@ actions:
 ```
 
 > [!NOTE]
-> For the standard-device-class measurements (`temperature`, `humidity`, `illuminance`, `soil_temperature`) you can alternatively use core's generic purpose triggers pointed at the plant's published `number.<plant>_min_*` / `_max_*` threshold entities — but the `plant.*` triggers above need no threshold wiring at all.
+> For measurements whose **source sensor** carries a standard Home Assistant device class (temperature, humidity, illuminance, soil temperature), Home Assistant's own generic `temperature.*` / `humidity.*` / `illuminance.*` purpose triggers also apply to that sensor — and their `crossed_threshold` form can optionally read the limit from the plant's published `number.<plant>_min_*` / `_max_*` entities. The `plant.*` triggers above need no such wiring.
 
 ---
 
