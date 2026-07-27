@@ -15,7 +15,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr, entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.plant import async_setup
+from custom_components.plant import DATA_COMPONENT, async_setup
 from custom_components.plant.const import (
     ATTR_PLANT,
     CARE_FIELDS,
@@ -84,6 +84,48 @@ class TestIntegrationSetup:
 
         # Entry should be removed from domain data
         assert init_integration.entry_id not in hass.data.get(DOMAIN, {})
+
+    async def test_plant_entity_added_via_shared_component(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """The plant.<name> entity must be added via the shared EntityComponent.
+
+        Regression test for issue #487: the entity was previously added through
+        a throwaway EntityComponent created per config entry and stored under the
+        entry's own data, which could leave it without a ``platform``. HA Core
+        2026.7 warns for platform-less entities ("does not have a platform ...")
+        and removes the compatibility guard in 2026.8. A single shared
+        domain-level component must own the entity so ``entity.platform`` is set.
+        """
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+
+        # The entity carries a valid platform reference...
+        assert plant.platform is not None
+        # ...and it is the single shared domain component (stored under
+        # DATA_COMPONENT), not a per-entry one under the entry's own data.
+        assert DATA_COMPONENT in hass.data[DOMAIN]
+        assert plant.platform is hass.data[DOMAIN][DATA_COMPONENT]._platforms[DOMAIN]
+        assert "component" not in hass.data[DOMAIN][init_integration.entry_id]
+
+    async def test_shared_component_survives_unload(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """The shared component persists after the last plant is unloaded.
+
+        It is domain-level infrastructure created in async_setup (which does not
+        re-run on a later re-add), so tearing it down would orphan its
+        EntityPlatform and make the next add hit a duplicate unique_id.
+        """
+        await hass.config_entries.async_unload(init_integration.entry_id)
+        await hass.async_block_till_done()
+
+        # Entry data is gone, but the shared component is retained.
+        assert init_integration.entry_id not in hass.data.get(DOMAIN, {})
+        assert DATA_COMPONENT in hass.data.get(DOMAIN, {})
 
     async def test_remove_entry(
         self,
