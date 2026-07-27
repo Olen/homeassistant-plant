@@ -46,10 +46,13 @@ jobs:
           # Latest HA version - uses current pytest-homeassistant-custom-component
           - ha-version: "latest"
             pytest-ha-version: ""
-          # Minimum HA version from hacs.json (2025.8.0)
-          # pytest-homeassistant-custom-component 0.13.270 supports HA 2025.8.x
-          - ha-version: "2025.8"
-            pytest-ha-version: "==0.13.270"
+          # Lowest TESTED HA version. hacs.json still declares support for 2025.8+
+          # (the plant.* triggers stay inert below 2026.7 — see trigger.py), but CI
+          # only tests 2026.3+: it is the first HA requiring Python 3.14, and older
+          # HA needs an aiodns/pycares workaround we no longer carry.
+          # pytest-homeassistant-custom-component 0.13.320 -> HA 2026.3.4.
+          - ha-version: "2026.3"
+            pytest-ha-version: "==0.13.320"
     steps:
       - name: Check out code
         uses: actions/checkout@v7
@@ -57,7 +60,8 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
-          python-version: "3.13"
+          # HA 2026.3+ requires Python 3.14
+          python-version: "3.14"
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
@@ -66,18 +70,21 @@ jobs:
         run: |
           rm -f uv.lock  # Prevent editable install from lock file
           uv venv
-          # Install test dependencies except pytest-homeassistant-custom-component
+          # Install the integration's runtime deps AND test deps, except
+          # pytest-homeassistant-custom-component (pinned separately below). The
+          # runtime deps (e.g. async-timeout) must be installed explicitly: newer
+          # HA no longer pulls them transitively, so relying on HA to provide them
+          # breaks on the latest HA.
           # Use --no-cache to ensure clean dependency resolution
           uv pip install --no-cache $(python -c "
           import tomllib
-          deps = tomllib.load(open('pyproject.toml', 'rb'))['project']['optional-dependencies']['test']
+          proj = tomllib.load(open('pyproject.toml', 'rb'))['project']
+          deps = proj.get('dependencies', []) + proj['optional-dependencies']['test']
           filtered = [d for d in deps if not d.startswith('pytest-homeassistant-custom-component')]
           print(' '.join(filtered))
           ")
           # Install pytest-homeassistant-custom-component with version constraint
           uv pip install --no-cache "pytest-homeassistant-custom-component${{ matrix.pytest-ha-version }}"
-          # Pin aiodns/pycares to known working versions to avoid compatibility issues
-          uv pip install --no-cache "aiodns==3.5.0" "pycares==4.11.0"
 
       - name: Show installed versions
         run: |

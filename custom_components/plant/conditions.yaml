@@ -1,0 +1,220 @@
+# Condition descriptions for the plant integration (HA 2026.7+).
+# Generated from automation_meta.py — keep in sync.
+
+has_problem:
+  target:
+    entity:
+      domain: plant
+
+moisture_is_low:
+  target:
+    entity:
+      domain: plant
+
+moisture_is_high:
+  target:
+    entity:
+      domain: plant
+
+moisture_is_ok:
+  target:
+    entity:
+      domain: plant
+
+conductivity_is_low:
+  target:
+    entity:
+      domain: plant
+
+conductivity_is_high:
+  target:
+    entity:
+      domain: plant
+
+conductivity_is_ok:
+  target:
+    entity:
+      domain: plant
+
+temperature_is_low:
+  target:
+    entity:
+      domain: plant
+
+temperature_is_high:
+  target:
+    entity:
+      domain: plant
+
+temperature_is_ok:
+  target:
+    entity:
+      domain: plant
+
+soil_temperature_is_low:
+  target:
+    entity:
+      domain: plant
+
+soil_temperature_is_high:
+  target:
+    entity:
+      domain: plant
+
+soil_temperature_is_ok:
+  target:
+    entity:
+      domain: plant
+
+humidity_is_low:
+  target:
+    entity:
+      domain: plant
+
+humidity_is_high:
+  target:
+    entity:
+      domain: plant
+
+humidity_is_ok:
+  target:
+    entity:
+      domain: plant
+
+illuminance_is_low:
+  target:
+    entity:
+      domain: plant
+
+illuminance_is_high:
+  target:
+    entity:
+      domain: plant
+
+illuminance_is_ok:
+  target:
+    entity:
+      domain: plant
+
+co2_is_low:
+  target:
+    entity:
+      domain: plant
+
+co2_is_high:
+  target:
+    entity:
+      domain: plant
+
+co2_is_ok:
+  target:
+    entity:
+      domain: plant
+
+dli_is_low:
+  target:
+    entity:
+      domain: plant
+
+dli_is_high:
+  target:
+    entity:
+      domain: plant
+
+dli_is_ok:
+  target:
+    entity:
+      domain: plant
+
+vpd_is_low:
+  target:
+    entity:
+      domain: plant
+
+vpd_is_high:
+  target:
+    entity:
+      domain: plant
+
+vpd_is_ok:
+  target:
+    entity:
+      domain: plant
+
+moisture_sensor_is_stale:
+  target:
+    entity:
+      domain: plant
+  fields:
+    for:
+      required: false
+      default: "24:00:00"
+      selector:
+        duration:
+
+conductivity_sensor_is_stale:
+  target:
+    entity:
+      domain: plant
+  fields:
+    for:
+      required: false
+      default: "24:00:00"
+      selector:
+        duration:
+
+temperature_sensor_is_stale:
+  target:
+    entity:
+      domain: plant
+  fields:
+    for:
+      required: false
+      default: "24:00:00"
+      selector:
+        duration:
+
+soil_temperature_sensor_is_stale:
+  target:
+    entity:
+      domain: plant
+  fields:
+    for:
+      required: false
+      default: "24:00:00"
+      selector:
+        duration:
+
+humidity_sensor_is_stale:
+  target:
+    entity:
+      domain: plant
+  fields:
+    for:
+      required: false
+      default: "24:00:00"
+      selector:
+        duration:
+
+illuminance_sensor_is_stale:
+  target:
+    entity:
+      domain: plant
+  fields:
+    for:
+      required: false
+      default: "24:00:00"
+      selector:
+        duration:
+
+co2_sensor_is_stale:
+  target:
+    entity:
+      domain: plant
+  fields:
+    for:
+      required: false
+      default: "24:00:00"
+      selector:
+        duration:
+

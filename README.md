@@ -21,6 +21,7 @@ A comprehensive plant monitoring integration for Home Assistant that treats each
   - [💧 Vapour Pressure Deficit (VPD)](#-vapour-pressure-deficit-vpd)
   - [🖼️ Plant Images](#️-plant-images)
   - [⚠️ Problem Reports](#️-problem-reports)
+  - [🔔 Automations: Triggers \& Conditions](#-automations-triggers--conditions)
   - [🔄 Replacing Sensors](#-replacing-sensors)
   - [🌻 OpenPlantbook Integration](#-openplantbook-integration)
   - [🃏 Lovelace Card](#-lovelace-card)
@@ -234,6 +235,72 @@ The band is relative to each threshold, so the margin stays proportional whether
 
 > [!NOTE]
 > When a sensor becomes unavailable, the hysteresis state resets. The next valid reading is evaluated fresh against the thresholds.
+
+---
+
+## 🔔 Automations: Triggers & Conditions
+
+**Home Assistant 2026.7+.** That release introduced purpose-specific triggers and conditions — reusable automation building blocks that an integration registers under its own domain. Plant Monitor teaches Home Assistant a set of `plant.*` triggers and conditions built directly on the status and problem detection described above. They appear automatically once you're on HA 2026.7 or later; on older supported versions (2025.8+) nothing changes and nothing is registered.
+
+Core Home Assistant ships generic purpose triggers too, like `temperature.crossed_threshold` — but you have to type in the number yourself. The `plant.*` per-measurement triggers instead fire off the plant's *own* status, which this integration already computes from the species-configured min/max **with hysteresis** (see above). There's no threshold to enter, and nothing to keep in sync with the plant's dashboard.
+
+### The trigger & condition families
+
+- **Whole-plant:** `plant.problem_detected` / `plant.problem_cleared` — the plant entered / left a problem state. Condition: `plant.has_problem`.
+- **Per-measurement status:** `plant.<measurement>_became_low` / `_became_high` / `_became_ok`, for `moisture`, `conductivity`, `temperature`, `soil_temperature`, `humidity`, `illuminance`, `co2`, `dli`, `vpd`. Conditions: `plant.<measurement>_is_low` / `_is_high` / `_is_ok`.
+- **Stale source sensor:** `plant.<measurement>_sensor_became_stale` / `_became_fresh`, for the externally-sourced measurements only — `moisture`, `conductivity`, `temperature`, `soil_temperature`, `humidity`, `illuminance`, `co2` (not `dli`/`vpd`, which are derived rather than sensor-backed). Condition: `plant.<measurement>_sensor_is_stale`.
+
+  "Stale" means the source sensor is `unavailable`/`unknown`, or simply hasn't updated within a window (`for`, default **24 hours**). A grace period means it does **not** false-alarm at restart, when a sensor briefly reads `unknown` before its own integration populates it — staleness only fires once the source is genuinely still dead after the full window elapses.
+
+### Targeting
+
+Every trigger and condition targets the **plant** entity — you pick which plant, nothing else. For the stale family, the integration resolves that measurement's configured external source sensor itself; you never reference the sensor directly.
+
+### Examples
+
+```yaml
+# Notify when a plant's moisture drops below its configured minimum
+triggers:
+  - trigger: plant.moisture_became_low
+    target:
+      entity_id: plant.my_fern
+actions:
+  - action: notify.mobile_app_phone
+    data:
+      message: "My Fern needs water"
+```
+
+```yaml
+# Do something whenever a plant enters a problem state
+triggers:
+  - trigger: plant.problem_detected
+    target:
+      entity_id: plant.my_fern
+actions:
+  - action: light.turn_on
+    target:
+      entity_id: light.plant_shelf
+    data:
+      color_name: red
+```
+
+```yaml
+# Alert if the source sensor feeding a plant's temperature has gone stale for 6 hours
+triggers:
+  - trigger: plant.temperature_sensor_became_stale
+    target:
+      entity_id: plant.my_fern
+    options:
+      for:
+        hours: 6
+actions:
+  - action: notify.mobile_app_phone
+    data:
+      message: "{{ trigger.entity_id }} hasn't reported in 6 hours"
+```
+
+> [!NOTE]
+> For measurements whose **source sensor** carries a standard Home Assistant device class (temperature, humidity, illuminance, soil temperature), Home Assistant's own generic `temperature.*` / `humidity.*` / `illuminance.*` purpose triggers also apply to that sensor — and their `crossed_threshold` form can optionally read the limit from the plant's published `number.<plant>_min_*` / `_max_*` entities. The `plant.*` triggers above need no such wiring.
 
 ---
 
