@@ -17,6 +17,8 @@ if (int(_ha_parts[0]), int(_ha_parts[1])) < (2026, 7):
     )
 
 from homeassistant.core import HomeAssistant
+from homeassistant.setup import async_setup_component
+from pytest_homeassistant_custom_component.common import async_capture_events
 
 from custom_components.plant.automation_meta import (
     EXTERNAL_MEASUREMENTS,
@@ -52,3 +54,72 @@ async def test_async_get_triggers_full_surface(hass: HomeAssistant) -> None:
 async def test_async_get_conditions_full_surface(hass: HomeAssistant) -> None:
     assert set(await async_get_conditions(hass)) == _expected_condition_keys()
     assert len(_expected_condition_keys()) == 35
+
+
+async def test_problem_detected_fires(hass: HomeAssistant) -> None:
+    hass.states.async_set("plant.test", "ok")
+    await hass.async_block_till_done()
+    events = async_capture_events(hass, "plant_problem")
+    assert await async_setup_component(
+        hass,
+        "automation",
+        {
+            "automation": {
+                "trigger": {
+                    "trigger": "plant.problem_detected",
+                    "target": {"entity_id": "plant.test"},
+                },
+                "action": {"event": "plant_problem"},
+            }
+        },
+    )
+    await hass.async_block_till_done()
+    hass.states.async_set("plant.test", "problem")
+    await hass.async_block_till_done()
+    assert len(events) == 1
+
+
+async def test_moisture_became_low_uses_status_attribute(hass: HomeAssistant) -> None:
+    hass.states.async_set("plant.test", "ok", {"moisture_status": "ok"})
+    await hass.async_block_till_done()
+    events = async_capture_events(hass, "moisture_low")
+    assert await async_setup_component(
+        hass,
+        "automation",
+        {
+            "automation": {
+                "trigger": {
+                    "trigger": "plant.moisture_became_low",
+                    "target": {"entity_id": "plant.test"},
+                },
+                "action": {"event": "moisture_low"},
+            }
+        },
+    )
+    await hass.async_block_till_done()
+    hass.states.async_set("plant.test", "problem", {"moisture_status": "Low"})
+    await hass.async_block_till_done()
+    assert len(events) == 1
+
+
+async def test_moisture_became_ok_fires_on_recovery(hass: HomeAssistant) -> None:
+    hass.states.async_set("plant.test", "problem", {"moisture_status": "Low"})
+    await hass.async_block_till_done()
+    events = async_capture_events(hass, "moisture_ok")
+    assert await async_setup_component(
+        hass,
+        "automation",
+        {
+            "automation": {
+                "trigger": {
+                    "trigger": "plant.moisture_became_ok",
+                    "target": {"entity_id": "plant.test"},
+                },
+                "action": {"event": "moisture_ok"},
+            }
+        },
+    )
+    await hass.async_block_till_done()
+    hass.states.async_set("plant.test", "ok", {"moisture_status": "ok"})
+    await hass.async_block_till_done()
+    assert len(events) == 1
