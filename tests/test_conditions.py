@@ -17,6 +17,7 @@ from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import async_capture_events
 
 from custom_components.plant.const import ATTR_PLANT, DOMAIN as PLANT_DOMAIN
+from custom_components.plant.stale import resolve_external_sensor
 
 
 async def _condition_passes(hass: HomeAssistant, cond: dict) -> bool:
@@ -93,6 +94,61 @@ async def test_moisture_sensor_is_stale_false_when_fresh(
 ) -> None:
     plant_id = _plant_entity_id(hass, init_integration)
     hass.states.async_set("sensor.test_moisture", "42")
+    await hass.async_block_till_done()
+    got = await _condition_passes(
+        hass,
+        {
+            "condition": "plant.moisture_sensor_is_stale",
+            "target": {"entity_id": plant_id},
+        },
+    )
+    assert got is False
+
+
+async def test_stale_resolution_follows_replace_sensor(
+    hass: HomeAssistant, init_integration
+) -> None:
+    """resolve_external_sensor and the stale condition must track a sensor swap.
+
+    replace_external_sensor updates PlantDevice.sensor_moisture.external_sensor
+    in place; resolve_external_sensor reads that attribute live, and the stale
+    CONDITION (unlike the trigger, which only re-binds on reload) re-resolves
+    the source on every evaluation. So both must follow a replace_sensor swap
+    without any reload.
+    """
+    plant_id = _plant_entity_id(hass, init_integration)
+    plant = hass.data[PLANT_DOMAIN][init_integration.entry_id][ATTR_PLANT]
+
+    assert (
+        resolve_external_sensor(hass, plant_id, "sensor_moisture")
+        == "sensor.test_moisture"
+    )
+
+    hass.states.async_set("sensor.new_moisture", "42")
+    await hass.async_block_till_done()
+    plant.sensor_moisture.replace_external_sensor("sensor.new_moisture")
+    await hass.async_block_till_done()
+
+    assert (
+        resolve_external_sensor(hass, plant_id, "sensor_moisture")
+        == "sensor.new_moisture"
+    )
+
+    # Old source going stale must no longer matter; new source drives the result.
+    hass.states.async_set("sensor.test_moisture", "unavailable")
+    hass.states.async_set("sensor.new_moisture", "unavailable")
+    await hass.async_block_till_done()
+    got = await _condition_passes(
+        hass,
+        {
+            "condition": "plant.moisture_sensor_is_stale",
+            "target": {"entity_id": plant_id},
+        },
+    )
+    assert got is True
+
+    hass.states.async_set("sensor.test_moisture", "unavailable")
+    hass.states.async_set("sensor.new_moisture", "42")
     await hass.async_block_till_done()
     got = await _condition_passes(
         hass,

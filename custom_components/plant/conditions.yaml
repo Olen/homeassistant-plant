@@ -145,34 +145,76 @@ moisture_sensor_is_stale:
   target:
     entity:
       domain: plant
+  fields:
+    for:
+      required: false
+      default: "24:00:00"
+      selector:
+        duration:
 
 conductivity_sensor_is_stale:
   target:
     entity:
       domain: plant
+  fields:
+    for:
+      required: false
+      default: "24:00:00"
+      selector:
+        duration:
 
 temperature_sensor_is_stale:
   target:
     entity:
       domain: plant
+  fields:
+    for:
+      required: false
+      default: "24:00:00"
+      selector:
+        duration:
 
 soil_temperature_sensor_is_stale:
   target:
     entity:
       domain: plant
+  fields:
+    for:
+      required: false
+      default: "24:00:00"
+      selector:
+        duration:
 
 humidity_sensor_is_stale:
   target:
     entity:
       domain: plant
+  fields:
+    for:
+      required: false
+      default: "24:00:00"
+      selector:
+        duration:
 
 illuminance_sensor_is_stale:
   target:
     entity:
       domain: plant
+  fields:
+    for:
+      required: false
+      default: "24:00:00"
+      selector:
+        duration:
 
 co2_sensor_is_stale:
   target:
     entity:
       domain: plant
+  fields:
+    for:
+      required: false
+      default: "24:00:00"
+      selector:
+        duration:
 
