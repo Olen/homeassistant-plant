@@ -14,6 +14,7 @@ A comprehensive plant monitoring integration that treats each plant as a **devic
 - 🚨 **Configurable problem triggers** — enable/disable per sensor type
 - 🔌 **Auto-disable** — sensors without a source entity are automatically disabled
 - 🖼️ **Flexible images** — HTTP URLs, local `/www/` files, or media source URLs
+- 🔔 **Automation triggers & conditions** *(Home Assistant 2026.7+)* — auto-thresholded `plant.*` triggers for problem/status changes, plus source-sensor staleness detection. See [Automations: Triggers & Conditions](https://github.com/Olen/homeassistant-plant/#-automations-triggers--conditions) in the README
 
 ## 📦 Dependencies
 
