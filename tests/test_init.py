@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from unittest.mock import AsyncMock, patch
 
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntryState
@@ -153,6 +154,29 @@ class TestIntegrationSetup:
         # The plant entity is live again (not a stale/unknown orphan)
         assert hass.states.get(plant_entity_id) is not None
         assert ATTR_PLANT in hass.data[DOMAIN][init_integration.entry_id]
+
+    async def test_reload_no_platform_warning(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+        caplog,
+    ) -> None:
+        """Reloading must not write plant state before the plant has a platform.
+
+        Regression for the reload-only residual of #487 (reported on #485): on
+        reload, each child sensor's state restoration re-persisted its
+        external_sensor to the config entry, which fired the update-options
+        listener (update_plant_options) and pushed plant state before the plant
+        entity had been re-added to the shared EntityComponent -- i.e. before it
+        had a platform. HA Core warns ("... does not have a platform ...") for
+        this in 2026.7 and turns it into a hard error in 2026.8.
+        """
+        caplog.clear()
+        with caplog.at_level(logging.WARNING):
+            await hass.config_entries.async_reload(init_integration.entry_id)
+            await hass.async_block_till_done()
+
+        assert "does not have a platform" not in caplog.text
 
     async def test_remove_entry(
         self,
