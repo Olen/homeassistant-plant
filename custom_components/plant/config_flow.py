@@ -873,7 +873,15 @@ async def update_plant_options(
     # Push attribute changes (display_species, entity_picture) into the
     # state machine immediately. Without this the UI would only see the
     # update on the next 30 s poll.
-    plant.async_write_ha_state()
+    #
+    # Skip the write if the plant entity has not been added to a platform yet.
+    # On a reload, a child sensor's state restoration re-persists its
+    # external_sensor to the config entry, which fires this listener before the
+    # plant has been re-added to the shared EntityComponent. Writing state
+    # without a platform warns in HA 2026.7 and raises in 2026.8; the plant
+    # writes its initial state when it is added (async_setup_entry).
+    if plant.platform is not None:
+        plant.async_write_ha_state()
     _LOGGER.debug("update_plant_options done for %s", entry.entry_id)
 
 
