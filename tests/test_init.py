@@ -74,6 +74,31 @@ class TestIntegrationSetup:
         # Plus potentially the main plant entity
         assert len(entities) >= 24  # At minimum sensors + thresholds
 
+    async def test_setup_creates_derived_light_sensors(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """The derived light sensors must actually be created.
+
+        The PPFD integral, DLI and 24h-DLI sensors subclass HA's
+        IntegrationSensor / UtilityMeterSensor / StatisticsSensor. HA 2026.8
+        (core PRs #177596 / #177597 / #177603) dropped the ``hass`` argument
+        from those constructors; passing it raised TypeError and aborted the
+        sensor-platform setup - yet the config entry still loaded, so a
+        setup-only check (entry LOADED) stayed green. Assert the entities exist
+        by unique_id so this class of regression is caught directly, not
+        swallowed as a logged platform error.
+        """
+        entity_registry = er.async_get(hass)
+        entry_id = init_integration.entry_id
+        for suffix in ("ppfd-integral", "dli", "dli-24h"):
+            unique_id = f"{entry_id}-{suffix}"
+            assert (
+                entity_registry.async_get_entity_id("sensor", DOMAIN, unique_id)
+                is not None
+            ), f"derived sensor {unique_id} was not created"
+
     async def test_unload_entry(
         self,
         hass: HomeAssistant,
