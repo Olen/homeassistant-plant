@@ -24,12 +24,12 @@ from homeassistant.const import (
     ATTR_ICON,
     ATTR_NAME,
     ATTR_UNIT_OF_MEASUREMENT,
-    CONCENTRATION_PARTS_PER_MILLION,
     LIGHT_LUX,
     PERCENTAGE,
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
     UnitOfConductivity,
+    UnitOfRatio,
     UnitOfTemperature,
     UnitOfTime,
 )
@@ -721,7 +721,7 @@ class PlantCurrentCo2(PlantCurrentStatus):
 
     _attr_device_class = SensorDeviceClass.CO2
     _attr_icon = ICON_CO2
-    _attr_native_unit_of_measurement = CONCENTRATION_PARTS_PER_MILLION
+    _attr_native_unit_of_measurement = UnitOfRatio.PARTS_PER_MILLION
     _attr_suggested_display_precision = 0
     _attr_translation_key = TRANSLATION_KEY_CO2
     _config_key = FLOW_SENSOR_CO2
