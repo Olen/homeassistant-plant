@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import asyncio
+import contextlib
 import logging
 from datetime import datetime, timedelta
 
@@ -248,28 +248,22 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
-    plant_entities = [
-        plant,
-    ]
-
-    # Add the entities to Hass via the single shared domain-level component
-    # (see _get_plant_component), so each entity has a valid platform.
+    # Add the plant.<name> entity through the shared domain component's
+    # config-entry platform (plant/plant.py). Binding the config entry to the
+    # platform lets Home Assistant attach the device and register the entity
+    # natively (entity_platform links both to the config entry) - which replaces
+    # the old manual device-registry patch and avoids the HA 2026.8 warning
+    # about attaching a device to an entity without a config entry. The per-entry
+    # EntityPlatform lives inside the single shared component, so the entity
+    # still always has a valid platform (issue #487), and async_unload_entry
+    # resets it cleanly on unload/reload.
     component = _get_plant_component(hass)
-    # On a reload the previous plant.<name> entity leaves a stale, non-restored
-    # state behind that keeps the entity_id "in use"; core would then abort the
-    # re-add with a duplicate unique_id. Clear any such orphan (no live entity
-    # backing it) right before adding so the id can be reclaimed.
-    erreg = er.async_get(hass)
-    existing_entity_id = erreg.async_get_entity_id(DOMAIN, DOMAIN, entry.entry_id)
-    if existing_entity_id and not hass.states.async_available(existing_entity_id):
-        existing_state = hass.states.get(existing_entity_id)
-        if existing_state is not None and not existing_state.attributes.get("restored"):
-            hass.states.async_remove(existing_entity_id)
-    await component.async_add_entities(plant_entities)
-
-    # Add the entities to device registry and tie to config entry
-    device_id = plant.device_id
-    await _plant_add_to_device_registry(hass, plant_entities, device_id, entry)
+    if not await component.async_setup_entry(entry):
+        _LOGGER.error(
+            "Failed to set up the plant entity platform for entry %s",
+            entry.entry_id,
+        )
+        return False
 
     # Set up utility sensor
     hass.data.setdefault(DATA_UTILITY, {})
@@ -369,51 +363,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
-_REGISTRY_RETRY_DELAY = 1  # seconds between retries
-_REGISTRY_MAX_RETRIES = 5
-
-
-async def _plant_add_to_device_registry(
-    hass: HomeAssistant,
-    plant_entities: list[Entity],
-    device_id: str,
-    entry: ConfigEntry,
-) -> None:
-    """Add all related entities to the correct device and config entry."""
-
-    # There must be a better way to do this, but I just can't find a way to set the
-    # device_id when adding the entities.
-    erreg = er.async_get(hass)
-    for entity in plant_entities:
-        registry_entry = entity.registry_entry or erreg.async_get(entity.entity_id)
-        retries = 0
-        while registry_entry is None and retries < _REGISTRY_MAX_RETRIES:
-            retries += 1
-            _LOGGER.debug(
-                "Entity %s not yet in registry, retrying (%s/%s)",
-                entity.entity_id,
-                retries,
-                _REGISTRY_MAX_RETRIES,
-            )
-            await asyncio.sleep(_REGISTRY_RETRY_DELAY)
-            registry_entry = entity.registry_entry or erreg.async_get(entity.entity_id)
-
-        if registry_entry is None:
-            _LOGGER.warning(
-                "Entity %s not found in registry after %s retries, "
-                "skipping device assignment",
-                entity.entity_id,
-                retries,
-            )
-            continue
-
-        erreg.async_update_entity(
-            registry_entry.entity_id,
-            device_id=device_id,
-            config_entry_id=entry.entry_id,
-        )
-
-
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     # Prevent auto-disable from firing during unload teardown
@@ -421,12 +370,17 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if ATTR_PLANT in plant_data:
         plant_data[ATTR_PLANT].plant_complete = False
 
-    # Remove the plant entity from the shared EntityComponent so reloads don't
-    # hit a duplicate unique_id error
-    plant = plant_data.get(ATTR_PLANT)
+    # Reset this entry's platform on the shared component so the plant.<name>
+    # entity is removed cleanly (mirror of component.async_setup_entry in
+    # async_setup_entry). This frees the entity_id so a reload can re-add it
+    # without a duplicate unique_id. Entries without plant info were never set
+    # up on the component, so async_unload_entry raises ValueError - ignore it.
     component = hass.data.get(DOMAIN, {}).get(DATA_COMPONENT)
-    if component and plant and plant.entity_id:
-        await component.async_remove_entity(plant.entity_id)
+    if component is not None:
+        # Entries without plant info were never set up on the component, so
+        # async_unload_entry raises ValueError - ignore it.
+        with contextlib.suppress(ValueError):
+            await component.async_unload_entry(entry)
 
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
