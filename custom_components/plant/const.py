@@ -167,7 +167,7 @@ UNIT_DLI = "mol/d⋅m²"
 UNIT_VPD = "kPa"
 UNIT_MICRO_DLI = "µmol/d⋅m²"
 # Note: For conductivity, use UnitOfConductivity.MICROSIEMENS_PER_CM from homeassistant.const
-# Note: For CO2, use CONCENTRATION_PARTS_PER_MILLION from homeassistant.const
+# Note: For CO2, use UnitOfRatio.PARTS_PER_MILLION from homeassistant.const
 
 FLOW_WRONG_PLANT = "wrong_plant"
 FLOW_RIGHT_PLANT = "right_plant"

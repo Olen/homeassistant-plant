@@ -24,7 +24,6 @@ from homeassistant.const import (
     ATTR_ICON,
     ATTR_NAME,
     ATTR_UNIT_OF_MEASUREMENT,
-    CONCENTRATION_PARTS_PER_MILLION,
     LIGHT_LUX,
     PERCENTAGE,
     STATE_UNAVAILABLE,
@@ -33,6 +32,17 @@ from homeassistant.const import (
     UnitOfTemperature,
     UnitOfTime,
 )
+
+try:
+    # HA 2026.7+ deprecated CONCENTRATION_PARTS_PER_MILLION in favour of the
+    # UnitOfRatio enumerator (removed in HA Core 2027.8). Fall back to the old
+    # constant on HA < 2026.7, where UnitOfRatio does not exist yet.
+    from homeassistant.const import UnitOfRatio
+
+    _UNIT_PPM: str = UnitOfRatio.PARTS_PER_MILLION
+except ImportError:  # HA < 2026.7
+    from homeassistant.const import CONCENTRATION_PARTS_PER_MILLION as _UNIT_PPM
+
 from homeassistant.core import Event, HomeAssistant, State, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
@@ -721,7 +731,7 @@ class PlantCurrentCo2(PlantCurrentStatus):
 
     _attr_device_class = SensorDeviceClass.CO2
     _attr_icon = ICON_CO2
-    _attr_native_unit_of_measurement = CONCENTRATION_PARTS_PER_MILLION
+    _attr_native_unit_of_measurement = _UNIT_PPM
     _attr_suggested_display_precision = 0
     _attr_translation_key = TRANSLATION_KEY_CO2
     _config_key = FLOW_SENSOR_CO2
