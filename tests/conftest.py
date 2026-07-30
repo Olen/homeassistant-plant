@@ -34,9 +34,7 @@ if not hasattr(_ha_http, "start_http_server_and_save_config"):
     def _noop_start_http_server_and_save_config(*args: Any, **kwargs: Any) -> None:
         return None
 
-    _ha_http.start_http_server_and_save_config = (
-        _noop_start_http_server_and_save_config
-    )
+    _ha_http.start_http_server_and_save_config = _noop_start_http_server_and_save_config
 
 
 from custom_components.plant.const import (
