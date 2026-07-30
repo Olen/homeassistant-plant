@@ -55,6 +55,9 @@ class TestIntegrationSetup:
         )
         assert device is not None
         assert device.name == TEST_PLANT_NAME
+        # The device is owned by the config entry - attached natively by the
+        # config-entry-bound platform, not patched in after the fact.
+        assert init_integration.entry_id in device.config_entries
 
     async def test_setup_entry_creates_entities(
         self,
@@ -100,15 +103,24 @@ class TestIntegrationSetup:
         and removes the compatibility guard in 2026.8. A single shared
         domain-level component must own the entity so ``entity.platform`` is set.
         """
-        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        entry_id = init_integration.entry_id
+        plant = hass.data[DOMAIN][entry_id][ATTR_PLANT]
 
         # The entity carries a valid platform reference...
         assert plant.platform is not None
-        # ...and it is the single shared domain component (stored under
-        # DATA_COMPONENT), not a per-entry one under the entry's own data.
+        # ...owned by the single shared domain component (stored under
+        # DATA_COMPONENT), not a per-entry EntityComponent under the entry data.
         assert DATA_COMPONENT in hass.data[DOMAIN]
-        assert plant.platform is hass.data[DOMAIN][DATA_COMPONENT]._platforms[DOMAIN]
-        assert "component" not in hass.data[DOMAIN][init_integration.entry_id]
+        component = hass.data[DOMAIN][DATA_COMPONENT]
+        # The entity is on this entry's config-entry-bound platform (added via
+        # component.async_setup_entry -> plant/plant.py), so its platform carries
+        # the config entry. That is what lets HA attach the device natively and
+        # avoids the 2026.8 "attach a device to an entity without a config entry"
+        # warning.
+        assert plant.platform is component._platforms[entry_id]
+        assert plant.platform.config_entry is not None
+        assert plant.platform.config_entry.entry_id == entry_id
+        assert "component" not in hass.data[DOMAIN][entry_id]
 
     async def test_shared_component_survives_unload(
         self,
