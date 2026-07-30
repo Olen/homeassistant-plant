@@ -39,6 +39,8 @@ jobs:
   test:
     name: Tests (HA ${{ matrix.ha-version }})
     runs-on: ubuntu-latest
+    # Non-blocking for the experimental "beta" matrix entry; required otherwise.
+    continue-on-error: ${{ matrix.experimental || false }}
     strategy:
       fail-fast: false
       matrix:
@@ -53,6 +55,14 @@ jobs:
           # pytest-homeassistant-custom-component 0.13.320 -> HA 2026.3.4.
           - ha-version: "2026.3"
             pytest-ha-version: "==0.13.320"
+          # Latest HA prerelease/beta (NON-BLOCKING, see continue-on-error). Uses
+          # the latest plugin (which pins the newest *stable* HA), then force-
+          # upgrades HA to the newest prerelease so breakage in an upcoming HA
+          # release surfaces here early rather than in users' logs. The conftest
+          # HA-beta shim recreates symbols the lagging plugin still patches.
+          - ha-version: "beta"
+            pytest-ha-version: ""
+            experimental: true
     steps:
       - name: Check out code
         uses: actions/checkout@v7
@@ -85,6 +95,14 @@ jobs:
           ")
           # Install pytest-homeassistant-custom-component with version constraint
           uv pip install --no-cache "pytest-homeassistant-custom-component${{ matrix.pytest-ha-version }}"
+
+      - name: Force latest HA prerelease (beta job only)
+        if: matrix.ha-version == 'beta'
+        # Upgrade HA to the newest release INCLUDING prereleases, over the stable
+        # version the plugin pinned. Best-effort: the conftest HA-beta shim
+        # handles symbols the plugin still patches that a newer HA may have
+        # removed. This step is what makes the "beta" job test upcoming releases.
+        run: uv pip install --no-cache --prerelease=allow --upgrade homeassistant
 
       - name: Show installed versions
         run: |

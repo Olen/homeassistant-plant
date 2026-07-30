@@ -21,6 +21,24 @@ from pytest_homeassistant_custom_component.common import (
 pytest_plugins = "pytest_homeassistant_custom_component"
 
 
+# HA-beta compatibility shim (no-op on stable HA). pytest-homeassistant-custom-
+# component patches homeassistant.components.http.start_http_server_and_save_config
+# in an autouse fixture, but HA 2026.8 removed that symbol. The non-blocking
+# "HA beta" CI job force-installs a newer HA than the released plugin targets, so
+# the patch target is missing and every test would error at setup. Recreate a
+# no-op when it is absent; on HA versions that still export it this does nothing.
+from homeassistant.components import http as _ha_http
+
+if not hasattr(_ha_http, "start_http_server_and_save_config"):
+
+    def _noop_start_http_server_and_save_config(*args: Any, **kwargs: Any) -> None:
+        return None
+
+    _ha_http.start_http_server_and_save_config = (
+        _noop_start_http_server_and_save_config
+    )
+
+
 from custom_components.plant.const import (
     ATTR_CARE,
     ATTR_LIMITS,
