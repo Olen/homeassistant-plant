@@ -2488,7 +2488,13 @@ class TestMoistureGracePeriod:
 
         plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
 
-        # Start normal
+        # Freeze time BEFORE any reading so grace-period timing is fully
+        # deterministic (no real-clock leak into utility-meter timers).
+        base_time = dt_util.now()
+        freezer.move_to(base_time)
+
+        # Establish a low baseline so the next reading registers as a watering
+        # event. Kept separate (no watering yet: _last_moisture_value is None).
         await set_external_sensor_states(
             hass,
             temperature=25.0,
@@ -2499,22 +2505,13 @@ class TestMoistureGracePeriod:
         )
         await update_plant_sensors(hass, init_integration.entry_id)
 
-        # Freeze time at a known point
-        base_time = dt_util.now()
-        freezer.move_to(base_time)
-
-        # Water plant
-        await set_external_sensor_states(
-            hass,
-            temperature=25.0,
-            moisture=55.0,
-            conductivity=1000.0,
-            illuminance=5000.0,
-            humidity=40.0,
-        )
-        await update_plant_sensors(hass, init_integration.entry_id)
-
-        # Moisture goes high
+        # Single unambiguous watering event straight to a "high" value: one
+        # +25% jump (>> the 10% threshold) arms the grace period AND makes
+        # moisture high in the same step. Deliberately NOT a two-step
+        # 40->55->65 walk: the old 55->65 step was itself a boundary (+10%)
+        # watering event, so a single stale intermediate read under load made
+        # the final update mis-detect a fresh watering event and re-arm the
+        # grace period past the time jump -> alert suppressed -> flaky failure.
         await set_external_sensor_states(
             hass,
             temperature=25.0,
@@ -2525,14 +2522,15 @@ class TestMoistureGracePeriod:
         )
         await update_plant_sensors(hass, init_integration.entry_id)
 
-        # Problem suppressed during grace period
+        # Problem suppressed during grace period, which ends exactly 600s out.
         assert plant.moisture_status == STATE_HIGH
         assert plant.state == STATE_OK
+        assert plant._moisture_grace_end_time == base_time + timedelta(seconds=600)
 
         # Advance time past grace period (15 minutes > 10 minutes)
         freezer.move_to(base_time + timedelta(minutes=15))
 
-        # Trigger update - moisture still high
+        # Trigger update - moisture unchanged (delta 0, so no re-arm)
         await set_external_sensor_states(
             hass,
             temperature=25.0,
