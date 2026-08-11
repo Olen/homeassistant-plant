@@ -34,6 +34,9 @@
       },
       "dli_24h": {
         "name": "DLI (24h contínuo)"
+      },
+      "vpd": {
+        "name": "Défice de pressão de vapor"
       }
     },
     "number": {
@@ -84,6 +87,12 @@
       },
       "min_soil_temperature": {
         "name": "Mín. temperatura do solo"
+      },
+      "max_vpd": {
+        "name": "Máx. VPD"
+      },
+      "min_vpd": {
+        "name": "Mín. VPD"
       },
       "lux_to_ppfd": {
         "name": "Fator Lux para PPFD"
@@ -145,6 +154,8 @@
           "min_conductivity": "Mín. condutividade (uS/cm)",
           "max_humidity": "Máx. humidade do ar (%)",
           "min_humidity": "Mín. humidade do ar (%)",
+          "max_vpd": "Máx. VPD (kPa)",
+          "min_vpd": "Mín. VPD (kPa)",
           "entity_picture": "URL da imagem"
         }
       }
@@ -177,7 +188,8 @@
           "moisture_grace_period": "Moisture grace period after watering (seconds, 0-86400)",
           "temperature_trigger": "Usar temperatura como gatilho de problema",
           "co2_trigger": "Usar CO2 como gatilho de problema",
-          "soil_temperature_trigger": "Usar temperatura do solo como gatilho de problema"
+          "soil_temperature_trigger": "Usar temperatura do solo como gatilho de problema",
+          "vpd_trigger": "Usar VPD como gatilho de problema"
         }
       },
       "replace_sensor": {

@@ -34,6 +34,9 @@
       },
       "dli_24h": {
         "name": "DLI (24t rullende)"
+      },
+      "vpd": {
+        "name": "Damptryksdeficit"
       }
     },
     "number": {
@@ -84,6 +87,12 @@
       },
       "min_soil_temperature": {
         "name": "Min. jordtemperatur"
+      },
+      "max_vpd": {
+        "name": "Maks. VPD"
+      },
+      "min_vpd": {
+        "name": "Min. VPD"
       },
       "lux_to_ppfd": {
         "name": "Lux til PPFD faktor"
@@ -145,6 +154,8 @@
           "min_conductivity": "Min. ledningsevne (uS/cm)",
           "max_humidity": "Maks. luftfugtighed (%)",
           "min_humidity": "Min. luftfugtighed (%)",
+          "max_vpd": "Maks. VPD (kPa)",
+          "min_vpd": "Min. VPD (kPa)",
           "entity_picture": "Billed-URL"
         }
       }
@@ -177,7 +188,8 @@
           "moisture_grace_period": "Moisture grace period after watering (seconds, 0-86400)",
           "temperature_trigger": "Brug temperatur som problemudløser",
           "co2_trigger": "Brug CO2 som problemudløser",
-          "soil_temperature_trigger": "Brug jordtemperatur som problemudløser"
+          "soil_temperature_trigger": "Brug jordtemperatur som problemudløser",
+          "vpd_trigger": "Brug VPD som problemudløser"
         }
       },
       "replace_sensor": {

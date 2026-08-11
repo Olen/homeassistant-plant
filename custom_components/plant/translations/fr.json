@@ -34,6 +34,9 @@
       },
       "dli_24h": {
         "name": "DLI (24h glissant)"
+      },
+      "vpd": {
+        "name": "Déficit de pression de vapeur"
       }
     },
     "number": {
@@ -84,6 +87,12 @@
       },
       "min_soil_temperature": {
         "name": "Température du sol min."
+      },
+      "max_vpd": {
+        "name": "VPD max."
+      },
+      "min_vpd": {
+        "name": "VPD min."
       },
       "lux_to_ppfd": {
         "name": "Facteur Lux vers PPFD"
@@ -145,6 +154,8 @@
           "min_conductivity": "Conductivité min. (uS/cm)",
           "max_humidity": "Humidité de l'air max. (%)",
           "min_humidity": "Humidité de l'air min. (%)",
+          "max_vpd": "VPD max. (kPa)",
+          "min_vpd": "VPD min. (kPa)",
           "entity_picture": "URL de l'image"
         }
       }
@@ -177,7 +188,8 @@
           "moisture_grace_period": "Moisture grace period after watering (seconds, 0-86400)",
           "temperature_trigger": "Utiliser la température comme déclencheur de problème",
           "co2_trigger": "Utiliser le CO2 comme déclencheur de problème",
-          "soil_temperature_trigger": "Utiliser la température du sol comme déclencheur de problème"
+          "soil_temperature_trigger": "Utiliser la température du sol comme déclencheur de problème",
+          "vpd_trigger": "Utiliser le VPD comme déclencheur de problème"
         }
       },
       "replace_sensor": {
