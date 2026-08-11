@@ -1,0 +1,6 @@
+# Store text files with LF in the repository, whatever platform they were
+# written on. Without this a checkout configured for CRLF rewrites every line
+# of a file it touches, and the diff shows the whole file as changed with the
+# real edit buried in it (flower-card PR #324 was 943 changed lines hiding 174).
+# "text=auto" leaves git to detect binary files and leave them alone.
+* text=auto eol=lf
