@@ -29,7 +29,7 @@
       "total_light_integral": {
         "name": "Teljes fényintegrál"
       },
-      "daily_light_integral": {
+      "dli": {
         "name": "Napi fényintegrál"
       },
       "dli_24h": {

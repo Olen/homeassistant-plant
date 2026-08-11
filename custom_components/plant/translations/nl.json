@@ -29,7 +29,7 @@
       "total_light_integral": {
         "name": "Totale lichtintegraal"
       },
-      "daily_light_integral": {
+      "dli": {
         "name": "Dagelijkse lichtintegraal"
       },
       "dli_24h": {

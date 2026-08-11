@@ -79,7 +79,10 @@ TRANSLATION_KEY_ILLUMINANCE = "illuminance"
 TRANSLATION_KEY_HUMIDITY = "humidity"
 TRANSLATION_KEY_PPFD = "ppfd"
 TRANSLATION_KEY_TOTAL_LIGHT_INTEGRAL = "total_light_integral"
-TRANSLATION_KEY_DAILY_LIGHT_INTEGRAL = "daily_light_integral"
+# The data vocabulary calls this reading "dli" (ATTR_DLI/READING_DLI, the
+# min_dli/max_dli options, the entity ids); the translation key follows it,
+# so consumers can look a name up by the key they already have.
+TRANSLATION_KEY_DLI = "dli"
 TRANSLATION_KEY_DLI_24H = "dli_24h"
 TRANSLATION_KEY_MAX_MOISTURE = "max_moisture"
 TRANSLATION_KEY_MIN_MOISTURE = "min_moisture"
