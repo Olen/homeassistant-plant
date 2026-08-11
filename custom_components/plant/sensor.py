@@ -106,7 +106,7 @@ from .const import (
     RESTORE_GRACE_PERIOD,
     TRANSLATION_KEY_CO2,
     TRANSLATION_KEY_CONDUCTIVITY,
-    TRANSLATION_KEY_DAILY_LIGHT_INTEGRAL,
+    TRANSLATION_KEY_DLI,
     TRANSLATION_KEY_DLI_24H,
     TRANSLATION_KEY_HUMIDITY,
     TRANSLATION_KEY_ILLUMINANCE,
@@ -1319,7 +1319,7 @@ class PlantDailyLightIntegral(UtilityMeterSensor):
     _attr_device_class = ATTR_DLI
     _attr_icon = ICON_DLI
     _attr_suggested_display_precision = 2
-    _attr_translation_key = TRANSLATION_KEY_DAILY_LIGHT_INTEGRAL
+    _attr_translation_key = TRANSLATION_KEY_DLI
 
     def __init__(
         self,

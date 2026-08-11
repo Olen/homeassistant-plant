@@ -23,7 +23,7 @@
       "total_light_integral": {
         "name": "Total light integral"
       },
-      "daily_light_integral": {
+      "dli": {
         "name": "Daily light integral"
       },
       "vpd": {
