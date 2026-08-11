@@ -34,6 +34,9 @@
       },
       "dli_24h": {
         "name": "DLI (24h rollierend)"
+      },
+      "vpd": {
+        "name": "Dampfdruckdefizit"
       }
     },
     "number": {
@@ -84,6 +87,12 @@
       },
       "min_soil_temperature": {
         "name": "Min. Bodentemperatur"
+      },
+      "max_vpd": {
+        "name": "Max. VPD"
+      },
+      "min_vpd": {
+        "name": "Min. VPD"
       },
       "lux_to_ppfd": {
         "name": "Lux-zu-PPFD-Faktor"
@@ -145,6 +154,8 @@
           "min_conductivity": "Min. Leitfähigkeit (uS/cm)",
           "max_humidity": "Max. Luftfeuchtigkeit (%)",
           "min_humidity": "Min. Luftfeuchtigkeit (%)",
+          "max_vpd": "Max. VPD (kPa)",
+          "min_vpd": "Min. VPD (kPa)",
           "entity_picture": "Bild-URL"
         }
       }
@@ -177,7 +188,8 @@
           "moisture_grace_period": "Moisture grace period after watering (seconds, 0-86400)",
           "temperature_trigger": "Temperatur als Problemauslöser verwenden",
           "co2_trigger": "CO2 als Problemauslöser verwenden",
-          "soil_temperature_trigger": "Bodentemperatur als Problemauslöser verwenden"
+          "soil_temperature_trigger": "Bodentemperatur als Problemauslöser verwenden",
+          "vpd_trigger": "VPD als Problemauslöser verwenden"
         }
       },
       "replace_sensor": {

@@ -34,6 +34,9 @@
       },
       "dli_24h": {
         "name": "DLI (24小时滚动)"
+      },
+      "vpd": {
+        "name": "饱和水汽压差"
       }
     },
     "number": {
@@ -84,6 +87,12 @@
       },
       "min_soil_temperature": {
         "name": "最低土壤温度"
+      },
+      "max_vpd": {
+        "name": "最大VPD"
+      },
+      "min_vpd": {
+        "name": "最小VPD"
       },
       "lux_to_ppfd": {
         "name": "勒克斯转PPFD系数"
@@ -145,6 +154,8 @@
           "min_conductivity": "最小电导率(uS/cm)",
           "max_humidity": "最大空气湿度(%)",
           "min_humidity": "最小空气湿度(%)",
+          "max_vpd": "最大VPD(kPa)",
+          "min_vpd": "最小VPD(kPa)",
           "entity_picture": "图片URL"
         }
       }
@@ -177,7 +188,8 @@
           "moisture_grace_period": "Moisture grace period after watering (seconds, 0-86400)",
           "temperature_trigger": "使用温度作为问题触发器",
           "co2_trigger": "使用二氧化碳作为问题触发器",
-          "soil_temperature_trigger": "使用土壤温度作为问题触发器"
+          "soil_temperature_trigger": "使用土壤温度作为问题触发器",
+          "vpd_trigger": "使用VPD作为问题触发器"
         }
       },
       "replace_sensor": {

@@ -34,6 +34,9 @@
       },
       "dli_24h": {
         "name": "DLI (24 órás gördülő)"
+      },
+      "vpd": {
+        "name": "Gőznyomáshiány"
       }
     },
     "number": {
@@ -84,6 +87,12 @@
       },
       "min_soil_temperature": {
         "name": "Min. talajhőmérséklet"
+      },
+      "max_vpd": {
+        "name": "Max. VPD"
+      },
+      "min_vpd": {
+        "name": "Min. VPD"
       },
       "lux_to_ppfd": {
         "name": "Lux-PPFD átalakítási tényező"
@@ -145,6 +154,8 @@
           "min_conductivity": "Min. vezetőképesség (uS/cm)",
           "max_humidity": "Max. páratartalom (%)",
           "min_humidity": "Min. páratartalom (%)",
+          "max_vpd": "Max. VPD (kPa)",
+          "min_vpd": "Min. VPD (kPa)",
           "entity_picture": "Kép URL"
         }
       }
@@ -177,7 +188,8 @@
           "moisture_grace_period": "Moisture grace period after watering (seconds, 0-86400)",
           "temperature_trigger": "Hőmérséklet használata problémajelzőként",
           "co2_trigger": "CO2 használata problémajelzőként",
-          "soil_temperature_trigger": "Talajhőmérséklet használata problémajelzőként"
+          "soil_temperature_trigger": "Talajhőmérséklet használata problémajelzőként",
+          "vpd_trigger": "VPD használata problémajelzőként"
         }
       },
       "replace_sensor": {
