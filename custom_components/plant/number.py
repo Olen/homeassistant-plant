@@ -368,6 +368,7 @@ class PlantMinMax(RestoreNumber):
         self._attr_native_value = value
         self.async_write_ha_state()
 
+    @callback
     def _state_changed_event(self, event: Event) -> None:
         if event.data.get("old_state") is None or event.data.get("new_state") is None:
             return
@@ -382,6 +383,7 @@ class PlantMinMax(RestoreNumber):
             new_state=event.data.get("new_state").state,
         )
 
+    @callback
     def state_changed(self, old_state: str | None, new_state: str | None) -> None:
         """Store the state if changed from the UI."""
         _LOGGER.debug(
@@ -399,11 +401,13 @@ class PlantMinMax(RestoreNumber):
         else:
             self._attr_native_value = new_state
 
+    @callback
     def state_attributes_changed(
         self, old_attributes: dict[str, Any], new_attributes: dict[str, Any]
     ) -> None:
         """Handle attribute changes (placeholder for subclasses)."""
 
+    @callback
     def self_updated(self) -> None:
         """Allow the state to be changed from the UI and saved in restore_state."""
         if self._attr_state != self.hass.states.get(self.entity_id).state:
@@ -558,6 +562,7 @@ class PlantMaxTemperature(PlantMinMax):
         super().__init__(hass, config, plantdevice)
         self._attr_native_unit_of_measurement = self.hass.config.units.temperature_unit
 
+    @callback
     def state_attributes_changed(
         self, old_attributes: dict[str, Any], new_attributes: dict[str, Any]
     ) -> None:
@@ -654,6 +659,7 @@ class PlantMinTemperature(PlantMinMax):
         super().__init__(hass, config, plantdevice)
         self._attr_native_unit_of_measurement = self.hass.config.units.temperature_unit
 
+    @callback
     def state_attributes_changed(
         self, old_attributes: dict[str, Any], new_attributes: dict[str, Any]
     ) -> None:
@@ -1020,6 +1026,7 @@ class PlantMaxSoilTemperature(PlantMinMax):
         super().__init__(hass, config, plantdevice)
         self._attr_native_unit_of_measurement = self.hass.config.units.temperature_unit
 
+    @callback
     def state_attributes_changed(
         self, old_attributes: dict[str, Any], new_attributes: dict[str, Any]
     ) -> None:
@@ -1100,6 +1107,7 @@ class PlantMinSoilTemperature(PlantMinMax):
         super().__init__(hass, config, plantdevice)
         self._attr_native_unit_of_measurement = self.hass.config.units.temperature_unit
 
+    @callback
     def state_attributes_changed(
         self, old_attributes: dict[str, Any], new_attributes: dict[str, Any]
     ) -> None:

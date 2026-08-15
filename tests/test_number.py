@@ -1501,3 +1501,45 @@ class TestGetTemperatureDefaultMatrix:
         # Re-stamped as °F (e.g. after a refresh), read back on metric.
         back_on_metric = _temp_default(_F, _C, on_imperial)
         assert back_on_metric == 32  # 90°F -> 32°C
+
+
+class TestListenersRunOnTheEventLoop:
+    """Every state listener must be a @callback.
+
+    Home Assistant picks a job type from the function itself: an undecorated
+    sync function becomes HassJobType.Executor and is dispatched to a worker
+    thread. These listeners write _attr_native_value, so off the loop two
+    changes in quick succession can be applied out of order and the entity
+    keeps the older value - issue #515, where setting -10 then -45 left -10.
+    """
+
+    @pytest.mark.parametrize(
+        "method",
+        [
+            "_state_changed_event",
+            "state_changed",
+            "state_attributes_changed",
+            "self_updated",
+        ],
+    )
+    def test_listener_is_a_callback(self, method):
+        """Check every class in number.py that defines one."""
+        import inspect
+
+        from homeassistant.core import HassJob, HassJobType
+
+        from custom_components.plant import number as number_module
+
+        checked = 0
+        for _, cls in inspect.getmembers(number_module, inspect.isclass):
+            if cls.__module__ != number_module.__name__:
+                continue
+            func = cls.__dict__.get(method)
+            if func is None:
+                continue
+            checked += 1
+            assert HassJob(func).job_type is HassJobType.Callback, (
+                f"{cls.__name__}.{method} is dispatched as "
+                f"{HassJob(func).job_type.name}, not on the event loop"
+            )
+        assert checked, f"no class defines {method} - has it been renamed?"
