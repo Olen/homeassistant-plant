@@ -3,6 +3,15 @@
 # label every PR so it lands in the right category. Unlabeled PRs fall into
 # "Other Changes". See CONTRIBUTING.md.
 changelog:
+  # Nothing here changes what a user runs: `release` is the manifest bump
+  # itself, the rest is workflow and action plumbing. `chore` is deliberately
+  # NOT excluded -- it has carried translations and entity renames.
+  exclude:
+    labels:
+      - release
+      - ci
+      - github_actions
+      - dependencies
   categories:
     - title: 🚀 Features & Enhancements
       labels:
@@ -15,11 +24,8 @@ changelog:
     - title: 📚 Documentation
       labels:
         - documentation
-    - title: 🧹 Maintenance & CI
+    - title: 🧹 Maintenance
       labels:
-        - dependencies
-        - github_actions
-        - ci
         - chore
     - title: Other Changes
       labels:
