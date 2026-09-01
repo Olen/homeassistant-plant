@@ -50,10 +50,12 @@ class TestIntegrationSetup:
     ) -> None:
         """Test that setup creates a device in the device registry."""
         device_registry = dr.async_get(hass)
-        device = device_registry.async_get_device(
-            identifiers={(DOMAIN, init_integration.entry_id)}
+        devices = dr.async_entries_for_config_entry(
+            device_registry, init_integration.entry_id
         )
-        assert device is not None
+        assert len(devices) == 1
+        device = devices[0]
+        assert (DOMAIN, init_integration.entry_id) in device.identifiers
         assert device.name == TEST_PLANT_NAME
         # The device is owned by the config entry - attached natively by the
         # config-entry-bound platform, not patched in after the fact.
@@ -228,11 +230,10 @@ class TestIntegrationSetup:
         device_registry = dr.async_get(hass)
 
         entities_before = er.async_entries_for_config_entry(entity_registry, entry_id)
-        device_before = device_registry.async_get_device(
-            identifiers={(DOMAIN, entry_id)}
-        )
+        devices_before = dr.async_entries_for_config_entry(device_registry, entry_id)
         assert len(entities_before) > 0
-        assert device_before is not None
+        assert len(devices_before) == 1
+        assert (DOMAIN, entry_id) in devices_before[0].identifiers
 
         # Verify the main plant entity is tied to the config entry
         plant_entity_id = entity_registry.async_get_entity_id(DOMAIN, DOMAIN, entry_id)
@@ -252,10 +253,38 @@ class TestIntegrationSetup:
         assert entity_registry.async_get(plant_entity_id) is None
 
         # Verify device is removed from registry
-        device_after = device_registry.async_get_device(
-            identifiers={(DOMAIN, entry_id)}
+        assert dr.async_entries_for_config_entry(device_registry, entry_id) == []
+
+    async def test_update_registry_sets_device_id(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Test update_registry records the device id without a registry lookup.
+
+        async_get_or_create already returns the device entry, so the plant must
+        not fall back to the deprecated device_registry.async_get_device().
+        """
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        device_registry = dr.async_get(hass)
+
+        devices = dr.async_entries_for_config_entry(
+            device_registry, init_integration.entry_id
         )
-        assert device_after is None
+        assert len(devices) == 1
+        assert plant.device_id == devices[0].id
+
+        # Re-running must be idempotent and keep the same device.
+        plant.update_registry()
+        assert plant.device_id == devices[0].id
+        assert (
+            len(
+                dr.async_entries_for_config_entry(
+                    device_registry, init_integration.entry_id
+                )
+            )
+            == 1
+        )
 
     async def test_setup_completes_when_registry_entry_not_immediate(
         self,

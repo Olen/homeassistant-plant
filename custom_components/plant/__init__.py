@@ -437,10 +437,9 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
         _LOGGER.debug("Removing entity registry entry: %s", entity_entry.entity_id)
         ent_reg.async_remove(entity_entry.entity_id)
 
-    # Remove device registry entry
+    # Remove device registry entries
     dev_reg = dr.async_get(hass)
-    device = dev_reg.async_get_device(identifiers={(DOMAIN, entry.entry_id)})
-    if device:
+    for device in dr.async_entries_for_config_entry(dev_reg, entry.entry_id):
         _LOGGER.debug("Removing device registry entry: %s", device.id)
         dev_reg.async_remove_device(device.id)
 
@@ -1675,7 +1674,7 @@ class PlantDevice(RestoreEntity):
         # Is there a better way to add an entity to the device registry?
 
         device_registry = dr.async_get(self.hass)
-        device_registry.async_get_or_create(
+        device = device_registry.async_get_or_create(
             config_entry_id=self._config.entry_id,
             identifiers={(DOMAIN, self.unique_id)},
             name=self.name,
@@ -1683,9 +1682,6 @@ class PlantDevice(RestoreEntity):
             manufacturer=self.data_source,
         )
         if self._device_id is None:
-            device = device_registry.async_get_device(
-                identifiers={(DOMAIN, self.unique_id)}
-            )
             self._device_id = device.id
 
     async def async_added_to_hass(self) -> None:
