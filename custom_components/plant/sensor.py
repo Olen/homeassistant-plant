@@ -1226,7 +1226,10 @@ class PlantTotalLightIntegral(IntegrationSensor):
         integration_kwargs = {
             "integration_method": METHOD_TRAPEZOIDAL,
             "name": f"Total {READING_PPFD} Integral",
-            "round_digits": 2,
+            # The DLI meter reads this sensor's rounded state, so the rounding
+            # step is its resolution floor -- at 2 digits a dim plant loses a
+            # whole 0.01 mol/m² off its daily total.
+            "round_digits": 4,
             "source_entity": illuminance_ppfd_sensor.entity_id,
             "unique_id": f"{config.entry_id}-ppfd-integral",
             "unit_prefix": None,
