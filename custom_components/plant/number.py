@@ -320,6 +320,12 @@ class PlantMinMax(RestoreNumber):
     _attr_mode = NumberMode.BOX
     # Subclasses should override this for entity_id generation
     _entity_id_key: str | None = None
+    # Whether a restored unit should win over the class's own. Only the
+    # temperature thresholds convert their value between °C and °F, so only
+    # they have to restore value and unit together. Everywhere else the unit
+    # belongs to the entity type, and a restored one would pin whatever an
+    # older version happened to write.
+    _restores_unit_of_measurement = False
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -468,7 +474,10 @@ class PlantMinMax(RestoreNumber):
                 )
             else:
                 self._attr_native_value = state.native_value
-        if state.native_unit_of_measurement is not None:
+        if (
+            self._restores_unit_of_measurement
+            and state.native_unit_of_measurement is not None
+        ):
             self._attr_native_unit_of_measurement = state.native_unit_of_measurement
         # Final safety net: ensure we always have a valid numeric value
         if self._attr_native_value is None:
@@ -541,6 +550,7 @@ class PlantMaxTemperature(PlantMinMax):
     """Entity class for max temperature threshold"""
 
     _attr_device_class = NumberDeviceClass.TEMPERATURE
+    _restores_unit_of_measurement = True
     _attr_icon = ICON_TEMPERATURE
     _attr_native_max_value = TEMPERATURE_MAX_VALUE
     _attr_native_min_value = TEMPERATURE_MIN_VALUE
@@ -638,6 +648,7 @@ class PlantMinTemperature(PlantMinMax):
     """Entity class for min temperature threshold"""
 
     _attr_device_class = NumberDeviceClass.TEMPERATURE
+    _restores_unit_of_measurement = True
     _attr_icon = ICON_TEMPERATURE
     _attr_native_max_value = TEMPERATURE_MAX_VALUE
     _attr_native_min_value = TEMPERATURE_MIN_VALUE
@@ -1005,6 +1016,7 @@ class PlantMaxSoilTemperature(PlantMinMax):
     """Entity class for max soil temperature threshold"""
 
     _attr_device_class = NumberDeviceClass.TEMPERATURE
+    _restores_unit_of_measurement = True
     _attr_icon = ICON_SOIL_TEMPERATURE
     _attr_native_max_value = TEMPERATURE_MAX_VALUE
     _attr_native_min_value = TEMPERATURE_MIN_VALUE
@@ -1086,6 +1098,7 @@ class PlantMinSoilTemperature(PlantMinMax):
     """Entity class for min soil temperature threshold"""
 
     _attr_device_class = NumberDeviceClass.TEMPERATURE
+    _restores_unit_of_measurement = True
     _attr_icon = ICON_SOIL_TEMPERATURE
     _attr_native_max_value = TEMPERATURE_MAX_VALUE
     _attr_native_min_value = TEMPERATURE_MIN_VALUE
