@@ -1543,3 +1543,116 @@ class TestListenersRunOnTheEventLoop:
                 f"{HassJob(func).job_type.name}, not on the event loop"
             )
         assert checked, f"no class defines {method} - has it been renamed?"
+
+
+class TestThresholdRestoreUnit:
+    """A restored unit must not override one the entity type defines.
+
+    RestoreNumber stores the unit alongside the value, so an entity that
+    was written by an older version keeps that version's unit for good --
+    the DLI thresholds were still reporting the PPFD unit long after the
+    constant was corrected.
+    """
+
+    async def test_fixed_unit_ignores_restored_unit(
+        self,
+        hass: HomeAssistant,
+        plant_config_data: dict,
+        mock_external_sensors,
+        mock_no_openplantbook,
+    ) -> None:
+        """A DLI threshold restored with a stale unit reports UNIT_DLI,
+        and still restores its value.
+        """
+        entry_id = "stale_unit_entry_id"
+        ent_reg = er.async_get(hass)
+        registry_entry = ent_reg.async_get_or_create(
+            domain="number",
+            platform=DOMAIN,
+            unique_id=f"{entry_id}-max-dli",
+        )
+
+        mock_restore_cache_with_extra_data(
+            hass,
+            [
+                (
+                    State(registry_entry.entity_id, "22.5"),
+                    {
+                        "native_max_value": 100,
+                        "native_min_value": 0,
+                        "native_step": 0.1,
+                        # What an older version wrote: PPFD, per second.
+                        "native_unit_of_measurement": "mol/s⋅m²",
+                        "native_value": 22.5,
+                    },
+                ),
+            ],
+        )
+
+        config_entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=plant_config_data,
+            entry_id=entry_id,
+            title=TEST_PLANT_NAME,
+        )
+        config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][config_entry.entry_id][ATTR_PLANT]
+        assert plant.max_dli.native_unit_of_measurement == UNIT_DLI
+        assert plant.max_dli.native_value == 22.5
+
+        await hass.config_entries.async_unload(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+    async def test_temperature_still_restores_its_unit(
+        self,
+        hass: HomeAssistant,
+        plant_config_data: dict,
+        mock_external_sensors,
+        mock_no_openplantbook,
+    ) -> None:
+        """Temperature converts its value between °C and °F, so it has to
+        restore value and unit together.
+        """
+        entry_id = "fahrenheit_entry_id"
+        ent_reg = er.async_get(hass)
+        registry_entry = ent_reg.async_get_or_create(
+            domain="number",
+            platform=DOMAIN,
+            unique_id=f"{entry_id}-max-temperature",
+        )
+
+        mock_restore_cache_with_extra_data(
+            hass,
+            [
+                (
+                    State(registry_entry.entity_id, "90"),
+                    {
+                        "native_max_value": 200,
+                        "native_min_value": -100,
+                        "native_step": 1,
+                        "native_unit_of_measurement": _F,
+                        "native_value": 90,
+                    },
+                ),
+            ],
+        )
+
+        config_entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=plant_config_data,
+            entry_id=entry_id,
+            title=TEST_PLANT_NAME,
+        )
+        config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        plant = hass.data[DOMAIN][config_entry.entry_id][ATTR_PLANT]
+        assert plant.max_temperature.native_unit_of_measurement == _F
+        assert plant.max_temperature.native_value == 90
+
+        await hass.config_entries.async_unload(config_entry.entry_id)
+        await hass.async_block_till_done()
