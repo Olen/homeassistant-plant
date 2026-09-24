@@ -12,7 +12,7 @@
         "name": "Geleidbaarheid"
       },
       "illuminance": {
-        "name": "Verlichtingssterkte"
+        "name": "Lichtsterkte"
       },
       "humidity": {
         "name": "Luchtvochtigheid"
@@ -53,10 +53,10 @@
         "name": "Min. temperatuur"
       },
       "max_illuminance": {
-        "name": "Max. verlichtingssterkte"
+        "name": "Max. lichtsterkte"
       },
       "min_illuminance": {
-        "name": "Min. verlichtingssterkte"
+        "name": "Min. lichtsterkte"
       },
       "max_dli": {
         "name": "Max. DLI"
