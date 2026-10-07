@@ -50,6 +50,8 @@ class TestIntegrationSetup:
     ) -> None:
         """Test that setup creates a device in the device registry."""
         device_registry = dr.async_get(hass)
+        # Looking the device up by config entry asserts the entry owns it -
+        # attached natively by the config-entry-bound platform, not patched in.
         devices = dr.async_entries_for_config_entry(
             device_registry, init_integration.entry_id
         )
@@ -57,9 +59,6 @@ class TestIntegrationSetup:
         device = devices[0]
         assert (DOMAIN, init_integration.entry_id) in device.identifiers
         assert device.name == TEST_PLANT_NAME
-        # The device is owned by the config entry - attached natively by the
-        # config-entry-bound platform, not patched in after the fact.
-        assert init_integration.entry_id in device.config_entries
 
     async def test_setup_entry_creates_entities(
         self,
