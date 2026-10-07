@@ -114,7 +114,7 @@ jobs:
       - name: Show installed versions
         run: |
           .venv/bin/python -c "from homeassistant.const import __version__; print(f'Home Assistant version: {__version__}')"
-          .venv/bin/pip show pycares aiodns | grep -E "^(Name|Version)"
+          uv pip show --python .venv/bin/python pycares aiodns | grep -E "^(Name|Version)"
 
       - name: Run tests
         run: .venv/bin/pytest tests/ -v --tb=short
