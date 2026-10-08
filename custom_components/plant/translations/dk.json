@@ -127,6 +127,7 @@
         "title": "Vælg sensorer",
         "description": "Alle sensorer er valgfrie. Sensorer kan også tilføjes eller ændres senere.",
         "data": {
+          "source_device": "Udfyld sensorer fra enhed",
           "temperature_sensor": "Temperatursensor",
           "moisture_sensor": "Jordfugtighedssensor",
           "conductivity_sensor": "Ledningsevnesensor",
@@ -134,6 +135,9 @@
           "humidity_sensor": "Luftfugtighedssensor",
           "co2_sensor": "CO2-sensor",
           "soil_temperature_sensor": "Jordtemperatursensor"
+        },
+        "data_description": {
+          "source_device": "Vælg en enhed, f.eks. en jordsensor, for at udfylde felterne nedenfor ud fra dens entiteter. Matches på enhedsklasse og kan rettes bagefter."
         }
       },
       "limits": {
@@ -196,6 +200,7 @@
         "title": "Erstat sensorer",
         "description": "Replace external sensors for **{plant_name}**. Clear a field to remove that sensor.",
         "data": {
+          "source_device": "Udfyld sensorer fra enhed",
           "temperature_sensor": "Temperatursensor",
           "moisture_sensor": "Jordfugtighedssensor",
           "conductivity_sensor": "Ledningsevnesensor",
@@ -203,6 +208,9 @@
           "humidity_sensor": "Luftfugtighedssensor",
           "co2_sensor": "CO2-sensor",
           "soil_temperature_sensor": "Jordtemperatursensor"
+        },
+        "data_description": {
+          "source_device": "Vælg en enhed, f.eks. en jordsensor, for at udfylde felterne nedenfor ud fra dens entiteter. Matches på enhedsklasse og kan rettes bagefter."
         }
       }
     }

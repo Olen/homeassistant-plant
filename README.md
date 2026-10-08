@@ -113,6 +113,10 @@ Choose which physical sensors to associate with your plant. All sensors are opti
 | 🫧 CO2 | `carbon_dioxide` | CO2 concentration |
 | 🌡️ Soil temperature | `temperature` | Soil temperature |
 
+**Fill sensors from device** — if one device reports several of these measurements (a soil probe, a multi-sensor), pick it in the top field. The form reloads with every matching field filled in, and you can still change any of them by hand.
+
+Matching is by device class, so the device must report the correct one. A device class with more than one candidate entity is left blank rather than guessed.
+
 > [!TIP]
 > Sensors without a source entity are automatically disabled. You can add or replace sensors at any time after setup.
 
@@ -313,6 +317,8 @@ You can replace the physical sensor backing a plant measurement at any time — 
 1. Go to **Settings** → **Devices & Services** → **Plant Monitor** → *Your Plant* → **Configure**
 2. Select **Replace sensors**
 3. Change the sensor entity for any sensor type, or clear a field to remove it
+
+The **Fill sensors from device** field works here too — handy when you move a probe to a different plant: pick the device and every field it covers is re-pointed at once.
 
 <img width="413" height="257" alt="image" src="https://github.com/user-attachments/assets/3f8cd00e-25aa-4ab2-af15-18eaf3d499a4" />
 

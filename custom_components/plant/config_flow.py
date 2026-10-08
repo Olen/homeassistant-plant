@@ -19,13 +19,17 @@ from homeassistant.const import (
     UnitOfTemperature,
 )
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import (
+    config_validation as cv,
+    entity_registry as er,
+)
 from homeassistant.helpers.network import NoURLAvailableError, get_url
 from homeassistant.helpers.selector import selector
 from homeassistant.util.unit_conversion import TemperatureConverter
 
 from .const import (
     ATTR_CARE,
+    ATTR_DEVICE,
     ATTR_ENTITY,
     ATTR_LIMITS,
     ATTR_OPTIONS,
@@ -89,6 +93,7 @@ from .const import (
     FLOW_SENSOR_ILLUMINANCE,
     FLOW_SENSOR_MOISTURE,
     FLOW_SENSOR_SOIL_TEMPERATURE,
+    FLOW_SENSOR_SOURCE_DEVICE,
     FLOW_SENSOR_TEMPERATURE,
     FLOW_SOIL_TEMPERATURE_TRIGGER,
     FLOW_STRING_DESCRIPTION,
@@ -114,10 +119,80 @@ SENSOR_SCHEMA_FIELDS = [
 ]
 
 
+def _sensors_from_device(hass: HomeAssistant, device_id: str) -> dict[str, str]:
+    """Map a device's sensor entities onto the plant's sensor fields.
+
+    Matched by device class, which is what the entity selectors on this form
+    filter by too — so anything offered here is also pickable by hand. A device
+    class with several candidates is left blank rather than guessed: binding
+    the wrong probe silently is worse than one extra dropdown.
+    """
+    registry = er.async_get(hass)
+    candidates: dict[str, list[str]] = {}
+    for entry in er.async_entries_for_device(registry, device_id):
+        if entry.domain != SENSOR_DOMAIN:
+            continue
+        device_class = entry.device_class or entry.original_device_class
+        if device_class is None:
+            continue
+        candidates.setdefault(str(device_class), []).append(entry.entity_id)
+
+    matched: dict[str, str] = {}
+    for key, device_class in SENSOR_SCHEMA_FIELDS:
+        # Two fields share SensorDeviceClass.TEMPERATURE; whichever comes
+        # first in SENSOR_SCHEMA_FIELDS claims a single candidate.
+        unclaimed = [
+            entity_id
+            for entity_id in candidates.get(str(device_class), [])
+            if entity_id not in matched.values()
+        ]
+        if len(unclaimed) == 1:
+            matched[key] = unclaimed[0]
+    return matched
+
+
+def _merge_source_device(
+    hass: HomeAssistant, user_input: dict[str, Any], previous_device: str | None
+) -> dict[str, Any] | None:
+    """Pre-fill the sensor fields from a newly picked source device.
+
+    Returns the values to re-show the form with, or None when the submission
+    carries no new device and should be processed as a normal submit.
+    """
+    device_id = user_input.get(FLOW_SENSOR_SOURCE_DEVICE)
+    if not device_id or device_id == previous_device:
+        return None
+    merged = dict(user_input)
+    merged.update(_sensors_from_device(hass, device_id))
+    return merged
+
+
 def _build_sensor_schema(defaults: dict[str, Any] | None = None) -> dict:
     """Build sensor selection schema, optionally pre-filled with current values."""
     defaults = defaults or {}
     schema = {}
+
+    source_device = defaults.get(FLOW_SENSOR_SOURCE_DEVICE)
+    if source_device:
+        device_key = vol.Optional(
+            FLOW_SENSOR_SOURCE_DEVICE,
+            description={"suggested_value": source_device},
+        )
+    else:
+        device_key = vol.Optional(FLOW_SENSOR_SOURCE_DEVICE)
+    schema[device_key] = selector(
+        {
+            ATTR_DEVICE: {
+                ATTR_ENTITY: {
+                    ATTR_DOMAIN: SENSOR_DOMAIN,
+                    ATTR_DEVICE_CLASS: sorted(
+                        {str(device_class) for _, device_class in SENSOR_SCHEMA_FIELDS}
+                    ),
+                }
+            }
+        }
+    )
+
     for key, device_class in SENSOR_SCHEMA_FIELDS:
         current = defaults.get(key)
         if current:
@@ -144,6 +219,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Initialize the config flow."""
         self.plant_info: dict[str, Any] = {}
         self.error: str | None = None
+        self.source_device: str | None = None
 
     @staticmethod
     @callback
@@ -258,6 +334,13 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Handle sensor selection step."""
         if user_input is not None:
             _LOGGER.debug("User Input (sensors) %s", user_input)
+            prefilled = _merge_source_device(self.hass, user_input, self.source_device)
+            if prefilled is not None:
+                self.source_device = prefilled[FLOW_SENSOR_SOURCE_DEVICE]
+                return self.async_show_form(
+                    step_id="sensors",
+                    data_schema=vol.Schema(_build_sensor_schema(prefilled)),
+                )
             # Store sensor selections in plant_info
             for key in (
                 FLOW_SENSOR_TEMPERATURE,
@@ -614,6 +697,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
     def __init__(self) -> None:
         """Initialize options flow."""
         self.plant = None
+        self.source_device: str | None = None
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
@@ -764,6 +848,14 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
     ) -> ConfigFlowResult:
         """Handle sensor replacement."""
         if user_input is not None:
+            prefilled = _merge_source_device(self.hass, user_input, self.source_device)
+            if prefilled is not None:
+                self.source_device = prefilled[FLOW_SENSOR_SOURCE_DEVICE]
+                return self.async_show_form(
+                    step_id="replace_sensor",
+                    data_schema=vol.Schema(_build_sensor_schema(prefilled)),
+                    description_placeholders={"plant_name": self.plant.name},
+                )
             plant_info = self.config_entry.data.get(FLOW_PLANT_INFO, {})
             for key, attr_name in _SENSOR_ATTR_MAP.items():
                 new_val = user_input.get(key)

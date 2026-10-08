@@ -8,6 +8,10 @@ from homeassistant import config_entries
 from homeassistant.const import ATTR_ENTITY_PICTURE, ATTR_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.helpers import (
+    device_registry as dr,
+    entity_registry as er,
+)
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.plant.const import (
@@ -35,8 +39,12 @@ from custom_components.plant.const import (
     FLOW_PLANT_LIMITS,
     FLOW_RIGHT_PLANT,
     FLOW_SENSOR_CO2,
+    FLOW_SENSOR_CONDUCTIVITY,
+    FLOW_SENSOR_HUMIDITY,
     FLOW_SENSOR_ILLUMINANCE,
     FLOW_SENSOR_MOISTURE,
+    FLOW_SENSOR_SOIL_TEMPERATURE,
+    FLOW_SENSOR_SOURCE_DEVICE,
     FLOW_SENSOR_TEMPERATURE,
     OPB_DISPLAY_PID,
 )
@@ -48,6 +56,40 @@ from .fixtures.openplantbook_responses import (
     GET_RESULT_MONSTERA_DELICIOSA,
     SEARCH_RESULT_FICUS,
 )
+
+
+def _suggested_values(data_schema) -> dict[str, object]:
+    """Map each form field to the value the form is pre-filled with."""
+    return {
+        str(getattr(marker, "schema", marker)): (
+            getattr(marker, "description", None) or {}
+        ).get("suggested_value")
+        for marker in data_schema.schema
+    }
+
+
+def _register_sensor_device(
+    hass: HomeAssistant, name: str, device_classes: list[str]
+) -> str:
+    """Register a device exposing one sensor entity per given device class."""
+    config_entry = MockConfigEntry(domain="mock_probe", title=name)
+    config_entry.add_to_hass(hass)
+    device = dr.async_get(hass).async_get_or_create(
+        config_entry_id=config_entry.entry_id,
+        identifiers={("mock_probe", name)},
+        name=name,
+    )
+    registry = er.async_get(hass)
+    for index, device_class in enumerate(device_classes):
+        registry.async_get_or_create(
+            "sensor",
+            "mock_probe",
+            f"{name}_{index}_{device_class}",
+            device_id=device.id,
+            original_device_class=device_class,
+            suggested_object_id=f"{name}_{index}_{device_class}",
+        )
+    return device.id
 
 
 class TestConfigFlowUserStep:
@@ -311,6 +353,160 @@ class TestConfigFlowSensorsStep:
 
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "limits"
+
+
+class TestConfigFlowSourceDevice:
+    """Tests for filling the sensor fields from a source device."""
+
+    async def _goto_sensors(self, hass: HomeAssistant) -> dict:
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_USER}
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {ATTR_NAME: "My Plant", ATTR_SPECIES: "ficus"},
+        )
+        assert result["step_id"] == "sensors"
+        return result
+
+    async def test_source_device_prefills_matching_sensors(
+        self,
+        hass: HomeAssistant,
+        mock_no_openplantbook,
+    ) -> None:
+        """Picking a device fills each field whose device class it provides."""
+        device_id = _register_sensor_device(
+            hass,
+            "miflora",
+            ["temperature", "moisture", "conductivity", "illuminance"],
+        )
+        result = await self._goto_sensors(hass)
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {FLOW_SENSOR_SOURCE_DEVICE: device_id}
+        )
+
+        # Re-shows the same step so the user can confirm or adjust.
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "sensors"
+        suggested = _suggested_values(result["data_schema"])
+        assert suggested[FLOW_SENSOR_TEMPERATURE] == "sensor.miflora_0_temperature"
+        assert suggested[FLOW_SENSOR_MOISTURE] == "sensor.miflora_1_moisture"
+        assert suggested[FLOW_SENSOR_CONDUCTIVITY] == "sensor.miflora_2_conductivity"
+        assert suggested[FLOW_SENSOR_ILLUMINANCE] == "sensor.miflora_3_illuminance"
+        # The device stays selected in the re-shown form.
+        assert suggested[FLOW_SENSOR_SOURCE_DEVICE] == device_id
+
+    async def test_source_device_leaves_unprovided_classes_empty(
+        self,
+        hass: HomeAssistant,
+        mock_no_openplantbook,
+    ) -> None:
+        """A single temperature sensor fills temperature, not soil temperature."""
+        device_id = _register_sensor_device(hass, "probe", ["temperature"])
+        result = await self._goto_sensors(hass)
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {FLOW_SENSOR_SOURCE_DEVICE: device_id}
+        )
+
+        suggested = _suggested_values(result["data_schema"])
+        assert suggested[FLOW_SENSOR_TEMPERATURE] == "sensor.probe_0_temperature"
+        assert suggested[FLOW_SENSOR_SOIL_TEMPERATURE] is None
+        assert suggested[FLOW_SENSOR_CO2] is None
+
+    async def test_ambiguous_device_class_is_left_for_the_user(
+        self,
+        hass: HomeAssistant,
+        mock_no_openplantbook,
+    ) -> None:
+        """Two sensors of one device class fill nothing rather than guess."""
+        device_id = _register_sensor_device(
+            hass, "probe", ["temperature", "temperature", "moisture"]
+        )
+        result = await self._goto_sensors(hass)
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {FLOW_SENSOR_SOURCE_DEVICE: device_id}
+        )
+
+        suggested = _suggested_values(result["data_schema"])
+        assert suggested[FLOW_SENSOR_TEMPERATURE] is None
+        assert suggested[FLOW_SENSOR_SOIL_TEMPERATURE] is None
+        # Unambiguous classes on the same device still fill.
+        assert suggested[FLOW_SENSOR_MOISTURE] == "sensor.probe_2_moisture"
+
+    async def test_source_device_keeps_manually_picked_sensors(
+        self,
+        hass: HomeAssistant,
+        mock_no_openplantbook,
+    ) -> None:
+        """Fields the device cannot supply keep what the user already picked."""
+        device_id = _register_sensor_device(hass, "probe", ["moisture"])
+        result = await self._goto_sensors(hass)
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                FLOW_SENSOR_SOURCE_DEVICE: device_id,
+                FLOW_SENSOR_HUMIDITY: "sensor.room_humidity",
+            },
+        )
+
+        suggested = _suggested_values(result["data_schema"])
+        assert suggested[FLOW_SENSOR_MOISTURE] == "sensor.probe_0_moisture"
+        assert suggested[FLOW_SENSOR_HUMIDITY] == "sensor.room_humidity"
+
+    async def test_confirming_the_same_device_proceeds_to_limits(
+        self,
+        hass: HomeAssistant,
+        mock_no_openplantbook,
+    ) -> None:
+        """Submitting again with the device unchanged continues the flow."""
+        device_id = _register_sensor_device(hass, "probe", ["moisture"])
+        result = await self._goto_sensors(hass)
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {FLOW_SENSOR_SOURCE_DEVICE: device_id}
+        )
+        assert result["step_id"] == "sensors"
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                FLOW_SENSOR_SOURCE_DEVICE: device_id,
+                FLOW_SENSOR_MOISTURE: "sensor.probe_0_moisture",
+            },
+        )
+
+        assert result["step_id"] == "limits"
+
+    async def test_source_device_is_not_stored_in_the_entry(
+        self,
+        hass: HomeAssistant,
+        mock_no_openplantbook,
+    ) -> None:
+        """The picker is a form convenience and never lands in the config entry."""
+        device_id = _register_sensor_device(hass, "probe", ["moisture"])
+        result = await self._goto_sensors(hass)
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {FLOW_SENSOR_SOURCE_DEVICE: device_id}
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                FLOW_SENSOR_SOURCE_DEVICE: device_id,
+                FLOW_SENSOR_MOISTURE: "sensor.probe_0_moisture",
+            },
+        )
+        assert result["step_id"] == "limits"
+        result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        plant_info = result["data"][FLOW_PLANT_INFO]
+        assert FLOW_SENSOR_SOURCE_DEVICE not in plant_info
+        assert plant_info[FLOW_SENSOR_MOISTURE] == "sensor.probe_0_moisture"
 
 
 class TestConfigFlowLimitsStep:
@@ -1363,6 +1559,53 @@ class TestOptionsFlow:
 
         # Verify the sensor was replaced
         assert plant.sensor_temperature.external_sensor == "sensor.new_temperature"
+
+    async def test_options_flow_replace_sensor_from_source_device(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Picking a device re-points a plant's sensors in one step."""
+        plant = hass.data[DOMAIN][init_integration.entry_id]["plant"]
+        device_id = _register_sensor_device(
+            hass, "spare_probe", ["temperature", "moisture"]
+        )
+
+        result = await hass.config_entries.options.async_init(init_integration.entry_id)
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            {"next_step_id": "replace_sensor"},
+        )
+        assert result["step_id"] == "replace_sensor"
+
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            {FLOW_SENSOR_SOURCE_DEVICE: device_id},
+        )
+
+        # Re-shows the form pre-filled rather than saving straight away.
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "replace_sensor"
+        suggested = _suggested_values(result["data_schema"])
+        assert suggested[FLOW_SENSOR_TEMPERATURE] == "sensor.spare_probe_0_temperature"
+        assert suggested[FLOW_SENSOR_MOISTURE] == "sensor.spare_probe_1_moisture"
+
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            {
+                FLOW_SENSOR_SOURCE_DEVICE: device_id,
+                FLOW_SENSOR_TEMPERATURE: "sensor.spare_probe_0_temperature",
+                FLOW_SENSOR_MOISTURE: "sensor.spare_probe_1_moisture",
+            },
+        )
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        await hass.async_block_till_done()
+        assert (
+            plant.sensor_temperature.external_sensor
+            == "sensor.spare_probe_0_temperature"
+        )
+        assert plant.sensor_moisture.external_sensor == "sensor.spare_probe_1_moisture"
 
     async def test_options_flow_replace_sensor_preserves_options(
         self,

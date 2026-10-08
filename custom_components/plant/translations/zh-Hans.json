@@ -127,6 +127,7 @@
         "title": "选择传感器",
         "description": "所有传感器都是可选的。传感器也可以在之后添加或更改。",
         "data": {
+          "source_device": "从设备填充传感器",
           "temperature_sensor": "温度传感器",
           "moisture_sensor": "土壤湿度传感器",
           "conductivity_sensor": "电导率传感器",
@@ -134,6 +135,9 @@
           "humidity_sensor": "空气湿度传感器",
           "co2_sensor": "二氧化碳传感器",
           "soil_temperature_sensor": "土壤温度传感器"
+        },
+        "data_description": {
+          "source_device": "选择一个设备（例如土壤传感器），根据其实体填充下面的字段。按设备类别匹配，填充后仍可手动调整。"
         }
       },
       "limits": {
@@ -196,6 +200,7 @@
         "title": "替换传感器",
         "description": "Replace external sensors for **{plant_name}**. Clear a field to remove that sensor.",
         "data": {
+          "source_device": "从设备填充传感器",
           "temperature_sensor": "温度传感器",
           "moisture_sensor": "土壤湿度传感器",
           "conductivity_sensor": "电导率传感器",
@@ -203,6 +208,9 @@
           "humidity_sensor": "空气湿度传感器",
           "co2_sensor": "CO2传感器",
           "soil_temperature_sensor": "土壤温度传感器"
+        },
+        "data_description": {
+          "source_device": "选择一个设备（例如土壤传感器），根据其实体填充下面的字段。按设备类别匹配，填充后仍可手动调整。"
         }
       }
     }

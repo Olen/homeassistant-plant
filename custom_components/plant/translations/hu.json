@@ -127,6 +127,7 @@
         "title": "Érzékelők kiválasztása",
         "description": "Minden érzékelő opcionális. Az érzékelők később is hozzáadhatók vagy módosíthatók.",
         "data": {
+          "source_device": "Érzékelők kitöltése eszközről",
           "temperature_sensor": "Hőmérséklet-érzékelő",
           "moisture_sensor": "Talajnedvesség-érzékelő",
           "conductivity_sensor": "Vezetőképesség-érzékelő",
@@ -134,6 +135,9 @@
           "humidity_sensor": "Páratartalom-érzékelő",
           "co2_sensor": "CO2-érzékelő",
           "soil_temperature_sensor": "Talajhőmérséklet-érzékelő"
+        },
+        "data_description": {
+          "source_device": "Válasszon egy eszközt, például egy talajérzékelőt, hogy az alábbi mezőket annak entitásaiból töltse ki. A párosítás eszközosztály alapján történik, és utólag módosítható."
         }
       },
       "limits": {
@@ -196,6 +200,7 @@
         "title": "Érzékelők cseréje",
         "description": "Replace external sensors for **{plant_name}**. Clear a field to remove that sensor.",
         "data": {
+          "source_device": "Érzékelők kitöltése eszközről",
           "temperature_sensor": "Hőmérséklet-érzékelő",
           "moisture_sensor": "Talajnedvesség-érzékelő",
           "conductivity_sensor": "Vezetőképesség-érzékelő",
@@ -203,6 +208,9 @@
           "humidity_sensor": "Páratartalom-érzékelő",
           "co2_sensor": "CO2-érzékelő",
           "soil_temperature_sensor": "Talajhőmérséklet-érzékelő"
+        },
+        "data_description": {
+          "source_device": "Válasszon egy eszközt, például egy talajérzékelőt, hogy az alábbi mezőket annak entitásaiból töltse ki. A párosítás eszközosztály alapján történik, és utólag módosítható."
         }
       }
     }
