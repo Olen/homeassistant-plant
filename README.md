@@ -113,9 +113,9 @@ Choose which physical sensors to associate with your plant. All sensors are opti
 | 🫧 CO2 | `carbon_dioxide` | CO2 concentration |
 | 🌡️ Soil temperature | `temperature` | Soil temperature |
 
-**Fill sensors from device** — if one device reports several of these measurements (a soil probe, a multi-sensor), pick it in the top field. The form reloads with every matching field filled in, and you can still change any of them by hand.
+**Fill sensors from device** — if one device reports several of these measurements (a soil probe, a multi-sensor), pick it in the top field. The form reloads with every matching field filled in, and you can still change any of them by hand. Fields you already filled in yourself are left alone.
 
-Matching is by device class, so the device must report the correct one. A device class with more than one candidate entity is left blank rather than guessed.
+Matching is by device class, so the device must report the correct one. A device class with more than one candidate entity is left blank rather than guessed. Temperature is the exception: a temperature entity whose name or id mentions "soil" goes to soil temperature, and a single remaining one goes to (air) temperature.
 
 > [!TIP]
 > Sensors without a source entity are automatically disabled. You can add or replace sensors at any time after setup.

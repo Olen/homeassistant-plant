@@ -119,6 +119,12 @@ SENSOR_SCHEMA_FIELDS = [
 ]
 
 
+def _is_soil_sensor(entry: er.RegistryEntry) -> bool:
+    """Tell whether an entity's id, name or translation key mentions soil."""
+    labels = (entry.entity_id, entry.name, entry.original_name, entry.translation_key)
+    return any("soil" in label.lower() for label in labels if label)
+
+
 def _sensors_from_device(hass: HomeAssistant, device_id: str) -> dict[str, str]:
     """Map a device's sensor entities onto the plant's sensor fields.
 
@@ -126,25 +132,39 @@ def _sensors_from_device(hass: HomeAssistant, device_id: str) -> dict[str, str]:
     filter by too — so anything offered here is also pickable by hand. A device
     class with several candidates is left blank rather than guessed: binding
     the wrong probe silently is worse than one extra dropdown.
+
+    Temperature is the exception, since two fields share that device class: a
+    single temperature entity naming soil goes to soil temperature, and a
+    single remaining one goes to (air) temperature.
     """
     registry = er.async_get(hass)
-    candidates: dict[str, list[str]] = {}
+    candidates: dict[str, list[er.RegistryEntry]] = {}
     for entry in er.async_entries_for_device(registry, device_id):
         if entry.domain != SENSOR_DOMAIN:
             continue
         device_class = entry.device_class or entry.original_device_class
         if device_class is None:
             continue
-        candidates.setdefault(str(device_class), []).append(entry.entity_id)
+        candidates.setdefault(str(device_class), []).append(entry)
 
     matched: dict[str, str] = {}
+    soil = [
+        entry
+        for entry in candidates.get(str(SensorDeviceClass.TEMPERATURE), [])
+        if _is_soil_sensor(entry)
+    ]
+    if len(soil) == 1:
+        matched[FLOW_SENSOR_SOIL_TEMPERATURE] = soil[0].entity_id
+
     for key, device_class in SENSOR_SCHEMA_FIELDS:
+        if key in matched:
+            continue
         # Two fields share SensorDeviceClass.TEMPERATURE; whichever comes
         # first in SENSOR_SCHEMA_FIELDS claims a single candidate.
         unclaimed = [
-            entity_id
-            for entity_id in candidates.get(str(device_class), [])
-            if entity_id not in matched.values()
+            entry.entity_id
+            for entry in candidates.get(str(device_class), [])
+            if entry.entity_id not in matched.values()
         ]
         if len(unclaimed) == 1:
             matched[key] = unclaimed[0]
@@ -152,18 +172,24 @@ def _sensors_from_device(hass: HomeAssistant, device_id: str) -> dict[str, str]:
 
 
 def _merge_source_device(
-    hass: HomeAssistant, user_input: dict[str, Any], previous_device: str | None
+    hass: HomeAssistant, user_input: dict[str, Any], shown: dict[str, Any]
 ) -> dict[str, Any] | None:
     """Pre-fill the sensor fields from a newly picked source device.
+
+    ``shown`` holds the values the form was last displayed with. A field whose
+    submitted value differs from it was set by the user and is left alone;
+    the rest take whatever the device provides.
 
     Returns the values to re-show the form with, or None when the submission
     carries no new device and should be processed as a normal submit.
     """
     device_id = user_input.get(FLOW_SENSOR_SOURCE_DEVICE)
-    if not device_id or device_id == previous_device:
+    if not device_id or device_id == shown.get(FLOW_SENSOR_SOURCE_DEVICE):
         return None
     merged = dict(user_input)
-    merged.update(_sensors_from_device(hass, device_id))
+    for key, entity_id in _sensors_from_device(hass, device_id).items():
+        if user_input.get(key) == shown.get(key):
+            merged[key] = entity_id
     return merged
 
 
@@ -219,7 +245,7 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Initialize the config flow."""
         self.plant_info: dict[str, Any] = {}
         self.error: str | None = None
-        self.source_device: str | None = None
+        self.sensor_form_values: dict[str, Any] = {}
 
     @staticmethod
     @callback
@@ -334,9 +360,11 @@ class PlantConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Handle sensor selection step."""
         if user_input is not None:
             _LOGGER.debug("User Input (sensors) %s", user_input)
-            prefilled = _merge_source_device(self.hass, user_input, self.source_device)
+            prefilled = _merge_source_device(
+                self.hass, user_input, self.sensor_form_values
+            )
             if prefilled is not None:
-                self.source_device = prefilled[FLOW_SENSOR_SOURCE_DEVICE]
+                self.sensor_form_values = prefilled
                 return self.async_show_form(
                     step_id="sensors",
                     data_schema=vol.Schema(_build_sensor_schema(prefilled)),
@@ -697,7 +725,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
     def __init__(self) -> None:
         """Initialize options flow."""
         self.plant = None
-        self.source_device: str | None = None
+        self.sensor_form_values: dict[str, Any] = {}
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
@@ -848,9 +876,11 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
     ) -> ConfigFlowResult:
         """Handle sensor replacement."""
         if user_input is not None:
-            prefilled = _merge_source_device(self.hass, user_input, self.source_device)
+            prefilled = _merge_source_device(
+                self.hass, user_input, self.sensor_form_values
+            )
             if prefilled is not None:
-                self.source_device = prefilled[FLOW_SENSOR_SOURCE_DEVICE]
+                self.sensor_form_values = prefilled
                 return self.async_show_form(
                     step_id="replace_sensor",
                     data_schema=vol.Schema(_build_sensor_schema(prefilled)),
@@ -881,6 +911,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             )
 
         plant_info = self.config_entry.data.get(FLOW_PLANT_INFO, {})
+        self.sensor_form_values = dict(plant_info)
         return self.async_show_form(
             step_id="replace_sensor",
             data_schema=vol.Schema(_build_sensor_schema(defaults=plant_info)),
