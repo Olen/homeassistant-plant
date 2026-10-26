@@ -22,6 +22,7 @@ from homeassistant.const import (
     UnitOfTemperature,
 )
 from homeassistant.core import Event, HomeAssistant, callback
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import (
     Entity,
@@ -320,12 +321,11 @@ class PlantMinMax(RestoreNumber):
     _attr_mode = NumberMode.BOX
     # Subclasses should override this for entity_id generation
     _entity_id_key: str | None = None
-    # Whether a restored unit should win over the class's own. Only the
-    # temperature thresholds convert their value between °C and °F, so only
-    # they have to restore value and unit together. Everywhere else the unit
-    # belongs to the entity type, and a restored one would pin whatever an
-    # older version happened to write.
-    _restores_unit_of_measurement = False
+    # Whether a value restored in another unit is converted into the
+    # entity's own. Only the temperature thresholds can be stored in °C or
+    # °F; everywhere else the unit belongs to the entity type and the
+    # restored one is ignored.
+    _converts_restored_unit = False
 
     def __init__(
         self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
@@ -387,11 +387,21 @@ class PlantMinMax(RestoreNumber):
         self.state_changed(
             old_state=event.data.get("old_state").state,
             new_state=event.data.get("new_state").state,
+            unit=event.data.get("new_state").attributes.get(ATTR_UNIT_OF_MEASUREMENT),
         )
 
     @callback
-    def state_changed(self, old_state: str | None, new_state: str | None) -> None:
-        """Store the state if changed from the UI."""
+    def state_changed(
+        self,
+        old_state: str | None,
+        new_state: str | None,
+        unit: str | None = None,
+    ) -> None:
+        """Store the state if changed from the UI.
+
+        The state is in the displayed unit, which for a temperature can
+        differ from the native one, so it is converted back before storing.
+        """
         _LOGGER.debug(
             "State of %s changed from %s to %s, native_value = %s",
             self.entity_id,
@@ -399,13 +409,24 @@ class PlantMinMax(RestoreNumber):
             new_state,
             self._attr_native_value,
         )
-        if new_state is not None:
-            try:
-                self._attr_native_value = float(new_state)
-            except (ValueError, TypeError):
-                self._attr_native_value = new_state
-        else:
+        if new_state is None:
             self._attr_native_value = new_state
+            return
+        try:
+            value = float(new_state)
+        except (ValueError, TypeError):
+            self._attr_native_value = new_state
+            return
+        native_unit = self._attr_native_unit_of_measurement
+        if (
+            unit is not None
+            and native_unit is not None
+            and unit != native_unit
+            and unit in TemperatureConverter.VALID_UNITS
+            and native_unit in TemperatureConverter.VALID_UNITS
+        ):
+            value = TemperatureConverter.convert(value, unit, native_unit)
+        self._attr_native_value = value
 
     @callback
     def state_attributes_changed(
@@ -473,12 +494,9 @@ class PlantMinMax(RestoreNumber):
                     self._default_value,
                 )
             else:
-                self._attr_native_value = state.native_value
-        if (
-            self._restores_unit_of_measurement
-            and state.native_unit_of_measurement is not None
-        ):
-            self._attr_native_unit_of_measurement = state.native_unit_of_measurement
+                self._attr_native_value = self._in_own_unit(
+                    state.native_value, state.native_unit_of_measurement
+                )
         # Final safety net: ensure we always have a valid numeric value
         if self._attr_native_value is None:
             _LOGGER.warning(
@@ -494,6 +512,24 @@ class PlantMinMax(RestoreNumber):
             [self.entity_id],
             self._state_changed_event,
         )
+
+    def _in_own_unit(self, value, unit: str | None):
+        """Return a restored ``value`` converted from ``unit`` into the
+        entity's own unit, where that unit can vary."""
+        own_unit = self._attr_native_unit_of_measurement
+        if not self._converts_restored_unit or unit is None or unit == own_unit:
+            return value
+        try:
+            return round(TemperatureConverter.convert(float(value), unit, own_unit))
+        except (ValueError, TypeError, HomeAssistantError):
+            _LOGGER.warning(
+                "Cannot convert restored %s %s for %s, using default %s",
+                value,
+                unit,
+                self.entity_id,
+                self._default_value,
+            )
+            return self._default_value
 
     @callback
     def _schedule_immediate_update(self):
@@ -550,7 +586,7 @@ class PlantMaxTemperature(PlantMinMax):
     """Entity class for max temperature threshold"""
 
     _attr_device_class = NumberDeviceClass.TEMPERATURE
-    _restores_unit_of_measurement = True
+    _converts_restored_unit = True
     _attr_icon = ICON_TEMPERATURE
     _attr_native_max_value = TEMPERATURE_MAX_VALUE
     _attr_native_min_value = TEMPERATURE_MIN_VALUE
@@ -648,7 +684,7 @@ class PlantMinTemperature(PlantMinMax):
     """Entity class for min temperature threshold"""
 
     _attr_device_class = NumberDeviceClass.TEMPERATURE
-    _restores_unit_of_measurement = True
+    _converts_restored_unit = True
     _attr_icon = ICON_TEMPERATURE
     _attr_native_max_value = TEMPERATURE_MAX_VALUE
     _attr_native_min_value = TEMPERATURE_MIN_VALUE
@@ -1016,7 +1052,7 @@ class PlantMaxSoilTemperature(PlantMinMax):
     """Entity class for max soil temperature threshold"""
 
     _attr_device_class = NumberDeviceClass.TEMPERATURE
-    _restores_unit_of_measurement = True
+    _converts_restored_unit = True
     _attr_icon = ICON_SOIL_TEMPERATURE
     _attr_native_max_value = TEMPERATURE_MAX_VALUE
     _attr_native_min_value = TEMPERATURE_MIN_VALUE
@@ -1098,7 +1134,7 @@ class PlantMinSoilTemperature(PlantMinMax):
     """Entity class for min soil temperature threshold"""
 
     _attr_device_class = NumberDeviceClass.TEMPERATURE
-    _restores_unit_of_measurement = True
+    _converts_restored_unit = True
     _attr_icon = ICON_SOIL_TEMPERATURE
     _attr_native_max_value = TEMPERATURE_MAX_VALUE
     _attr_native_min_value = TEMPERATURE_MIN_VALUE
