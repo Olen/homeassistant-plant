@@ -137,7 +137,7 @@
           "soil_temperature_sensor": "Talajhőmérséklet-érzékelő"
         },
         "data_description": {
-          "source_device": "Válasszon egy eszközt, például egy talajérzékelőt, hogy az alábbi mezőket annak entitásaiból töltse ki. A párosítás eszközosztály alapján történik, és utólag módosítható."
+          "source_device": "Válasszon egy eszközt, például egy talajérzékelőt, és küldje el az űrlapot, hogy az alábbi mezőket annak entitásaiból töltse ki. Az űrlap újra megnyílik, így folytatás előtt ellenőrizheti őket; a már kitöltött mezők megmaradnak."
         }
       },
       "limits": {
@@ -210,7 +210,7 @@
           "soil_temperature_sensor": "Talajhőmérséklet-érzékelő"
         },
         "data_description": {
-          "source_device": "Válasszon egy eszközt, például egy talajérzékelőt, hogy az alábbi mezőket annak entitásaiból töltse ki. A párosítás eszközosztály alapján történik, és utólag módosítható."
+          "source_device": "Válasszon egy eszközt, például egy talajérzékelőt, és küldje el az űrlapot, hogy az alábbi mezőket annak entitásaiból töltse ki. Az űrlap újra megnyílik, így folytatás előtt ellenőrizheti őket; a már kitöltött mezők megmaradnak."
         }
       }
     }

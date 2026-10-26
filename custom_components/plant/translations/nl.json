@@ -137,7 +137,7 @@
           "soil_temperature_sensor": "Bodemtemperatuursensor"
         },
         "data_description": {
-          "source_device": "Kies een apparaat, bijvoorbeeld een bodemsensor, om de velden hieronder te vullen met de entiteiten ervan. Gekoppeld op apparaatklasse en daarna aan te passen."
+          "source_device": "Kies een apparaat, bijvoorbeeld een bodemsensor, en verstuur het formulier om de velden hieronder te vullen met de entiteiten ervan. Het formulier opent opnieuw zodat u ze kunt controleren voordat u verdergaat; velden die u al hebt ingevuld blijven behouden."
         }
       },
       "limits": {
@@ -210,7 +210,7 @@
           "soil_temperature_sensor": "Bodemtemperatuursensor"
         },
         "data_description": {
-          "source_device": "Kies een apparaat, bijvoorbeeld een bodemsensor, om de velden hieronder te vullen met de entiteiten ervan. Gekoppeld op apparaatklasse en daarna aan te passen."
+          "source_device": "Kies een apparaat, bijvoorbeeld een bodemsensor, en verstuur het formulier om de velden hieronder te vullen met de entiteiten ervan. Het formulier opent opnieuw zodat u ze kunt controleren voordat u verdergaat; velden die u al hebt ingevuld blijven behouden."
         }
       }
     }

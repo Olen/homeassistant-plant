@@ -137,7 +137,7 @@
           "soil_temperature_sensor": "Capteur de température du sol"
         },
         "data_description": {
-          "source_device": "Sélectionnez un appareil, par exemple un capteur de sol, pour remplir les champs ci-dessous à partir de ses entités. L'association se fait par classe d'appareil et peut être ajustée ensuite."
+          "source_device": "Sélectionnez un appareil, par exemple un capteur de sol, puis validez le formulaire pour remplir les champs ci-dessous à partir de ses entités. Le formulaire s'ouvre à nouveau pour que vous puissiez les vérifier avant de continuer ; les champs déjà renseignés sont conservés."
         }
       },
       "limits": {
@@ -210,7 +210,7 @@
           "soil_temperature_sensor": "Capteur de température du sol"
         },
         "data_description": {
-          "source_device": "Sélectionnez un appareil, par exemple un capteur de sol, pour remplir les champs ci-dessous à partir de ses entités. L'association se fait par classe d'appareil et peut être ajustée ensuite."
+          "source_device": "Sélectionnez un appareil, par exemple un capteur de sol, puis validez le formulaire pour remplir les champs ci-dessous à partir de ses entités. Le formulaire s'ouvre à nouveau pour que vous puissiez les vérifier avant de continuer ; les champs déjà renseignés sont conservés."
         }
       }
     }

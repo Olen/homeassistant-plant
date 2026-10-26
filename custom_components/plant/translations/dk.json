@@ -137,7 +137,7 @@
           "soil_temperature_sensor": "Jordtemperatursensor"
         },
         "data_description": {
-          "source_device": "Vælg en enhed, f.eks. en jordsensor, for at udfylde felterne nedenfor ud fra dens entiteter. Matches på enhedsklasse og kan rettes bagefter."
+          "source_device": "Vælg en enhed, f.eks. en jordsensor, og send formularen for at udfylde felterne nedenfor ud fra dens entiteter. Formularen åbner igen, så du kan gennemse dem, før du fortsætter; felter, du allerede har udfyldt, bevares."
         }
       },
       "limits": {
@@ -210,7 +210,7 @@
           "soil_temperature_sensor": "Jordtemperatursensor"
         },
         "data_description": {
-          "source_device": "Vælg en enhed, f.eks. en jordsensor, for at udfylde felterne nedenfor ud fra dens entiteter. Matches på enhedsklasse og kan rettes bagefter."
+          "source_device": "Vælg en enhed, f.eks. en jordsensor, og send formularen for at udfylde felterne nedenfor ud fra dens entiteter. Formularen åbner igen, så du kan gennemse dem, før du fortsætter; felter, du allerede har udfyldt, bevares."
         }
       }
     }

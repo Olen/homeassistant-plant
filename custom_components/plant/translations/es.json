@@ -137,7 +137,7 @@
           "soil_temperature_sensor": "Sensor de temperatura del suelo"
         },
         "data_description": {
-          "source_device": "Seleccione un dispositivo, como un sensor de suelo, para rellenar los campos siguientes a partir de sus entidades. Se asignan por clase de dispositivo y pueden ajustarse después."
+          "source_device": "Seleccione un dispositivo, como un sensor de suelo, y envíe el formulario para rellenar los campos siguientes a partir de sus entidades. El formulario se abrirá de nuevo para que pueda revisarlos antes de continuar; los campos que ya haya rellenado se conservan."
         }
       },
       "limits": {
@@ -210,7 +210,7 @@
           "soil_temperature_sensor": "Sensor de temperatura del suelo"
         },
         "data_description": {
-          "source_device": "Seleccione un dispositivo, como un sensor de suelo, para rellenar los campos siguientes a partir de sus entidades. Se asignan por clase de dispositivo y pueden ajustarse después."
+          "source_device": "Seleccione un dispositivo, como un sensor de suelo, y envíe el formulario para rellenar los campos siguientes a partir de sus entidades. El formulario se abrirá de nuevo para que pueda revisarlos antes de continuar; los campos que ya haya rellenado se conservan."
         }
       }
     }

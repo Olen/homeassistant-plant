@@ -137,7 +137,7 @@
           "soil_temperature_sensor": "Bodentemperatursensor"
         },
         "data_description": {
-          "source_device": "Wählen Sie ein Gerät, etwa einen Bodensensor, um die Felder unten aus dessen Entitäten zu füllen. Die Zuordnung erfolgt über die Geräteklasse und kann danach angepasst werden."
+          "source_device": "Wählen Sie ein Gerät, etwa einen Bodensensor, und senden Sie das Formular ab, um die Felder unten aus dessen Entitäten zu füllen. Das Formular öffnet sich erneut, damit Sie die Zuordnung vor dem Fortfahren prüfen können; bereits gesetzte Felder bleiben erhalten."
         }
       },
       "limits": {
@@ -210,7 +210,7 @@
           "soil_temperature_sensor": "Bodentemperatursensor"
         },
         "data_description": {
-          "source_device": "Wählen Sie ein Gerät, etwa einen Bodensensor, um die Felder unten aus dessen Entitäten zu füllen. Die Zuordnung erfolgt über die Geräteklasse und kann danach angepasst werden."
+          "source_device": "Wählen Sie ein Gerät, etwa einen Bodensensor, und senden Sie das Formular ab, um die Felder unten aus dessen Entitäten zu füllen. Das Formular öffnet sich erneut, damit Sie die Zuordnung vor dem Fortfahren prüfen können; bereits gesetzte Felder bleiben erhalten."
         }
       }
     }
