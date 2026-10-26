@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
 from types import SimpleNamespace
 
 import pytest
@@ -15,8 +16,10 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant, State
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity import EntityCategory
+from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
+    async_fire_time_changed,
     mock_restore_cache_with_extra_data,
 )
 
@@ -1606,53 +1609,145 @@ class TestThresholdRestoreUnit:
         await hass.config_entries.async_unload(config_entry.entry_id)
         await hass.async_block_till_done()
 
-    async def test_temperature_still_restores_its_unit(
+    async def test_temperature_restored_in_another_unit_is_converted(
         self,
         hass: HomeAssistant,
         plant_config_data: dict,
         mock_external_sensors,
         mock_no_openplantbook,
     ) -> None:
-        """Temperature converts its value between °C and °F, so it has to
-        restore value and unit together.
+        """A temperature threshold restored in °F on a °C system comes back
+        converted to °C, so the native unit always matches the system unit.
         """
-        entry_id = "fahrenheit_entry_id"
-        ent_reg = er.async_get(hass)
-        registry_entry = ent_reg.async_get_or_create(
-            domain="number",
-            platform=DOMAIN,
-            unique_id=f"{entry_id}-max-temperature",
+        plant = await _setup_with_restored_max_temperature(
+            hass, plant_config_data, "fahrenheit_entry_id", 86, _F
         )
+        assert plant.max_temperature.native_unit_of_measurement == _C
+        assert plant.max_temperature.native_value == 30
 
-        mock_restore_cache_with_extra_data(
-            hass,
-            [
-                (
-                    State(registry_entry.entity_id, "90"),
-                    {
-                        "native_max_value": 200,
-                        "native_min_value": -100,
-                        "native_step": 1,
-                        "native_unit_of_measurement": _F,
-                        "native_value": 90,
-                    },
-                ),
-            ],
-        )
+    async def test_temperature_restored_in_celsius_on_imperial_is_converted(
+        self,
+        hass: HomeAssistant,
+        plant_config_data: dict,
+        mock_external_sensors,
+        mock_no_openplantbook,
+    ) -> None:
+        """The same holds the other way round on an imperial system."""
+        from homeassistant.util.unit_system import METRIC_SYSTEM, US_CUSTOMARY_SYSTEM
 
-        config_entry = MockConfigEntry(
-            domain=DOMAIN,
-            data=plant_config_data,
-            entry_id=entry_id,
-            title=TEST_PLANT_NAME,
-        )
-        config_entry.add_to_hass(hass)
-        await hass.config_entries.async_setup(config_entry.entry_id)
+        hass.config.units = US_CUSTOMARY_SYSTEM
+        try:
+            plant = await _setup_with_restored_max_temperature(
+                hass, plant_config_data, "celsius_entry_id", 30, _C
+            )
+            assert plant.max_temperature.native_unit_of_measurement == _F
+            assert plant.max_temperature.native_value == 86
+        finally:
+            hass.config.units = METRIC_SYSTEM
+
+
+async def _setup_with_restored_max_temperature(
+    hass: HomeAssistant, plant_config_data: dict, entry_id: str, value, unit
+):
+    """Set up a plant whose max temperature restores ``value`` in ``unit``."""
+    registry_entry = er.async_get(hass).async_get_or_create(
+        domain="number",
+        platform=DOMAIN,
+        unique_id=f"{entry_id}-max-temperature",
+    )
+    mock_restore_cache_with_extra_data(
+        hass,
+        [
+            (
+                State(registry_entry.entity_id, str(value)),
+                {
+                    "native_max_value": 200,
+                    "native_min_value": -100,
+                    "native_step": 1,
+                    "native_unit_of_measurement": unit,
+                    "native_value": value,
+                },
+            ),
+        ],
+    )
+    config_entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=plant_config_data,
+        entry_id=entry_id,
+        title=TEST_PLANT_NAME,
+    )
+    config_entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
+    return hass.data[DOMAIN][config_entry.entry_id][ATTR_PLANT]
+
+
+async def _poll(hass: HomeAssistant, times: int) -> None:
+    """Let HA's 30 s number polling run ``times`` times."""
+    now = dt_util.utcnow()
+    for i in range(1, times + 1):
+        async_fire_time_changed(hass, now + timedelta(seconds=31 * i))
         await hass.async_block_till_done()
 
-        plant = hass.data[DOMAIN][config_entry.entry_id][ATTR_PLANT]
-        assert plant.max_temperature.native_unit_of_measurement == _F
-        assert plant.max_temperature.native_value == 90
 
-        await hass.config_entries.async_unload(config_entry.entry_id)
+class TestTemperatureThresholdDrift:
+    """A temperature threshold must hold its value across state writes (#532).
+
+    The value used to be re-converted °F->°C on every 30 s poll until it
+    reached -40, whenever the native unit differed from the displayed one.
+    """
+
+    async def test_value_set_after_fahrenheit_restore_holds(
+        self,
+        hass: HomeAssistant,
+        plant_config_data: dict,
+        mock_external_sensors,
+        mock_no_openplantbook,
+    ) -> None:
+        """The reported case: restored in °F on a °C system, then set to 30."""
+        plant = await _setup_with_restored_max_temperature(
+            hass, plant_config_data, "drift_entry_id", 30, _F
+        )
+        entity_id = plant.max_temperature.entity_id
+
+        await hass.services.async_call(
+            "number", "set_value", {"entity_id": entity_id, "value": 30}, blocking=True
+        )
+        await _poll(hass, 5)
+
+        assert float(hass.states.get(entity_id).state) == 30
+
+    async def test_value_holds_with_a_display_unit_override(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """A °F display unit chosen in the entity settings on a °C system."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        entity_id = plant.max_temperature.entity_id
+        er.async_get(hass).async_update_entity_options(
+            entity_id, "number", {"unit_of_measurement": _F}
+        )
         await hass.async_block_till_done()
+
+        await hass.services.async_call(
+            "number", "set_value", {"entity_id": entity_id, "value": 86}, blocking=True
+        )
+        await _poll(hass, 5)
+
+        state = hass.states.get(entity_id)
+        assert state.attributes["unit_of_measurement"] == _F
+        assert float(state.state) == 86
+        assert plant.max_temperature.native_value == pytest.approx(30)
+
+    async def test_state_set_in_another_unit_is_stored_converted(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """A state written in °F to a °C threshold is stored as °C."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+
+        plant.max_temperature.state_changed(old_state="40", new_state="86", unit=_F)
+
+        assert plant.max_temperature.native_value == pytest.approx(30)
