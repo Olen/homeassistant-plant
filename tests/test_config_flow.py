@@ -1668,15 +1668,11 @@ class TestOptionsFlow:
         )
         assert result["step_id"] == "replace_sensor"
 
-        # The form comes back with the current sensors, as the UI submits them.
-        current = {
-            key: value
-            for key, value in _suggested_values(result["data_schema"]).items()
-            if value
-        }
+        # The user clears the current sensors, then picks the device; a
+        # cleared selector is omitted from the submit.
         result = await hass.config_entries.options.async_configure(
             result["flow_id"],
-            {**current, FLOW_SENSOR_SOURCE_DEVICE: device_id},
+            {FLOW_SENSOR_SOURCE_DEVICE: device_id},
         )
 
         # Re-shows the form pre-filled rather than saving straight away.
@@ -1718,15 +1714,10 @@ class TestOptionsFlow:
             result["flow_id"],
             {"next_step_id": "replace_sensor"},
         )
-        current = {
-            key: value
-            for key, value in _suggested_values(result["data_schema"]).items()
-            if value
-        }
+        # Moisture cleared, temperature changed by hand.
         result = await hass.config_entries.options.async_configure(
             result["flow_id"],
             {
-                **current,
                 FLOW_SENSOR_SOURCE_DEVICE: device_id,
                 FLOW_SENSOR_TEMPERATURE: "sensor.room_temperature",
             },
@@ -1734,6 +1725,37 @@ class TestOptionsFlow:
 
         suggested = _suggested_values(result["data_schema"])
         assert suggested[FLOW_SENSOR_TEMPERATURE] == "sensor.room_temperature"
+        assert suggested[FLOW_SENSOR_MOISTURE] == "sensor.spare_probe_1_moisture"
+
+    async def test_options_flow_source_device_keeps_configured_sensors(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Sensors left in place in the replace form are not re-pointed."""
+        device_id = _register_sensor_device(
+            hass, "spare_probe", ["temperature", "moisture"]
+        )
+
+        result = await hass.config_entries.options.async_init(init_integration.entry_id)
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            {"next_step_id": "replace_sensor"},
+        )
+        current = {
+            key: value
+            for key, value in _suggested_values(result["data_schema"]).items()
+            if value
+        }
+        # Only moisture cleared; temperature submitted as it was shown.
+        current.pop(FLOW_SENSOR_MOISTURE)
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            {**current, FLOW_SENSOR_SOURCE_DEVICE: device_id},
+        )
+
+        suggested = _suggested_values(result["data_schema"])
+        assert suggested[FLOW_SENSOR_TEMPERATURE] == current[FLOW_SENSOR_TEMPERATURE]
         assert suggested[FLOW_SENSOR_MOISTURE] == "sensor.spare_probe_1_moisture"
 
     async def test_options_flow_replace_sensor_preserves_options(

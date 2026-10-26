@@ -176,19 +176,29 @@ def _merge_source_device(
 ) -> dict[str, Any] | None:
     """Pre-fill the sensor fields from a newly picked source device.
 
-    ``shown`` holds the values the form was last displayed with. A field whose
-    submitted value differs from it was set by the user and is left alone;
-    the rest take whatever the device provides.
+    Only empty fields are filled, plus fields still holding what the
+    previously picked device filled in, so switching devices swaps its own
+    fills. Anything else (a sensor picked by hand, or one already configured
+    on the plant) is left alone; clear a field to have the device fill it.
+
+    ``shown`` holds the values the form was last displayed with.
 
     Returns the values to re-show the form with, or None when the submission
     carries no new device and should be processed as a normal submit.
     """
     device_id = user_input.get(FLOW_SENSOR_SOURCE_DEVICE)
-    if not device_id or device_id == shown.get(FLOW_SENSOR_SOURCE_DEVICE):
+    previous_device = shown.get(FLOW_SENSOR_SOURCE_DEVICE)
+    if not device_id or device_id == previous_device:
         return None
+    previous_fills = (
+        _sensors_from_device(hass, previous_device) if previous_device else {}
+    )
     merged = dict(user_input)
     for key, entity_id in _sensors_from_device(hass, device_id).items():
-        if user_input.get(key) == shown.get(key):
+        submitted = user_input.get(key)
+        if not submitted or (
+            submitted == shown.get(key) and submitted == previous_fills.get(key)
+        ):
             merged[key] = entity_id
     return merged
 
