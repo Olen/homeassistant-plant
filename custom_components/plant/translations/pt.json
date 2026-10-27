@@ -127,6 +127,7 @@
         "title": "Selecionar sensores",
         "description": "Todos os sensores são opcionais. Os sensores também podem ser adicionados ou alterados mais tarde.",
         "data": {
+          "source_device": "Preencher sensores a partir de um dispositivo",
           "temperature_sensor": "Sensor de temperatura",
           "moisture_sensor": "Sensor de humidade do solo",
           "conductivity_sensor": "Sensor de condutividade",
@@ -134,6 +135,9 @@
           "humidity_sensor": "Sensor de humidade do ar",
           "co2_sensor": "Sensor de CO2",
           "soil_temperature_sensor": "Sensor de temperatura do solo"
+        },
+        "data_description": {
+          "source_device": "Selecione um dispositivo, como um sensor de solo, e submeta o formulário para preencher os campos abaixo a partir das suas entidades. O formulário volta a abrir para que os possa rever antes de continuar; os campos que já preencheu são mantidos."
         }
       },
       "limits": {
@@ -196,6 +200,7 @@
         "title": "Substituir sensores",
         "description": "Replace external sensors for **{plant_name}**. Clear a field to remove that sensor.",
         "data": {
+          "source_device": "Preencher sensores a partir de um dispositivo",
           "temperature_sensor": "Sensor de temperatura",
           "moisture_sensor": "Sensor de humidade do solo",
           "conductivity_sensor": "Sensor de condutividade",
@@ -203,6 +208,9 @@
           "humidity_sensor": "Sensor de humidade do ar",
           "co2_sensor": "Sensor de CO2",
           "soil_temperature_sensor": "Sensor de temperatura do solo"
+        },
+        "data_description": {
+          "source_device": "Selecione um dispositivo, como um sensor de solo, e submeta o formulário para preencher os campos abaixo a partir das suas entidades. O formulário volta a abrir para que os possa rever antes de continuar; os campos que já preencheu são mantidos."
         }
       }
     }

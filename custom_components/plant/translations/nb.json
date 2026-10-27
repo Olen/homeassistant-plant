@@ -127,6 +127,7 @@
         "title": "Velg sensorer",
         "description": "Alle sensorer er valgfrie. Sensorer kan også legges til eller endres senere.",
         "data": {
+          "source_device": "Fyll ut sensorer fra enhet",
           "temperature_sensor": "Temperatursensor",
           "moisture_sensor": "Jordfuktighetssensor",
           "conductivity_sensor": "Ledningsevnesensor",
@@ -134,6 +135,9 @@
           "humidity_sensor": "Luftfuktighetssensor",
           "co2_sensor": "CO2-sensor",
           "soil_temperature_sensor": "Jordtemperatursensor"
+        },
+        "data_description": {
+          "source_device": "Velg en enhet, for eksempel en jordsensor, og send inn skjemaet for å fylle ut feltene nedenfor fra entitetene dens. Skjemaet åpnes igjen slik at du kan se over dem før du fortsetter; felt du allerede har fylt ut, beholdes."
         }
       },
       "limits": {
@@ -196,6 +200,7 @@
         "title": "Erstatt sensorer",
         "description": "Erstatt eksterne sensorer for **{plant_name}**. Tøm et felt for å fjerne sensoren.",
         "data": {
+          "source_device": "Fyll ut sensorer fra enhet",
           "temperature_sensor": "Temperatursensor",
           "moisture_sensor": "Jordfuktighetssensor",
           "conductivity_sensor": "Ledningsevnesensor",
@@ -203,6 +208,9 @@
           "humidity_sensor": "Luftfuktighetssensor",
           "co2_sensor": "CO2-sensor",
           "soil_temperature_sensor": "Jordtemperatursensor"
+        },
+        "data_description": {
+          "source_device": "Velg en enhet, for eksempel en jordsensor, og send inn skjemaet for å fylle ut feltene nedenfor fra entitetene dens. Skjemaet åpnes igjen slik at du kan se over dem før du fortsetter; felt du allerede har fylt ut, beholdes."
         }
       }
     }

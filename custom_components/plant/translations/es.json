@@ -127,6 +127,7 @@
         "title": "Seleccionar sensores",
         "description": "Todos los sensores son opcionales. Los sensores también se pueden añadir o cambiar más tarde.",
         "data": {
+          "source_device": "Rellenar sensores desde un dispositivo",
           "temperature_sensor": "Sensor de temperatura",
           "moisture_sensor": "Sensor de humedad del suelo",
           "conductivity_sensor": "Sensor de conductividad",
@@ -134,6 +135,9 @@
           "humidity_sensor": "Sensor de humedad del aire",
           "co2_sensor": "Sensor de CO2",
           "soil_temperature_sensor": "Sensor de temperatura del suelo"
+        },
+        "data_description": {
+          "source_device": "Seleccione un dispositivo, como un sensor de suelo, y envíe el formulario para rellenar los campos siguientes a partir de sus entidades. El formulario se abrirá de nuevo para que pueda revisarlos antes de continuar; los campos que ya haya rellenado se conservan."
         }
       },
       "limits": {
@@ -196,6 +200,7 @@
         "title": "Reemplazar sensores",
         "description": "Replace external sensors for **{plant_name}**. Clear a field to remove that sensor.",
         "data": {
+          "source_device": "Rellenar sensores desde un dispositivo",
           "temperature_sensor": "Sensor de temperatura",
           "moisture_sensor": "Sensor de humedad del suelo",
           "conductivity_sensor": "Sensor de conductividad",
@@ -203,6 +208,9 @@
           "humidity_sensor": "Sensor de humedad del aire",
           "co2_sensor": "Sensor de CO2",
           "soil_temperature_sensor": "Sensor de temperatura del suelo"
+        },
+        "data_description": {
+          "source_device": "Seleccione un dispositivo, como un sensor de suelo, y envíe el formulario para rellenar los campos siguientes a partir de sus entidades. El formulario se abrirá de nuevo para que pueda revisarlos antes de continuar; los campos que ya haya rellenado se conservan."
         }
       }
     }

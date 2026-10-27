@@ -127,6 +127,7 @@
         "title": "Select sensors",
         "description": "All sensors are optional. Sensors can also be added or changed later.",
         "data": {
+          "source_device": "Fill sensors from device",
           "temperature_sensor": "Temperature sensor",
           "moisture_sensor": "Soil moisture sensor",
           "conductivity_sensor": "Conductivity sensor",
@@ -134,6 +135,9 @@
           "humidity_sensor": "Air humidity sensor",
           "co2_sensor": "CO2 sensor",
           "soil_temperature_sensor": "Soil temperature sensor"
+        },
+        "data_description": {
+          "source_device": "Pick a device, such as a soil sensor, and submit the form to fill the fields below from its entities. The form opens again so you can review them before continuing; fields you have already set are kept."
         }
       },
       "limits": {
@@ -196,6 +200,7 @@
         "title": "Replace sensors",
         "description": "Replace external sensors for **{plant_name}**. Clear a field to remove that sensor.",
         "data": {
+          "source_device": "Fill sensors from device",
           "temperature_sensor": "Temperature sensor",
           "moisture_sensor": "Soil moisture sensor",
           "conductivity_sensor": "Conductivity sensor",
@@ -203,6 +208,9 @@
           "humidity_sensor": "Air humidity sensor",
           "co2_sensor": "CO2 sensor",
           "soil_temperature_sensor": "Soil temperature sensor"
+        },
+        "data_description": {
+          "source_device": "Pick a device, such as a soil sensor, and submit the form to fill the fields below from its entities. The form opens again so you can review them before continuing; fields you have already set are kept."
         }
       }
     }

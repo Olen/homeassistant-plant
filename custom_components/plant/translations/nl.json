@@ -127,6 +127,7 @@
         "title": "Selecteer sensoren",
         "description": "Alle sensoren zijn optioneel. Sensoren kunnen ook later worden toegevoegd of gewijzigd.",
         "data": {
+          "source_device": "Sensoren invullen vanaf apparaat",
           "temperature_sensor": "Temperatuursensor",
           "moisture_sensor": "Bodemvochtsensor",
           "conductivity_sensor": "Geleidbaarheidssensor",
@@ -134,6 +135,9 @@
           "humidity_sensor": "Luchtvochtigheidssensor",
           "co2_sensor": "CO2-sensor",
           "soil_temperature_sensor": "Bodemtemperatuursensor"
+        },
+        "data_description": {
+          "source_device": "Kies een apparaat, bijvoorbeeld een bodemsensor, en verstuur het formulier om de velden hieronder te vullen met de entiteiten ervan. Het formulier opent opnieuw zodat u ze kunt controleren voordat u verdergaat; velden die u al hebt ingevuld blijven behouden."
         }
       },
       "limits": {
@@ -196,6 +200,7 @@
         "title": "Sensoren vervangen",
         "description": "Replace external sensors for **{plant_name}**. Clear a field to remove that sensor.",
         "data": {
+          "source_device": "Sensoren invullen vanaf apparaat",
           "temperature_sensor": "Temperatuursensor",
           "moisture_sensor": "Bodemvochtsensor",
           "conductivity_sensor": "Geleidbaarheidssensor",
@@ -203,6 +208,9 @@
           "humidity_sensor": "Luchtvochtigheidssensor",
           "co2_sensor": "CO2-sensor",
           "soil_temperature_sensor": "Bodemtemperatuursensor"
+        },
+        "data_description": {
+          "source_device": "Kies een apparaat, bijvoorbeeld een bodemsensor, en verstuur het formulier om de velden hieronder te vullen met de entiteiten ervan. Het formulier opent opnieuw zodat u ze kunt controleren voordat u verdergaat; velden die u al hebt ingevuld blijven behouden."
         }
       }
     }

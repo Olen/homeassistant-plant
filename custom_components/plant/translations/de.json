@@ -127,6 +127,7 @@
         "title": "Sensoren auswählen",
         "description": "Alle Sensoren sind optional. Sensoren können auch später hinzugefügt oder geändert werden.",
         "data": {
+          "source_device": "Sensoren vom Gerät übernehmen",
           "temperature_sensor": "Temperatursensor",
           "moisture_sensor": "Bodenfeuchtesensor",
           "conductivity_sensor": "Leitfähigkeitssensor",
@@ -134,6 +135,9 @@
           "humidity_sensor": "Luftfeuchtigkeitssensor",
           "co2_sensor": "CO2-Sensor",
           "soil_temperature_sensor": "Bodentemperatursensor"
+        },
+        "data_description": {
+          "source_device": "Wählen Sie ein Gerät, etwa einen Bodensensor, und senden Sie das Formular ab, um die Felder unten aus dessen Entitäten zu füllen. Das Formular öffnet sich erneut, damit Sie die Zuordnung vor dem Fortfahren prüfen können; bereits gesetzte Felder bleiben erhalten."
         }
       },
       "limits": {
@@ -196,6 +200,7 @@
         "title": "Sensoren ersetzen",
         "description": "Externe Sensoren für **{plant_name}** ersetzen. Feld leeren, um den Sensor zu entfernen.",
         "data": {
+          "source_device": "Sensoren vom Gerät übernehmen",
           "temperature_sensor": "Temperatursensor",
           "moisture_sensor": "Bodenfeuchtesensor",
           "conductivity_sensor": "Leitfähigkeitssensor",
@@ -203,6 +208,9 @@
           "humidity_sensor": "Luftfeuchtigkeitssensor",
           "co2_sensor": "CO2-Sensor",
           "soil_temperature_sensor": "Bodentemperatursensor"
+        },
+        "data_description": {
+          "source_device": "Wählen Sie ein Gerät, etwa einen Bodensensor, und senden Sie das Formular ab, um die Felder unten aus dessen Entitäten zu füllen. Das Formular öffnet sich erneut, damit Sie die Zuordnung vor dem Fortfahren prüfen können; bereits gesetzte Felder bleiben erhalten."
         }
       }
     }
