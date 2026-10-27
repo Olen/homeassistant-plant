@@ -502,6 +502,35 @@ class TestConfigFlowSourceDevice:
         suggested = _suggested_values(result["data_schema"])
         assert suggested[FLOW_SENSOR_MOISTURE] == "sensor.second_0_moisture"
 
+    async def test_switching_device_keeps_hand_picked_sensor_of_first(
+        self,
+        hass: HomeAssistant,
+        mock_no_openplantbook,
+    ) -> None:
+        """A sensor picked by hand stays put even if the first device has it."""
+        first = _register_sensor_device(hass, "first", ["moisture"])
+        second = _register_sensor_device(hass, "second", ["moisture"])
+        result = await self._goto_sensors(hass)
+
+        # Moisture is picked by hand, so the first device leaves it alone.
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                FLOW_SENSOR_SOURCE_DEVICE: first,
+                FLOW_SENSOR_MOISTURE: "sensor.first_0_moisture",
+            },
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                FLOW_SENSOR_SOURCE_DEVICE: second,
+                FLOW_SENSOR_MOISTURE: "sensor.first_0_moisture",
+            },
+        )
+
+        suggested = _suggested_values(result["data_schema"])
+        assert suggested[FLOW_SENSOR_MOISTURE] == "sensor.first_0_moisture"
+
     async def test_soil_named_temperature_goes_to_soil_temperature(
         self,
         hass: HomeAssistant,
@@ -875,6 +904,57 @@ class TestConfigFlowLimitsStep:
         # Should go back to select_species
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "select_species"
+
+    async def test_wrong_plant_then_same_device_prefills_again(
+        self,
+        hass: HomeAssistant,
+        mock_openplantbook_services,
+    ) -> None:
+        """Back on an empty sensor form, the same device fills it again."""
+        device_id = _register_sensor_device(hass, "probe", ["moisture"])
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_USER}
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {ATTR_NAME: "My Monstera", ATTR_SPECIES: "monstera"},
+        )
+        species = {ATTR_SEARCH_FOR: "monstera", ATTR_SPECIES: "monstera deliciosa"}
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], species
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {FLOW_SENSOR_SOURCE_DEVICE: device_id}
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                FLOW_SENSOR_SOURCE_DEVICE: device_id,
+                FLOW_SENSOR_MOISTURE: "sensor.probe_0_moisture",
+            },
+        )
+        assert result["step_id"] == "limits"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                FLOW_RIGHT_PLANT: False,
+                OPB_DISPLAY_PID: "Monstera deliciosa",
+                ATTR_ENTITY_PICTURE: GET_RESULT_MONSTERA_DELICIOSA["image_url"],
+            },
+        )
+        assert result["step_id"] == "select_species"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], species
+        )
+        assert result["step_id"] == "sensors"
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {FLOW_SENSOR_SOURCE_DEVICE: device_id}
+        )
+
+        assert result["step_id"] == "sensors"
+        suggested = _suggested_values(result["data_schema"])
+        assert suggested[FLOW_SENSOR_MOISTURE] == "sensor.probe_0_moisture"
 
     async def test_conditional_limits_only_selected_sensors(
         self,
