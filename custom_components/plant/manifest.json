@@ -9,6 +9,9 @@
     "statistics",
     "utility_meter"
   ],
+  "categories": [
+    "garden_plants"
+  ],
   "codeowners": [
     "@Olen"
   ],
