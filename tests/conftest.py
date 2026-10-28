@@ -94,6 +94,15 @@ def auto_enable_custom_integrations(enable_custom_integrations):
 TEST_PLANT_NAME = "Test Plant"
 TEST_PLANT_SPECIES = "monstera deliciosa"
 TEST_PLANT_DISPLAY_SPECIES = "Monstera deliciosa"
+
+
+def device_info_field(device_info: Any, field: str) -> Any:
+    """Read a DeviceInfo field: a TypedDict before HA 2026.11, a dataclass after."""
+    if isinstance(device_info, dict):
+        return device_info[field]
+    return getattr(device_info, field)
+
+
 TEST_PLANT_IMAGE = "https://example.com/plant.jpg"
 TEST_ENTRY_ID = "test_entry_id_12345"
 

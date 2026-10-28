@@ -35,7 +35,7 @@ from custom_components.plant.const import (
 )
 from custom_components.plant.number import _get_temperature_default
 
-from .conftest import TEST_PLANT_NAME
+from .conftest import TEST_PLANT_NAME, device_info_field
 
 _C = UnitOfTemperature.CELSIUS
 _F = UnitOfTemperature.FAHRENHEIT
@@ -392,7 +392,9 @@ class TestThresholdEntityProperties:
         for threshold in plant.threshold_entities:
             device_info = threshold.device_info
             assert "identifiers" in device_info
-            assert (DOMAIN, plant.unique_id) in device_info["identifiers"]
+            assert (DOMAIN, plant.unique_id) in device_info_field(
+                device_info, "identifiers"
+            )
 
 
 class TestThresholdStateChanges:
