@@ -126,6 +126,8 @@ The project uses GitHub Actions for CI. The workflow runs:
 2. Linting with Ruff
 3. Full test suite with pytest against a minimum and the latest Home Assistant
 
+Which code only exists for older (or newer) HA versions, and what can go when the minimum is raised, is listed in [HA_COMPATIBILITY.md](HA_COMPATIBILITY.md).
+
 ---
 
 ## 🏷️ Pull Requests & Releases
