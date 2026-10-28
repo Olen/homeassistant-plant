@@ -19,6 +19,7 @@ Sorted by the version that makes each one unnecessary. Raising the minimum to a 
 | 2026.8 | `hass` is passed to `IntegrationSensor`, `StatisticsSensor` and `UtilityMeterSensor` only where their `__init__` still takes it | `sensor.py` `_init_accepts_hass()` and the three `_*_ACCEPTS_HASS` flags | Never pass `hass`; drop the helper |
 | 2026.11 | `device_class=None` is passed to `IntegrationSensor` only where it's a parameter (required from 2026.11) | `sensor.py` `_INTEGRATION_SENSOR_TAKES_DEVICE_CLASS` | Always pass `device_class=None` |
 | 2026.11 | Threshold numbers skip restoring state for a brand-new entity that reuses an old entity_id. HA does this itself from 2026.11 (#542) | `number.py` `_is_new_entity` | Drop the guard |
+| 2026.11 | `async_entity_id_changed` only calls `super()` where `Entity` has the method (added in 2026.11) | `PlantDevice`, `PlantMinMax`, `PlantCurrentStatus`, `PlantCurrentVpd`, `PlantDailyLightIntegral24h` | Call `super().async_entity_id_changed()` directly |
 | 2026.11 (tests) | Tests read `DeviceInfo` as dict or dataclass (#540, PR #548) | `tests/conftest.py` `device_info_field()` | Use attribute access; drop the helper |
 
 ## Test-environment workarounds
@@ -33,7 +34,7 @@ These depend on the test plugin (`pytest-homeassistant-custom-component`) rather
 
 Not workarounds yet, but they set a deadline:
 
-- **2027.11:** entities must implement `async_entity_id_changed` to support in-place entity_id renames, or renames stop updating them (#539).
+- **2027.11:** entities without `async_entity_id_changed` stop being removed and re-added on a rename. Plant's entities have it (#539); a new class that implements `async_added_to_hass` or `async_will_remove_from_hass` needs it too. `tests/test_entity_id_change.py` checks this on HA 2026.11+.
 - **2027.8:** `CONCENTRATION_PARTS_PER_MILLION` is removed. The PPM fallback above only uses it on HA < 2026.7, so this is fine as long as that row is removed before the minimum gets anywhere near 2027.8.
 
 ## Not tied to an HA version

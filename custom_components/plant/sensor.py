@@ -509,6 +509,16 @@ class PlantCurrentStatus(RestoreSensor):
             )
 
     @callback
+    def async_entity_id_changed(self, old_entity_id: str) -> None:
+        """Take entity_id changes in place (HA 2026.11+).
+
+        A rename of a plant entity reloads the plant, which resubscribes
+        everything under the new entity_id (see async_setup_entry).
+        """
+        if (parent := getattr(super(), "async_entity_id_changed", None)) is not None:
+            parent(old_entity_id)
+
+    @callback
     def _end_restore_window(self, _now: datetime | None = None) -> None:
         """End the startup restore window once the grace period elapses."""
         if not self._restored_value_active:
@@ -975,6 +985,16 @@ class PlantCurrentVpd(RestoreSensor):
                     self.hass, RESTORE_GRACE_PERIOD, self._end_restore_window
                 )
             )
+
+    @callback
+    def async_entity_id_changed(self, old_entity_id: str) -> None:
+        """Take entity_id changes in place (HA 2026.11+).
+
+        A rename of a plant entity reloads the plant, which resubscribes
+        everything under the new entity_id (see async_setup_entry).
+        """
+        if (parent := getattr(super(), "async_entity_id_changed", None)) is not None:
+            parent(old_entity_id)
 
     @callback
     def _end_restore_window(self, _now: datetime | None = None) -> None:
@@ -1445,6 +1465,16 @@ class PlantDailyLightIntegral24h(StatisticsSensor):
         cancel_update_listener = getattr(self, "_async_cancel_update_listener", None)
         if cancel_update_listener is not None:
             cancel_update_listener()
+
+    @callback
+    def async_entity_id_changed(self, old_entity_id: str) -> None:
+        """Take entity_id changes in place (HA 2026.11+).
+
+        A rename of a plant entity reloads the plant, which resubscribes
+        everything under the new entity_id (see async_setup_entry).
+        """
+        if (parent := getattr(super(), "async_entity_id_changed", None)) is not None:
+            parent(old_entity_id)
 
 
 class PlantDummyStatus(SensorEntity):

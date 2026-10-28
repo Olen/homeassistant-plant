@@ -513,6 +513,16 @@ class PlantMinMax(RestoreNumber):
             self._state_changed_event,
         )
 
+    @callback
+    def async_entity_id_changed(self, old_entity_id: str) -> None:
+        """Take entity_id changes in place (HA 2026.11+).
+
+        A rename of a plant entity reloads the plant, which resubscribes
+        everything under the new entity_id (see async_setup_entry).
+        """
+        if (parent := getattr(super(), "async_entity_id_changed", None)) is not None:
+            parent(old_entity_id)
+
     def _in_own_unit(self, value, unit: str | None):
         """Return a restored ``value`` converted from ``unit`` into the
         entity's own unit, where that unit can vary."""
