@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import logging
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntryState
 from homeassistant.const import (
     STATE_OK,
@@ -2957,3 +2958,49 @@ class TestMoistureGracePeriod:
         # New grace period should be set (later than first one)
         assert second_grace_end is not None
         assert second_grace_end > first_grace_end
+
+
+# A failed setup leaves the already-forwarded sensor platforms running, with
+# their timers; the same happened when setup returned False.
+@pytest.mark.parametrize("expected_lingering_timers", [True])
+class TestSetupEntryErrors:
+    """A failed setup reports plant's own reason instead of a generic one."""
+
+    async def _setup(self, hass: HomeAssistant, entry: MockConfigEntry, add) -> None:
+        """Set up ``entry`` with ``add`` standing in for the plant entity platform."""
+        entry.add_to_hass(hass)
+        component = MagicMock(async_setup_entry=AsyncMock(side_effect=add))
+        with patch(
+            "custom_components.plant._get_plant_component", return_value=component
+        ):
+            await hass.config_entries.async_setup(entry.entry_id)
+            await hass.async_block_till_done()
+
+    async def test_platform_setup_failure_reports_its_reason(
+        self, hass: HomeAssistant, mock_config_entry: MockConfigEntry
+    ) -> None:
+        """The plant entity platform failing to set up."""
+
+        async def fail(entry):
+            return False
+
+        await self._setup(hass, mock_config_entry, fail)
+
+        assert mock_config_entry.state is ConfigEntryState.SETUP_ERROR
+        assert mock_config_entry.error_reason_translation_key == "platform_setup_failed"
+
+    async def test_plant_entity_not_added_reports_its_reason(
+        self, hass: HomeAssistant, mock_config_entry: MockConfigEntry
+    ) -> None:
+        """The plant entity's add aborted, as on a duplicate unique_id."""
+
+        async def abort_add(entry):
+            hass.data[DOMAIN][entry.entry_id][ATTR_PLANT].add_to_platform_abort()
+            return True
+
+        await self._setup(hass, mock_config_entry, abort_add)
+
+        assert mock_config_entry.state is ConfigEntryState.SETUP_ERROR
+        assert (
+            mock_config_entry.error_reason_translation_key == "plant_entity_not_added"
+        )
