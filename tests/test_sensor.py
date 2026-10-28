@@ -3,14 +3,16 @@
 from __future__ import annotations
 
 from datetime import timedelta
+from unittest.mock import patch
 
 import pytest
 from homeassistant.const import (
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
 )
-from homeassistant.core import HomeAssistant, State
+from homeassistant.core import HomeAssistant, State, callback
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.entity_registry import EVENT_ENTITY_REGISTRY_UPDATED
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import (
@@ -21,6 +23,7 @@ from pytest_homeassistant_custom_component.common import (
 
 from custom_components.plant.const import (
     ATTR_PLANT,
+    DATA_UPDATED,
     DEFAULT_LUX_TO_PPFD,
     DOMAIN,
     RESTORE_GRACE_PERIOD,
@@ -28,6 +31,7 @@ from custom_components.plant.const import (
     UNIT_PPFD,
     UNIT_TOTAL_LIGHT_INTEGRAL,
 )
+from custom_components.plant.sensor import PlantCurrentStatus
 
 from .common import set_sensor_state
 from .conftest import device_info_field
@@ -236,6 +240,88 @@ class TestPlantCurrentSensors:
         sensor.replace_external_sensor("sensor.new_temperature")
 
         assert sensor.external_sensor == "sensor.new_temperature"
+
+    async def test_replaced_external_sensor_no_longer_feeds_the_plant(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """After a replace, only the new sensor updates the reading (#551)."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        meter = plant.sensor_moisture
+        old_sensor = meter.external_sensor
+        await set_sensor_state(hass, "sensor.new_moisture", "55")
+
+        meter.replace_external_sensor("sensor.new_moisture")
+        await set_sensor_state(hass, "sensor.new_moisture", "56")
+        await set_sensor_state(hass, old_sensor, "12")
+
+        assert float(hass.states.get(meter.entity_id).state) == 56
+
+    async def test_reloaded_sensor_leaves_no_listeners_behind(
+        self, hass: HomeAssistant, mock_config_entry: MockConfigEntry
+    ) -> None:
+        """After a reload only the new instance gets updates, each once (#551)."""
+        calls: list[tuple[object, str]] = []
+        on_state = PlantCurrentStatus._state_changed_event
+        on_update = PlantCurrentStatus._schedule_immediate_update
+
+        @callback
+        def spy_state(self, event):
+            calls.append((self, event.data["entity_id"]))
+            on_state(self, event)
+
+        @callback
+        def spy_update(self):
+            calls.append((self, DATA_UPDATED))
+            on_update(self)
+
+        with (
+            patch.object(PlantCurrentStatus, "_state_changed_event", spy_state),
+            patch.object(PlantCurrentStatus, "_schedule_immediate_update", spy_update),
+        ):
+            mock_config_entry.add_to_hass(hass)
+            await hass.config_entries.async_setup(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+            plant = hass.data[DOMAIN][mock_config_entry.entry_id][ATTR_PLANT]
+            old_meter = plant.sensor_moisture
+            source = old_meter.external_sensor
+
+            await hass.config_entries.async_reload(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+            plant = hass.data[DOMAIN][mock_config_entry.entry_id][ATTR_PLANT]
+            new_meter = plant.sensor_moisture
+            assert new_meter is not old_meter
+
+            calls.clear()
+            await set_sensor_state(hass, source, "42")
+            async_dispatcher_send(hass, DATA_UPDATED)
+            await hass.async_block_till_done()
+
+        assert not [what for meter, what in calls if meter is old_meter]
+        # The source change, the dispatch, and the meter's own resulting write
+        # (it also tracks its own entity_id), each exactly once.
+        assert sorted(what for meter, what in calls if meter is new_meter) == sorted(
+            [source, DATA_UPDATED, new_meter.entity_id]
+        )
+
+    async def test_switching_back_to_the_original_sensor(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Replacing A with B and back again makes A the only source again."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        meter = plant.sensor_moisture
+        original = meter.external_sensor
+        await set_sensor_state(hass, "sensor.new_moisture", "55")
+
+        meter.replace_external_sensor("sensor.new_moisture")
+        meter.replace_external_sensor(original)
+        await set_sensor_state(hass, original, "33")
+        await set_sensor_state(hass, "sensor.new_moisture", "77")
+
+        assert float(hass.states.get(meter.entity_id).state) == 33
 
     async def test_sensor_no_external_sensor(
         self,

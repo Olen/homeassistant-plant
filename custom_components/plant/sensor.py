@@ -44,7 +44,7 @@ try:
 except ImportError:  # HA < 2026.7
     from homeassistant.const import CONCENTRATION_PARTS_PER_MILLION as _UNIT_PPM
 
-from homeassistant.core import Event, HomeAssistant, State, callback
+from homeassistant.core import CALLBACK_TYPE, Event, HomeAssistant, State, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import (
@@ -259,7 +259,8 @@ class PlantCurrentStatus(RestoreSensor):
         self._config = config
         self._default_state = None
         self._plant = plantdevice
-        self._tracker = []
+        # entity_id -> unsubscribe for the state listeners this sensor holds
+        self._tracker: dict[str, CALLBACK_TYPE] = {}
         self._restored_value_active = False
         # Only force entity_id for existing entities (backwards compat).
         # New entities let has_entity_name derive the entity_id automatically.
@@ -311,8 +312,11 @@ class PlantCurrentStatus(RestoreSensor):
     def replace_external_sensor(self, new_sensor: str | None) -> None:
         """Modify the external sensor and persist to config entry."""
         _LOGGER.info("Setting %s external sensor to %s", self.entity_id, new_sensor)
+        old_sensor = getattr(self, "_external_sensor", None)
         # pylint: disable=attribute-defined-outside-init
         self._external_sensor = new_sensor
+        if old_sensor not in (new_sensor, self.entity_id):
+            self.async_untrack_entity(old_sensor)
 
         if new_sensor is None:
             self._attr_native_value = self._default_state
@@ -378,19 +382,30 @@ class PlantCurrentStatus(RestoreSensor):
             new_sensor,
         )
 
-    def async_track_entity(self, entity_id: str) -> None:
+    def async_track_entity(self, entity_id: str | None) -> None:
         """Track state_changed of certain entities"""
         if entity_id and entity_id not in self._tracker:
-            async_track_state_change_event(
+            self._tracker[entity_id] = async_track_state_change_event(
                 self.hass,
                 [entity_id],
                 self._state_changed_event,
             )
-            self._tracker.append(entity_id)
+
+    def async_untrack_entity(self, entity_id: str | None) -> None:
+        """Stop tracking an entity."""
+        if (unsub := self._tracker.pop(entity_id, None)) is not None:
+            unsub()
+
+    @callback
+    def _async_untrack_all(self) -> None:
+        for unsub in self._tracker.values():
+            unsub()
+        self._tracker.clear()
 
     async def async_added_to_hass(self) -> None:
         """Handle entity which will be added."""
         await super().async_added_to_hass()
+        self.async_on_remove(self._async_untrack_all)
         state = await self.async_get_last_state()
 
         if state:
@@ -440,8 +455,10 @@ class PlantCurrentStatus(RestoreSensor):
             await self.async_update()
             self.async_write_ha_state()
 
-        async_dispatcher_connect(
-            self.hass, DATA_UPDATED, self._schedule_immediate_update
+        self.async_on_remove(
+            async_dispatcher_connect(
+                self.hass, DATA_UPDATED, self._schedule_immediate_update
+            )
         )
 
         # Listen for entity registry updates to handle entity_id changes and deletions
