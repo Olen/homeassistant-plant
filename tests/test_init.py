@@ -27,7 +27,7 @@ from custom_components.plant.const import (
 )
 
 from .common import set_external_sensor_states, update_plant_sensors
-from .conftest import TEST_PLANT_NAME
+from .conftest import TEST_PLANT_NAME, device_info_field
 
 
 class TestIntegrationSetup:
@@ -635,7 +635,7 @@ class TestPlantDevice:
         device_info = plant.device_info
         assert "identifiers" in device_info
         assert "name" in device_info
-        assert device_info["name"] == TEST_PLANT_NAME
+        assert device_info_field(device_info, "name") == TEST_PLANT_NAME
 
     async def test_plant_device_trigger_disabled(
         self,

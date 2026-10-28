@@ -30,6 +30,7 @@ from custom_components.plant.const import (
 )
 
 from .common import set_sensor_state
+from .conftest import device_info_field
 
 
 class TestPlantCurrentSensors:
@@ -894,7 +895,9 @@ class TestSensorDeviceInfo:
         for sensor in plant.meter_entities:
             device_info = sensor.device_info
             assert "identifiers" in device_info
-            assert (DOMAIN, plant.unique_id) in device_info["identifiers"]
+            assert (DOMAIN, plant.unique_id) in device_info_field(
+                device_info, "identifiers"
+            )
 
     async def test_integral_sensor_device_info(
         self,
@@ -907,7 +910,9 @@ class TestSensorDeviceInfo:
         for sensor in plant.integral_entities:
             device_info = sensor.device_info
             assert "identifiers" in device_info
-            assert (DOMAIN, plant.unique_id) in device_info["identifiers"]
+            assert (DOMAIN, plant.unique_id) in device_info_field(
+                device_info, "identifiers"
+            )
 
 
 class TestSensorEntityIdRename:
