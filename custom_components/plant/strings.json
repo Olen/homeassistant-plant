@@ -822,5 +822,13 @@
         }
       }
     }
+  },
+  "exceptions": {
+    "platform_setup_failed": {
+      "message": "The plant entity platform could not be set up."
+    },
+    "plant_entity_not_added": {
+      "message": "The plant entity {entity_id} was not added to Home Assistant, possibly because its unique ID is already in use."
+    }
   }
 }

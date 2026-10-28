@@ -27,6 +27,7 @@ from homeassistant.const import (
     Platform,
 )
 from homeassistant.core import HomeAssistant, ServiceCall, callback
+from homeassistant.exceptions import ConfigEntryError
 from homeassistant.helpers import (
     config_validation as cv,
     device_registry as dr,
@@ -259,11 +260,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # resets it cleanly on unload/reload.
     component = _get_plant_component(hass)
     if not await component.async_setup_entry(entry):
-        _LOGGER.error(
-            "Failed to set up the plant entity platform for entry %s",
-            entry.entry_id,
+        raise ConfigEntryError(
+            translation_domain=DOMAIN, translation_key="platform_setup_failed"
         )
-        return False
 
     # Set up utility sensor
     hass.data.setdefault(DATA_UTILITY, {})
@@ -333,13 +332,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     websocket_api.async_register_command(hass, ws_get_info)
 
     if plant.hass is None:
-        _LOGGER.error(
-            "Plant entity %s was not added to Home Assistant "
-            "(possible duplicate unique_id). Aborting setup for %s",
-            plant.entity_id,
-            entry.title,
+        raise ConfigEntryError(
+            translation_domain=DOMAIN,
+            translation_key="plant_entity_not_added",
+            translation_placeholders={"entity_id": plant.entity_id},
         )
-        return False
 
     plant.async_schedule_update_ha_state(True)
 

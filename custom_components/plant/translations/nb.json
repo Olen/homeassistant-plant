@@ -230,5 +230,13 @@
         }
       }
     }
+  },
+  "exceptions": {
+    "platform_setup_failed": {
+      "message": "Plante-entitetsplattformen kunne ikke settes opp."
+    },
+    "plant_entity_not_added": {
+      "message": "Plante-entiteten {entity_id} ble ikke lagt til i Home Assistant, kanskje fordi den unike ID-en allerede er i bruk."
+    }
   }
 }
