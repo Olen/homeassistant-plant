@@ -5,6 +5,8 @@ from __future__ import annotations
 import importlib
 import inspect
 import pkgutil
+from collections.abc import Iterator
+from contextlib import contextmanager
 from unittest.mock import patch
 
 import pytest
@@ -100,24 +102,41 @@ async def test_reloaded_threshold_leaves_no_listeners_behind(
     assert new in calls
 
 
+@contextmanager
+def _renamed_in_place(hass: HomeAssistant, entity: Entity) -> Iterator[str]:
+    """Rename ``entity`` the way HA 2026.11 does, and undo it afterwards.
+
+    HA's platform and restore-state bookkeeping stay under the old entity_id,
+    so the entity must have it back before teardown removes it.
+    """
+    old_id = entity.entity_id
+    new_id = f"{old_id}_renamed"
+    state = hass.states.get(old_id)
+    hass.states.async_set(new_id, state.state, state.attributes)
+    entity.entity_id = new_id
+    entity.async_entity_id_changed(old_id)
+    try:
+        yield old_id
+    finally:
+        entity.entity_id = old_id
+        entity.async_entity_id_changed(new_id)
+        hass.states.async_remove(new_id)
+
+
 async def test_entity_id_changed_moves_threshold_listener(
     hass: HomeAssistant, init_integration: MockConfigEntry
 ) -> None:
     """After the hook, edits arrive under the new entity_id only."""
     threshold = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT].max_moisture
-    old_id = threshold.entity_id
-    new_id = f"{old_id}_renamed"
-    attributes = dict(hass.states.get(old_id).attributes)
-    hass.states.async_set(new_id, hass.states.get(old_id).state, attributes)
+    attributes = dict(hass.states.get(threshold.entity_id).attributes)
 
-    threshold.entity_id = new_id
-    threshold.async_entity_id_changed(old_id)
-    hass.states.async_set(new_id, "77", attributes)
-    await hass.async_block_till_done()
-    hass.states.async_set(old_id, "11", attributes)
-    await hass.async_block_till_done()
+    with _renamed_in_place(hass, threshold) as old_id:
+        hass.states.async_set(threshold.entity_id, "77", attributes)
+        await hass.async_block_till_done()
+        hass.states.async_set(old_id, "11", attributes)
+        await hass.async_block_till_done()
 
-    assert threshold.native_value == 77
+        assert threshold.native_value == 77
 
 
 async def test_entity_id_changed_keeps_ppfd_on_old_state_removal(
@@ -128,14 +147,9 @@ async def test_entity_id_changed_keeps_ppfd_on_old_state_removal(
     ppfd = plant.ppfd
     await set_sensor_state(hass, plant.sensor_illuminance.external_sensor, "1000")
     assert ppfd.native_value is not None
-    old_id = ppfd.entity_id
-    new_id = f"{old_id}_renamed"
-    old_state = hass.states.get(old_id)
-    hass.states.async_set(new_id, old_state.state, old_state.attributes)
 
-    ppfd.entity_id = new_id
-    ppfd.async_entity_id_changed(old_id)
-    hass.states.async_remove(old_id)
-    await hass.async_block_till_done()
+    with _renamed_in_place(hass, ppfd) as old_id:
+        hass.states.async_remove(old_id)
+        await hass.async_block_till_done()
 
-    assert ppfd.native_value is not None
+        assert ppfd.native_value is not None
