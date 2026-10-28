@@ -237,6 +237,41 @@ class TestPlantCurrentSensors:
 
         assert sensor.external_sensor == "sensor.new_temperature"
 
+    async def test_replaced_external_sensor_no_longer_feeds_the_plant(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """After a replace, only the new sensor updates the reading (#551)."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        meter = plant.sensor_moisture
+        old_sensor = meter.external_sensor
+        await set_sensor_state(hass, "sensor.new_moisture", "55")
+
+        meter.replace_external_sensor("sensor.new_moisture")
+        await set_sensor_state(hass, "sensor.new_moisture", "56")
+        await set_sensor_state(hass, old_sensor, "12")
+
+        assert float(hass.states.get(meter.entity_id).state) == 56
+
+    async def test_switching_back_to_the_original_sensor(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Replacing A with B and back again makes A the only source again."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        meter = plant.sensor_moisture
+        original = meter.external_sensor
+        await set_sensor_state(hass, "sensor.new_moisture", "55")
+
+        meter.replace_external_sensor("sensor.new_moisture")
+        meter.replace_external_sensor(original)
+        await set_sensor_state(hass, original, "33")
+        await set_sensor_state(hass, "sensor.new_moisture", "77")
+
+        assert float(hass.states.get(meter.entity_id).state) == 33
+
     async def test_sensor_no_external_sensor(
         self,
         hass: HomeAssistant,
