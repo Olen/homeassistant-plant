@@ -142,6 +142,11 @@ def _init_accepts_hass(cls: type) -> bool:
 _INTEGRATION_SENSOR_ACCEPTS_HASS = _init_accepts_hass(IntegrationSensor)
 _UTILITY_METER_SENSOR_ACCEPTS_HASS = _init_accepts_hass(UtilityMeterSensor)
 _STATISTICS_SENSOR_ACCEPTS_HASS = _init_accepts_hass(StatisticsSensor)
+# HA 2026.11 made ``device_class`` a required keyword of IntegrationSensor.
+# None keeps the device class derived from the source sensor, as before.
+_INTEGRATION_SENSOR_TAKES_DEVICE_CLASS = (
+    "device_class" in inspect.signature(IntegrationSensor.__init__).parameters
+)
 
 
 async def async_setup_entry(
@@ -1238,6 +1243,8 @@ class PlantTotalLightIntegral(IntegrationSensor):
         }
         if _INTEGRATION_SENSOR_ACCEPTS_HASS:
             integration_kwargs["hass"] = hass
+        if _INTEGRATION_SENSOR_TAKES_DEVICE_CLASS:
+            integration_kwargs["device_class"] = None
         super().__init__(**integration_kwargs)
         ent_reg = er_async_get(hass)
         if ent_reg.async_get_entity_id(
