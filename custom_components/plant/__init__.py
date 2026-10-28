@@ -26,7 +26,7 @@ from homeassistant.const import (
     STATE_UNKNOWN,
     Platform,
 )
-from homeassistant.core import HomeAssistant, ServiceCall, callback
+from homeassistant.core import Event, HomeAssistant, ServiceCall, callback
 from homeassistant.exceptions import ConfigEntryError
 from homeassistant.helpers import (
     config_validation as cv,
@@ -337,6 +337,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             translation_key="plant_entity_not_added",
             translation_placeholders={"entity_id": plant.entity_id},
         )
+
+    @callback
+    def _reload_on_rename(event: Event[er.EventEntityRegistryUpdatedData]) -> None:
+        """Reload when one of this plant's entities gets a new entity_id.
+
+        VPD and the light integrals subscribe to their sources by entity_id;
+        a reload resubscribes them under the new ids.
+        """
+        if event.data["action"] != "update" or "old_entity_id" not in event.data:
+            return
+        reg_entry = er.async_get(hass).async_get(event.data["entity_id"])
+        if reg_entry is not None and reg_entry.config_entry_id == entry.entry_id:
+            hass.config_entries.async_schedule_reload(entry.entry_id)
+
+    entry.async_on_unload(
+        hass.bus.async_listen(er.EVENT_ENTITY_REGISTRY_UPDATED, _reload_on_rename)
+    )
 
     plant.async_schedule_update_ha_state(True)
 
