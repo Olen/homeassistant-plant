@@ -31,7 +31,7 @@ from custom_components.plant.const import (
     UNIT_PPFD,
     UNIT_TOTAL_LIGHT_INTEGRAL,
 )
-from custom_components.plant.sensor import PlantCurrentStatus
+from custom_components.plant.sensor import PlantCurrentStatus, PlantCurrentVpd
 
 from .common import set_sensor_state
 from .conftest import device_info_field
@@ -1115,7 +1115,9 @@ class TestSensorEntityIdRename:
         ent_reg.async_update_entity(old_entity_id, new_entity_id=new_entity_id)
         await hass.async_block_till_done()
 
-        # Verify the integral sensor updated its source reference
+        # The rename reloads the plant; the new integral is built on the new id
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        integral_sensor = plant.total_integral
         assert integral_sensor._source_entity == new_entity_id
         assert integral_sensor._sensor_source_id == new_entity_id
 
@@ -1141,7 +1143,8 @@ class TestSensorEntityIdRename:
         ent_reg.async_update_entity(old_entity_id, new_entity_id=new_entity_id)
         await hass.async_block_till_done()
 
-        # Verify the DLI sensor updated its source reference
+        # The rename reloads the plant; the new DLI is built on the new id
+        dli_sensor = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT].dli
         assert dli_sensor._sensor_source_id == new_entity_id
 
 
@@ -1715,3 +1718,114 @@ class TestVpdSensor:
         await plant.vpd.async_update()
 
         assert plant.vpd.native_value == pytest.approx(0.49, abs=0.01)
+
+
+async def _feed(hass: HomeAssistant, freezer, entity_id: str, values) -> None:
+    """Write ``values`` to ``entity_id`` ten minutes apart."""
+    for value in values:
+        freezer.tick(600)
+        state = hass.states.get(entity_id)
+        hass.states.async_set(entity_id, str(value), state.attributes if state else {})
+        await hass.async_block_till_done()
+
+
+async def _rename(hass: HomeAssistant, entity_id: str) -> str:
+    new_entity_id = f"{entity_id}_renamed"
+    er.async_get(hass).async_update_entity(entity_id, new_entity_id=new_entity_id)
+    await hass.async_block_till_done()
+    return new_entity_id
+
+
+class TestInternalSensorRename:
+    """Computed sensors keep updating after their source is renamed (#553)."""
+
+    async def test_vpd_follows_temperature_sensor_rename(
+        self, hass: HomeAssistant, init_integration: MockConfigEntry
+    ) -> None:
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        source = plant.sensor_temperature.external_sensor
+        await set_sensor_state(hass, source, "30")
+
+        await _rename(hass, plant.sensor_temperature.entity_id)
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        before = hass.states.get(plant.vpd.entity_id).state
+        await set_sensor_state(hass, source, "20")
+        # VPD is a second hop; HA 2026.3 delivers state changes one loop later
+        await hass.async_block_till_done()
+
+        assert hass.states.get(plant.vpd.entity_id).state != before
+
+    @pytest.mark.parametrize(
+        ("source_attr", "watcher_attr", "values"),
+        [
+            ("ppfd", "total_integral", [0.001, 0.002, 0.003]),
+            ("total_integral", "dli", [1, 2, 3]),
+            ("total_integral", "dli_24h", [1, 2, 3]),
+        ],
+    )
+    async def test_light_sensors_follow_source_rename(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+        freezer,
+        source_attr: str,
+        watcher_attr: str,
+        values: list[float],
+    ) -> None:
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        new_source = await _rename(hass, getattr(plant, source_attr).entity_id)
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        watcher = getattr(plant, watcher_attr)
+        await _feed(hass, freezer, new_source, values)
+        before = hass.states.get(watcher.entity_id).state
+
+        await _feed(hass, freezer, new_source, [v * 2 for v in values])
+
+        assert hass.states.get(watcher.entity_id).state != before
+
+    async def test_reloaded_vpd_leaves_no_listeners_behind(
+        self, hass: HomeAssistant, mock_config_entry: MockConfigEntry
+    ) -> None:
+        """A reload (e.g. after a rename) must not leave the old VPD listening."""
+        calls: list[object] = []
+        on_state = PlantCurrentVpd._state_changed_event
+
+        @callback
+        def spy(self, event):
+            calls.append(self)
+            on_state(self, event)
+
+        with patch.object(PlantCurrentVpd, "_state_changed_event", spy):
+            mock_config_entry.add_to_hass(hass)
+            await hass.config_entries.async_setup(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+            plant = hass.data[DOMAIN][mock_config_entry.entry_id][ATTR_PLANT]
+            old_vpd = plant.vpd
+            source = plant.sensor_temperature.external_sensor
+
+            await hass.config_entries.async_reload(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+            new_vpd = hass.data[DOMAIN][mock_config_entry.entry_id][ATTR_PLANT].vpd
+            calls.clear()
+            await set_sensor_state(hass, source, "25")
+            # VPD is a second hop; HA 2026.3 delivers state changes one loop later
+            await hass.async_block_till_done()
+
+        assert old_vpd not in calls
+        assert new_vpd in calls
+
+    async def test_only_renames_of_own_entities_reload_the_plant(
+        self, hass: HomeAssistant, init_integration: MockConfigEntry
+    ) -> None:
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        er.async_get(hass).async_get_or_create(
+            "sensor", "other", "x1", suggested_object_id="unrelated"
+        )
+        with patch.object(
+            hass.config_entries, "async_schedule_reload"
+        ) as schedule_reload:
+            await _rename(hass, "sensor.unrelated")
+            schedule_reload.assert_not_called()
+
+            await _rename(hass, plant.sensor_moisture.entity_id)
+            schedule_reload.assert_called_once_with(init_integration.entry_id)
