@@ -1750,6 +1750,8 @@ class TestInternalSensorRename:
         plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
         before = hass.states.get(plant.vpd.entity_id).state
         await set_sensor_state(hass, source, "20")
+        # VPD is a second hop; HA 2026.3 delivers state changes one loop later
+        await hass.async_block_till_done()
 
         assert hass.states.get(plant.vpd.entity_id).state != before
 
@@ -1806,6 +1808,8 @@ class TestInternalSensorRename:
             new_vpd = hass.data[DOMAIN][mock_config_entry.entry_id][ATTR_PLANT].vpd
             calls.clear()
             await set_sensor_state(hass, source, "25")
+            # VPD is a second hop; HA 2026.3 delivers state changes one loop later
+            await hass.async_block_till_done()
 
         assert old_vpd not in calls
         assert new_vpd in calls
