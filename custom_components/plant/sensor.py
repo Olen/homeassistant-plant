@@ -513,8 +513,12 @@ class PlantCurrentStatus(RestoreSensor):
         """Take entity_id changes in place (HA 2026.11+).
 
         A rename of a plant entity reloads the plant, which resubscribes
-        everything under the new entity_id (see async_setup_entry).
+        everything under the new entity_id (see async_setup_entry); the own
+        listener moves right away, so a late removal of the old id's state is
+        not taken for a source change.
         """
+        self.async_untrack_entity(old_entity_id)
+        self.async_track_entity(self.entity_id)
         if (parent := getattr(super(), "async_entity_id_changed", None)) is not None:
             parent(old_entity_id)
 
