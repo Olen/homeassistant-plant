@@ -133,3 +133,6 @@ CLAUDE.md
 
 #Jetbrains
 .idea/
+
+# Written by Home Assistant when pytest-home-assistant runs the tests
+tests/testing_config/

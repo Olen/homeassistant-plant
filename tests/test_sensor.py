@@ -15,11 +15,6 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.entity_registry import EVENT_ENTITY_REGISTRY_UPDATED
 from homeassistant.util import dt as dt_util
-from pytest_homeassistant_custom_component.common import (
-    MockConfigEntry,
-    async_fire_time_changed,
-    mock_restore_cache_with_extra_data,
-)
 
 from custom_components.plant.const import (
     ATTR_PLANT,
@@ -35,6 +30,11 @@ from custom_components.plant.sensor import PlantCurrentStatus, PlantCurrentVpd
 
 from .common import set_sensor_state
 from .conftest import device_info_field
+from .ha_common import (
+    MockConfigEntry,
+    async_fire_time_changed,
+    mock_restore_cache_with_extra_data,
+)
 
 
 class TestPlantCurrentSensors:

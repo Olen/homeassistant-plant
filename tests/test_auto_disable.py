@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
-from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.plant.const import (
     ATTR_PLANT,
@@ -19,6 +18,7 @@ from .conftest import (
     create_plant_config_data,
     setup_mock_external_sensors,
 )
+from .ha_common import MockConfigEntry
 
 
 class TestAutoDisableOnSetup:
@@ -253,7 +253,6 @@ class TestAutoDisablePartialSensors:
     async def test_partial_sensors_mixed_state(
         self,
         hass: HomeAssistant,
-        enable_custom_integrations,
     ) -> None:
         """Only configured sensors should be enabled; unconfigured ones disabled."""
         # Create config with only temperature and moisture sensors

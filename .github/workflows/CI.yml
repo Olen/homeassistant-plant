@@ -62,11 +62,10 @@ jobs:
           # pytest-homeassistant-custom-component 0.13.320 -> HA 2026.3.4.
           - ha-version: "2026.3"
             pytest-ha-version: "==0.13.320"
-          # Latest HA prerelease/beta (NON-BLOCKING, see continue-on-error). Uses
-          # the latest plugin (which pins the newest *stable* HA), then force-
-          # upgrades HA to the newest prerelease so breakage in an upcoming HA
-          # release surfaces here early rather than in users' logs. The conftest
-          # HA-beta shim recreates symbols the lagging plugin still patches.
+          # Latest HA prerelease/beta (NON-BLOCKING, see continue-on-error), so
+          # breakage in an upcoming HA release surfaces here before users see it.
+          # Tested with the official pytest-home-assistant, which replaced
+          # pytest-homeassistant-custom-component in HA 2026.11.
           - ha-version: "beta"
             pytest-ha-version: ""
             experimental: true
@@ -100,20 +99,24 @@ jobs:
           filtered = [d for d in deps if not d.startswith('pytest-homeassistant-custom-component')]
           print(' '.join(filtered))
           ")
-          # Install pytest-homeassistant-custom-component with version constraint
-          uv pip install --no-cache "pytest-homeassistant-custom-component${{ matrix.pytest-ha-version }}"
 
-      - name: Force latest HA prerelease (beta job only)
+      - name: Install pytest-homeassistant-custom-component
+        if: matrix.ha-version != 'beta'
+        run: uv pip install --no-cache "pytest-homeassistant-custom-component${{ matrix.pytest-ha-version }}"
+
+      - name: Install the newest HA prerelease and pytest-home-assistant (beta job only)
         if: matrix.ha-version == 'beta'
-        # Upgrade HA to the newest release INCLUDING prereleases, over the stable
-        # version the plugin pinned. Best-effort: the conftest HA-beta shim
-        # handles symbols the plugin still patches that a newer HA may have
-        # removed. This step is what makes the "beta" job test upcoming releases.
-        run: uv pip install --no-cache --prerelease=allow --upgrade homeassistant
+        # pytest-home-assistant must match the installed HA. It is not on PyPI
+        # yet, so it comes from the core tag of that HA version.
+        run: |
+          uv pip install --no-cache --prerelease=allow --upgrade homeassistant
+          HA_VERSION=$(.venv/bin/python -c "from homeassistant.const import __version__; print(__version__)")
+          uv pip install --no-cache "pytest-home-assistant @ git+https://github.com/home-assistant/core@${HA_VERSION}#subdirectory=packages/pytest-home-assistant"
 
       - name: Show installed versions
         run: |
           .venv/bin/python -c "from homeassistant.const import __version__; print(f'Home Assistant version: {__version__}')"
+          uv pip show --python .venv/bin/python pytest-home-assistant pytest-homeassistant-custom-component 2>/dev/null | grep -E "^(Name|Version)" || true
           uv pip show --python .venv/bin/python pycares aiodns | grep -E "^(Name|Version)"
 
       - name: Run tests

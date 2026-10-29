@@ -12,11 +12,11 @@ from collections import Counter
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
-from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.plant.const import DOMAIN
 
 from .conftest import create_plant_config_data, setup_mock_external_sensors
+from .ha_common import MockConfigEntry
 
 
 async def _setup_plant(

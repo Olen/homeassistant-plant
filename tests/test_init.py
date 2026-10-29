@@ -15,7 +15,6 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr, entity_registry as er
-from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.plant import DATA_COMPONENT, async_setup
 from custom_components.plant.const import (
@@ -29,6 +28,7 @@ from custom_components.plant.const import (
 
 from .common import set_external_sensor_states, update_plant_sensors
 from .conftest import TEST_PLANT_NAME, device_info_field
+from .ha_common import MockConfigEntry
 
 
 class TestIntegrationSetup:
