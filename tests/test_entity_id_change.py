@@ -13,13 +13,13 @@ import pytest
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity as entity_helper
 from homeassistant.helpers.entity import Entity
-from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 import custom_components.plant as plant_package
 from custom_components.plant.const import ATTR_PLANT, DOMAIN
 from custom_components.plant.number import PlantMinMax
 
 from .common import set_sensor_state
+from .ha_common import MockConfigEntry
 
 # HA 2026.11+: whether an entity_id change still removes and re-adds the entity.
 _requires_readd = getattr(entity_helper, "_entity_class_requires_readd", None)
