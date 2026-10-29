@@ -23,16 +23,19 @@ Sorted by the version that makes each one unnecessary. Raising the minimum to a 
 
 ## Test-environment workarounds
 
-These depend on the test plugin (`pytest-homeassistant-custom-component`) rather than on HA itself.
+HA 2026.11 replaced `pytest-homeassistant-custom-component` with the official `pytest-home-assistant`. CI uses the official package for the beta job and the old one for the others, so the tests work with both.
 
 | What | Where | Remove when |
 |---|---|---|
-| A no-op `start_http_server_and_save_config` for the beta job, where the plugin still patches a symbol HA 2026.8 removed. Does nothing on stable HA | `tests/conftest.py` | No CI job runs a plugin that still patches it |
+| Test helpers imported from whichever package is installed | `tests/ha_common.py` (`OFFICIAL_TEST_PACKAGE`) | Every CI job uses `pytest-home-assistant`; then import from `pytest_homeassistant.common` directly |
+| `pytest_plugins` and the `enable_custom_integrations` fixture only with the old package (the official one loads itself and enables custom integrations) | `tests/conftest.py` | Same |
+| `pytest-home-assistant` installed from the core tag of the beta, as it is not on PyPI yet | `.github/workflows/CI.yml`, beta job | It is published on PyPI |
 
 ## Upcoming requirements
 
 Not workarounds yet, but they set a deadline:
 
+- **HA 2026.11.0 (stable):** `pytest-homeassistant-custom-component` no longer gets releases, so the "latest" CI job would stay on HA 2026.10. Move it to `pytest-home-assistant` once 2026.11.0 is out.
 - **2027.11:** entities must implement `async_entity_id_changed` to support in-place entity_id renames, or renames stop updating them (#539).
 - **2027.8:** `CONCENTRATION_PARTS_PER_MILLION` is removed. The PPM fallback above only uses it on HA < 2026.7, so this is fine as long as that row is removed before the minimum gets anywhere near 2027.8.
 

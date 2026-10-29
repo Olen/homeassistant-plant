@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.plant.const import (
     ATTR_CONDUCTIVITY,
@@ -19,6 +18,8 @@ from custom_components.plant.const import (
     ATTR_TEMPERATURE,
     DOMAIN,
 )
+
+from .ha_common import MockConfigEntry
 
 
 class TestWebsocketGetInfo:

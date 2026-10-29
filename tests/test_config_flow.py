@@ -12,7 +12,6 @@ from homeassistant.helpers import (
     device_registry as dr,
     entity_registry as er,
 )
-from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.plant.const import (
     ATTR_CARE,
@@ -56,6 +55,7 @@ from .fixtures.openplantbook_responses import (
     GET_RESULT_MONSTERA_DELICIOSA,
     SEARCH_RESULT_FICUS,
 )
+from .ha_common import MockConfigEntry
 
 
 def _suggested_values(data_schema) -> dict[str, object]:

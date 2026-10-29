@@ -12,10 +12,6 @@ from unittest.mock import patch
 import pytest
 from homeassistant.const import STATE_PROBLEM, STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant, State
-from pytest_homeassistant_custom_component.common import (
-    MockConfigEntry,
-    mock_restore_cache_with_extra_data,
-)
 
 from custom_components.plant.const import (
     ATTR_CONDUCTIVITY,
@@ -30,6 +26,10 @@ from custom_components.plant.const import (
 )
 
 from .common import set_external_sensor_states, update_plant_sensors
+from .ha_common import (
+    MockConfigEntry,
+    mock_restore_cache_with_extra_data,
+)
 
 
 class TestProblemsAttribute:

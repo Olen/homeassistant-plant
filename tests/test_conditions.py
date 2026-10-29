@@ -14,10 +14,11 @@ if not _has_purpose_condition_api():
 
 from homeassistant.core import HomeAssistant
 from homeassistant.setup import async_setup_component
-from pytest_homeassistant_custom_component.common import async_capture_events
 
 from custom_components.plant.const import ATTR_PLANT, DOMAIN as PLANT_DOMAIN
 from custom_components.plant.stale import resolve_external_sensor
+
+from .ha_common import async_capture_events
 
 
 async def _condition_passes(hass: HomeAssistant, cond: dict) -> bool:
