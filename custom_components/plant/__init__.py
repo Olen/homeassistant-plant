@@ -1745,6 +1745,16 @@ class PlantDevice(RestoreEntity):
             )
 
     @callback
+    def async_entity_id_changed(self, old_entity_id: str) -> None:
+        """Take entity_id changes in place (HA 2026.11+).
+
+        A rename of a plant entity reloads the plant, which resubscribes
+        everything under the new entity_id (see async_setup_entry).
+        """
+        if (parent := getattr(super(), "async_entity_id_changed", None)) is not None:
+            parent(old_entity_id)
+
+    @callback
     def _end_restore_window(self, _now: datetime | None = None) -> None:
         """End the startup restore window once the grace period elapses."""
         if not self._restored_state_active:
