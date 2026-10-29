@@ -67,10 +67,12 @@ The [OpenPlantbook integration](https://github.com/Olen/home-assistant-openplant
 
 ### 3. Install Plant Monitor
 
-#### Via HACS
+#### Via the Marketplace (HACS before Home Assistant 2026.11)
 
-1. Add [this repo](https://github.com/Olen/homeassistant-plant) as a [Custom Repository](https://hacs.xyz/docs/faq/custom_repositories/) with type **Integration**
-2. Click **Install** in the "Home Assistant Plant" integration
+[![Open your Home Assistant instance and open this repository in the Marketplace.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Olen&repository=homeassistant-plant&category=integration)
+
+1. Select the button above, or add [this repo](https://github.com/Olen/homeassistant-plant) as a custom repository with type **Integration**
+2. Click **Install** in the "Home Assistant Plant" repository. From Home Assistant 2026.11, the Marketplace asks you to confirm that it replaces the built-in `plant` integration
 3. Restart Home Assistant
 
 #### Manual Installation
