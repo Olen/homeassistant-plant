@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.plant.diagnostics import async_get_config_entry_diagnostics
+
+from .ha_common import MockConfigEntry
 
 
 class TestDiagnostics:

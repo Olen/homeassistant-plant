@@ -17,11 +17,6 @@ from homeassistant.core import HomeAssistant, State
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.util import dt as dt_util
-from pytest_homeassistant_custom_component.common import (
-    MockConfigEntry,
-    async_fire_time_changed,
-    mock_restore_cache_with_extra_data,
-)
 
 from custom_components.plant.const import (
     ATTR_PLANT,
@@ -36,6 +31,11 @@ from custom_components.plant.const import (
 from custom_components.plant.number import _get_temperature_default
 
 from .conftest import TEST_PLANT_NAME, device_info_field
+from .ha_common import (
+    MockConfigEntry,
+    async_fire_time_changed,
+    mock_restore_cache_with_extra_data,
+)
 
 _C = UnitOfTemperature.CELSIUS
 _F = UnitOfTemperature.FAHRENHEIT
