@@ -16,7 +16,11 @@ jobs:
     name: "Auto Release"
     runs-on: "ubuntu-latest"
     # Only run if CI succeeded
-    if: github.event.workflow_run.conclusion == 'success'
+    # Only for pushes to this repository: a fork's branch can share the name main
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
     steps:
       - name: "Checkout code"
         uses: actions/checkout@v7
@@ -91,11 +95,12 @@ jobs:
           PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^)
           python3 scripts/flower_card_notes.py --since-tag "$PREVIOUS_TAG" > card-notes.md
           if [ -s card-notes.md ]; then
-            gh release view "v${{ env.COMPONENT_VERSION }}" --json body --jq .body > release-notes.md
+            gh release view "v$VERSION" --json body --jq .body > release-notes.md
             printf '\n' >> release-notes.md
             cat card-notes.md >> release-notes.md
-            gh release edit "v${{ env.COMPONENT_VERSION }}" --notes-file release-notes.md
+            gh release edit "v$VERSION" --notes-file release-notes.md
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ env.COMPONENT_VERSION }}
         if: steps.check_manifest.outputs.changed == 'true' && steps.check_tag.outputs.exists != 'true'
