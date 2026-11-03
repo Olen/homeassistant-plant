@@ -116,11 +116,14 @@ creates it (fine-grained PAT or GitHub App). The PR is merged by hand like any o
 
 ### 6. The flower-card repository afterwards
 
-- Its README says the card is installed with the plant integration, and how to move from the
-  HACS copy.
-- It stops being a HACS install: its releases no longer attach `flower-card.js` for users, and
-  `hacs.json` / the HACS validation workflow are removed. Whether to do this in the same release
-  as the first bundled plant release, or one release later, is the builder's call.
+- **Its README's installation section is rewritten (Olen's decision):** the card comes with the
+  plant integration, there is nothing to install separately, and existing users move over by
+  removing the HACS copy when the repair asks (or from Resources, for a hand-installed copy). The
+  rest of the README (configuration, options, screenshots) stays as it is.
+- **`hacs.json` and the HACS validation workflow stay (Olen's decision)**, so HACS problems show up
+  in the card repo before a build reaches plant. The repo is no longer advertised as a HACS install,
+  but it keeps working as a HACS custom repository. Anyone who still installs it that way gets the
+  repair from section 2.
 - Plant's README gets one line pointing to the flower-card repository for card documentation.
 
 ## Left to the builder
