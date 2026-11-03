@@ -242,7 +242,7 @@
   "issues": {
     "other_flower_card": {
       "title": "Flower card er installert to ganger",
-      "description": "Flower card følger nå med Plant Monitor-integrasjonen. Dashbordene dine laster også en annen kopi: {urls}\n\nFjern den kopien: avinstaller Flower Card i HACS, eller slett ressursen under Innstillinger → Dashbord → Ressurser hvis du la den til selv. Dashbordene fortsetter å virke, og Plant Monitor tar over kortet så snart den andre kopien er borte. Last inn nettleseren på nytt etterpå."
+      "description": "Flower card følger nå med Plant Monitor-integrasjonen. Dashbordene dine laster også en annen kopi: {urls}\n\nFjern den kopien: avinstaller Flower Card i HACS, eller slett ressursen du la til selv (under Innstillinger → Dashbord → Ressurser, eller fra `lovelace`-ressursene i YAML-konfigurasjonen). Dashbordene fortsetter å virke i mellomtiden. Plant Monitor tar over så snart den andre kopien er borte; har du ressursene i YAML, må du starte Home Assistant på nytt først. Last inn nettleseren på nytt etterpå."
     }
   }
 }
