@@ -40,6 +40,12 @@ def test_no_earlier_release_raises() -> None:
 
 
 def test_older_tag_shapes_are_understood() -> None:
-    tags = ["2022.5.0", "v2023.1.0-beta.3", "v2023.1.0beta4", "2023.1.0-beta5", "v2023.1.0"]
+    tags = [
+        "2022.5.0",
+        "v2023.1.0-beta.3",
+        "v2023.1.0beta4",
+        "2023.1.0-beta5",
+        "v2023.1.0",
+    ]
     assert previous_tag(tags, "2023.2.0") == "v2023.1.0"
     assert previous_tag(tags, "2023.1.0-beta6") == "2023.1.0-beta5"
