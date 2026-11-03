@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: read
 
 jobs:
   auto-release:
@@ -84,3 +85,17 @@ jobs:
           name: "Version ${{ env.COMPONENT_VERSION }}"
           tag_name: "v${{ env.COMPONENT_VERSION }}"
         if: steps.check_manifest.outputs.changed == 'true' && steps.check_tag.outputs.exists != 'true' && contains(env.COMPONENT_VERSION, 'beta') == true
+
+      - name: "Add bundled flower card notes"
+        run: |
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^)
+          python3 scripts/flower_card_notes.py --since-tag "$PREVIOUS_TAG" > card-notes.md
+          if [ -s card-notes.md ]; then
+            gh release view "v${{ env.COMPONENT_VERSION }}" --json body --jq .body > release-notes.md
+            printf '\n' >> release-notes.md
+            cat card-notes.md >> release-notes.md
+            gh release edit "v${{ env.COMPONENT_VERSION }}" --notes-file release-notes.md
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if: steps.check_manifest.outputs.changed == 'true' && steps.check_tag.outputs.exists != 'true'

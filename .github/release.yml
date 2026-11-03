@@ -12,6 +12,8 @@ changelog:
       - ci
       - github_actions
       - dependencies
+      # Listed in their own section by the Auto Release workflow.
+      - flower-card
   categories:
     - title: 🚀 Features & Enhancements
       labels:
