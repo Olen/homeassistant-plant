@@ -220,3 +220,13 @@ async def test_yaml_mode_own_url_listed_is_not_injected(hass: HomeAssistant) -> 
 
     add_js.assert_not_called()
     assert _issue(hass) is None
+
+
+def test_fragments_are_ignored() -> None:
+    items = [
+        {"id": "1", "type": "module", "url": "/local/flower-card.js#v1"},
+        {"id": "2", "type": "module", "url": "/plant/flower-card.js#v1"},
+    ]
+
+    assert find_other_flower_cards(items) == ["/local/flower-card.js#v1"]
+    assert [item["id"] for item in find_own_resources(items)] == ["2"]

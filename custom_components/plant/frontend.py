@@ -40,8 +40,8 @@ def card_url(version: str) -> str:
 
 
 def url_path(url: str) -> str:
-    """Return a URL without its query string."""
-    return url.split("?", 1)[0]
+    """Return a URL without its query string and fragment."""
+    return url.split("#", 1)[0].split("?", 1)[0]
 
 
 def find_other_flower_cards(items: Iterable[dict]) -> list[str]:
