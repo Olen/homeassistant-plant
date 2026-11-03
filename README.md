@@ -78,6 +78,8 @@ The [OpenPlantbook integration](https://github.com/Olen/home-assistant-openplant
 
 After restart, add plants via **Settings** → **Devices & Services** → **Add Integration** → **Plant Monitor**.
 
+The [Flower Card](https://github.com/Olen/lovelace-flower-card/) comes with Plant Monitor. If you installed it separately before, Home Assistant shows a repair asking you to remove that copy.
+
 ---
 
 ## 🔧 Setup & Configuration
