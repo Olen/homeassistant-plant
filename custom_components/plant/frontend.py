@@ -105,19 +105,52 @@ async def async_sync_storage_resource(
         return
 
     first, *extra = own
-    if first["url"] != wanted["url"]:
+    if first["url"] != wanted["url"] or first["type"] != wanted["res_type"]:
         await resources.async_update_item(first["id"], wanted)
     for item in extra:
         await resources.async_delete_item(item["id"])
 
 
+# The collection awaits listeners inside each write, plant's own included, so passes nest
+class StorageResourceSync:
+    """Run the storage sync one pass at a time, repeating it for changes made meanwhile."""
+
+    def __init__(
+        self, hass: HomeAssistant, resources: ResourceStorageCollection, version: str
+    ) -> None:
+        """Store what each pass needs."""
+        self._hass = hass
+        self._resources = resources
+        self._version = version
+        self._running = False
+        self._changed_meanwhile = False
+
+    async def async_run(self, *_args: object) -> None:
+        """Sync now, or mark that the running pass must go round again."""
+        if self._running:
+            self._changed_meanwhile = True
+            return
+
+        self._running = True
+        try:
+            self._changed_meanwhile = True
+            while self._changed_meanwhile:
+                self._changed_meanwhile = False
+                await async_sync_storage_resource(
+                    self._hass, self._resources, self._version
+                )
+        finally:
+            self._running = False
+
+
 def sync_yaml_resource(
     hass: HomeAssistant, resources: ResourceYAMLCollection, version: str
 ) -> None:
-    """Load the card as an extra module unless another copy is listed."""
-    others = find_other_flower_cards(resources.async_items())
+    """Load the card as an extra module unless a copy is already listed."""
+    items = resources.async_items()
+    others = find_other_flower_cards(items)
     update_other_card_issue(hass, others)
-    if not others:
+    if not others and not find_own_resources(items):
         add_extra_js_url(hass, card_url(version))
 
 
@@ -134,12 +167,9 @@ async def async_setup_card(hass: HomeAssistant) -> None:
 
     resources = lovelace.resources
     if isinstance(resources, ResourceStorageCollection):
-        await async_sync_storage_resource(hass, resources, version)
-
-        async def _resources_changed(*_args) -> None:
-            await async_sync_storage_resource(hass, resources, version)
-
-        resources.async_add_listener(_resources_changed)
+        sync = StorageResourceSync(hass, resources, version)
+        await sync.async_run()
+        resources.async_add_listener(sync.async_run)
     elif isinstance(resources, ResourceYAMLCollection):
         sync_yaml_resource(hass, resources, version)
     else:

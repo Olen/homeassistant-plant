@@ -178,3 +178,45 @@ async def test_unknown_resource_collection_raises(hass: HomeAssistant) -> None:
 
     with pytest.raises(TypeError):
         await async_setup_card(hass)
+
+
+async def test_wrong_type_is_restored(hass: HomeAssistant) -> None:
+    resources = await _storage_resources(hass, [])
+    await async_setup_card(hass)
+    own_id = resources.async_items()[0]["id"]
+
+    await resources.async_update_item(own_id, {"res_type": "css"})
+    await hass.async_block_till_done()
+
+    assert [(item["type"], item["url"]) for item in resources.async_items()] == [
+        ("module", OWN_URL)
+    ]
+
+
+async def test_nested_change_does_not_delete_twice(hass: HomeAssistant) -> None:
+    resources = await _storage_resources(hass, [HACS_URL])
+    await async_setup_card(hass)
+    # Two own resources appear at once, without a change notification
+    for item_id in ("own1", "own2"):
+        resources.data[item_id] = {"id": item_id, "type": "module", "url": OWN_URL}
+
+    await resources.async_create_item({"res_type": "css", "url": "/local/theme.css"})
+    await hass.async_block_till_done()
+
+    assert sorted(item["url"] for item in resources.async_items()) == [
+        HACS_URL,
+        "/local/theme.css",
+    ]
+
+
+async def test_yaml_mode_own_url_listed_is_not_injected(hass: HomeAssistant) -> None:
+    await _setup_lovelace(
+        hass,
+        {"resource_mode": "yaml", "resources": [{"url": OWN_URL, "type": "module"}]},
+    )
+
+    with patch("custom_components.plant.frontend.add_extra_js_url") as add_js:
+        await async_setup_card(hass)
+
+    add_js.assert_not_called()
+    assert _issue(hass) is None
