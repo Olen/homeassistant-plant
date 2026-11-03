@@ -238,5 +238,11 @@
     "plant_entity_not_added": {
       "message": "Plante-entiteten {entity_id} ble ikke lagt til i Home Assistant, kanskje fordi den unike ID-en allerede er i bruk."
     }
+  },
+  "issues": {
+    "other_flower_card": {
+      "title": "Flower card er installert to ganger",
+      "description": "Flower card følger nå med Plant Monitor-integrasjonen. Dashbordene dine laster også en annen kopi: {urls}\n\nFjern den kopien: avinstaller Flower Card i HACS, eller slett ressursen under Innstillinger → Dashbord → Ressurser hvis du la den til selv. Dashbordene fortsetter å virke, og Plant Monitor tar over kortet så snart den andre kopien er borte. Last inn nettleseren på nytt etterpå."
+    }
   }
 }
