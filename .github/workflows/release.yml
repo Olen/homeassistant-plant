@@ -9,13 +9,17 @@ on:
 
 permissions:
   contents: write
+  pull-requests: read
 
 jobs:
   auto-release:
     name: "Auto Release"
     runs-on: "ubuntu-latest"
-    # Only run if CI succeeded
-    if: github.event.workflow_run.conclusion == 'success'
+    # Only after CI succeeds on a push to this repository (a fork's branch can also be named main)
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
     steps:
       - name: "Checkout code"
         uses: actions/checkout@v7
@@ -84,3 +88,18 @@ jobs:
           name: "Version ${{ env.COMPONENT_VERSION }}"
           tag_name: "v${{ env.COMPONENT_VERSION }}"
         if: steps.check_manifest.outputs.changed == 'true' && steps.check_tag.outputs.exists != 'true' && contains(env.COMPONENT_VERSION, 'beta') == true
+
+      - name: "Add bundled flower card notes"
+        run: |
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^)
+          python3 scripts/flower_card_notes.py --since-tag "$PREVIOUS_TAG" --release-ref HEAD > card-notes.md
+          if [ -s card-notes.md ]; then
+            gh release view "v$VERSION" --json body --jq .body > release-notes.md
+            printf '\n' >> release-notes.md
+            cat card-notes.md >> release-notes.md
+            gh release edit "v$VERSION" --notes-file release-notes.md
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ env.COMPONENT_VERSION }}
+        if: steps.check_manifest.outputs.changed == 'true' && steps.check_tag.outputs.exists != 'true'

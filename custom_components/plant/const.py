@@ -5,6 +5,12 @@ from datetime import timedelta
 DOMAIN = "plant"
 DOMAIN_PLANTBOOK = "openplantbook"
 
+# Bundled flower card
+CARD_FILENAME = "flower-card.js"
+CARD_VERSION_FILENAME = "flower-card.version"
+CARD_URL_PATH = "/plant/flower-card.js"
+ISSUE_OTHER_FLOWER_CARD = "other_flower_card"
+
 # URL patterns
 URL_SCHEME_HTTP = "http"
 URL_SCHEME_MEDIA_SOURCE = "media-source://"
