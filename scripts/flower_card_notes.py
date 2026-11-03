@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Print the flower card section for a plant release.
 
 Reads the card notes from the bodies of `flower-card` PRs merged since a tag.
