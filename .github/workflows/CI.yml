@@ -64,7 +64,7 @@ jobs:
             pytest-ha-version: "==0.13.320"
           # Latest HA prerelease/beta (NON-BLOCKING, see continue-on-error), so
           # breakage in an upcoming HA release surfaces here before users see it.
-          # Tested with the official pytest-home-assistant, which replaced
+          # Tested with the official pytest-homeassistant, which replaced
           # pytest-homeassistant-custom-component in HA 2026.11.
           - ha-version: "beta"
             pytest-ha-version: ""
@@ -104,19 +104,19 @@ jobs:
         if: matrix.ha-version != 'beta'
         run: uv pip install --no-cache "pytest-homeassistant-custom-component${{ matrix.pytest-ha-version }}"
 
-      - name: Install the newest HA prerelease and pytest-home-assistant (beta job only)
+      - name: Install the newest HA prerelease and pytest-homeassistant (beta job only)
         if: matrix.ha-version == 'beta'
-        # pytest-home-assistant must match the installed HA. It is not on PyPI
-        # yet, so it comes from the core tag of that HA version.
+        # pytest-homeassistant must match the installed HA; HA publishes it on
+        # PyPI with the same version number.
         run: |
           uv pip install --no-cache --prerelease=allow --upgrade homeassistant
           HA_VERSION=$(.venv/bin/python -c "from homeassistant.const import __version__; print(__version__)")
-          uv pip install --no-cache "pytest-home-assistant @ git+https://github.com/home-assistant/core@${HA_VERSION}#subdirectory=packages/pytest-home-assistant"
+          uv pip install --no-cache "pytest-homeassistant==${HA_VERSION}"
 
       - name: Show installed versions
         run: |
           .venv/bin/python -c "from homeassistant.const import __version__; print(f'Home Assistant version: {__version__}')"
-          uv pip show --python .venv/bin/python pytest-home-assistant pytest-homeassistant-custom-component 2>/dev/null | grep -E "^(Name|Version)" || true
+          uv pip show --python .venv/bin/python pytest-homeassistant pytest-homeassistant-custom-component 2>/dev/null | grep -E "^(Name|Version)" || true
           uv pip show --python .venv/bin/python pycares aiodns | grep -E "^(Name|Version)"
 
       - name: Run tests
