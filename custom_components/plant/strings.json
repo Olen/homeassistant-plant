@@ -830,5 +830,11 @@
     "plant_entity_not_added": {
       "message": "The plant entity {entity_id} was not added to Home Assistant, possibly because its unique ID is already in use."
     }
+  },
+  "issues": {
+    "other_flower_card": {
+      "title": "Flower card is installed twice",
+      "description": "The flower card now comes with the Plant Monitor integration. Your dashboards also load another copy: {urls}\n\nRemove that copy: uninstall Flower Card in HACS, or delete the resource you added yourself (under Settings → Dashboards → Resources, or from the `lovelace` resources in your YAML configuration). Your dashboards keep working in the meantime. Plant Monitor takes over as soon as the other copy is gone; if your resources are in YAML, restart Home Assistant first. Refresh the browser afterwards."
+    }
   }
 }

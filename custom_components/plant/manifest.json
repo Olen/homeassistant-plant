@@ -7,7 +7,9 @@
     "openplantbook",
     "integration",
     "statistics",
-    "utility_meter"
+    "utility_meter",
+    "frontend",
+    "lovelace"
   ],
   "categories": [
     "garden_plants"
@@ -16,6 +18,9 @@
     "@Olen"
   ],
   "config_flow": true,
+  "dependencies": [
+    "http"
+  ],
   "documentation": "https://github.com/Olen/homeassistant-plant/",
   "issue_tracker": "https://github.com/Olen/homeassistant-plant/issues",
   "requirements": [

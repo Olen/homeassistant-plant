@@ -15,6 +15,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr, entity_registry as er
+from homeassistant.setup import async_setup_component
 
 from custom_components.plant import DATA_COMPONENT, async_setup
 from custom_components.plant.const import (
@@ -2221,6 +2222,11 @@ class TestHysteresis:
 
 class TestYamlImport:
     """Tests for YAML configuration import (async_setup)."""
+
+    @pytest.fixture(autouse=True)
+    async def setup_http(self, hass: HomeAssistant) -> None:
+        """Set up http, which HA does before plant's async_setup."""
+        assert await async_setup_component(hass, "http", {})
 
     async def test_async_setup_no_yaml_config(
         self,

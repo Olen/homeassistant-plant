@@ -97,6 +97,7 @@ from .const import (
     STATE_HIGH,
     STATE_LOW,
 )
+from .frontend import async_setup_card
 from .plant_helpers import PlantHelper
 
 _LOGGER = logging.getLogger(__name__)
@@ -229,6 +230,8 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
                 "Please remove the '%s:' section from configuration.yaml",
                 DOMAIN,
             )
+
+    await async_setup_card(hass)
     return True
 
 
