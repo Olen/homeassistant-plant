@@ -61,11 +61,7 @@ The [OpenPlantbook integration](https://github.com/Olen/home-assistant-openplant
 - Add your `client_id` and `secret` in the integration config
 - Test with the `openplantbook.search` action
 
-### 2. Install the Flower Card *(optional)*
-
-[Lovelace Flower Card v2](https://github.com/Olen/lovelace-flower-card/) is the recommended card for displaying plant data. Install via HACS or manually.
-
-### 3. Install Plant Monitor
+### 2. Install Plant Monitor
 
 #### Via HACS
 
@@ -396,7 +392,7 @@ When OpenPlantbook has care information for a species, the plant device exposes 
 
 ## 🃏 Lovelace Card
 
-The [Lovelace Flower Card](https://github.com/Olen/lovelace-flower-card/) is designed to work with this integration.
+The [Lovelace Flower Card](https://github.com/Olen/lovelace-flower-card/) comes with this integration, so there is nothing extra to install. Its options and documentation are in the [flower card repository](https://github.com/Olen/lovelace-flower-card/).
 
 ![Flower card light](https://user-images.githubusercontent.com/203184/183286657-824a0e7f-a140-4d8e-8d6a-387070419dfd.png)
 ![Flower card dark](https://user-images.githubusercontent.com/203184/183286691-02294d6b-84cf-46e6-9070-845d00f24a14.png)
