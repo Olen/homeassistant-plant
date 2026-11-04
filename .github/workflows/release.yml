@@ -94,12 +94,9 @@ jobs:
           PREVIOUS_TAG=$(python3 scripts/previous_release_tag.py "$VERSION")
           gh api "repos/$GITHUB_REPOSITORY/releases/generate-notes" \
             -f tag_name="v$VERSION" -f previous_tag_name="$PREVIOUS_TAG" --jq .body > release-notes.md
-          python3 scripts/flower_card_notes.py --since-tag "$PREVIOUS_TAG" --release-ref HEAD > card-notes.md
-          if [ -s card-notes.md ]; then
-            printf '\n' >> release-notes.md
-            cat card-notes.md >> release-notes.md
-          fi
-          gh release edit "v$VERSION" --notes-file release-notes.md
+          python3 scripts/flower_card_notes.py --since-tag "$PREVIOUS_TAG" --release-ref HEAD \
+            --release-notes release-notes.md > release-notes-with-card.md
+          gh release edit "v$VERSION" --notes-file release-notes-with-card.md
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ env.COMPONENT_VERSION }}
