@@ -4,7 +4,12 @@ from __future__ import annotations
 
 import pytest
 
-from scripts.flower_card_notes import card_section, extract_notes, pr_numbers_in_log
+from scripts.flower_card_notes import (
+    add_card_section,
+    card_section,
+    extract_notes,
+    pr_numbers_in_log,
+)
 
 BODY = (
     "Bundles flower card 2026.11.1.\n\n"
@@ -36,6 +41,50 @@ def test_card_section_keeps_order() -> None:
 
     assert section.startswith("## 🌸 Flower card\n\n* Fix A")
     assert section.index("Fix A") < section.index("Fix B")
+
+
+def test_card_section_is_one_list() -> None:
+    second = BODY.replace("Fix A", "Fix B").replace("390", "391")
+
+    section = card_section([BODY, second])
+
+    assert "pull/390\n* Fix B" in section
+
+
+SECTION = "## 🌸 Flower card\n\n* Fix A\n"
+WHATS_CHANGED = "## What's Changed\n* Fix X by @Olen in https://example/pull/1\n\n"
+NEW_CONTRIBUTORS = "## New Contributors\n* @someone made their first contribution\n\n"
+FULL_CHANGELOG = "**Full Changelog**: https://example/compare/v1...v2"
+
+
+def test_add_card_section_above_new_contributors() -> None:
+    notes = WHATS_CHANGED + NEW_CONTRIBUTORS + FULL_CHANGELOG
+
+    assert add_card_section(notes, SECTION) == (
+        WHATS_CHANGED + SECTION + "\n" + NEW_CONTRIBUTORS + FULL_CHANGELOG
+    )
+
+
+def test_add_card_section_above_full_changelog() -> None:
+    notes = WHATS_CHANGED + FULL_CHANGELOG
+
+    assert add_card_section(notes, SECTION) == (
+        WHATS_CHANGED + SECTION + "\n" + FULL_CHANGELOG
+    )
+
+
+def test_add_card_section_appends_without_trailing_parts() -> None:
+    notes = "## What's Changed\n* Fix X\n"
+
+    assert (
+        add_card_section(notes, SECTION) == "## What's Changed\n* Fix X\n\n" + SECTION
+    )
+
+
+def test_add_card_section_empty_section_leaves_notes() -> None:
+    notes = WHATS_CHANGED + FULL_CHANGELOG
+
+    assert add_card_section(notes, "") == notes
 
 
 def test_pr_numbers_in_log() -> None:
