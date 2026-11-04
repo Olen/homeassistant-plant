@@ -68,9 +68,8 @@ jobs:
           message: "Version ${{ env.COMPONENT_VERSION }}"
         if: steps.check_manifest.outputs.changed == 'true' && steps.check_tag.outputs.exists != 'true'
 
-      # GitHub's native release notes: auto-detects the previous tag (so a beta's
-      # notes don't span back to the last stable) and buckets PRs by label per
-      # .github/release.yml. Replaces the raw changelog-generator dump.
+      # GitHub's notes, bucketed by label per .github/release.yml; the notes step
+      # below regenerates them from the right previous release
       - name: "Create Stable release"
         uses: softprops/action-gh-release@v3
         with:
@@ -89,16 +88,18 @@ jobs:
           tag_name: "v${{ env.COMPONENT_VERSION }}"
         if: steps.check_manifest.outputs.changed == 'true' && steps.check_tag.outputs.exists != 'true' && contains(env.COMPONENT_VERSION, 'beta') == true
 
-      - name: "Add bundled flower card notes"
+      # A stable release lists everything since the previous stable one, betas included
+      - name: "Release notes since the previous release"
         run: |
-          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^)
+          PREVIOUS_TAG=$(python3 scripts/previous_release_tag.py "$VERSION")
+          gh api "repos/$GITHUB_REPOSITORY/releases/generate-notes" \
+            -f tag_name="v$VERSION" -f previous_tag_name="$PREVIOUS_TAG" --jq .body > release-notes.md
           python3 scripts/flower_card_notes.py --since-tag "$PREVIOUS_TAG" --release-ref HEAD > card-notes.md
           if [ -s card-notes.md ]; then
-            gh release view "v$VERSION" --json body --jq .body > release-notes.md
             printf '\n' >> release-notes.md
             cat card-notes.md >> release-notes.md
-            gh release edit "v$VERSION" --notes-file release-notes.md
           fi
+          gh release edit "v$VERSION" --notes-file release-notes.md
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ env.COMPONENT_VERSION }}
