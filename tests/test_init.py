@@ -60,7 +60,7 @@ class TestIntegrationSetup:
             restore_mock,
         ):
             await hass.config_entries.async_setup(mock_config_entry.entry_id)
-            await hass.async_block_till_done()
+            await hass.async_block_till_done(wait_background_tasks=True)
 
         restore_mock.assert_awaited_once_with(
             TEST_PLANT_SPECIES,
