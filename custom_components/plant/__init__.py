@@ -38,6 +38,7 @@ from homeassistant.helpers.entity import Entity, async_generate_entity_id
 from homeassistant.helpers.entity_component import EntityComponent
 from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.restore_state import RestoreEntity
+from homeassistant.helpers.start import async_at_started
 from homeassistant.util import dt as dt_util
 
 from . import group as group
@@ -272,6 +273,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data[DATA_UTILITY].setdefault(entry.entry_id, {})
     hass.data[DATA_UTILITY][entry.entry_id].setdefault(DATA_TARIFF_SENSORS, [])
     hass.data[DATA_UTILITY][entry.entry_id][DATA_TARIFF_SENSORS].append(plant.dli)
+
+    # Wait for startup so OpenPlantbook is loaded before we ask it.
+    async def _restore_missing_image(hass: HomeAssistant) -> None:
+        entry.async_create_background_task(
+            hass,
+            PlantHelper(hass).restore_missing_image(
+                plant.species, plant.entity_picture
+            ),
+            f"plant restore image {entry.entry_id}",
+        )
+
+    entry.async_on_unload(async_at_started(hass, _restore_missing_image))
 
     #
     # Service call to replace sensors

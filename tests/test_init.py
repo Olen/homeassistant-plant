@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntryState
 from homeassistant.const import (
+    ATTR_ENTITY_PICTURE,
     STATE_OK,
     STATE_PROBLEM,
     STATE_UNAVAILABLE,
@@ -28,7 +29,7 @@ from custom_components.plant.const import (
 )
 
 from .common import set_external_sensor_states, update_plant_sensors
-from .conftest import TEST_PLANT_NAME, device_info_field
+from .conftest import TEST_PLANT_NAME, TEST_PLANT_SPECIES, device_info_field
 from .ha_common import MockConfigEntry
 
 
@@ -44,6 +45,29 @@ class TestIntegrationSetup:
         assert DOMAIN in hass.data
         assert init_integration.entry_id in hass.data[DOMAIN]
         assert ATTR_PLANT in hass.data[DOMAIN][init_integration.entry_id]
+
+    async def test_setup_entry_restores_missing_image(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+        mock_external_sensors: None,
+    ) -> None:
+        """Setting up a plant checks its image with the plant's species."""
+        restore_mock = AsyncMock()
+        mock_config_entry.add_to_hass(hass)
+        with patch(
+            "custom_components.plant.plant_helpers.PlantHelper.restore_missing_image",
+            restore_mock,
+        ):
+            await hass.config_entries.async_setup(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+        restore_mock.assert_awaited_once_with(
+            TEST_PLANT_SPECIES,
+            mock_config_entry.data[FLOW_PLANT_INFO][ATTR_ENTITY_PICTURE],
+        )
+        await hass.config_entries.async_unload(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
 
     async def test_setup_entry_creates_device(
         self,

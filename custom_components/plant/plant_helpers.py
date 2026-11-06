@@ -301,6 +301,35 @@ class PlantHelper:
             _LOGGER.warning("Image URL validation failed for %s: %s", url, ex)
             return False
 
+    async def restore_missing_image(
+        self, species: str | None, entity_picture: str | None
+    ) -> None:
+        """Download a plant's missing /local/ image again from OpenPlantbook."""
+        if not entity_picture or not entity_picture.startswith("/local/"):
+            return
+        if not species or not self.has_openplantbook:
+            return
+        if await self.validate_image_url(entity_picture):
+            return
+
+        # Bypass the cache: OpenPlantbook only downloads images on a real fetch.
+        opb_plant = await self.openplantbook_get(species, cache=False)
+        if opb_plant is None:
+            return
+
+        opb_image = opb_plant.get(FLOW_PLANT_IMAGE)
+        if opb_image == entity_picture:
+            _LOGGER.info("Downloaded the missing image %s again", entity_picture)
+        else:
+            _LOGGER.warning(
+                "Image %s is missing and OpenPlantbook did not recreate it "
+                "(its image for %s is %s). Turn on image downloads in "
+                "OpenPlantbook, or choose a new image for the plant",
+                entity_picture,
+                species,
+                opb_image,
+            )
+
     async def generate_configentry(self, config: dict[str, Any]) -> dict[str, Any]:
         """Generates a config-entry dict from current data and/or OPB"""
 

@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from collections.abc import Iterator
+from contextlib import contextmanager
+from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 import aiohttp
 from homeassistant.const import ATTR_ENTITY_PICTURE, ATTR_NAME
@@ -578,6 +580,119 @@ class TestToIntHelper:
 
         assert _to_int(42.5, 0) == 42
         assert _to_int(42.9, 0) == 42  # int() truncates, doesn't round
+
+
+LOCAL_IMAGE = "/local/images/plants/monstera deliciosa.jpg"
+
+
+@contextmanager
+def _restore_dependencies(
+    file_exists: bool, opb_result: dict | None, has_openplantbook: bool = True
+) -> Iterator[AsyncMock]:
+    """Patch what restore_missing_image depends on; yield the get mock."""
+    get_mock = AsyncMock(return_value=opb_result)
+    with (
+        patch.object(
+            PlantHelper,
+            "has_openplantbook",
+            new_callable=PropertyMock,
+            return_value=has_openplantbook,
+        ),
+        patch.object(
+            PlantHelper, "validate_image_url", AsyncMock(return_value=file_exists)
+        ),
+        patch.object(PlantHelper, "openplantbook_get", get_mock),
+    ):
+        yield get_mock
+
+
+class TestRestoreMissingImage:
+    """Tests for downloading a plant's missing local image again."""
+
+    async def test_missing_file_fetches_species_without_cache(
+        self, hass: HomeAssistant, caplog
+    ) -> None:
+        """A missing /local/ image triggers an uncached OpenPlantbook get."""
+        with _restore_dependencies(
+            file_exists=False, opb_result={"image_url": LOCAL_IMAGE}
+        ) as get_mock:
+            await PlantHelper(hass).restore_missing_image(
+                "monstera deliciosa", LOCAL_IMAGE
+            )
+
+        get_mock.assert_awaited_once_with("monstera deliciosa", cache=False)
+        assert "Downloaded the missing image" in caplog.text
+
+    async def test_existing_file_does_nothing(self, hass: HomeAssistant) -> None:
+        """An image that is on disk is left alone."""
+        with _restore_dependencies(
+            file_exists=True, opb_result={"image_url": LOCAL_IMAGE}
+        ) as get_mock:
+            await PlantHelper(hass).restore_missing_image(
+                "monstera deliciosa", LOCAL_IMAGE
+            )
+
+        get_mock.assert_not_awaited()
+
+    async def test_remote_image_does_nothing(self, hass: HomeAssistant) -> None:
+        """Only /local/ images can be restored."""
+        with _restore_dependencies(file_exists=False, opb_result=None) as get_mock:
+            await PlantHelper(hass).restore_missing_image(
+                "monstera deliciosa", "https://example.com/plant.jpg"
+            )
+            await PlantHelper(hass).restore_missing_image(
+                "monstera deliciosa", "media-source://media_source/local/plant.jpg"
+            )
+            await PlantHelper(hass).restore_missing_image("monstera deliciosa", None)
+
+        get_mock.assert_not_awaited()
+
+    async def test_without_openplantbook_does_nothing(
+        self, hass: HomeAssistant
+    ) -> None:
+        """Nothing is fetched when OpenPlantbook is not installed."""
+        with _restore_dependencies(
+            file_exists=False, opb_result=None, has_openplantbook=False
+        ) as get_mock:
+            await PlantHelper(hass).restore_missing_image(
+                "monstera deliciosa", LOCAL_IMAGE
+            )
+
+        get_mock.assert_not_awaited()
+
+    async def test_without_species_does_nothing(self, hass: HomeAssistant) -> None:
+        """A plant without a species has nothing to fetch."""
+        with _restore_dependencies(file_exists=False, opb_result=None) as get_mock:
+            await PlantHelper(hass).restore_missing_image("", LOCAL_IMAGE)
+
+        get_mock.assert_not_awaited()
+
+    async def test_other_image_from_openplantbook_warns(
+        self, hass: HomeAssistant, caplog
+    ) -> None:
+        """A user-chosen image that OpenPlantbook cannot recreate is reported."""
+        with _restore_dependencies(
+            file_exists=False,
+            opb_result={"image_url": "/local/images/plants/other.jpg"},
+        ) as get_mock:
+            await PlantHelper(hass).restore_missing_image(
+                "monstera deliciosa", "/local/my own photo.jpg"
+            )
+
+        get_mock.assert_awaited_once()
+        assert "choose a new image for the plant" in caplog.text
+
+    async def test_species_not_found_is_quiet(
+        self, hass: HomeAssistant, caplog
+    ) -> None:
+        """openplantbook_get reports a missing species itself; no extra warning."""
+        with _restore_dependencies(file_exists=False, opb_result=None) as get_mock:
+            await PlantHelper(hass).restore_missing_image(
+                "monstera deliciosa", LOCAL_IMAGE
+            )
+
+        get_mock.assert_awaited_once()
+        assert "choose a new image" not in caplog.text
 
 
 class TestImageValidation:
