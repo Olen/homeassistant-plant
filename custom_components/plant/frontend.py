@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Iterable
 from pathlib import Path
+from urllib.parse import unquote
 
 from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.components.http import StaticPathConfig
@@ -63,7 +64,7 @@ LOCAL_PREFIXES = {"/local/": ("www",), "/hacsfiles/": ("www", "community")}
 
 def resource_file(hass: HomeAssistant, url: str) -> Path | None:
     """Return the file a resource URL serves, or None when it is not a local file."""
-    path = url_path(url)
+    path = unquote(url_path(url))
     for prefix, folders in LOCAL_PREFIXES.items():
         if path.startswith(prefix):
             return Path(hass.config.path(*folders, path.removeprefix(prefix)))
@@ -146,9 +147,11 @@ async def async_sync_storage_resource(
 ) -> None:
     """Keep exactly one plant resource, or none while another copy is loaded."""
     await resources.async_get_info()
-    items = resources.async_items()
-    others = await async_other_copies(hass, items)
-    own = find_own_resources(items)
+    others = await async_other_copies(hass, resources.async_items())
+    # Read our own entries after the file check: they may have changed while
+    # it ran, and writing to a deleted entry would fail. A change made then also
+    # makes StorageResourceSync go round again, so a stale `others` is redone.
+    own = find_own_resources(resources.async_items())
 
     if others:
         for item in own:

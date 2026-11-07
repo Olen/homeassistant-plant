@@ -12,6 +12,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.setup import async_setup_component
 
+from custom_components.plant import frontend
 from custom_components.plant.const import (
     DOMAIN,
     ISSUE_MISSING_FLOWER_CARD,
@@ -315,3 +316,26 @@ def test_a_remote_card_counts_as_installed(hass: HomeAssistant) -> None:
     url = "https://cdn.example.com/flower-card.js"
     assert resource_file(hass, url) is None
     assert split_by_file(hass, [url]) == ([url], [])
+
+
+def test_resource_file_decodes_the_path(hass: HomeAssistant) -> None:
+    assert resource_file(hass, "/local/old%20cards/flower-card.js") == Path(
+        hass.config.path("www", "old cards", "flower-card.js")
+    )
+
+
+async def test_own_resource_deleted_during_the_file_check(hass: HomeAssistant) -> None:
+    """Our entry disappears while the file check runs; the sync must not fail."""
+    resources = await _storage_resources(hass, [OWN_URL])
+    own_id = resources.async_items()[0]["id"]
+    real_check = frontend.async_other_copies
+
+    async def delete_own_meanwhile(hass, items):
+        if own_id in resources.data:
+            resources.data.pop(own_id)
+        return await real_check(hass, items)
+
+    with patch.object(frontend, "async_other_copies", delete_own_meanwhile):
+        await async_setup_card(hass)
+
+    assert [item["url"] for item in resources.async_items()] == [OWN_URL]
