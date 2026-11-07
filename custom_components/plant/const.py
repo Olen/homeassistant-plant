@@ -10,6 +10,7 @@ CARD_FILENAME = "flower-card.js"
 CARD_VERSION_FILENAME = "flower-card.version"
 CARD_URL_PATH = "/plant/flower-card.js"
 ISSUE_OTHER_FLOWER_CARD = "other_flower_card"
+ISSUE_MISSING_FLOWER_CARD = "missing_flower_card"
 
 # URL patterns
 URL_SCHEME_HTTP = "http"

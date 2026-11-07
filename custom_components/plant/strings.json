@@ -834,7 +834,11 @@
   "issues": {
     "other_flower_card": {
       "title": "Flower card is installed twice",
-      "description": "The flower card now comes with the Plant Monitor integration. Your dashboards also load another copy: {urls}\n\nRemove that copy: uninstall Flower Card in HACS, or delete the resource you added yourself (under Settings → Dashboards → Resources, or from the `lovelace` resources in your YAML configuration). Your dashboards keep working in the meantime. Plant Monitor takes over as soon as the other copy is gone; if your resources are in YAML, restart Home Assistant first. Refresh the browser afterwards."
+      "description": "The flower card now comes with the Plant Monitor integration. Your dashboards also load another copy: {urls}\n\nRemove that copy: uninstall Flower Card in the Marketplace (HACS before Home Assistant 2026.11), or delete the resource you added yourself (under Settings → Dashboards → Resources, or from the `lovelace` resources in your YAML configuration). Your dashboards keep working in the meantime. Plant Monitor takes over as soon as the other copy is gone; if your resources are in YAML, restart Home Assistant first. Refresh the browser afterwards."
+    },
+    "missing_flower_card": {
+      "title": "A dashboard resource points to a removed flower card",
+      "description": "Your dashboard resources still list a flower card whose file is gone: {urls}\n\nThat entry no longer counts as an installed card, so it does not stop Plant Monitor from loading its own. Delete the leftover resource under Settings → Dashboards → Resources, or from the `lovelace` resources in your YAML configuration, to stop the browser asking for the missing file."
     }
   }
 }
