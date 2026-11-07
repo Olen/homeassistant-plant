@@ -254,7 +254,7 @@ Core Home Assistant ships generic purpose triggers too, like `temperature.crosse
 - **Per-measurement status:** `plant.<measurement>_became_low` / `_became_high` / `_became_ok`, for `moisture`, `conductivity`, `temperature`, `soil_temperature`, `humidity`, `illuminance`, `co2`, `dli`, `vpd`. Conditions: `plant.<measurement>_is_low` / `_is_high` / `_is_ok`.
 - **Stale source sensor:** `plant.<measurement>_sensor_became_stale` / `_became_fresh`, for the externally-sourced measurements only — `moisture`, `conductivity`, `temperature`, `soil_temperature`, `humidity`, `illuminance`, `co2` (not `dli`/`vpd`, which are derived rather than sensor-backed). Condition: `plant.<measurement>_sensor_is_stale`.
 
-  "Stale" means the source sensor is `unavailable`/`unknown`, or simply hasn't updated within a window (`for`, default **24 hours**). A grace period means it does **not** false-alarm at restart, when a sensor briefly reads `unknown` before its own integration populates it — staleness only fires once the source is genuinely still dead after the full window elapses.
+  "Stale" means the source sensor is `unavailable`/`unknown`, or simply hasn't reported within a window (`for`, default **24 hours**). A sensor that keeps reporting the same value counts as reporting. A grace period means it does **not** false-alarm at restart, when a sensor briefly reads `unknown` before its own integration populates it — staleness only fires once the source is genuinely still dead after the full window elapses.
 
 ### Targeting
 

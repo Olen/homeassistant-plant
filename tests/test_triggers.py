@@ -275,6 +275,42 @@ async def test_moisture_sensor_became_stale_on_no_update(
     assert len(events) == 1
 
 
+async def test_moisture_sensor_same_value_reports_keep_it_fresh(
+    hass: HomeAssistant, init_integration, freezer
+) -> None:
+    """A sensor reporting an unchanged value is alive, not stale."""
+    plant_id = _plant_entity_id(hass, init_integration)
+    hass.states.async_set("sensor.test_moisture", "42")
+    await hass.async_block_till_done()
+    events = async_capture_events(hass, "stale")
+    assert await async_setup_component(
+        hass,
+        "automation",
+        {
+            "automation": {
+                "trigger": {
+                    "trigger": "plant.moisture_sensor_became_stale",
+                    "target": {"entity_id": plant_id},
+                    "options": {"for": {"seconds": 30}},
+                },
+                "action": {"event": "stale"},
+            }
+        },
+    )
+    await hass.async_block_till_done()
+    for _ in range(3):
+        freezer.tick(timedelta(seconds=20))
+        hass.states.async_set("sensor.test_moisture", "42")
+        async_fire_time_changed(hass)
+        await hass.async_block_till_done()
+    assert len(events) == 0
+    # Silence for longer than the window is still stale.
+    freezer.tick(timedelta(seconds=31))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    assert len(events) == 1
+
+
 async def test_moisture_sensor_became_fresh_on_recovery(
     hass: HomeAssistant, init_integration
 ) -> None:
