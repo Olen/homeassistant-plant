@@ -21,6 +21,7 @@ from .const import (
     CARD_URL_PATH,
     CARD_VERSION_FILENAME,
     DOMAIN,
+    ISSUE_MISSING_FLOWER_CARD,
     ISSUE_OTHER_FLOWER_CARD,
 )
 
@@ -55,6 +56,36 @@ def find_other_flower_cards(items: Iterable[dict]) -> list[str]:
     return others
 
 
+# Where Home Assistant serves files from the config folder, and where the
+# Marketplace (and HACS before it) serves dashboard cards.
+LOCAL_PREFIXES = {"/local/": ("www",), "/hacsfiles/": ("www", "community")}
+
+
+def resource_file(hass: HomeAssistant, url: str) -> Path | None:
+    """Return the file a resource URL serves, or None when it is not a local file."""
+    path = url_path(url)
+    for prefix, folders in LOCAL_PREFIXES.items():
+        if path.startswith(prefix):
+            return Path(hass.config.path(*folders, path.removeprefix(prefix)))
+    return None
+
+
+def split_by_file(hass: HomeAssistant, urls: list[str]) -> tuple[list[str], list[str]]:
+    """Split resource URLs into installed copies and leftovers whose file is gone.
+
+    A URL that is not a local file (another server, a CDN) cannot be checked,
+    so it counts as installed.
+    """
+    installed, missing = [], []
+    for url in urls:
+        file = resource_file(hass, url)
+        if file is None or file.is_file():
+            installed.append(url)
+        else:
+            missing.append(url)
+    return installed, missing
+
+
 def find_own_resources(items: Iterable[dict]) -> list[dict]:
     """Return the resources that point at plant's bundled card."""
     return [item for item in items if url_path(item["url"]) == CARD_URL_PATH]
@@ -84,14 +115,39 @@ def update_other_card_issue(hass: HomeAssistant, others: list[str]) -> None:
         ir.async_delete_issue(hass, DOMAIN, ISSUE_OTHER_FLOWER_CARD)
 
 
+def update_missing_card_issue(hass: HomeAssistant, missing: list[str]) -> None:
+    """Ask the user to delete resources left behind by a removed card, or clear that."""
+    if missing:
+        ir.async_create_issue(
+            hass,
+            DOMAIN,
+            ISSUE_MISSING_FLOWER_CARD,
+            is_fixable=False,
+            severity=ir.IssueSeverity.WARNING,
+            translation_key=ISSUE_MISSING_FLOWER_CARD,
+            translation_placeholders={"urls": ", ".join(missing)},
+        )
+    else:
+        ir.async_delete_issue(hass, DOMAIN, ISSUE_MISSING_FLOWER_CARD)
+
+
+async def async_other_copies(hass: HomeAssistant, items: Iterable[dict]) -> list[str]:
+    """Return the other copies that are installed, and report any leftovers."""
+    installed, missing = await hass.async_add_executor_job(
+        split_by_file, hass, find_other_flower_cards(items)
+    )
+    update_other_card_issue(hass, installed)
+    update_missing_card_issue(hass, missing)
+    return installed
+
+
 async def async_sync_storage_resource(
     hass: HomeAssistant, resources: ResourceStorageCollection, version: str
 ) -> None:
     """Keep exactly one plant resource, or none while another copy is loaded."""
     await resources.async_get_info()
     items = resources.async_items()
-    others = find_other_flower_cards(items)
-    update_other_card_issue(hass, others)
+    others = await async_other_copies(hass, items)
     own = find_own_resources(items)
 
     if others:
@@ -143,13 +199,12 @@ class StorageResourceSync:
             self._running = False
 
 
-def sync_yaml_resource(
+async def async_sync_yaml_resource(
     hass: HomeAssistant, resources: ResourceYAMLCollection, version: str
 ) -> None:
     """Load the card as an extra module unless a copy is already listed."""
     items = resources.async_items()
-    others = find_other_flower_cards(items)
-    update_other_card_issue(hass, others)
+    others = await async_other_copies(hass, items)
     if not others and not find_own_resources(items):
         add_extra_js_url(hass, card_url(version))
 
@@ -171,6 +226,6 @@ async def async_setup_card(hass: HomeAssistant) -> None:
         await sync.async_run()
         resources.async_add_listener(sync.async_run)
     elif isinstance(resources, ResourceYAMLCollection):
-        sync_yaml_resource(hass, resources, version)
+        await async_sync_yaml_resource(hass, resources, version)
     else:
         raise TypeError(f"Unknown dashboard resource collection: {type(resources)}")
