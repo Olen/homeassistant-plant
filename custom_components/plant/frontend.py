@@ -226,8 +226,9 @@ async def async_setup_card(hass: HomeAssistant) -> None:
     resources = lovelace.resources
     if isinstance(resources, ResourceStorageCollection):
         sync = StorageResourceSync(hass, resources, version)
-        await sync.async_run()
+        # Listen first: a change during the first pass then makes it go round again.
         resources.async_add_listener(sync.async_run)
+        await sync.async_run()
     elif isinstance(resources, ResourceYAMLCollection):
         await async_sync_yaml_resource(hass, resources, version)
     else:

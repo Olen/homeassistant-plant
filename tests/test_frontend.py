@@ -339,3 +339,28 @@ async def test_own_resource_deleted_during_the_file_check(hass: HomeAssistant) -
         await async_setup_card(hass)
 
     assert [item["url"] for item in resources.async_items()] == [OWN_URL]
+
+
+async def test_other_copy_removed_during_the_first_file_check(
+    hass: HomeAssistant, hacs_card_installed
+) -> None:
+    """The other card's resource goes while setup checks files; ours must follow."""
+    resources = await _storage_resources(hass, [HACS_URL])
+    hacs_id = resources.async_items()[0]["id"]
+    real_check = frontend.async_other_copies
+    calls = 0
+
+    async def remove_other_meanwhile(hass, items):
+        nonlocal calls
+        calls += 1
+        result = await real_check(hass, items)
+        if calls == 1:
+            await resources.async_delete_item(hacs_id)
+        return result
+
+    with patch.object(frontend, "async_other_copies", remove_other_meanwhile):
+        await async_setup_card(hass)
+        await hass.async_block_till_done()
+
+    assert [item["url"] for item in resources.async_items()] == [OWN_URL]
+    assert _issue(hass) is None
