@@ -2,7 +2,8 @@
 
 A stale trigger targets the *plant* entity; it resolves that measurement's
 external source sensor from the PlantDevice and watches that sensor. "Stale" =
-unavailable/unknown, or no update within `for` (default 24h). Imported lazily
+unavailable/unknown, or no report within `for` (default 24h); a sensor that
+reports the same value again counts as reporting. Imported lazily
 by trigger_impl.py — only on HA with the 2026.7 API.
 """
 
@@ -19,10 +20,20 @@ from homeassistant.const import (
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
 )
-from homeassistant.core import CALLBACK_TYPE, HomeAssistant, State, callback
+from homeassistant.core import (
+    CALLBACK_TYPE,
+    Event,
+    EventStateReportedData,
+    HomeAssistant,
+    State,
+    callback,
+)
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.condition import Condition, ConditionConfig
-from homeassistant.helpers.event import async_call_later
+from homeassistant.helpers.event import (
+    async_call_later,
+    async_track_state_report_event,
+)
 from homeassistant.helpers.target import (
     TargetStateChangedData,
     async_track_target_selector_state_change_event,
@@ -119,6 +130,8 @@ def make_stale_trigger(measurement: Measurement, *, fresh: bool) -> type[Trigger
             # sensor not yet populated after restart) does NOT fire immediately.
             timers: dict[str, CALLBACK_TYPE] = {}
             status: dict[str, str] = {}
+            # A same-value write fires state_reported, not state_changed.
+            unsub_reports: CALLBACK_TYPE | None = None
 
             @callback
             def _fire(entity_id: str, reason: str | None) -> None:
@@ -203,6 +216,21 @@ def make_stale_trigger(measurement: Measurement, *, fresh: bool) -> type[Trigger
                 _consider(ev.data["entity_id"], ev.data["new_state"], initial=False)
 
             @callback
+            def _on_state_report(event: Event[EventStateReportedData]) -> None:
+                _consider(
+                    event.data["entity_id"], event.data["new_state"], initial=False
+                )
+
+            @callback
+            def _track_reports() -> None:
+                nonlocal unsub_reports
+                if unsub_reports is not None:
+                    unsub_reports()
+                unsub_reports = async_track_state_report_event(
+                    self._hass, list(status), _on_state_report
+                )
+
+            @callback
             def _on_entities_update(
                 added: set[str],
                 removed: set[str],
@@ -213,6 +241,7 @@ def make_stale_trigger(measurement: Measurement, *, fresh: bool) -> type[Trigger
                     status.pop(entity_id, None)
                 for entity_id in added:
                     _consider(entity_id, entity_states.get(entity_id), initial=True)
+                _track_reports()
 
             unsub = await async_track_target_selector_state_change_event(
                 self._hass,
@@ -225,6 +254,8 @@ def make_stale_trigger(measurement: Measurement, *, fresh: bool) -> type[Trigger
             @callback
             def _remove() -> None:
                 unsub()
+                if unsub_reports is not None:
+                    unsub_reports()
                 for timer in timers.values():
                     timer()
                 timers.clear()
@@ -273,7 +304,7 @@ def make_stale_condition(measurement: Measurement) -> type[Condition]:
                 state = self._hass.states.get(source)
                 if state is None or state.state in _EXCLUDED:
                     return True
-                if now - state.last_updated > self._duration:
+                if now - state.last_reported > self._duration:
                     return True
             return False
 

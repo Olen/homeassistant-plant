@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
+
 import pytest
 
 from custom_components.plant.condition import _has_purpose_condition_api
@@ -104,6 +106,26 @@ async def test_moisture_sensor_is_stale_false_when_fresh(
         },
     )
     assert got is False
+
+
+async def test_moisture_sensor_is_stale_counts_same_value_reports(
+    hass: HomeAssistant, init_integration, freezer
+) -> None:
+    """An unchanged value reported again keeps the sensor fresh."""
+    plant_id = _plant_entity_id(hass, init_integration)
+    condition = {
+        "condition": "plant.moisture_sensor_is_stale",
+        "target": {"entity_id": plant_id},
+        "options": {"for": {"hours": 1}},
+    }
+    hass.states.async_set("sensor.test_moisture", "42")
+    freezer.tick(timedelta(minutes=50))
+    hass.states.async_set("sensor.test_moisture", "42")
+    freezer.tick(timedelta(minutes=50))
+    await hass.async_block_till_done()
+    assert await _condition_passes(hass, condition) is False
+    freezer.tick(timedelta(minutes=11))
+    assert await _condition_passes(hass, condition) is True
 
 
 async def test_stale_resolution_follows_replace_sensor(
