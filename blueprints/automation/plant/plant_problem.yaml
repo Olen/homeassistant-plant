@@ -1,0 +1,60 @@
+blueprint:
+  name: Plant needs attention
+  description: >-
+    Run actions when a plant gets a problem - a reading outside the plant's
+    limits - and, if you want, when it is fine again.
+
+
+    Variables for the actions: `plant` (entity id), `plant_name`, and
+    `problems` (for example "moisture low, illuminance high").
+
+
+    Needs Home Assistant 2026.7 or later.
+  domain: automation
+  source_url: https://github.com/Olen/homeassistant-plant/blob/main/blueprints/automation/plant/plant_problem.yaml
+  homeassistant:
+    min_version: 2026.7.0
+  input:
+    plants:
+      name: Plants
+      selector:
+        target:
+          entity:
+            - domain: plant
+    problem_actions:
+      name: When a problem appears
+      selector:
+        action: {}
+    cleared_actions:
+      name: When the plant is fine again
+      default: []
+      selector:
+        action: {}
+
+mode: queued
+max_exceeded: silent
+
+triggers:
+  - trigger: plant.problem_detected
+    target: !input plants
+    id: problem
+  - trigger: plant.problem_cleared
+    target: !input plants
+    id: cleared
+
+variables:
+  plant: "{{ trigger.entity_id }}"
+  plant_name: "{{ state_attr(plant, 'friendly_name') or plant }}"
+  problems: >-
+    {% set ns = namespace(items=[]) %}
+    {% for p in state_attr(plant, 'problems') or [] %}
+      {% set ns.items = ns.items + [p.sensor_type | replace('_', ' ') ~ ' ' ~ (p.status | lower)] %}
+    {% endfor %}
+    {{ ns.items | join(', ') }}
+
+actions:
+  - choose:
+      - conditions: "{{ trigger.id == 'problem' }}"
+        sequence: !input problem_actions
+      - conditions: "{{ trigger.id == 'cleared' }}"
+        sequence: !input cleared_actions

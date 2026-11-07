@@ -1,0 +1,45 @@
+blueprint:
+  name: Plant needs water
+  description: >-
+    Run actions when a plant's soil moisture drops below the plant's minimum.
+    The minimum comes from the plant itself - from OpenPlantbook or what you
+    set - so there is no threshold to enter here.
+
+
+    Variables for the actions: `plant` (entity id), `plant_name` and
+    `moisture` (the reading, in %).
+
+
+    Needs Home Assistant 2026.7 or later.
+  domain: automation
+  source_url: https://github.com/Olen/homeassistant-plant/blob/main/blueprints/automation/plant/plant_needs_water.yaml
+  homeassistant:
+    min_version: 2026.7.0
+  input:
+    plants:
+      name: Plants
+      selector:
+        target:
+          entity:
+            - domain: plant
+    water_actions:
+      name: Actions
+      selector:
+        action: {}
+
+mode: queued
+max_exceeded: silent
+
+triggers:
+  - trigger: plant.moisture_became_low
+    target: !input plants
+
+variables:
+  plant: "{{ trigger.entity_id }}"
+  plant_name: "{{ state_attr(plant, 'friendly_name') or plant }}"
+  moisture: >-
+    {% set sensors = device_entities(device_id(plant))
+                     | select('is_state_attr', 'device_class', 'moisture') | list %}
+    {{ states(sensors[0]) if sensors else '' }}
+
+actions: !input water_actions

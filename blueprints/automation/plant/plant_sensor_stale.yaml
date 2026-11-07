@@ -1,0 +1,119 @@
+blueprint:
+  name: Plant sensor stopped reporting
+  description: >-
+    Run actions when a sensor feeding a plant goes unavailable or stops
+    reporting for a while, and, if you want, when it reports again.
+    A sensor that reports the same value again counts as reporting.
+
+
+    Variables for the actions: `sensor` (entity id), `sensor_name`,
+    `measurement` (for example "soil temperature"), `plant_names` (all plants
+    the sensor feeds, comma separated) and `reason` ("unavailable" or
+    "no_update"; empty when the sensor is back).
+
+
+    Needs Home Assistant 2026.7 or later.
+  domain: automation
+  source_url: https://github.com/Olen/homeassistant-plant/blob/main/blueprints/automation/plant/plant_sensor_stale.yaml
+  homeassistant:
+    min_version: 2026.7.0
+  input:
+    plants:
+      name: Plants
+      selector:
+        target:
+          entity:
+            - domain: plant
+    stale_for:
+      name: Silent for
+      description: How long a sensor may go without reporting.
+      default:
+        hours: 24
+      selector:
+        duration: {}
+    stale_actions:
+      name: When a sensor stops reporting
+      selector:
+        action: {}
+    fresh_actions:
+      name: When it reports again
+      default: []
+      selector:
+        action: {}
+
+mode: queued
+max_exceeded: silent
+
+triggers:
+  - trigger: plant.moisture_sensor_became_stale
+    target: !input plants
+    options: {for: !input stale_for}
+    id: stale
+  - trigger: plant.conductivity_sensor_became_stale
+    target: !input plants
+    options: {for: !input stale_for}
+    id: stale
+  - trigger: plant.temperature_sensor_became_stale
+    target: !input plants
+    options: {for: !input stale_for}
+    id: stale
+  - trigger: plant.soil_temperature_sensor_became_stale
+    target: !input plants
+    options: {for: !input stale_for}
+    id: stale
+  - trigger: plant.humidity_sensor_became_stale
+    target: !input plants
+    options: {for: !input stale_for}
+    id: stale
+  - trigger: plant.illuminance_sensor_became_stale
+    target: !input plants
+    options: {for: !input stale_for}
+    id: stale
+  - trigger: plant.co2_sensor_became_stale
+    target: !input plants
+    options: {for: !input stale_for}
+    id: stale
+  - trigger: plant.moisture_sensor_became_fresh
+    target: !input plants
+    options: {for: !input stale_for}
+    id: fresh
+  - trigger: plant.conductivity_sensor_became_fresh
+    target: !input plants
+    options: {for: !input stale_for}
+    id: fresh
+  - trigger: plant.temperature_sensor_became_fresh
+    target: !input plants
+    options: {for: !input stale_for}
+    id: fresh
+  - trigger: plant.soil_temperature_sensor_became_fresh
+    target: !input plants
+    options: {for: !input stale_for}
+    id: fresh
+  - trigger: plant.humidity_sensor_became_fresh
+    target: !input plants
+    options: {for: !input stale_for}
+    id: fresh
+  - trigger: plant.illuminance_sensor_became_fresh
+    target: !input plants
+    options: {for: !input stale_for}
+    id: fresh
+  - trigger: plant.co2_sensor_became_fresh
+    target: !input plants
+    options: {for: !input stale_for}
+    id: fresh
+
+variables:
+  sensor: "{{ trigger.entity_id }}"
+  sensor_name: "{{ state_attr(sensor, 'friendly_name') or sensor }}"
+  measurement: "{{ trigger.measurement | replace('_', ' ') }}"
+  plant_names: >-
+    {{ trigger.plant_entity_ids
+       | map('state_attr', 'friendly_name') | reject('none') | join(', ') }}
+  reason: "{{ trigger.reason | default('') }}"
+
+actions:
+  - choose:
+      - conditions: "{{ trigger.id == 'stale' }}"
+        sequence: !input stale_actions
+      - conditions: "{{ trigger.id == 'fresh' }}"
+        sequence: !input fresh_actions

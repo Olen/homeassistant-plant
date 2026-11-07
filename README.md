@@ -252,7 +252,7 @@ Core Home Assistant ships generic purpose triggers too, like `temperature.crosse
 
 - **Whole-plant:** `plant.problem_detected` / `plant.problem_cleared` — the plant entered / left a problem state. Condition: `plant.has_problem`.
 - **Per-measurement status:** `plant.<measurement>_became_low` / `_became_high` / `_became_ok`, for `moisture`, `conductivity`, `temperature`, `soil_temperature`, `humidity`, `illuminance`, `co2`, `dli`, `vpd`. Conditions: `plant.<measurement>_is_low` / `_is_high` / `_is_ok`.
-- **Stale source sensor:** `plant.<measurement>_sensor_became_stale` / `_became_fresh`, for the externally-sourced measurements only — `moisture`, `conductivity`, `temperature`, `soil_temperature`, `humidity`, `illuminance`, `co2` (not `dli`/`vpd`, which are derived rather than sensor-backed). Condition: `plant.<measurement>_sensor_is_stale`.
+- **Stale source sensor:** `plant.<measurement>_sensor_became_stale` / `_became_fresh`, for the externally-sourced measurements only — `moisture`, `conductivity`, `temperature`, `soil_temperature`, `humidity`, `illuminance`, `co2` (not `dli`/`vpd`, which are derived rather than sensor-backed). Condition: `plant.<measurement>_sensor_is_stale`. The trigger tells your actions which sensor it is (`trigger.entity_id`), the measurement (`trigger.measurement`), the plants it feeds (`trigger.plant_entity_ids`) and why (`trigger.reason`: `unavailable` or `no_update`).
 
   "Stale" means the source sensor is `unavailable`/`unknown`, or simply hasn't reported within a window (`for`, default **24 hours**). A sensor that keeps reporting the same value counts as reporting. A grace period means it does **not** false-alarm at restart, when a sensor briefly reads `unknown` before its own integration populates it — staleness only fires once the source is genuinely still dead after the full window elapses.
 
@@ -301,6 +301,24 @@ actions:
   - action: notify.mobile_app_phone
     data:
       message: "{{ trigger.entity_id }} hasn't reported in 6 hours"
+```
+
+### Blueprints
+
+Ready-made automations built on these triggers. Import one, pick your plants, and choose what should happen - a notification, a light, anything. Each needs Home Assistant 2026.7 or later.
+
+| Blueprint | Runs when | Variables for your actions | |
+|---|---|---|---|
+| **Plant needs attention** | a plant gets a problem, and optionally when it is fine again | `plant_name`, `problems` (e.g. "moisture low, illuminance high") | [![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FOlen%2Fhomeassistant-plant%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fplant%2Fplant_problem.yaml) |
+| **Plant sensor stopped reporting** | a sensor feeding a plant goes unavailable or silent for a while (default 24 h), and optionally when it reports again | `sensor_name`, `measurement`, `plant_names`, `reason` | [![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FOlen%2Fhomeassistant-plant%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fplant%2Fplant_sensor_stale.yaml) |
+| **Plant needs water** | soil moisture drops below the plant's own minimum | `plant_name`, `moisture` | [![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FOlen%2Fhomeassistant-plant%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fplant%2Fplant_needs_water.yaml) |
+
+For example, the action for **Plant sensor stopped reporting**:
+
+```yaml
+action: notify.mobile_app_phone
+data:
+  message: "{{ sensor_name }} ({{ measurement }} for {{ plant_names }}) has stopped reporting"
 ```
 
 > [!NOTE]
