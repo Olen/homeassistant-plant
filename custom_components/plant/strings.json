@@ -838,7 +838,7 @@
     },
     "missing_flower_card": {
       "title": "A dashboard resource points to a removed flower card",
-      "description": "Your dashboard resources still list a flower card whose file is gone: {urls}\n\nPlant Monitor loads its own copy of the card, so your dashboards work. Delete the leftover resource under Settings → Dashboards → Resources, or from the `lovelace` resources in your YAML configuration, to stop the browser asking for the missing file."
+      "description": "Your dashboard resources still list a flower card whose file is gone: {urls}\n\nThat entry no longer counts as an installed card, so it does not stop Plant Monitor from loading its own. Delete the leftover resource under Settings → Dashboards → Resources, or from the `lovelace` resources in your YAML configuration, to stop the browser asking for the missing file."
     }
   }
 }
