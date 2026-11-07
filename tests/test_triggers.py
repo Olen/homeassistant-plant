@@ -31,7 +31,9 @@ from custom_components.plant.condition import async_get_conditions
 from custom_components.plant.const import ATTR_PLANT, DOMAIN as PLANT_DOMAIN
 from custom_components.plant.trigger import async_get_triggers
 
+from .conftest import create_plant_config_data
 from .ha_common import (
+    MockConfigEntry,
     async_capture_events,
     async_fire_time_changed,
 )
@@ -358,3 +360,86 @@ async def test_moisture_sensor_became_fresh_on_recovery(
         blocking=True,
     )
     await hass.async_block_till_done()
+
+
+async def _turn_off_automations(hass: HomeAssistant) -> None:
+    """Detach the triggers, so their freshness timers do not outlive the test."""
+    await hass.services.async_call(
+        "automation", "turn_off", {"entity_id": "all"}, blocking=True
+    )
+    await hass.async_block_till_done()
+
+
+@pytest.fixture
+async def second_plant(hass: HomeAssistant, init_integration) -> str:
+    """A second plant fed by the same sensors as the first."""
+    entry = MockConfigEntry(
+        domain=PLANT_DOMAIN,
+        title="Second Plant",
+        data=create_plant_config_data(name="Second Plant"),
+        entry_id="second_plant_entry",
+        unique_id="second_plant_entry",
+    )
+    entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    yield _plant_entity_id(hass, entry)
+    await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+
+
+async def _humidity_automation(hass: HomeAssistant, plants: list[str]) -> list:
+    """Report every stale/fresh humidity transition with the plants it names."""
+    events = async_capture_events(hass, "humidity")
+    assert await async_setup_component(
+        hass,
+        "automation",
+        {
+            "automation": {
+                "trigger": [
+                    {
+                        "trigger": f"plant.humidity_sensor_became_{kind}",
+                        "target": {"entity_id": plants},
+                    }
+                    for kind in ("stale", "fresh")
+                ],
+                "action": {
+                    "event": "humidity",
+                    "event_data": {
+                        "plants": "{{ trigger.plant_entity_ids | join(',') }}"
+                    },
+                },
+            }
+        },
+    )
+    await hass.async_block_till_done()
+    return events
+
+
+async def test_shared_sensor_names_every_plant_it_feeds(
+    hass: HomeAssistant, init_integration, second_plant
+) -> None:
+    first = _plant_entity_id(hass, init_integration)
+    events = await _humidity_automation(hass, [second_plant, first])
+
+    hass.states.async_set("sensor.test_humidity", "unavailable")
+    await hass.async_block_till_done()
+    hass.states.async_set("sensor.test_humidity", "55")
+    await hass.async_block_till_done()
+
+    both = ",".join(sorted([first, second_plant]))
+    assert [e.data["plants"] for e in events] == [both, both]
+    await _turn_off_automations(hass)
+
+
+async def test_shared_sensor_names_only_the_targeted_plant(
+    hass: HomeAssistant, init_integration, second_plant
+) -> None:
+    first = _plant_entity_id(hass, init_integration)
+    events = await _humidity_automation(hass, [first])
+
+    hass.states.async_set("sensor.test_humidity", "unavailable")
+    await hass.async_block_till_done()
+
+    assert [e.data["plants"] for e in events] == [first]
+    await _turn_off_automations(hass)
