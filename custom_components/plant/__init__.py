@@ -628,7 +628,7 @@ class PlantDevice(RestoreEntity):
     def _is_ppfd_source(self) -> bool:
         """Check if illuminance source provides PPFD instead of lux.
 
-        FYTA sensors and similar devices report light in PPFD (µmol/s⋅m²)
+        FYTA sensors and similar devices report light in PPFD (μmol/s⋅m²)
         instead of lux. When the source provides PPFD, the illuminance
         threshold comparison is meaningless (thresholds are in lux).
         """
