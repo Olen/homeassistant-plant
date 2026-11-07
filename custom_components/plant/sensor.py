@@ -1057,7 +1057,7 @@ class PlantCurrentPpfd(PlantCurrentStatus):
     def _is_ppfd_source(self) -> bool:
         """Check if the external sensor provides PPFD directly (not lux).
 
-        FYTA sensors and similar devices report light in PPFD (µmol/s⋅m²)
+        FYTA sensors and similar devices report light in PPFD (μmol/s⋅m²)
         instead of lux. When the source already provides PPFD, we should
         pass through the value unchanged instead of converting from lux.
         """
@@ -1069,7 +1069,7 @@ class PlantCurrentPpfd(PlantCurrentStatus):
         unit = external_state.attributes.get(ATTR_UNIT_OF_MEASUREMENT, "")
         if not unit:
             return False
-        # Check if unit contains 'mol' (covers µmol/s⋅m², mol/s⋅m², etc.)
+        # Check if unit contains 'mol' (covers μmol/s⋅m², mol/s⋅m², etc.)
         return "mol" in unit.lower()
 
     def ppfd(self, value: float | int | str | None) -> float | None:
