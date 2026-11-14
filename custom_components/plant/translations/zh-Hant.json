@@ -1,0 +1,868 @@
+{
+  "title": "植物監測",
+  "entity": {
+    "sensor": {
+      "moisture": {
+        "name": "土壤濕度"
+      },
+      "temperature": {
+        "name": "溫度"
+      },
+      "conductivity": {
+        "name": "導電度"
+      },
+      "illuminance": {
+        "name": "照度"
+      },
+      "humidity": {
+        "name": "空氣濕度"
+      },
+      "co2": {
+        "name": "CO2"
+      },
+      "soil_temperature": {
+        "name": "土壤溫度"
+      },
+      "ppfd": {
+        "name": "PPFD"
+      },
+      "total_light_integral": {
+        "name": "總光照積分"
+      },
+      "dli": {
+        "name": "每日光照積分"
+      },
+      "dli_24h": {
+        "name": "DLI（24 小時滾動）"
+      },
+      "vpd": {
+        "name": "飽和水氣壓差"
+      }
+    },
+    "number": {
+      "max_moisture": {
+        "name": "土壤濕度上限"
+      },
+      "min_moisture": {
+        "name": "土壤濕度下限"
+      },
+      "max_temperature": {
+        "name": "溫度上限"
+      },
+      "min_temperature": {
+        "name": "溫度下限"
+      },
+      "max_illuminance": {
+        "name": "照度上限"
+      },
+      "min_illuminance": {
+        "name": "照度下限"
+      },
+      "max_dli": {
+        "name": "DLI 上限"
+      },
+      "min_dli": {
+        "name": "DLI 下限"
+      },
+      "max_conductivity": {
+        "name": "導電度上限"
+      },
+      "min_conductivity": {
+        "name": "導電度下限"
+      },
+      "max_humidity": {
+        "name": "空氣濕度上限"
+      },
+      "min_humidity": {
+        "name": "空氣濕度下限"
+      },
+      "max_co2": {
+        "name": "CO2 上限"
+      },
+      "min_co2": {
+        "name": "CO2 下限"
+      },
+      "max_soil_temperature": {
+        "name": "土壤溫度上限"
+      },
+      "min_soil_temperature": {
+        "name": "土壤溫度下限"
+      },
+      "max_vpd": {
+        "name": "VPD 上限"
+      },
+      "min_vpd": {
+        "name": "VPD 下限"
+      },
+      "lux_to_ppfd": {
+        "name": "照度轉 PPFD 係數"
+      }
+    }
+  },
+  "config": {
+    "step": {
+      "user": {
+        "title": "設定植物",
+        "description": "輸入植物名稱。也可以輸入品種，以便在 OpenPlantbook 搜尋。",
+        "data": {
+          "name": "植物名稱",
+          "species": "品種"
+        },
+        "data_description": {
+          "species": "用於在 OpenPlantbook 搜尋"
+        }
+      },
+      "select_species": {
+        "title": "從 OpenPlantbook 選擇品種",
+        "description": "{desc}",
+        "data": {
+          "search_for": "搜尋其他品種",
+          "species": "品種"
+        },
+        "menu_options": {
+          "user": "返回"
+        }
+      },
+      "sensors": {
+        "title": "選擇感測器",
+        "description": "所有感測器都是選填，之後也可以新增或變更。",
+        "data": {
+          "source_device": "從裝置帶入感測器",
+          "temperature_sensor": "溫度感測器",
+          "moisture_sensor": "土壤濕度感測器",
+          "conductivity_sensor": "導電度感測器",
+          "illuminance_sensor": "照度感測器",
+          "humidity_sensor": "空氣濕度感測器",
+          "co2_sensor": "CO2 感測器",
+          "soil_temperature_sensor": "土壤溫度感測器"
+        },
+        "data_description": {
+          "source_device": "選擇一個裝置（例如土壤感測器）並送出表單，即可用它的實體填入下方欄位。表單會再次開啟，讓您在繼續之前檢查；已經設定的欄位會保留。"
+        }
+      },
+      "limits": {
+        "title": "設定上下限",
+        "description": "# {name}\n![植物]({entity_picture}){br}\n{extra_desc}溫度單位為 {temperature_unit}",
+        "data": {
+          "right_plant": "這就是我要找的植物",
+          "display_pid": "要顯示的植物品種",
+          "max_moisture": "土壤濕度上限 (%)",
+          "min_moisture": "土壤濕度下限 (%)",
+          "max_illuminance": "照度上限 (lx)",
+          "min_illuminance": "照度下限 (lx)",
+          "max_dli": "DLI 上限 (mol/d⋅m²)",
+          "min_dli": "DLI 下限 (mol/d⋅m²)",
+          "max_temperature": "溫度上限（單位見上方）",
+          "min_temperature": "溫度下限（單位見上方）",
+          "max_conductivity": "導電度上限 (uS/cm)",
+          "min_conductivity": "導電度下限 (uS/cm)",
+          "max_humidity": "空氣濕度上限 (%)",
+          "min_humidity": "空氣濕度下限 (%)",
+          "max_vpd": "VPD 上限 (kPa)",
+          "min_vpd": "VPD 下限 (kPa)",
+          "entity_picture": "圖片網址"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "選項",
+        "description": "設定 **{plant_name}** 的選項",
+        "menu_options": {
+          "plant_properties": "植物屬性",
+          "replace_sensor": "更換感測器"
+        }
+      },
+      "plant_properties": {
+        "title": "植物屬性",
+        "description": "設定 **{plant_name}** 的選項",
+        "data": {
+          "check_days": "照度檢查天數",
+          "species": "品種",
+          "force_update": "強制從 OpenPlantbook 重新取得資料",
+          "display_pid": "要顯示的植物品種",
+          "entity_picture": "圖片網址。若在 OpenPlantbook 找到該品種，會自動更新",
+          "illuminance_trigger": "以照度作為問題觸發條件",
+          "dli_trigger": "以每日光照積分（DLI）作為問題觸發條件",
+          "humidity_trigger": "以空氣濕度作為問題觸發條件",
+          "conductivity_trigger": "以導電度作為問題觸發條件",
+          "moisture_trigger": "以土壤濕度作為問題觸發條件",
+          "moisture_grace_period": "澆水後的土壤濕度寬限期（秒，0-86400）",
+          "temperature_trigger": "以溫度作為問題觸發條件",
+          "co2_trigger": "以 CO2 作為問題觸發條件",
+          "soil_temperature_trigger": "以土壤溫度作為問題觸發條件",
+          "vpd_trigger": "以 VPD 作為問題觸發條件"
+        }
+      },
+      "replace_sensor": {
+        "title": "更換感測器",
+        "description": "更換 **{plant_name}** 的外部感測器。清空欄位即可移除該感測器。",
+        "data": {
+          "source_device": "從裝置帶入感測器",
+          "temperature_sensor": "溫度感測器",
+          "moisture_sensor": "土壤濕度感測器",
+          "conductivity_sensor": "導電度感測器",
+          "illuminance_sensor": "照度感測器",
+          "humidity_sensor": "空氣濕度感測器",
+          "co2_sensor": "CO2 感測器",
+          "soil_temperature_sensor": "土壤溫度感測器"
+        },
+        "data_description": {
+          "source_device": "選擇一個裝置（例如土壤感測器）並送出表單，即可用它的實體填入下方欄位。表單會再次開啟，讓您在繼續之前檢查；已經設定的欄位會保留。"
+        }
+      }
+    }
+  },
+  "services": {
+    "replace_sensor": {
+      "name": "更換感測器",
+      "description": "更換植物感測器的來源。",
+      "fields": {
+        "meter_entity": {
+          "name": "量測實體",
+          "description": "要更換感測器的量測實體。"
+        },
+        "new_sensor": {
+          "name": "感測器實體",
+          "description": "新感測器的實體 ID。留空即移除感測器。"
+        }
+      }
+    }
+  },
+  "triggers": {
+    "problem_detected": {
+      "name": "偵測到問題",
+      "description": "植物出現問題時觸發（任一讀數超出門檻）。",
+      "fields": {
+        "behavior": {
+          "name": "行為",
+          "description": "觸發器要針對每個目標植物各觸發一次，或整個群組只觸發一次。"
+        }
+      }
+    },
+    "problem_cleared": {
+      "name": "問題已解除",
+      "description": "植物最後一個問題解除、所有讀數都恢復正常時觸發。",
+      "fields": {
+        "behavior": {
+          "name": "行為",
+          "description": "觸發器要針對每個目標植物各觸發一次，或整個群組只觸發一次。"
+        }
+      }
+    },
+    "moisture_became_low": {
+      "name": "土壤濕度降到過低",
+      "description": "植物的土壤濕度低於設定的下限時觸發。",
+      "fields": {
+        "behavior": {
+          "name": "行為",
+          "description": "觸發器要針對每個目標植物各觸發一次，或整個群組只觸發一次。"
+        }
+      }
+    },
+    "moisture_became_high": {
+      "name": "土壤濕度升到過高",
+      "description": "植物的土壤濕度高於設定的上限時觸發。",
+      "fields": {
+        "behavior": {
+          "name": "行為",
+          "description": "觸發器要針對每個目標植物各觸發一次，或整個群組只觸發一次。"
+        }
+      }
+    },
+    "moisture_became_ok": {
+      "name": "土壤濕度恢復正常",
+      "description": "植物的土壤濕度回到正常範圍時觸發。",
+      "fields": {
+        "behavior": {
+          "name": "行為",
+          "description": "觸發器要針對每個目標植物各觸發一次，或整個群組只觸發一次。"
+        }
+      }
+    },
+    "conductivity_became_low": {
+      "name": "導電度降到過低",
+      "description": "植物的導電度低於設定的下限時觸發。",
+      "fields": {
+        "behavior": {
+          "name": "行為",
+          "description": "觸發器要針對每個目標植物各觸發一次，或整個群組只觸發一次。"
+        }
+      }
+    },
+    "conductivity_became_high": {
+      "name": "導電度升到過高",
+      "description": "植物的導電度高於設定的上限時觸發。",
+      "fields": {
+        "behavior": {
+          "name": "行為",
+          "description": "觸發器要針對每個目標植物各觸發一次，或整個群組只觸發一次。"
+        }
+      }
+    },
+    "conductivity_became_ok": {
+      "name": "導電度恢復正常",
+      "description": "植物的導電度回到正常範圍時觸發。",
+      "fields": {
+        "behavior": {
+          "name": "行為",
+          "description": "觸發器要針對每個目標植物各觸發一次，或整個群組只觸發一次。"
+        }
+      }
+    },
+    "temperature_became_low": {
+      "name": "溫度降到過低",
+      "description": "植物的溫度低於設定的下限時觸發。",
+      "fields": {
+        "behavior": {
+          "name": "行為",
+          "description": "觸發器要針對每個目標植物各觸發一次，或整個群組只觸發一次。"
+        }
+      }
+    },
+    "temperature_became_high": {
+      "name": "溫度升到過高",
+      "description": "植物的溫度高於設定的上限時觸發。",
+      "fields": {
+        "behavior": {
+          "name": "行為",
+          "description": "觸發器要針對每個目標植物各觸發一次，或整個群組只觸發一次。"
+        }
+      }
+    },
+    "temperature_became_ok": {
+      "name": "溫度恢復正常",
+      "description": "植物的溫度回到正常範圍時觸發。",
+      "fields": {
+        "behavior": {
+          "name": "行為",
+          "description": "觸發器要針對每個目標植物各觸發一次，或整個群組只觸發一次。"
+        }
+      }
+    },
+    "soil_temperature_became_low": {
+      "name": "土壤溫度降到過低",
+      "description": "植物的土壤溫度低於設定的下限時觸發。",
+      "fields": {
+        "behavior": {
+          "name": "行為",
+          "description": "觸發器要針對每個目標植物各觸發一次，或整個群組只觸發一次。"
+        }
+      }
+    },
+    "soil_temperature_became_high": {
+      "name": "土壤溫度升到過高",
+      "description": "植物的土壤溫度高於設定的上限時觸發。",
+      "fields": {
+        "behavior": {
+          "name": "行為",
+          "description": "觸發器要針對每個目標植物各觸發一次，或整個群組只觸發一次。"
+        }
+      }
+    },
+    "soil_temperature_became_ok": {
+      "name": "土壤溫度恢復正常",
+      "description": "植物的土壤溫度回到正常範圍時觸發。",
+      "fields": {
+        "behavior": {
+          "name": "行為",
+          "description": "觸發器要針對每個目標植物各觸發一次，或整個群組只觸發一次。"
+        }
+      }
+    },
+    "humidity_became_low": {
+      "name": "空氣濕度降到過低",
+      "description": "植物的空氣濕度低於設定的下限時觸發。",
+      "fields": {
+        "behavior": {
+          "name": "行為",
+          "description": "觸發器要針對每個目標植物各觸發一次，或整個群組只觸發一次。"
+        }
+      }
+    },
+    "humidity_became_high": {
+      "name": "空氣濕度升到過高",
+      "description": "植物的空氣濕度高於設定的上限時觸發。",
+      "fields": {
+        "behavior": {
+          "name": "行為",
+          "description": "觸發器要針對每個目標植物各觸發一次，或整個群組只觸發一次。"
+        }
+      }
+    },
+    "humidity_became_ok": {
+      "name": "空氣濕度恢復正常",
+      "description": "植物的空氣濕度回到正常範圍時觸發。",
+      "fields": {
+        "behavior": {
+          "name": "行為",
+          "description": "觸發器要針對每個目標植物各觸發一次，或整個群組只觸發一次。"
+        }
+      }
+    },
+    "illuminance_became_low": {
+      "name": "照度降到過低",
+      "description": "植物的照度低於設定的下限時觸發。",
+      "fields": {
+        "behavior": {
+          "name": "行為",
+          "description": "觸發器要針對每個目標植物各觸發一次，或整個群組只觸發一次。"
+        }
+      }
+    },
+    "illuminance_became_high": {
+      "name": "照度升到過高",
+      "description": "植物的照度高於設定的上限時觸發。",
+      "fields": {
+        "behavior": {
+          "name": "行為",
+          "description": "觸發器要針對每個目標植物各觸發一次，或整個群組只觸發一次。"
+        }
+      }
+    },
+    "illuminance_became_ok": {
+      "name": "照度恢復正常",
+      "description": "植物的照度回到正常範圍時觸發。",
+      "fields": {
+        "behavior": {
+          "name": "行為",
+          "description": "觸發器要針對每個目標植物各觸發一次，或整個群組只觸發一次。"
+        }
+      }
+    },
+    "co2_became_low": {
+      "name": "CO2 降到過低",
+      "description": "植物的 CO2 低於設定的下限時觸發。",
+      "fields": {
+        "behavior": {
+          "name": "行為",
+          "description": "觸發器要針對每個目標植物各觸發一次，或整個群組只觸發一次。"
+        }
+      }
+    },
+    "co2_became_high": {
+      "name": "CO2 升到過高",
+      "description": "植物的 CO2 高於設定的上限時觸發。",
+      "fields": {
+        "behavior": {
+          "name": "行為",
+          "description": "觸發器要針對每個目標植物各觸發一次，或整個群組只觸發一次。"
+        }
+      }
+    },
+    "co2_became_ok": {
+      "name": "CO2 恢復正常",
+      "description": "植物的 CO2 回到正常範圍時觸發。",
+      "fields": {
+        "behavior": {
+          "name": "行為",
+          "description": "觸發器要針對每個目標植物各觸發一次，或整個群組只觸發一次。"
+        }
+      }
+    },
+    "dli_became_low": {
+      "name": "DLI 降到過低",
+      "description": "植物的 DLI 低於設定的下限時觸發。",
+      "fields": {
+        "behavior": {
+          "name": "行為",
+          "description": "觸發器要針對每個目標植物各觸發一次，或整個群組只觸發一次。"
+        }
+      }
+    },
+    "dli_became_high": {
+      "name": "DLI 升到過高",
+      "description": "植物的 DLI 高於設定的上限時觸發。",
+      "fields": {
+        "behavior": {
+          "name": "行為",
+          "description": "觸發器要針對每個目標植物各觸發一次，或整個群組只觸發一次。"
+        }
+      }
+    },
+    "dli_became_ok": {
+      "name": "DLI 恢復正常",
+      "description": "植物的 DLI 回到正常範圍時觸發。",
+      "fields": {
+        "behavior": {
+          "name": "行為",
+          "description": "觸發器要針對每個目標植物各觸發一次，或整個群組只觸發一次。"
+        }
+      }
+    },
+    "vpd_became_low": {
+      "name": "VPD 降到過低",
+      "description": "植物的 VPD 低於設定的下限時觸發。",
+      "fields": {
+        "behavior": {
+          "name": "行為",
+          "description": "觸發器要針對每個目標植物各觸發一次，或整個群組只觸發一次。"
+        }
+      }
+    },
+    "vpd_became_high": {
+      "name": "VPD 升到過高",
+      "description": "植物的 VPD 高於設定的上限時觸發。",
+      "fields": {
+        "behavior": {
+          "name": "行為",
+          "description": "觸發器要針對每個目標植物各觸發一次，或整個群組只觸發一次。"
+        }
+      }
+    },
+    "vpd_became_ok": {
+      "name": "VPD 恢復正常",
+      "description": "植物的 VPD 回到正常範圍時觸發。",
+      "fields": {
+        "behavior": {
+          "name": "行為",
+          "description": "觸發器要針對每個目標植物各觸發一次，或整個群組只觸發一次。"
+        }
+      }
+    },
+    "moisture_sensor_became_stale": {
+      "name": "土壤濕度感測器停止更新",
+      "description": "植物的土壤濕度感測器停止傳送更新時觸發。",
+      "fields": {
+        "for": {
+          "name": "持續時間",
+          "description": "感測器必須維持這個狀態至少這段時間，觸發器才會觸發。"
+        }
+      }
+    },
+    "moisture_sensor_became_fresh": {
+      "name": "土壤濕度感測器恢復更新",
+      "description": "植物的土壤濕度感測器重新開始傳送更新時觸發。",
+      "fields": {
+        "for": {
+          "name": "持續時間",
+          "description": "感測器必須維持這個狀態至少這段時間，觸發器才會觸發。"
+        }
+      }
+    },
+    "conductivity_sensor_became_stale": {
+      "name": "導電度感測器停止更新",
+      "description": "植物的導電度感測器停止傳送更新時觸發。",
+      "fields": {
+        "for": {
+          "name": "持續時間",
+          "description": "感測器必須維持這個狀態至少這段時間，觸發器才會觸發。"
+        }
+      }
+    },
+    "conductivity_sensor_became_fresh": {
+      "name": "導電度感測器恢復更新",
+      "description": "植物的導電度感測器重新開始傳送更新時觸發。",
+      "fields": {
+        "for": {
+          "name": "持續時間",
+          "description": "感測器必須維持這個狀態至少這段時間，觸發器才會觸發。"
+        }
+      }
+    },
+    "temperature_sensor_became_stale": {
+      "name": "溫度感測器停止更新",
+      "description": "植物的溫度感測器停止傳送更新時觸發。",
+      "fields": {
+        "for": {
+          "name": "持續時間",
+          "description": "感測器必須維持這個狀態至少這段時間，觸發器才會觸發。"
+        }
+      }
+    },
+    "temperature_sensor_became_fresh": {
+      "name": "溫度感測器恢復更新",
+      "description": "植物的溫度感測器重新開始傳送更新時觸發。",
+      "fields": {
+        "for": {
+          "name": "持續時間",
+          "description": "感測器必須維持這個狀態至少這段時間，觸發器才會觸發。"
+        }
+      }
+    },
+    "soil_temperature_sensor_became_stale": {
+      "name": "土壤溫度感測器停止更新",
+      "description": "植物的土壤溫度感測器停止傳送更新時觸發。",
+      "fields": {
+        "for": {
+          "name": "持續時間",
+          "description": "感測器必須維持這個狀態至少這段時間，觸發器才會觸發。"
+        }
+      }
+    },
+    "soil_temperature_sensor_became_fresh": {
+      "name": "土壤溫度感測器恢復更新",
+      "description": "植物的土壤溫度感測器重新開始傳送更新時觸發。",
+      "fields": {
+        "for": {
+          "name": "持續時間",
+          "description": "感測器必須維持這個狀態至少這段時間，觸發器才會觸發。"
+        }
+      }
+    },
+    "humidity_sensor_became_stale": {
+      "name": "空氣濕度感測器停止更新",
+      "description": "植物的空氣濕度感測器停止傳送更新時觸發。",
+      "fields": {
+        "for": {
+          "name": "持續時間",
+          "description": "感測器必須維持這個狀態至少這段時間，觸發器才會觸發。"
+        }
+      }
+    },
+    "humidity_sensor_became_fresh": {
+      "name": "空氣濕度感測器恢復更新",
+      "description": "植物的空氣濕度感測器重新開始傳送更新時觸發。",
+      "fields": {
+        "for": {
+          "name": "持續時間",
+          "description": "感測器必須維持這個狀態至少這段時間，觸發器才會觸發。"
+        }
+      }
+    },
+    "illuminance_sensor_became_stale": {
+      "name": "照度感測器停止更新",
+      "description": "植物的照度感測器停止傳送更新時觸發。",
+      "fields": {
+        "for": {
+          "name": "持續時間",
+          "description": "感測器必須維持這個狀態至少這段時間，觸發器才會觸發。"
+        }
+      }
+    },
+    "illuminance_sensor_became_fresh": {
+      "name": "照度感測器恢復更新",
+      "description": "植物的照度感測器重新開始傳送更新時觸發。",
+      "fields": {
+        "for": {
+          "name": "持續時間",
+          "description": "感測器必須維持這個狀態至少這段時間，觸發器才會觸發。"
+        }
+      }
+    },
+    "co2_sensor_became_stale": {
+      "name": "CO2 感測器停止更新",
+      "description": "植物的 CO2 感測器停止傳送更新時觸發。",
+      "fields": {
+        "for": {
+          "name": "持續時間",
+          "description": "感測器必須維持這個狀態至少這段時間，觸發器才會觸發。"
+        }
+      }
+    },
+    "co2_sensor_became_fresh": {
+      "name": "CO2 感測器恢復更新",
+      "description": "植物的 CO2 感測器重新開始傳送更新時觸發。",
+      "fields": {
+        "for": {
+          "name": "持續時間",
+          "description": "感測器必須維持這個狀態至少這段時間，觸發器才會觸發。"
+        }
+      }
+    }
+  },
+  "conditions": {
+    "has_problem": {
+      "name": "有問題",
+      "description": "植物有任何尚未解除的問題時成立。"
+    },
+    "moisture_is_low": {
+      "name": "土壤濕度過低",
+      "description": "植物的土壤濕度低於設定的下限時成立。"
+    },
+    "moisture_is_high": {
+      "name": "土壤濕度過高",
+      "description": "植物的土壤濕度高於設定的上限時成立。"
+    },
+    "moisture_is_ok": {
+      "name": "土壤濕度正常",
+      "description": "植物的土壤濕度在正常範圍內時成立。"
+    },
+    "conductivity_is_low": {
+      "name": "導電度過低",
+      "description": "植物的導電度低於設定的下限時成立。"
+    },
+    "conductivity_is_high": {
+      "name": "導電度過高",
+      "description": "植物的導電度高於設定的上限時成立。"
+    },
+    "conductivity_is_ok": {
+      "name": "導電度正常",
+      "description": "植物的導電度在正常範圍內時成立。"
+    },
+    "temperature_is_low": {
+      "name": "溫度過低",
+      "description": "植物的溫度低於設定的下限時成立。"
+    },
+    "temperature_is_high": {
+      "name": "溫度過高",
+      "description": "植物的溫度高於設定的上限時成立。"
+    },
+    "temperature_is_ok": {
+      "name": "溫度正常",
+      "description": "植物的溫度在正常範圍內時成立。"
+    },
+    "soil_temperature_is_low": {
+      "name": "土壤溫度過低",
+      "description": "植物的土壤溫度低於設定的下限時成立。"
+    },
+    "soil_temperature_is_high": {
+      "name": "土壤溫度過高",
+      "description": "植物的土壤溫度高於設定的上限時成立。"
+    },
+    "soil_temperature_is_ok": {
+      "name": "土壤溫度正常",
+      "description": "植物的土壤溫度在正常範圍內時成立。"
+    },
+    "humidity_is_low": {
+      "name": "空氣濕度過低",
+      "description": "植物的空氣濕度低於設定的下限時成立。"
+    },
+    "humidity_is_high": {
+      "name": "空氣濕度過高",
+      "description": "植物的空氣濕度高於設定的上限時成立。"
+    },
+    "humidity_is_ok": {
+      "name": "空氣濕度正常",
+      "description": "植物的空氣濕度在正常範圍內時成立。"
+    },
+    "illuminance_is_low": {
+      "name": "照度過低",
+      "description": "植物的照度低於設定的下限時成立。"
+    },
+    "illuminance_is_high": {
+      "name": "照度過高",
+      "description": "植物的照度高於設定的上限時成立。"
+    },
+    "illuminance_is_ok": {
+      "name": "照度正常",
+      "description": "植物的照度在正常範圍內時成立。"
+    },
+    "co2_is_low": {
+      "name": "CO2 過低",
+      "description": "植物的 CO2 低於設定的下限時成立。"
+    },
+    "co2_is_high": {
+      "name": "CO2 過高",
+      "description": "植物的 CO2 高於設定的上限時成立。"
+    },
+    "co2_is_ok": {
+      "name": "CO2 正常",
+      "description": "植物的 CO2 在正常範圍內時成立。"
+    },
+    "dli_is_low": {
+      "name": "DLI 過低",
+      "description": "植物的 DLI 低於設定的下限時成立。"
+    },
+    "dli_is_high": {
+      "name": "DLI 過高",
+      "description": "植物的 DLI 高於設定的上限時成立。"
+    },
+    "dli_is_ok": {
+      "name": "DLI 正常",
+      "description": "植物的 DLI 在正常範圍內時成立。"
+    },
+    "vpd_is_low": {
+      "name": "VPD 過低",
+      "description": "植物的 VPD 低於設定的下限時成立。"
+    },
+    "vpd_is_high": {
+      "name": "VPD 過高",
+      "description": "植物的 VPD 高於設定的上限時成立。"
+    },
+    "vpd_is_ok": {
+      "name": "VPD 正常",
+      "description": "植物的 VPD 在正常範圍內時成立。"
+    },
+    "moisture_sensor_is_stale": {
+      "name": "土壤濕度感測器未更新",
+      "description": "植物的土壤濕度感測器超過設定時間未傳送更新時成立。",
+      "fields": {
+        "for": {
+          "name": "持續時間",
+          "description": "感測器必須停止更新至少這段時間，條件才會成立。"
+        }
+      }
+    },
+    "conductivity_sensor_is_stale": {
+      "name": "導電度感測器未更新",
+      "description": "植物的導電度感測器超過設定時間未傳送更新時成立。",
+      "fields": {
+        "for": {
+          "name": "持續時間",
+          "description": "感測器必須停止更新至少這段時間，條件才會成立。"
+        }
+      }
+    },
+    "temperature_sensor_is_stale": {
+      "name": "溫度感測器未更新",
+      "description": "植物的溫度感測器超過設定時間未傳送更新時成立。",
+      "fields": {
+        "for": {
+          "name": "持續時間",
+          "description": "感測器必須停止更新至少這段時間，條件才會成立。"
+        }
+      }
+    },
+    "soil_temperature_sensor_is_stale": {
+      "name": "土壤溫度感測器未更新",
+      "description": "植物的土壤溫度感測器超過設定時間未傳送更新時成立。",
+      "fields": {
+        "for": {
+          "name": "持續時間",
+          "description": "感測器必須停止更新至少這段時間，條件才會成立。"
+        }
+      }
+    },
+    "humidity_sensor_is_stale": {
+      "name": "空氣濕度感測器未更新",
+      "description": "植物的空氣濕度感測器超過設定時間未傳送更新時成立。",
+      "fields": {
+        "for": {
+          "name": "持續時間",
+          "description": "感測器必須停止更新至少這段時間，條件才會成立。"
+        }
+      }
+    },
+    "illuminance_sensor_is_stale": {
+      "name": "照度感測器未更新",
+      "description": "植物的照度感測器超過設定時間未傳送更新時成立。",
+      "fields": {
+        "for": {
+          "name": "持續時間",
+          "description": "感測器必須停止更新至少這段時間，條件才會成立。"
+        }
+      }
+    },
+    "co2_sensor_is_stale": {
+      "name": "CO2 感測器未更新",
+      "description": "植物的 CO2 感測器超過設定時間未傳送更新時成立。",
+      "fields": {
+        "for": {
+          "name": "持續時間",
+          "description": "感測器必須停止更新至少這段時間，條件才會成立。"
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "platform_setup_failed": {
+      "message": "無法設定植物實體平台。"
+    },
+    "plant_entity_not_added": {
+      "message": "植物實體 {entity_id} 未加入 Home Assistant，可能是因為它的唯一 ID 已被使用。"
+    }
+  },
+  "issues": {
+    "other_flower_card": {
+      "title": "Flower card 重複安裝",
+      "description": "Plant Monitor 整合現在已內建 flower card。您的儀表板還另外載入了一份：{urls}\n\n請移除那一份：在 Marketplace 解除安裝 Flower Card（Home Assistant 2026.11 之前為 HACS），或刪除您自行新增的資源（在「設定 → 儀表板 → 資源」，或 YAML 設定中的 `lovelace` 資源）。在這之前儀表板仍可正常使用。另一份移除後，Plant Monitor 會立即接手；如果資源寫在 YAML 中，請先重新啟動 Home Assistant。之後請重新整理瀏覽器。"
+    },
+    "missing_flower_card": {
+      "title": "儀表板資源指向已移除的 flower card",
+      "description": "您的儀表板資源仍列著一個檔案已不存在的 flower card：{urls}\n\n這個項目已不算是已安裝的卡片，所以不會影響 Plant Monitor 載入自己的卡片。請在「設定 → 儀表板 → 資源」或 YAML 設定中的 `lovelace` 資源刪除這個殘留項目，瀏覽器就不會再去要求那個不存在的檔案。"
+    }
+  }
+}
