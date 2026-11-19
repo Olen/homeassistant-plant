@@ -103,21 +103,21 @@
     "step": {
       "user": {
         "title": "設定植物",
-        "description": "輸入植物名稱。也可以輸入品種，以便在 OpenPlantbook 搜尋。",
+        "description": "輸入植物名稱。也可以輸入種類，以便在 OpenPlantbook 搜尋。",
         "data": {
           "name": "植物名稱",
-          "species": "品種"
+          "species": "種類"
         },
         "data_description": {
           "species": "用於在 OpenPlantbook 搜尋"
         }
       },
       "select_species": {
-        "title": "從 OpenPlantbook 選擇品種",
+        "title": "從 OpenPlantbook 選擇種類",
         "description": "{desc}",
         "data": {
-          "search_for": "搜尋其他品種",
-          "species": "品種"
+          "search_for": "搜尋其他種類",
+          "species": "種類"
         },
         "menu_options": {
           "user": "返回"
@@ -145,7 +145,7 @@
         "description": "# {name}\n![植物]({entity_picture}){br}\n{extra_desc}溫度單位為 {temperature_unit}",
         "data": {
           "right_plant": "這就是我要找的植物",
-          "display_pid": "要顯示的植物品種",
+          "display_pid": "要顯示的植物種類",
           "max_moisture": "土壤濕度上限 (%)",
           "min_moisture": "土壤濕度下限 (%)",
           "max_illuminance": "照度上限 (lx)",
@@ -180,10 +180,10 @@
         "description": "設定 **{plant_name}** 的選項",
         "data": {
           "check_days": "照度檢查天數",
-          "species": "品種",
+          "species": "種類",
           "force_update": "強制從 OpenPlantbook 重新取得資料",
-          "display_pid": "要顯示的植物品種",
-          "entity_picture": "圖片網址。若在 OpenPlantbook 找到該品種，會自動更新",
+          "display_pid": "要顯示的植物種類",
+          "entity_picture": "圖片網址。若在 OpenPlantbook 找到該種類，會自動更新",
           "illuminance_trigger": "以照度作為問題觸發條件",
           "dli_trigger": "以每日光照積分（DLI）作為問題觸發條件",
           "humidity_trigger": "以空氣濕度作為問題觸發條件",
