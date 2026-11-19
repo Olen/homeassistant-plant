@@ -40,7 +40,7 @@ from .ha_common import (
 
 
 def _expected_trigger_keys() -> set[str]:
-    keys = {"problem_detected", "problem_cleared"}
+    keys = {"problem_detected", "problem_cleared", "watered", "fertilized", "repotted"}
     for m in STATUS_MEASUREMENTS:
         keys |= {f"{m.key}_became_low", f"{m.key}_became_high", f"{m.key}_became_ok"}
     for m in EXTERNAL_MEASUREMENTS:
@@ -59,7 +59,7 @@ def _expected_condition_keys() -> set[str]:
 
 async def test_async_get_triggers_full_surface(hass: HomeAssistant) -> None:
     assert set(await async_get_triggers(hass)) == _expected_trigger_keys()
-    assert len(_expected_trigger_keys()) == 43
+    assert len(_expected_trigger_keys()) == 46
 
 
 async def test_async_get_conditions_full_surface(hass: HomeAssistant) -> None:

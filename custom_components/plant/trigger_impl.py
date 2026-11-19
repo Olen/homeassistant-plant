@@ -7,7 +7,8 @@ from homeassistant.helpers.automation import DomainSpec
 from homeassistant.helpers.trigger import make_entity_target_state_trigger
 
 from .automation_meta import EXTERNAL_MEASUREMENTS, STATUS_MEASUREMENTS
-from .const import DOMAIN, STATE_HIGH, STATE_LOW
+from .care_trigger import make_care_trigger
+from .const import CARE_EVENT_TYPES, DOMAIN, STATE_HIGH, STATE_LOW
 from .stale import make_stale_trigger
 
 # transition-name suffix -> plant <m>_status value it maps to
@@ -36,4 +37,7 @@ def build_triggers() -> dict[str, type]:
     for m in EXTERNAL_MEASUREMENTS:
         triggers[f"{m.key}_sensor_became_stale"] = make_stale_trigger(m, fresh=False)
         triggers[f"{m.key}_sensor_became_fresh"] = make_stale_trigger(m, fresh=True)
+    # Care reported on the plant's care event entity (watered, fertilized, ...)
+    for event_type in CARE_EVENT_TYPES.values():
+        triggers[event_type] = make_care_trigger(event_type)
     return triggers

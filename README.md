@@ -257,6 +257,8 @@ Core Home Assistant ships generic purpose triggers too, like `temperature.crosse
 
   "Stale" means the source sensor is `unavailable`/`unknown`, or simply hasn't reported within a window (`for`, default **24 hours**). A sensor that keeps reporting the same value counts as reporting. A grace period means it does **not** false-alarm at restart, when a sensor briefly reads `unknown` before its own integration populates it — staleness only fires once the source is genuinely still dead after the full window elapses.
 
+- **Care:** `plant.watered` / `plant.fertilized` / `plant.repotted`. `watered` fires when the plant detects a watering (a quick rise in soil moisture), with or without a to-do list. With [care tasks](#-care-tasks-preview), all three also fire when the matching item is ticked off. `trigger.entity_id` is the plant.
+
 ### Targeting
 
 Every trigger and condition targets the **plant** entity — you pick which plant, nothing else. For the stale family, the integration resolves that measurement's configured external source sensor itself; you never reference the sensor directly.
@@ -399,7 +401,7 @@ What happens:
 
 - **Watering:** when the soil gets too dry, "Water *plant*" is added. When the plant notices a watering, it ticks the item off itself. You can also tick it off by hand.
 - **Fertilizing and repotting:** an item is added with a due date. When you tick it off, the next one is added, counted from the day it was done.
-- **Care event:** each plant has an event entity that reports `watered`, `fertilized` and `repotted`. Use it with the **Event received** trigger in your own automations.
+- **Automations:** the `plant.watered`, `plant.fertilized` and `plant.repotted` triggers fire when the care is done. Each plant also has a care event entity that reports the same, for the **Event received** trigger and the logbook.
 
 Each item has a line such as `plant.aloe_vera · fertilize` in its description. The plant uses it to find its own items, so leave that line in place when you edit an item.
 

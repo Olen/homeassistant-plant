@@ -68,8 +68,10 @@ from .const import (
     ATTR_SPECIES,
     ATTR_TEMPERATURE,
     ATTR_VPD,
+    CARE_EVENT_TYPES,
     CARE_FERTILIZE,
     CARE_REPOT,
+    CARE_WATER,
     CONF_MAX_BRIGHTNESS,
     CONF_MAX_CONDUCTIVITY,
     CONF_MAX_MOISTURE,
@@ -102,7 +104,7 @@ from .const import (
     STATE_HIGH,
     STATE_LOW,
 )
-from .event import ATTR_CARE_EVENT
+from .event import ATTR_CARE_EVENT, PlantCareEvent
 from .frontend import async_setup_card
 from .plant_helpers import PlantHelper
 
@@ -656,6 +658,7 @@ class PlantDevice(RestoreEntity):
         self.illuminance_status = None
         self.moisture_status = None
         self.care_tasks: CareTasks | None = None
+        self.care_event: PlantCareEvent | None = None
         self.care_settings: tuple[str | None, int, int] = (None, 0, 0)
         self.temperature_status = None
         self.humidity_status = None
@@ -1340,6 +1343,14 @@ class PlantDevice(RestoreEntity):
 
         return False
 
+    def _watering_detected(self) -> None:
+        """Report a watering; with care tasks, also tick off the watering item."""
+        # update() runs in a worker thread; add_job hands the work to the event loop
+        if self.care_tasks is not None:
+            self.hass.add_job(self.care_tasks.async_watering_detected)
+        elif self.care_event is not None:
+            self.hass.add_job(self.care_event.report, CARE_EVENT_TYPES[CARE_WATER])
+
     def update(self) -> None:
         """Run on every update of the entities"""
 
@@ -1372,8 +1383,7 @@ class PlantDevice(RestoreEntity):
                 if self._last_moisture_value is not None:
                     moisture_increase = moisture_val - self._last_moisture_value
                     if moisture_increase >= MOISTURE_INCREASE_THRESHOLD:
-                        if self.care_tasks is not None:
-                            self.hass.add_job(self.care_tasks.async_watering_detected)
+                        self._watering_detected()
                         grace_period_seconds = self.moisture_grace_period
                         if grace_period_seconds > 0:
                             self._moisture_grace_end_time = dt_util.now() + timedelta(

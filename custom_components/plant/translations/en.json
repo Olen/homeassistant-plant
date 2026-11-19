@@ -693,6 +693,18 @@
           "description": "The sensor must stay in this state for at least this long before the trigger fires."
         }
       }
+    },
+    "watered": {
+      "name": "Plant watered",
+      "description": "Triggers when the plant is watered: detected from a quick rise in soil moisture, or a watering item ticked off in its to-do list."
+    },
+    "fertilized": {
+      "name": "Plant fertilized",
+      "description": "Triggers when a fertilizing item for the plant is ticked off in its to-do list."
+    },
+    "repotted": {
+      "name": "Plant repotted",
+      "description": "Triggers when a repotting item for the plant is ticked off in its to-do list."
     }
   },
   "conditions": {

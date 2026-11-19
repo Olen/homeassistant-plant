@@ -16,12 +16,13 @@ from homeassistant.components.todo import (
 )
 from homeassistant.config_entries import ConfigEntry, ConfigFlow
 from homeassistant.const import Platform, __version__ as HA_VERSION
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, State
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.setup import async_setup_component
 from homeassistant.util import dt as dt_util
 
+from custom_components.plant.care_trigger import is_new_care_event
 from custom_components.plant.const import (
     DOMAIN,
     FLOW_CARE_TODO,
@@ -35,6 +36,7 @@ from .ha_common import (
     MockConfigEntry,
     MockModule,
     MockPlatform,
+    async_capture_events,
     mock_config_flow,
     mock_integration,
     mock_platform,
@@ -424,3 +426,81 @@ async def test_options_step_saves_the_chosen_list(
     assert entry.options[FLOW_FERTILIZE_INTERVAL] == 30
     # The reload started care tasks, which planned the first fertilizing
     assert [i.summary for i in _own(todo_list)] == [f"Fertilize {TEST_PLANT_NAME}"]
+
+
+async def _automation_on(hass: HomeAssistant, trigger: str, event: str) -> list:
+    """An automation firing `event` on plant.<trigger> for the test plant."""
+    events = async_capture_events(hass, event)
+    assert await async_setup_component(
+        hass,
+        "automation",
+        {
+            "automation": {
+                "trigger": {
+                    "trigger": f"plant.{trigger}",
+                    "target": {"entity_id": PLANT_ENTITY_ID},
+                },
+                "action": {"event": event},
+            }
+        },
+    )
+    await hass.async_block_till_done()
+    return events
+
+
+@pytest.mark.usefixtures("mock_external_sensors")
+class TestCareTriggers:
+    """plant.watered / fertilized fire from the care event entity."""
+
+    async def test_watered_fires_without_a_todo_list(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        await _setup_plant(hass, plant_config_data, {})
+        watered = await _automation_on(hass, "watered", "was_watered")
+        await _set_moisture(hass, 20)
+
+        await _set_moisture(hass, 45)
+
+        assert len(watered) == 1
+
+    async def test_fertilized_fires_when_the_item_is_ticked_off(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        todo_list = await _setup_todo_list(hass)
+        await _setup_plant(
+            hass,
+            plant_config_data,
+            {FLOW_CARE_TODO: TODO_ENTITY_ID, FLOW_FERTILIZE_INTERVAL: 30},
+        )
+        fertilized = await _automation_on(hass, "fertilized", "was_fertilized")
+        watered = await _automation_on(hass, "watered", "was_watered")
+
+        await hass.services.async_call(
+            "todo",
+            "update_item",
+            {
+                "entity_id": TODO_ENTITY_ID,
+                "item": _own(todo_list)[0].uid,
+                "status": "completed",
+            },
+            blocking=True,
+        )
+        await hass.async_block_till_done()
+
+        assert len(fertilized) == 1
+        assert watered == []
+
+
+def test_restored_care_event_is_not_a_new_one() -> None:
+    """Restoring the last event at startup, or recovering, must not fire."""
+    watered = {"event_type": "watered"}
+    earlier = State("event.care", "2026-11-18T10:00:00.000+00:00", watered)
+    later = State("event.care", "2026-11-19T10:00:00.000+00:00", watered)
+
+    assert is_new_care_event(earlier, later, "watered")
+    assert not is_new_care_event(None, later, "watered")
+    assert not is_new_care_event(State("event.care", "unavailable"), later, "watered")
+    assert not is_new_care_event(later, later, "watered")
+    assert not is_new_care_event(earlier, later, "fertilized")
+    # The very first event ever goes from unknown to a timestamp
+    assert is_new_care_event(State("event.care", "unknown"), later, "watered")
