@@ -1330,6 +1330,152 @@ class TestSensorRemovalAndConfigPersistence:
         assert plant.sensor_soil_temperature._config_key == FLOW_SENSOR_SOIL_TEMPERATURE
 
 
+SOURCE_ENTITY_ID = "sensor.test_temperature"
+SOURCE_UNIQUE_ID = "0x00158d0001a2b3c4_temperature_zigbee2mqtt"
+
+
+def _register_source(hass: HomeAssistant, unique_id: str, object_id: str) -> str:
+    """Register a source sensor the way MQTT discovery does; return its entity_id."""
+    entry = er.async_get(hass).async_get_or_create(
+        "sensor", "mqtt", unique_id, suggested_object_id=object_id
+    )
+    return entry.entity_id
+
+
+def _register_existing_source(hass: HomeAssistant) -> None:
+    """Put the plant's temperature source into the entity registry under its own id."""
+    state = hass.states.get(SOURCE_ENTITY_ID)
+    hass.states.async_remove(SOURCE_ENTITY_ID)
+    entity_id = _register_source(hass, SOURCE_UNIQUE_ID, "test_temperature")
+    assert entity_id == SOURCE_ENTITY_ID
+    hass.states.async_set(SOURCE_ENTITY_ID, state.state, state.attributes)
+
+
+class TestRemovedSourceComesBack:
+    """A source that is removed and re-created (Zigbee2MQTT rename) is linked again."""
+
+    async def test_recreated_under_new_entity_id_is_linked_again(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """The re-created source is followed to its new entity_id."""
+        from custom_components.plant.const import (
+            FLOW_PLANT_INFO,
+            FLOW_SENSOR_TEMPERATURE,
+        )
+
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        meter = plant.sensor_temperature
+        _register_existing_source(hass)
+
+        er.async_get(hass).async_remove(SOURCE_ENTITY_ID)
+        await hass.async_block_till_done()
+        assert meter.external_sensor == SOURCE_ENTITY_ID
+
+        # The old id is still taken by its state, so HA picks a new one
+        new_entity_id = _register_source(
+            hass, SOURCE_UNIQUE_ID, "kitchen_aloe_temperature"
+        )
+        await hass.async_block_till_done()
+        assert new_entity_id == "sensor.kitchen_aloe_temperature"
+
+        assert meter.external_sensor == new_entity_id
+        entry = hass.config_entries.async_get_entry(init_integration.entry_id)
+        assert entry.data[FLOW_PLANT_INFO][FLOW_SENSOR_TEMPERATURE] == new_entity_id
+        meter_entry = er.async_get(hass).async_get(meter.entity_id)
+        assert meter_entry.disabled_by is None
+
+        # The window is closed: it must not clear the source later
+        async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=61))
+        await hass.async_block_till_done()
+        assert meter.external_sensor == new_entity_id
+
+    async def test_recreated_under_same_entity_id_stays_linked(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """A source that comes back under its old entity_id is kept."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        meter = plant.sensor_temperature
+        _register_existing_source(hass)
+
+        er.async_get(hass).async_remove(SOURCE_ENTITY_ID)
+        hass.states.async_remove(SOURCE_ENTITY_ID)
+        await hass.async_block_till_done()
+
+        entity_id = _register_source(hass, SOURCE_UNIQUE_ID, "something_else")
+        await hass.async_block_till_done()
+        assert entity_id == SOURCE_ENTITY_ID
+
+        async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=61))
+        await hass.async_block_till_done()
+        assert meter.external_sensor == SOURCE_ENTITY_ID
+
+    async def test_other_new_entity_is_not_linked(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """A different entity created in the window is not taken as the source."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        meter = plant.sensor_temperature
+        _register_existing_source(hass)
+
+        er.async_get(hass).async_remove(SOURCE_ENTITY_ID)
+        await hass.async_block_till_done()
+
+        _register_source(hass, "0x00158d0009999999_temperature", "other_temperature")
+        await hass.async_block_till_done()
+        assert meter.external_sensor == SOURCE_ENTITY_ID
+
+        async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=61))
+        await hass.async_block_till_done()
+        assert meter.external_sensor is None
+
+    async def test_source_that_does_not_return_is_cleared_after_window(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """A removed source is kept for the window, then cleared and its meter disabled."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        meter = plant.sensor_temperature
+        _register_existing_source(hass)
+
+        er.async_get(hass).async_remove(SOURCE_ENTITY_ID)
+        await hass.async_block_till_done()
+
+        async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=59))
+        await hass.async_block_till_done()
+        assert meter.external_sensor == SOURCE_ENTITY_ID
+
+        async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=61))
+        await hass.async_block_till_done()
+        assert meter.external_sensor is None
+        meter_entry = er.async_get(hass).async_get(meter.entity_id)
+        assert meter_entry.disabled_by == er.RegistryEntryDisabler.INTEGRATION
+
+    async def test_replacing_the_source_in_the_window_is_kept(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """A sensor chosen by the user during the window is not cleared by it."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        meter = plant.sensor_temperature
+        _register_existing_source(hass)
+
+        er.async_get(hass).async_remove(SOURCE_ENTITY_ID)
+        await hass.async_block_till_done()
+
+        meter.replace_external_sensor("sensor.test_soil_temperature")
+        async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=61))
+        await hass.async_block_till_done()
+        assert meter.external_sensor == "sensor.test_soil_temperature"
+
+
 class TestDliSensorsWhenIlluminanceRemoved:
     """Tests for DLI-related sensors when illuminance sensor is removed."""
 
