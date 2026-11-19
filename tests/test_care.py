@@ -597,3 +597,22 @@ class TestSwitchingOff:
 
         await _configure_care(hass, entry, None)
         assert hass.states.get(PLANT_ENTITY_ID).attributes["care_todo_list"] is None
+
+
+@pytest.mark.usefixtures("mock_external_sensors")
+async def test_items_and_menu_use_the_name_home_assistant_shows(
+    hass: HomeAssistant, plant_config_data: dict[str, Any]
+) -> None:
+    """A plant renamed in Home Assistant goes by that name, not its setup name."""
+    todo_list = await _setup_todo_list(hass)
+    entry = await _setup_plant(
+        hass, plant_config_data, {FLOW_CARE_TODO: TODO_ENTITY_ID}
+    )
+    er.async_get(hass).async_update_entity(PLANT_ENTITY_ID, name="Monstéra")
+    await hass.async_block_till_done()
+
+    await _set_moisture(hass, 10)
+    menu = await hass.config_entries.options.async_init(entry.entry_id)
+
+    assert [i.summary for i in _own(todo_list)] == ["Water Monstéra"]
+    assert menu["description_placeholders"]["plant_name"] == "Monstéra"

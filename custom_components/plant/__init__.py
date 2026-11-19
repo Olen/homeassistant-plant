@@ -107,7 +107,7 @@ from .const import (
 )
 from .event import ATTR_CARE_EVENT, PlantCareEvent
 from .frontend import async_setup_card
-from .plant_helpers import PlantHelper
+from .plant_helpers import PlantHelper, display_name
 
 _LOGGER = logging.getLogger(__name__)
 PLATFORMS = [Platform.EVENT, Platform.NUMBER, Platform.SENSOR]
@@ -417,7 +417,7 @@ async def _async_start_care_tasks(
     care_tasks = CareTasks(
         hass,
         plant_entity_id=plant.entity_id,
-        plant_name=lambda: plant.name,
+        plant_name=lambda: display_name(hass, plant),
         todo_entity_id=todo_entity_id,
         intervals={CARE_FERTILIZE: fertilize_days, CARE_REPOT: repot_days},
         care_event=hass.data[DOMAIN][entry.entry_id][ATTR_CARE_EVENT],
