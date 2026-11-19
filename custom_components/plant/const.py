@@ -27,6 +27,10 @@ REQUEST_TIMEOUT = 30
 # real (unavailable) state promptly for a genuinely dead sensor.
 RESTORE_GRACE_PERIOD = timedelta(minutes=10)
 
+# How long a removed source sensor may take to come back (e.g. a Zigbee2MQTT
+# rename re-creates its entities) before the plant lets go of it.
+SOURCE_RETURN_WINDOW = timedelta(seconds=60)
+
 # ATTRs are used by machines
 ATTR_BATTERY = "battery"
 ATTR_BRIGHTNESS = "brightness"

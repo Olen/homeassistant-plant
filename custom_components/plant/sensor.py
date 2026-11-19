@@ -104,6 +104,7 @@ from .const import (
     READING_TEMPERATURE,
     READING_VPD,
     RESTORE_GRACE_PERIOD,
+    SOURCE_RETURN_WINDOW,
     TRANSLATION_KEY_CO2,
     TRANSLATION_KEY_CONDUCTIVITY,
     TRANSLATION_KEY_DLI,
@@ -240,6 +241,20 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
+def _deleted_registry_id(hass: HomeAssistant, entity_id: str) -> str | None:
+    """Registry id HA keeps for a removed entity, reused if it is re-created."""
+    matches = [
+        deleted
+        for deleted in er_async_get(hass).deleted_entities.values()
+        if deleted.entity_id == entity_id
+    ]
+    if not matches:
+        return None
+    # An older deletion may have used the same entity_id; take the latest
+    latest = max(matches, key=lambda deleted: deleted.modified_at)
+    return latest.id
+
+
 class PlantCurrentStatus(RestoreSensor):
     """Parent class for the meter classes below"""
 
@@ -262,6 +277,9 @@ class PlantCurrentStatus(RestoreSensor):
         # entity_id -> unsubscribe for the state listeners this sensor holds
         self._tracker: dict[str, CALLBACK_TYPE] = {}
         self._restored_value_active = False
+        # Registry id of a removed source we wait for, and the timer that gives up
+        self._removed_source_registry_id: str | None = None
+        self._cancel_source_return_window: CALLBACK_TYPE | None = None
         # Only force entity_id for existing entities (backwards compat).
         # New entities let has_entity_name derive the entity_id automatically.
         ent_reg = er_async_get(hass)
@@ -312,6 +330,7 @@ class PlantCurrentStatus(RestoreSensor):
     def replace_external_sensor(self, new_sensor: str | None) -> None:
         """Modify the external sensor and persist to config entry."""
         _LOGGER.info("Setting %s external sensor to %s", self.entity_id, new_sensor)
+        self._stop_waiting_for_removed_source()
         old_sensor = getattr(self, "_external_sensor", None)
         # pylint: disable=attribute-defined-outside-init
         self._external_sensor = new_sensor
@@ -482,14 +501,11 @@ class PlantCurrentStatus(RestoreSensor):
                     )
                     self.replace_external_sensor(new_entity_id)
             elif action == "remove":
-                # Check if our external sensor was deleted
                 entity_id = event.data["entity_id"]
                 if self._external_sensor and entity_id == self._external_sensor:
-                    _LOGGER.info(
-                        "External sensor %s was deleted, clearing reference",
-                        entity_id,
-                    )
-                    self.replace_external_sensor(None)
+                    self._external_sensor_removed(entity_id)
+            elif action == "create":
+                self._entity_created(event.data["entity_id"])
 
         self.async_on_remove(
             self.hass.bus.async_listen(
@@ -497,6 +513,7 @@ class PlantCurrentStatus(RestoreSensor):
                 _handle_entity_registry_update,
             )
         )
+        self.async_on_remove(self._stop_waiting_for_removed_source)
 
         # Bound the startup restore window: if the source never delivers a live
         # value, end the window after the grace period so a stale restored value
@@ -507,6 +524,61 @@ class PlantCurrentStatus(RestoreSensor):
                     self.hass, RESTORE_GRACE_PERIOD, self._end_restore_window
                 )
             )
+
+    @callback
+    def _external_sensor_removed(self, entity_id: str) -> None:
+        """Give a removed source the return window before letting go of it."""
+        registry_id = _deleted_registry_id(self.hass, entity_id)
+        if registry_id is None:
+            # Without a unique_id the entity can never come back as itself
+            _LOGGER.info(
+                "External sensor %s was deleted, clearing reference", entity_id
+            )
+            self.replace_external_sensor(None)
+            return
+        _LOGGER.debug(
+            "External sensor %s was removed, waiting %s for it to come back",
+            entity_id,
+            SOURCE_RETURN_WINDOW,
+        )
+        self._stop_waiting_for_removed_source()
+        self._removed_source_registry_id = registry_id
+        self._cancel_source_return_window = async_call_later(
+            self.hass, SOURCE_RETURN_WINDOW, self._removed_source_did_not_return
+        )
+
+    @callback
+    def _entity_created(self, entity_id: str) -> None:
+        """Link the removed source again when it is re-created."""
+        if self._removed_source_registry_id is None:
+            return
+        entry = er_async_get(self.hass).async_get(entity_id)
+        if entry is None or entry.id != self._removed_source_registry_id:
+            return
+        _LOGGER.info(
+            "External sensor of %s came back as %s, linking it again",
+            self.entity_id,
+            entity_id,
+        )
+        self.replace_external_sensor(entity_id)
+
+    @callback
+    def _removed_source_did_not_return(self, _now: datetime) -> None:
+        """Let go of a removed source that did not come back in time."""
+        self._cancel_source_return_window = None
+        _LOGGER.info(
+            "External sensor %s was deleted, clearing reference",
+            self._external_sensor,
+        )
+        self.replace_external_sensor(None)
+
+    @callback
+    def _stop_waiting_for_removed_source(self) -> None:
+        """Forget a removed source we were waiting for."""
+        self._removed_source_registry_id = None
+        if self._cancel_source_return_window is not None:
+            self._cancel_source_return_window()
+            self._cancel_source_return_window = None
 
     @callback
     def async_entity_id_changed(self, old_entity_id: str) -> None:

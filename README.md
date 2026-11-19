@@ -361,6 +361,15 @@ To remove a sensor, call the action with an empty `new_sensor`.
 > [!TIP]
 > Use generic entity IDs for physical sensors (e.g. `sensor.ble_sensor_1_moisture`) and descriptive IDs for plant sensors (e.g. `sensor.rose_moisture`). This makes it easy to swap hardware without confusion.
 
+### Renamed or removed source sensors
+
+Renaming a source sensor's entity ID in Home Assistant is followed automatically.
+
+Some integrations rename a device by removing its entities and creating them again, for example Zigbee2MQTT with **Update Home Assistant entity ID** ticked. The plant waits 60 seconds for a removed sensor to come back, and links it again under its new entity ID.
+
+> [!NOTE]
+> Because of this, removing a device or a sensor entity is only reflected in the plant after 60 seconds. Until then the plant's sensor has no value; after that the source is cleared and the plant's sensor is disabled.
+
 ### Adding a sensor to an existing plant
 
 If you set up a plant without a particular sensor (e.g. you didn't have a CO2 or humidity sensor at the time), that plant sensor entity is **automatically disabled**. To add the sensor later:
