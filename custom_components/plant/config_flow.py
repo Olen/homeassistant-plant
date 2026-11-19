@@ -111,7 +111,7 @@ from .const import (
     URL_SCHEME_HTTP,
     URL_SCHEME_MEDIA_SOURCE,
 )
-from .plant_helpers import PlantHelper, display_name
+from .plant_helpers import PlantHelper
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -770,7 +770,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             step_id="init",
             menu_options=["plant_properties", "replace_sensor", "care_tasks"],
             description_placeholders={
-                "plant_name": display_name(self.hass, self.plant),
+                "plant_name": self.config_entry.title,
                 "care_todo_list": self._care_todo_list_name(),
             },
         )
@@ -914,9 +914,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         return self.async_show_form(
             step_id="plant_properties",
             data_schema=vol.Schema(data_schema),
-            description_placeholders={
-                "plant_name": display_name(self.hass, self.plant)
-            },
+            description_placeholders={"plant_name": self.config_entry.title},
         )
 
     async def async_step_replace_sensor(
@@ -937,9 +935,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     data_schema=vol.Schema(
                         _build_sensor_schema(self.sensor_form_values)
                     ),
-                    description_placeholders={
-                        "plant_name": display_name(self.hass, self.plant)
-                    },
+                    description_placeholders={"plant_name": self.config_entry.title},
                 )
             plant_info = self.config_entry.data.get(FLOW_PLANT_INFO, {})
             for key, attr_name in _SENSOR_ATTR_MAP.items():
@@ -971,9 +967,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         return self.async_show_form(
             step_id="replace_sensor",
             data_schema=vol.Schema(_build_sensor_schema(defaults=plant_info)),
-            description_placeholders={
-                "plant_name": display_name(self.hass, self.plant)
-            },
+            description_placeholders={"plant_name": self.config_entry.title},
         )
 
     async def async_step_care_tasks(
@@ -1029,9 +1023,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             step_id="care_tasks",
             data_schema=vol.Schema(data_schema),
             errors=errors,
-            description_placeholders={
-                "plant_name": display_name(self.hass, self.plant)
-            },
+            description_placeholders={"plant_name": self.config_entry.title},
         )
 
 

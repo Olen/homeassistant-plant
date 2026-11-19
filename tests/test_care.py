@@ -601,10 +601,10 @@ class TestSwitchingOff:
 
 
 @pytest.mark.usefixtures("mock_external_sensors")
-async def test_items_and_menu_use_the_name_home_assistant_shows(
+async def test_items_use_the_plant_name_and_menu_the_entry_title(
     hass: HomeAssistant, plant_config_data: dict[str, Any]
 ) -> None:
-    """A plant renamed in Home Assistant goes by that name, not its setup name."""
+    """Care items use the plant's displayed name; the options flow the entry title."""
     todo_list = await _setup_todo_list(hass)
     entry = await _setup_plant(
         hass, plant_config_data, {FLOW_CARE_TODO: TODO_ENTITY_ID}
@@ -619,7 +619,7 @@ async def test_items_and_menu_use_the_name_home_assistant_shows(
     shown = hass.states.get(PLANT_ENTITY_ID).name
     assert "Monstéra" in shown
     assert [i.summary for i in _own(todo_list)] == [f"Water {shown}"]
-    assert menu["description_placeholders"]["plant_name"] == shown
+    assert menu["description_placeholders"]["plant_name"] == entry.title
 
 
 async def _tick_off(hass: HomeAssistant, item: TodoItem) -> None:
