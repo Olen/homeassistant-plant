@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 from typing import Any
+from unittest.mock import patch
 from uuid import uuid4
 
 import pytest
@@ -614,8 +615,11 @@ async def test_items_and_menu_use_the_name_home_assistant_shows(
     await _set_moisture(hass, 10)
     menu = await hass.config_entries.options.async_init(entry.entry_id)
 
-    assert [i.summary for i in _own(todo_list)] == ["Water Monstéra"]
-    assert menu["description_placeholders"]["plant_name"] == "Monstéra"
+    # HA 2026.11+ shows "<device> <entity>", older versions the entity name
+    shown = hass.states.get(PLANT_ENTITY_ID).name
+    assert "Monstéra" in shown
+    assert [i.summary for i in _own(todo_list)] == [f"Water {shown}"]
+    assert menu["description_placeholders"]["plant_name"] == shown
 
 
 async def _tick_off(hass: HomeAssistant, item: TodoItem) -> None:
@@ -641,14 +645,17 @@ class TestRenamingThePlant:
         await _tick_off(hass, _own(todo_list)[0])
         await _set_moisture(hass, 45)
         await _set_moisture(hass, 10)
+        shown_before = hass.states.get(PLANT_ENTITY_ID).name
 
         er.async_get(hass).async_update_entity(PLANT_ENTITY_ID, name="Monstéra")
         await hass.async_block_till_done()
 
+        shown_after = hass.states.get(PLANT_ENTITY_ID).name
+        assert "Monstéra" in shown_after
         by_status = {i.status: i.summary for i in _own(todo_list)}
         assert by_status == {
-            TodoItemStatus.COMPLETED: f"Water {TEST_PLANT_NAME}",
-            TodoItemStatus.NEEDS_ACTION: "Water Monstéra",
+            TodoItemStatus.COMPLETED: f"Water {shown_before}",
+            TodoItemStatus.NEEDS_ACTION: f"Water {shown_after}",
         }
 
     async def test_logbook_uses_the_new_name(
@@ -657,11 +664,12 @@ class TestRenamingThePlant:
         await _setup_plant(hass, plant_config_data, {})
         er.async_get(hass).async_update_entity(PLANT_ENTITY_ID, name="Monstéra")
         await hass.async_block_till_done()
-        entries = async_capture_events(hass, "logbook_entry")
+        with patch("custom_components.plant.log_entry") as log_entry:
+            await _set_moisture(hass, 10)
 
-        await _set_moisture(hass, 10)
-
-        assert [e.data["name"] for e in entries] == ["Monstéra"]
+        names = [call.args[1] for call in log_entry.call_args_list]
+        assert names == [hass.states.get(PLANT_ENTITY_ID).name]
+        assert "Monstéra" in names[0]
 
     async def test_new_entity_id_keeps_items_and_history(
         self, hass: HomeAssistant, plant_config_data: dict[str, Any]
