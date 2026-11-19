@@ -535,3 +535,65 @@ def test_restored_care_event_is_not_a_new_one() -> None:
     assert not is_new_care_event(earlier, later, "fertilized")
     # The very first event ever goes from unknown to a timestamp
     assert is_new_care_event(State("event.care", "unknown"), later, "watered")
+
+
+async def _configure_care(
+    hass: HomeAssistant, entry: MockConfigEntry, todo_entity_id: str | None
+) -> None:
+    """Submit the Care tasks options step, the way the UI does."""
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "care_tasks"}
+    )
+    user_input: dict[str, Any] = {FLOW_FERTILIZE_INTERVAL: 0, FLOW_REPOT_INTERVAL: 0}
+    if todo_entity_id is not None:
+        user_input[FLOW_CARE_TODO] = todo_entity_id
+    await hass.config_entries.options.async_configure(result["flow_id"], user_input)
+    await hass.async_block_till_done()
+
+
+@pytest.mark.usefixtures("mock_external_sensors")
+class TestSwitchingOff:
+    """Switching care tasks off cleans up and is visible on the plant."""
+
+    async def test_open_items_are_removed_history_stays(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        todo_list = await _setup_todo_list(hass)
+        done = todo_list.add_existing(
+            summary="Water",
+            status=TodoItemStatus.COMPLETED,
+            description=f"{PLANT_ENTITY_ID} · water",
+            completed=dt_util.now() - timedelta(days=3),
+        )
+        other_plant = todo_list.add_existing(
+            summary="Water the fern",
+            status=TodoItemStatus.NEEDS_ACTION,
+            description="plant.fern · water",
+        )
+        entry = await _setup_plant(
+            hass, plant_config_data, {FLOW_CARE_TODO: TODO_ENTITY_ID}
+        )
+        await _set_moisture(hass, 10)
+        assert len(_own(todo_list)) == 2
+
+        await _configure_care(hass, entry, None)
+
+        assert _own(todo_list) == [done]
+        assert other_plant in todo_list.todo_items
+
+    async def test_plant_shows_which_list_it_uses(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        await _setup_todo_list(hass)
+        entry = await _setup_plant(hass, plant_config_data, {})
+        assert hass.states.get(PLANT_ENTITY_ID).attributes["care_todo_list"] is None
+
+        await _configure_care(hass, entry, TODO_ENTITY_ID)
+        assert (
+            hass.states.get(PLANT_ENTITY_ID).attributes["care_todo_list"]
+            == TODO_ENTITY_ID
+        )
+
+        await _configure_care(hass, entry, None)
+        assert hass.states.get(PLANT_ENTITY_ID).attributes["care_todo_list"] is None

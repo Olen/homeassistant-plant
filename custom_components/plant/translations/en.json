@@ -183,7 +183,7 @@
     "step": {
       "init": {
         "title": "Options",
-        "description": "Configure options for **{plant_name}**",
+        "description": "Configure options for **{plant_name}**\n\nCare tasks: {care_todo_list}",
         "menu_options": {
           "plant_properties": "Plant properties",
           "replace_sensor": "Replace sensors",

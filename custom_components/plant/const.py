@@ -327,6 +327,8 @@ CARE_FIELDS = ["watering", "sunlight", "soil", "pruning", "fertilization"]
 
 # Care tasks kept in a to-do list (see care.py)
 FLOW_CARE_TODO = "care_todo"
+# Plant attribute: the to-do list care tasks use, or None when they are off
+ATTR_CARE_TODO_LIST = "care_todo_list"
 FLOW_CARE_TODO_NEW = "care_todo_new"
 FLOW_FERTILIZE_INTERVAL = "fertilize_interval"
 FLOW_REPOT_INTERVAL = "repot_interval"

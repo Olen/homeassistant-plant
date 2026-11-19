@@ -19,6 +19,7 @@ from homeassistant.const import (
     UnitOfTemperature,
 )
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import (
     config_validation as cv,
     entity_registry as er,
@@ -768,8 +769,20 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         return self.async_show_menu(
             step_id="init",
             menu_options=["plant_properties", "replace_sensor", "care_tasks"],
-            description_placeholders={"plant_name": self.plant.name},
+            description_placeholders={
+                "plant_name": self.plant.name,
+                "care_todo_list": self._care_todo_list_name(),
+            },
         )
+
+    def _care_todo_list_name(self) -> str:
+        """Name of the to-do list care tasks use, or "off"."""
+        if self.plant.care_tasks is None:
+            return "off"
+        state = self.hass.states.get(self.plant.care_tasks.todo_entity_id)
+        if state is None:
+            return self.plant.care_tasks.todo_entity_id
+        return state.name
 
     async def async_step_plant_properties(
         self, user_input: dict[str, Any] | None = None
@@ -1058,6 +1071,18 @@ async def update_plant_options(
 
     plant = hass.data[DOMAIN][entry.entry_id]["plant"]
     if care_settings(entry.options) != plant.care_settings:
+        new_list = care_settings(entry.options)[0]
+        if plant.care_tasks is not None and plant.care_tasks.todo_entity_id != new_list:
+            # Switched off or moved: take the open items out of the old list
+            try:
+                await plant.care_tasks.async_remove_open_items()
+            except HomeAssistantError as err:
+                _LOGGER.warning(
+                    "Could not remove care items of %s from %s: %s",
+                    plant.entity_id,
+                    plant.care_tasks.todo_entity_id,
+                    err,
+                )
         # Care tasks are set up when the plant loads
         hass.config_entries.async_schedule_reload(entry.entry_id)
         return

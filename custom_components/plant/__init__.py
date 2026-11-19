@@ -48,6 +48,7 @@ from .const import (
     ATTR_BRIGHTNESS,
     ATTR_CARE,
     ATTR_CARE_PREFIX,
+    ATTR_CARE_TODO_LIST,
     ATTR_CO2,
     ATTR_CONDUCTIVITY,
     ATTR_CURRENT,
@@ -434,6 +435,7 @@ async def _async_start_care_tasks(
         )
         return
     plant.care_tasks = care_tasks
+    plant.async_write_ha_state()
     entry.async_on_unload(care_tasks.async_stop)
 
 
@@ -783,6 +785,9 @@ class PlantDevice(RestoreEntity):
             f"{ATTR_VPD}_status": self.vpd_status,
             f"{ATTR_SPECIES}_original": self.species,
             ATTR_PROBLEMS: self._problems,
+            ATTR_CARE_TODO_LIST: (
+                self.care_tasks.todo_entity_id if self.care_tasks is not None else None
+            ),
         }
         for field, value in self.care.items():
             attributes[f"{ATTR_CARE_PREFIX}{field}"] = value

@@ -89,6 +89,25 @@ class CareTasks:
         if self._moisture_is_low():
             await self.async_moisture_low()
 
+    @property
+    def todo_entity_id(self) -> str:
+        """The to-do list this plant's care items live in."""
+        return self._todo_entity_id
+
+    async def async_remove_open_items(self) -> None:
+        """Remove this plant's open items; completed ones stay as history."""
+        async with self._lock:
+            items = await self._async_own_items()
+            uids = [item["uid"] for item in items if item["status"] == STATUS_OPEN]
+            if not uids:
+                return
+            await self._hass.services.async_call(
+                TODO_DOMAIN,
+                "remove_item",
+                {ATTR_ENTITY_ID: self._todo_entity_id, "item": uids},
+                blocking=True,
+            )
+
     @callback
     def async_stop(self) -> None:
         """Stop following the list."""
