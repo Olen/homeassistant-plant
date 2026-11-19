@@ -29,6 +29,7 @@ from custom_components.plant.const import (
     FLOW_FERTILIZE_INTERVAL,
     FLOW_REPOT_INTERVAL,
 )
+from custom_components.plant.trigger import _has_purpose_trigger_api
 
 from .common import set_sensor_state, update_plant_sensors
 from .conftest import TEST_ENTRY_ID, TEST_PLANT_NAME
@@ -448,6 +449,9 @@ async def _automation_on(hass: HomeAssistant, trigger: str, event: str) -> list:
     return events
 
 
+@pytest.mark.skipif(
+    not _has_purpose_trigger_api(), reason="plant.* triggers need HA 2026.7+"
+)
 @pytest.mark.usefixtures("mock_external_sensors")
 class TestCareTriggers:
     """plant.watered / fertilized fire from the care event entity."""
