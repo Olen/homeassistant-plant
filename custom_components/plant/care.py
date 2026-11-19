@@ -65,8 +65,10 @@ class CareTasks:
         todo_entity_id: str,
         intervals: dict[str, int],
         care_event: PlantCareEvent,
+        moisture_is_low: Callable[[], bool],
     ) -> None:
         self._hass = hass
+        self._moisture_is_low = moisture_is_low
         self._plant_entity_id = plant_entity_id
         self._plant_name = plant_name
         self._todo_entity_id = todo_entity_id
@@ -83,6 +85,9 @@ class CareTasks:
             self._hass, [self._todo_entity_id], self._todo_changed
         )
         await self._async_sync(report_completed=False)
+        # The plant may already be dry; the change to low happened before we listened
+        if self._moisture_is_low():
+            await self.async_moisture_low()
 
     @callback
     def async_stop(self) -> None:

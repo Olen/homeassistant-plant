@@ -22,12 +22,14 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.setup import async_setup_component
 from homeassistant.util import dt as dt_util
 
+from custom_components.plant.care import CareTasks
 from custom_components.plant.care_trigger import is_new_care_event
 from custom_components.plant.const import (
     DOMAIN,
     FLOW_CARE_TODO,
     FLOW_FERTILIZE_INTERVAL,
     FLOW_REPOT_INTERVAL,
+    STATE_LOW,
 )
 from custom_components.plant.trigger import _has_purpose_trigger_api
 
@@ -218,6 +220,31 @@ class TestWatering:
         assert items[0].status == TodoItemStatus.NEEDS_ACTION
         assert items[0].due == dt_util.now().date()
         assert items[0].description == f"{PLANT_ENTITY_ID} · water"
+
+    async def test_plant_already_dry_gets_an_item_when_care_tasks_start(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        """The change to low happened before care tasks were listening."""
+        todo_list = await _setup_todo_list(hass)
+        entry = await _setup_plant(hass, plant_config_data, {})
+        await _set_moisture(hass, 10)
+        plant = hass.data[DOMAIN][entry.entry_id]["plant"]
+        assert plant.moisture_status == STATE_LOW
+
+        care_tasks = CareTasks(
+            hass,
+            plant_entity_id=PLANT_ENTITY_ID,
+            plant_name=lambda: plant.name,
+            todo_entity_id=TODO_ENTITY_ID,
+            intervals={},
+            care_event=plant.care_event,
+            moisture_is_low=lambda: plant.moisture_status == STATE_LOW,
+        )
+        await care_tasks.async_start()
+        await hass.async_block_till_done()
+        care_tasks.async_stop()
+
+        assert [i.summary for i in _own(todo_list)] == [f"Water {TEST_PLANT_NAME}"]
 
     async def test_detected_watering_ticks_the_item_off(
         self, hass: HomeAssistant, plant_config_data: dict[str, Any]

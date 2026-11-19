@@ -420,6 +420,7 @@ async def _async_start_care_tasks(
         todo_entity_id=todo_entity_id,
         intervals={CARE_FERTILIZE: fertilize_days, CARE_REPOT: repot_days},
         care_event=hass.data[DOMAIN][entry.entry_id][ATTR_CARE_EVENT],
+        moisture_is_low=lambda: plant.moisture_status == STATE_LOW,
     )
     try:
         await care_tasks.async_start()
