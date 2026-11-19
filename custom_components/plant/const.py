@@ -324,3 +324,20 @@ CONF_PLANTBOOK_MAPPING = {
 # OpenPlantbook `include: care` returns these free-text fields per species.
 # Order is the canonical attribute order used when exposing them.
 CARE_FIELDS = ["watering", "sunlight", "soil", "pruning", "fertilization"]
+
+# Care tasks kept in a to-do list (see care.py)
+FLOW_CARE_TODO = "care_todo"
+FLOW_CARE_TODO_NEW = "care_todo_new"
+FLOW_FERTILIZE_INTERVAL = "fertilize_interval"
+FLOW_REPOT_INTERVAL = "repot_interval"
+DEFAULT_CARE_TODO_NAME = "Plants"
+
+CARE_WATER = "water"
+CARE_FERTILIZE = "fertilize"
+CARE_REPOT = "repot"
+# Event type reported on the plant's care event entity for each care type
+CARE_EVENT_TYPES = {
+    CARE_WATER: "watered",
+    CARE_FERTILIZE: "fertilized",
+    CARE_REPOT: "repotted",
+}

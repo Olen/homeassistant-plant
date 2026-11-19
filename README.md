@@ -23,6 +23,7 @@ A comprehensive plant monitoring integration for Home Assistant that treats each
   - [⚠️ Problem Reports](#️-problem-reports)
   - [🔔 Automations: Triggers \& Conditions](#-automations-triggers--conditions)
   - [🔄 Replacing Sensors](#-replacing-sensors)
+  - [✅ Care Tasks (preview)](#-care-tasks-preview)
   - [🌻 OpenPlantbook Integration](#-openplantbook-integration)
   - [🃏 Lovelace Card](#-lovelace-card)
   - [💡 Tips & Tricks](TIPS.md)
@@ -380,6 +381,29 @@ If you set up a plant without a particular sensor (e.g. you didn't have a CO2 or
 
 > [!IMPORTANT]
 > You must enable the plant sensor entity **before** replacing it — Home Assistant hides disabled entities from the entity picker in the UI.
+
+---
+
+## ✅ Care Tasks (preview)
+
+> [!NOTE]
+> This is an early version. Feedback is welcome in [#581](https://github.com/Olen/homeassistant-plant/issues/581).
+
+A plant can keep its care tasks in a Home Assistant to-do list. The plant stores nothing itself: open items are your reminders, and completed items are the history.
+
+1. Go to **Settings** → **Devices & Services** → **Plant Monitor** → *Your Plant* → **Configure** → **Care tasks**
+2. Pick an existing to-do list, or type a name to create a new Local To-do list ("Plants" is suggested). Plants that use the same list share it.
+3. Optionally set how often to fertilize and repot, in days.
+
+What happens:
+
+- **Watering:** when the soil gets too dry, "Water *plant*" is added. When the plant notices a watering, it ticks the item off itself. You can also tick it off by hand.
+- **Fertilizing and repotting:** an item is added with a due date. When you tick it off, the next one is added, counted from the day it was done.
+- **Care event:** each plant has an event entity that reports `watered`, `fertilized` and `repotted`. Use it with the **Event received** trigger in your own automations.
+
+Each item has a line such as `plant.aloe_vera · fertilize` in its description. The plant uses it to find its own items, so leave that line in place when you edit an item.
+
+To know *when* an item was completed, the list has to report it. Local To-do, CalDAV, Google Tasks and iCloud do. With other lists, the next item is counted from when the plant saw the item ticked off.
 
 ---
 

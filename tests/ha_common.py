@@ -7,8 +7,13 @@ pytest-home-assistant. CI runs both until 2026.11 is the lowest tested HA.
 try:
     from pytest_homeassistant.common import (
         MockConfigEntry,
+        MockModule,
+        MockPlatform,
         async_capture_events,
         async_fire_time_changed,
+        mock_config_flow,
+        mock_integration,
+        mock_platform,
         mock_restore_cache_with_extra_data,
     )
 
@@ -16,8 +21,13 @@ try:
 except ImportError:
     from pytest_homeassistant_custom_component.common import (
         MockConfigEntry,
+        MockModule,
+        MockPlatform,
         async_capture_events,
         async_fire_time_changed,
+        mock_config_flow,
+        mock_integration,
+        mock_platform,
         mock_restore_cache_with_extra_data,
     )
 
@@ -26,7 +36,12 @@ except ImportError:
 __all__ = [
     "OFFICIAL_TEST_PACKAGE",
     "MockConfigEntry",
+    "MockModule",
+    "MockPlatform",
     "async_capture_events",
     "async_fire_time_changed",
+    "mock_config_flow",
+    "mock_integration",
+    "mock_platform",
     "mock_restore_cache_with_extra_data",
 ]

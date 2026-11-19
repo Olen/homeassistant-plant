@@ -27,6 +27,7 @@ from homeassistant.helpers.network import NoURLAvailableError, get_url
 from homeassistant.helpers.selector import selector
 from homeassistant.util.unit_conversion import TemperatureConverter
 
+from .care import care_settings
 from .const import (
     ATTR_CARE,
     ATTR_DEVICE,
@@ -55,6 +56,7 @@ from .const import (
     CONF_MIN_VPD,
     DATA_SOURCE,
     DATA_SOURCE_PLANTBOOK,
+    DEFAULT_CARE_TODO_NAME,
     DEFAULT_MAX_CONDUCTIVITY,
     DEFAULT_MAX_DLI,
     DEFAULT_MAX_HUMIDITY,
@@ -74,10 +76,13 @@ from .const import (
     DEFAULT_MOISTURE_GRACE_PERIOD,
     DOMAIN,
     DOMAIN_PLANTBOOK,
+    FLOW_CARE_TODO,
+    FLOW_CARE_TODO_NEW,
     FLOW_CO2_TRIGGER,
     FLOW_CONDUCTIVITY_TRIGGER,
     FLOW_DLI_TRIGGER,
     FLOW_ERROR_NOTFOUND,
+    FLOW_FERTILIZE_INTERVAL,
     FLOW_FORCE_SPECIES_UPDATE,
     FLOW_HUMIDITY_TRIGGER,
     FLOW_ILLUMINANCE_TRIGGER,
@@ -86,6 +91,7 @@ from .const import (
     FLOW_MOISTURE_TRIGGER,
     FLOW_PLANT_INFO,
     FLOW_PLANT_LIMITS,
+    FLOW_REPOT_INTERVAL,
     FLOW_RIGHT_PLANT,
     FLOW_SENSOR_CO2,
     FLOW_SENSOR_CONDUCTIVITY,
@@ -761,7 +767,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         self.plant = self.hass.data[DOMAIN][self.config_entry.entry_id]["plant"]
         return self.async_show_menu(
             step_id="init",
-            menu_options=["plant_properties", "replace_sensor"],
+            menu_options=["plant_properties", "replace_sensor", "care_tasks"],
             description_placeholders={"plant_name": self.plant.name},
         )
 
@@ -951,6 +957,89 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             description_placeholders={"plant_name": self.plant.name},
         )
 
+    async def async_step_care_tasks(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Choose the to-do list for care tasks and the care intervals."""
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            todo_entity_id = user_input.get(FLOW_CARE_TODO)
+            new_list_name = user_input.get(FLOW_CARE_TODO_NEW, "").strip()
+            if new_list_name:
+                todo_entity_id = await _async_create_todo_list(self.hass, new_list_name)
+                if todo_entity_id is None:
+                    errors[FLOW_CARE_TODO_NEW] = "todo_list_not_created"
+            if not errors:
+                options = dict(self.config_entry.options)
+                options[FLOW_CARE_TODO] = todo_entity_id
+                options[FLOW_FERTILIZE_INTERVAL] = int(
+                    user_input.get(FLOW_FERTILIZE_INTERVAL, 0)
+                )
+                options[FLOW_REPOT_INTERVAL] = int(
+                    user_input.get(FLOW_REPOT_INTERVAL, 0)
+                )
+                return self.async_create_entry(title="", data=options)
+
+        options = self.config_entry.options
+        days = {
+            "number": {"min": 0, "max": 730, "mode": "box", "unit_of_measurement": "d"}
+        }
+        data_schema = {
+            vol.Optional(
+                FLOW_CARE_TODO,
+                description={"suggested_value": options.get(FLOW_CARE_TODO)},
+            ): selector({"entity": {"domain": "todo"}}),
+            vol.Optional(
+                FLOW_CARE_TODO_NEW,
+                description={
+                    "suggested_value": (
+                        "" if options.get(FLOW_CARE_TODO) else DEFAULT_CARE_TODO_NAME
+                    )
+                },
+            ): str,
+            vol.Optional(
+                FLOW_FERTILIZE_INTERVAL,
+                default=options.get(FLOW_FERTILIZE_INTERVAL, 0),
+            ): selector(days),
+            vol.Optional(
+                FLOW_REPOT_INTERVAL,
+                default=options.get(FLOW_REPOT_INTERVAL, 0),
+            ): selector(days),
+        }
+        return self.async_show_form(
+            step_id="care_tasks",
+            data_schema=vol.Schema(data_schema),
+            errors=errors,
+            description_placeholders={"plant_name": self.plant.name},
+        )
+
+
+async def _async_create_todo_list(hass: HomeAssistant, name: str) -> str | None:
+    """Create a Local To-do list (or find the one with this name); return its entity_id."""
+    result = await hass.config_entries.flow.async_init(
+        "local_todo",
+        context={"source": config_entries.SOURCE_USER},
+        data={"todo_list_name": name},
+    )
+    if result["type"] == "create_entry":
+        entry_id = result["result"].entry_id
+    elif result.get("reason") == "already_configured":
+        entry_id = None
+        for entry in hass.config_entries.async_entries("local_todo"):
+            if entry.title == name:
+                entry_id = entry.entry_id
+    else:
+        _LOGGER.warning("Could not create to-do list %s: %s", name, result)
+        return None
+    if entry_id is None:
+        return None
+    for registry_entry in er.async_entries_for_config_entry(
+        er.async_get(hass), entry_id
+    ):
+        if registry_entry.domain == "todo":
+            return registry_entry.entity_id
+    return None
+
 
 async def update_plant_options(
     hass: HomeAssistant, entry: config_entries.ConfigEntry
@@ -968,6 +1057,10 @@ async def update_plant_options(
         return
 
     plant = hass.data[DOMAIN][entry.entry_id]["plant"]
+    if care_settings(entry.options) != plant.care_settings:
+        # Care tasks are set up when the plant loads
+        hass.config_entries.async_schedule_reload(entry.entry_id)
+        return
     _LOGGER.debug(
         "update_plant_options begin for %s Options: %s",
         entry.entry_id,

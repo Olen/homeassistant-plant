@@ -27,7 +27,7 @@ from homeassistant.const import (
     Platform,
 )
 from homeassistant.core import Event, HomeAssistant, ServiceCall, callback
-from homeassistant.exceptions import ConfigEntryError
+from homeassistant.exceptions import ConfigEntryError, HomeAssistantError
 from homeassistant.helpers import (
     config_validation as cv,
     device_registry as dr,
@@ -42,6 +42,7 @@ from homeassistant.helpers.start import async_at_started
 from homeassistant.util import dt as dt_util
 
 from . import group as group
+from .care import CareTasks, care_settings
 from .config_flow import update_plant_options
 from .const import (
     ATTR_BRIGHTNESS,
@@ -67,6 +68,8 @@ from .const import (
     ATTR_SPECIES,
     ATTR_TEMPERATURE,
     ATTR_VPD,
+    CARE_FERTILIZE,
+    CARE_REPOT,
     CONF_MAX_BRIGHTNESS,
     CONF_MAX_CONDUCTIVITY,
     CONF_MAX_MOISTURE,
@@ -79,6 +82,7 @@ from .const import (
     DEFAULT_MOISTURE_GRACE_PERIOD,
     DOMAIN,
     DOMAIN_PLANTBOOK,
+    FLOW_CARE_TODO,
     FLOW_CO2_TRIGGER,
     FLOW_CONDUCTIVITY_TRIGGER,
     FLOW_DLI_TRIGGER,
@@ -98,11 +102,12 @@ from .const import (
     STATE_HIGH,
     STATE_LOW,
 )
+from .event import ATTR_CARE_EVENT
 from .frontend import async_setup_card
 from .plant_helpers import PlantHelper
 
 _LOGGER = logging.getLogger(__name__)
-PLATFORMS = [Platform.NUMBER, Platform.SENSOR]
+PLATFORMS = [Platform.EVENT, Platform.NUMBER, Platform.SENSOR]
 
 # Key under hass.data[DOMAIN] holding the single shared EntityComponent that
 # owns the plant.<name> entities. The leading underscore keeps it out of the
@@ -246,6 +251,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _LOGGER.debug("Setting up config entry %s: %s", entry.entry_id, entry)
 
     plant = PlantDevice(hass, entry)
+    plant.care_settings = care_settings(entry.options)
     hass.data[DOMAIN][entry.entry_id][ATTR_PLANT] = plant
 
     # Register update listener for options flow
@@ -285,6 +291,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         )
 
     entry.async_on_unload(async_at_started(hass, _restore_missing_image))
+
+    if entry.options.get(FLOW_CARE_TODO):
+        # Wait for startup so the to-do list is loaded before we read it.
+        async def _start_care_tasks(hass: HomeAssistant) -> None:
+            await _async_start_care_tasks(hass, entry, plant)
+
+        entry.async_on_unload(async_at_started(hass, _start_care_tasks))
 
     #
     # Service call to replace sensors
@@ -391,6 +404,34 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 )
 
     return True
+
+
+async def _async_start_care_tasks(
+    hass: HomeAssistant, entry: ConfigEntry, plant: PlantDevice
+) -> None:
+    """Keep this plant's care items in the to-do list chosen in its options."""
+    todo_entity_id, fertilize_days, repot_days = plant.care_settings
+    care_tasks = CareTasks(
+        hass,
+        plant_entity_id=plant.entity_id,
+        plant_name=lambda: plant.name,
+        todo_entity_id=todo_entity_id,
+        intervals={CARE_FERTILIZE: fertilize_days, CARE_REPOT: repot_days},
+        care_event=hass.data[DOMAIN][entry.entry_id][ATTR_CARE_EVENT],
+    )
+    try:
+        await care_tasks.async_start()
+    except HomeAssistantError as err:
+        care_tasks.async_stop()
+        _LOGGER.warning(
+            "Care tasks for %s are off: cannot use to-do list %s: %s",
+            plant.entity_id,
+            todo_entity_id,
+            err,
+        )
+        return
+    plant.care_tasks = care_tasks
+    entry.async_on_unload(care_tasks.async_stop)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -614,6 +655,8 @@ class PlantDevice(RestoreEntity):
         self.conductivity_status = None
         self.illuminance_status = None
         self.moisture_status = None
+        self.care_tasks: CareTasks | None = None
+        self.care_settings: tuple[str | None, int, int] = (None, 0, 0)
         self.temperature_status = None
         self.humidity_status = None
         self.co2_status = None
@@ -1329,6 +1372,8 @@ class PlantDevice(RestoreEntity):
                 if self._last_moisture_value is not None:
                     moisture_increase = moisture_val - self._last_moisture_value
                     if moisture_increase >= MOISTURE_INCREASE_THRESHOLD:
+                        if self.care_tasks is not None:
+                            self.hass.add_job(self.care_tasks.async_watering_detected)
                         grace_period_seconds = self.moisture_grace_period
                         if grace_period_seconds > 0:
                             self._moisture_grace_end_time = dt_util.now() + timedelta(
@@ -1346,12 +1391,19 @@ class PlantDevice(RestoreEntity):
 
                 self._last_moisture_value = moisture_val
 
+                previous_moisture_status = self.moisture_status
                 self.moisture_status = self._check_threshold(
                     moisture_val,
                     self.min_moisture,
                     self.max_moisture,
                     self.moisture_status,
                 )
+                if (
+                    self.care_tasks is not None
+                    and self.moisture_status == STATE_LOW
+                    and previous_moisture_status != STATE_LOW
+                ):
+                    self.hass.add_job(self.care_tasks.async_moisture_low)
 
                 # Apply grace period logic: only suppress "high" problems during grace period
                 # Allow "low" problems (needs water) to trigger immediately
