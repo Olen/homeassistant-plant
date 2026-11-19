@@ -7,6 +7,7 @@ from typing import Any
 from uuid import uuid4
 
 import pytest
+from awesomeversion import AwesomeVersion
 from homeassistant.components.todo import (
     TodoItem,
     TodoItemStatus,
@@ -14,7 +15,7 @@ from homeassistant.components.todo import (
     TodoListEntityFeature,
 )
 from homeassistant.config_entries import ConfigEntry, ConfigFlow
-from homeassistant.const import Platform
+from homeassistant.const import Platform, __version__ as HA_VERSION
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -38,6 +39,9 @@ from .ha_common import (
     mock_integration,
     mock_platform,
 )
+
+# HA 2026.11 wants None from async_setup_entry; older versions want True
+SETUP_ENTRY_RETURNS_NONE = AwesomeVersion(HA_VERSION) >= AwesomeVersion("2026.11.0")
 
 TODO_ENTITY_ID = "todo.plants"
 PLANT_ENTITY_ID = "plant.test_plant"
@@ -97,8 +101,12 @@ async def _setup_todo_list(
 ) -> FakeTodoList:
     todo_list = FakeTodoList(records_completed_time)
 
-    async def async_setup_entry_init(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    async def async_setup_entry_init(
+        hass: HomeAssistant, entry: ConfigEntry
+    ) -> bool | None:
         await hass.config_entries.async_forward_entry_setups(entry, [Platform.TODO])
+        if SETUP_ENTRY_RETURNS_NONE:
+            return None
         return True
 
     async def async_setup_entry_platform(
