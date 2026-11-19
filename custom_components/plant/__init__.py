@@ -380,8 +380,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if event.data["action"] != "update" or "old_entity_id" not in event.data:
             return
         reg_entry = er.async_get(hass).async_get(event.data["entity_id"])
-        if reg_entry is not None and reg_entry.config_entry_id == entry.entry_id:
-            hass.config_entries.async_schedule_reload(entry.entry_id)
+        if reg_entry is None or reg_entry.config_entry_id != entry.entry_id:
+            return
+        if reg_entry.domain == DOMAIN and plant.care_tasks is not None:
+            # Move the care items first, or the reloaded plant will not know them
+            entry.async_create_task(
+                hass,
+                _async_move_care_items_then_reload(
+                    hass, entry, plant.care_tasks, event.data["entity_id"]
+                ),
+                f"plant move care items {entry.entry_id}",
+            )
+            return
+        hass.config_entries.async_schedule_reload(entry.entry_id)
 
     entry.async_on_unload(
         hass.bus.async_listen(er.EVENT_ENTITY_REGISTRY_UPDATED, _reload_on_rename)
@@ -407,6 +418,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 )
 
     return True
+
+
+async def _async_move_care_items_then_reload(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    care_tasks: CareTasks,
+    new_plant_entity_id: str,
+) -> None:
+    """Point the care items at the plant's new entity_id, then reload it."""
+    try:
+        await care_tasks.async_move_items(new_plant_entity_id)
+    except HomeAssistantError as err:
+        _LOGGER.warning(
+            "Could not move care items to %s in %s: %s",
+            new_plant_entity_id,
+            care_tasks.todo_entity_id,
+            err,
+        )
+    hass.config_entries.async_schedule_reload(entry.entry_id)
 
 
 async def _async_start_care_tasks(
@@ -1302,7 +1332,7 @@ class PlantDevice(RestoreEntity):
                 threshold_value = p["min"] if p["status"] == STATE_LOW else p["max"]
                 log_entry(
                     self.hass,
-                    self.name,
+                    display_name(self.hass, self),
                     f"{p['sensor_type'].replace('_', ' ')} {p['status'].lower()}"
                     f" — current: {p['current']}, {threshold_label}: {threshold_value}",
                     domain=DOMAIN,
@@ -1314,7 +1344,7 @@ class PlantDevice(RestoreEntity):
         for sensor_type in resolved:
             log_entry(
                 self.hass,
-                self.name,
+                display_name(self.hass, self),
                 f"{sensor_type.replace('_', ' ')} back in range",
                 domain=DOMAIN,
                 entity_id=self.entity_id,

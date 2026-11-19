@@ -616,3 +616,82 @@ async def test_items_and_menu_use_the_name_home_assistant_shows(
 
     assert [i.summary for i in _own(todo_list)] == ["Water Monstéra"]
     assert menu["description_placeholders"]["plant_name"] == "Monstéra"
+
+
+async def _tick_off(hass: HomeAssistant, item: TodoItem) -> None:
+    await hass.services.async_call(
+        "todo",
+        "update_item",
+        {"entity_id": TODO_ENTITY_ID, "item": item.uid, "status": "completed"},
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+
+
+@pytest.mark.usefixtures("mock_external_sensors")
+class TestRenamingThePlant:
+    """Renaming a plant in Home Assistant carries over to its care items."""
+
+    async def test_new_name_goes_to_open_items_not_history(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        todo_list = await _setup_todo_list(hass)
+        await _setup_plant(hass, plant_config_data, {FLOW_CARE_TODO: TODO_ENTITY_ID})
+        await _set_moisture(hass, 10)
+        await _tick_off(hass, _own(todo_list)[0])
+        await _set_moisture(hass, 45)
+        await _set_moisture(hass, 10)
+
+        er.async_get(hass).async_update_entity(PLANT_ENTITY_ID, name="Monstéra")
+        await hass.async_block_till_done()
+
+        by_status = {i.status: i.summary for i in _own(todo_list)}
+        assert by_status == {
+            TodoItemStatus.COMPLETED: f"Water {TEST_PLANT_NAME}",
+            TodoItemStatus.NEEDS_ACTION: "Water Monstéra",
+        }
+
+    async def test_logbook_uses_the_new_name(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        await _setup_plant(hass, plant_config_data, {})
+        er.async_get(hass).async_update_entity(PLANT_ENTITY_ID, name="Monstéra")
+        await hass.async_block_till_done()
+        entries = async_capture_events(hass, "logbook_entry")
+
+        await _set_moisture(hass, 10)
+
+        assert [e.data["name"] for e in entries] == ["Monstéra"]
+
+    async def test_new_entity_id_keeps_items_and_history(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        todo_list = await _setup_todo_list(hass)
+        fertilized = dt_util.now() - timedelta(days=10)
+        todo_list.add_existing(
+            summary=f"Fertilize {TEST_PLANT_NAME}",
+            status=TodoItemStatus.COMPLETED,
+            description=f"{PLANT_ENTITY_ID} · fertilize",
+            completed=fertilized,
+        )
+        await _setup_plant(
+            hass,
+            plant_config_data,
+            {FLOW_CARE_TODO: TODO_ENTITY_ID, FLOW_FERTILIZE_INTERVAL: 30},
+        )
+        await _set_moisture(hass, 10)
+        before = {(i.summary, i.status, i.due) for i in todo_list.todo_items}
+
+        er.async_get(hass).async_update_entity(
+            PLANT_ENTITY_ID, new_entity_id="plant.monstera"
+        )
+        await hass.async_block_till_done()
+        await _set_moisture(hass, 9)
+
+        # Same items, nothing added twice, all pointing at the new entity_id
+        assert {(i.summary, i.status, i.due) for i in todo_list.todo_items} == before
+        assert sorted(i.description for i in todo_list.todo_items) == [
+            "plant.monstera · fertilize",
+            "plant.monstera · fertilize",
+            "plant.monstera · water",
+        ]
