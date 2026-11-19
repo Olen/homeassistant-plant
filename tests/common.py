@@ -154,7 +154,9 @@ async def update_plant_sensors(hass: HomeAssistant, entry_id: str) -> None:
             await sensor.async_update()
             sensor.async_write_ha_state()
 
-    await hass.async_block_till_done()
+    # Let any update HA itself started (a poll runs as a background task) finish
+    # first: plant.update() below bypasses HA's one-update-at-a-time guard.
+    await hass.async_block_till_done(wait_background_tasks=True)
 
     # Update the plant state calculation
     plant.update()
