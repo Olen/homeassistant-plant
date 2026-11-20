@@ -257,7 +257,7 @@ Core Home Assistant ships generic purpose triggers too, like `temperature.crosse
 
   "Stale" means the source sensor is `unavailable`/`unknown`, or simply hasn't reported within a window (`for`, default **24 hours**). A sensor that keeps reporting the same value counts as reporting. A grace period means it does **not** false-alarm at restart, when a sensor briefly reads `unknown` before its own integration populates it — staleness only fires once the source is genuinely still dead after the full window elapses.
 
-- **Care:** `plant.watered` / `plant.fertilized` / `plant.repotted`. `watered` fires when the plant detects a watering (a quick rise in soil moisture), with or without a to-do list. With [care tasks](#-care-tasks-preview), all three also fire when the matching item is ticked off. `trigger.entity_id` is the plant.
+- **Care:** `plant.watered` / `plant.fertilized` / `plant.repotted`. `watered` fires when soil moisture rises at least 10 points between two updates, or when it is no longer low (above the minimum by the same margin that clears a "low" problem), with or without a to-do list. With [care tasks](#-care-tasks-preview), all three also fire when the matching item is ticked off. `trigger.entity_id` is the plant.
 
 ### Targeting
 
@@ -399,7 +399,7 @@ A plant can keep its care tasks in a Home Assistant to-do list. The plant stores
 
 What happens:
 
-- **Watering:** when the soil gets too dry, "Water *plant*" is added. When the plant notices a watering, it ticks the item off itself. You can also tick it off by hand.
+- **Watering:** when the soil gets too dry, "Water *plant*" is added. When the plant is watered (see `plant.watered` above), it ticks the item off itself. You can also tick it off by hand.
 - **Fertilizing and repotting:** an item is added with a due date. When you tick it off, the next one is added, counted from the day it was done.
 - **Automations:** the `plant.watered`, `plant.fertilized` and `plant.repotted` triggers fire when the care is done. Each plant also has a care event entity that reports the same, for the **Event received** trigger and the logbook.
 

@@ -1379,23 +1379,19 @@ class PlantDevice(RestoreEntity):
 
         return False
 
-    def _moisture_status_changed(self, previous: str | None) -> None:
-        """Keep the watering item in step with whether the soil is dry."""
-        if self.care_tasks is None or self.moisture_status == previous:
-            return
-        # update() runs in a worker thread; add_job hands the work to the event loop
-        if self.moisture_status == STATE_LOW:
-            self.hass.add_job(self.care_tasks.async_moisture_low)
-        elif previous == STATE_LOW:
-            self.hass.add_job(self.care_tasks.async_moisture_recovered)
+    # update() runs in a worker thread; add_job hands the work to the event loop
 
-    def _watering_detected(self) -> None:
-        """Report a watering; with care tasks, also tick off the watering item."""
-        # update() runs in a worker thread; add_job hands the work to the event loop
+    def _watered(self) -> None:
+        """Report a watering; with care tasks it ticks off the watering item."""
         if self.care_tasks is not None:
-            self.hass.add_job(self.care_tasks.async_watering_detected)
+            self.hass.add_job(self.care_tasks.async_watered)
         elif self.care_event is not None:
             self.hass.add_job(self.care_event.report, CARE_EVENT_TYPES[CARE_WATER])
+
+    def _soil_became_dry(self) -> None:
+        """With care tasks, add a watering item."""
+        if self.care_tasks is not None:
+            self.hass.add_job(self.care_tasks.async_moisture_low)
 
     def update(self) -> None:
         """Run on every update of the entities"""
@@ -1426,10 +1422,11 @@ class PlantDevice(RestoreEntity):
                 known_state = True
 
                 # Detect watering event (rapid moisture increase)
+                moisture_jumped = False
                 if self._last_moisture_value is not None:
                     moisture_increase = moisture_val - self._last_moisture_value
                     if moisture_increase >= MOISTURE_INCREASE_THRESHOLD:
-                        self._watering_detected()
+                        moisture_jumped = True
                         grace_period_seconds = self.moisture_grace_period
                         if grace_period_seconds > 0:
                             self._moisture_grace_end_time = dt_util.now() + timedelta(
@@ -1454,7 +1451,18 @@ class PlantDevice(RestoreEntity):
                     self.max_moisture,
                     self.moisture_status,
                 )
-                self._moisture_status_changed(previous_moisture_status)
+                # Watered: a quick rise, or the soil is no longer dry (the
+                # status already applies the hysteresis band)
+                left_dry = previous_moisture_status == STATE_LOW and (
+                    self.moisture_status in (STATE_OK, STATE_HIGH)
+                )
+                if moisture_jumped or left_dry:
+                    self._watered()
+                if (
+                    self.moisture_status == STATE_LOW
+                    and previous_moisture_status != STATE_LOW
+                ):
+                    self._soil_became_dry()
 
                 # Apply grace period logic: only suppress "high" problems during grace period
                 # Allow "low" problems (needs water) to trigger immediately

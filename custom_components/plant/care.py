@@ -102,7 +102,8 @@ class CareTasks:
         if moisture_status == STATE_LOW:
             await self.async_moisture_low()
         elif moisture_status in (STATE_OK, STATE_HIGH):
-            await self.async_moisture_recovered()
+            # Watered while we were not listening: the item is done
+            await self._async_complete_open(CARE_WATER)
 
     @property
     def todo_entity_id(self) -> str:
@@ -159,11 +160,7 @@ class CareTasks:
                 return
             await self._async_add(CARE_WATER, dt_util.now().date())
 
-    async def async_moisture_recovered(self) -> None:
-        """The soil is no longer dry: tick off the open watering item."""
-        await self._async_complete_open(CARE_WATER)
-
-    async def async_watering_detected(self) -> None:
+    async def async_watered(self) -> None:
         """Tick off the open watering item, or report the watering directly."""
         completed = await self._async_complete_open(CARE_WATER)
         if completed == 0:

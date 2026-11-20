@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from datetime import timedelta
 from typing import Any
 from unittest.mock import patch
@@ -191,6 +192,9 @@ def record_care_events(hass: HomeAssistant) -> None:
 async def _set_moisture(hass: HomeAssistant, value: float) -> None:
     await set_sensor_state(hass, MOISTURE, value)
     await update_plant_sensors(hass, TEST_ENTRY_ID)
+    # The plant hands its reaction to the loop with add_job, which is not a
+    # task; let it run before waiting for what it starts.
+    await asyncio.sleep(0)
     await hass.async_block_till_done()
 
 
@@ -325,6 +329,54 @@ class TestWatering:
             blocking=True,
         )
         await hass.async_block_till_done()
+
+        assert _care_events(hass) == ["watered"]
+
+
+@pytest.mark.usefixtures("mock_external_sensors", "record_care_events")
+class TestWateredRule:
+    """Watered = a 10-point rise, or the soil leaving "low"; list or not."""
+
+    async def test_slow_rise_out_of_dry_counts_without_a_list(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        await _setup_plant(hass, plant_config_data, {})
+        await _set_moisture(hass, 15)
+
+        await _set_moisture(hass, 23)
+
+        assert _care_events(hass) == ["watered"]
+
+    async def test_rise_inside_the_hysteresis_band_is_not_watered(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        """Min 20 with a 1-point band: still low at 21, no longer low at 22."""
+        await _setup_plant(hass, plant_config_data, {})
+        await _set_moisture(hass, 15)
+
+        await _set_moisture(hass, 21)
+        assert _care_events(hass) == []
+
+        await _set_moisture(hass, 22)
+        assert _care_events(hass) == ["watered"]
+
+    async def test_small_rise_in_moist_soil_is_not_watered(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        await _setup_plant(hass, plant_config_data, {})
+        await _set_moisture(hass, 30)
+
+        await _set_moisture(hass, 38)
+
+        assert _care_events(hass) == []
+
+    async def test_jump_out_of_dry_counts_once(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        await _setup_plant(hass, plant_config_data, {})
+        await _set_moisture(hass, 15)
+
+        await _set_moisture(hass, 45)
 
         assert _care_events(hass) == ["watered"]
 
