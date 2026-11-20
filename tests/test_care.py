@@ -194,6 +194,11 @@ async def _set_moisture(hass: HomeAssistant, value: float) -> None:
     await hass.async_block_till_done()
 
 
+def _current(todo_list: FakeTodoList, item: TodoItem) -> TodoItem:
+    """The item as it is in the list now (updates replace the object)."""
+    return next(i for i in todo_list.todo_items if i.uid == item.uid)
+
+
 def _own(todo_list: FakeTodoList) -> list[TodoItem]:
     return [
         item
@@ -239,7 +244,7 @@ class TestWatering:
             todo_entity_id=TODO_ENTITY_ID,
             intervals={},
             care_event=plant.care_event,
-            moisture_is_low=lambda: plant.moisture_status == STATE_LOW,
+            moisture_status=lambda: plant.moisture_status,
         )
         await care_tasks.async_start()
         await hass.async_block_till_done()
@@ -259,6 +264,39 @@ class TestWatering:
         items = _own(todo_list)
         assert [item.status for item in items] == [TodoItemStatus.COMPLETED]
         assert _care_events(hass) == ["watered"]
+
+    async def test_slow_rise_out_of_dry_ticks_the_item_off(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        """Dry soil soaks water up slowly: no 10-point jump, but no longer dry."""
+        todo_list = await _setup_todo_list(hass)
+        await _setup_plant(hass, plant_config_data, {FLOW_CARE_TODO: TODO_ENTITY_ID})
+        await _set_moisture(hass, 15)
+
+        await _set_moisture(hass, 23)
+
+        assert [i.status for i in _own(todo_list)] == [TodoItemStatus.COMPLETED]
+        assert _care_events(hass) == ["watered"]
+
+    async def test_item_left_open_while_away_is_ticked_off_at_start(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        """Watered while Home Assistant was down: the soil is fine at start."""
+        todo_list = await _setup_todo_list(hass)
+        left_open = todo_list.add_existing(
+            summary=f"Water {TEST_PLANT_NAME}",
+            status=TodoItemStatus.NEEDS_ACTION,
+            description=f"{PLANT_ENTITY_ID} · water",
+        )
+        entry = await _setup_plant(hass, plant_config_data, {})
+        await _set_moisture(hass, 45)
+
+        hass.config_entries.async_update_entry(
+            entry, options={FLOW_CARE_TODO: TODO_ENTITY_ID}
+        )
+        await hass.async_block_till_done()
+
+        assert _current(todo_list, left_open).status == TodoItemStatus.COMPLETED
 
     async def test_watering_without_an_open_item_is_still_reported(
         self, hass: HomeAssistant, plant_config_data: dict[str, Any]
@@ -409,8 +447,8 @@ class TestSharedList:
         await _set_moisture(hass, 10)
         await _set_moisture(hass, 45)
 
-        assert other_plant.status == TodoItemStatus.NEEDS_ACTION
-        assert own_note.status == TodoItemStatus.NEEDS_ACTION
+        assert _current(todo_list, other_plant).status == TodoItemStatus.NEEDS_ACTION
+        assert _current(todo_list, own_note).status == TodoItemStatus.NEEDS_ACTION
         assert [i.status for i in _own(todo_list)] == [TodoItemStatus.COMPLETED]
 
 

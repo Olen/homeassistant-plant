@@ -13,7 +13,7 @@ from collections.abc import Callable, Mapping
 from datetime import date, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
-from homeassistant.const import ATTR_ENTITY_ID
+from homeassistant.const import ATTR_ENTITY_ID, STATE_OK
 from homeassistant.core import Event, EventStateChangedData, HomeAssistant, callback
 from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.util import dt as dt_util
@@ -26,6 +26,8 @@ from .const import (
     FLOW_CARE_TODO,
     FLOW_FERTILIZE_INTERVAL,
     FLOW_REPOT_INTERVAL,
+    STATE_HIGH,
+    STATE_LOW,
 )
 
 if TYPE_CHECKING:
@@ -70,10 +72,10 @@ class CareTasks:
         todo_entity_id: str,
         intervals: dict[str, int],
         care_event: PlantCareEvent,
-        moisture_is_low: Callable[[], bool],
+        moisture_status: Callable[[], str | None],
     ) -> None:
         self._hass = hass
-        self._moisture_is_low = moisture_is_low
+        self._moisture_status = moisture_status
         self._plant_entity_id = plant_entity_id
         self._plant_name = plant_name
         self._todo_entity_id = todo_entity_id
@@ -95,9 +97,12 @@ class CareTasks:
             ),
         ]
         await self._async_sync(report_completed=False)
-        # The plant may already be dry; the change to low happened before we listened
-        if self._moisture_is_low():
+        # The moisture may have changed before we listened: match the list to it
+        moisture_status = self._moisture_status()
+        if moisture_status == STATE_LOW:
             await self.async_moisture_low()
+        elif moisture_status in (STATE_OK, STATE_HIGH):
+            await self.async_moisture_recovered()
 
     @property
     def todo_entity_id(self) -> str:
@@ -154,26 +159,34 @@ class CareTasks:
                 return
             await self._async_add(CARE_WATER, dt_util.now().date())
 
+    async def async_moisture_recovered(self) -> None:
+        """The soil is no longer dry: tick off the open watering item."""
+        await self._async_complete_open(CARE_WATER)
+
     async def async_watering_detected(self) -> None:
         """Tick off the open watering item, or report the watering directly."""
+        completed = await self._async_complete_open(CARE_WATER)
+        if completed == 0:
+            self._care_event.report(CARE_EVENT_TYPES[CARE_WATER])
+
+    async def _async_complete_open(self, care: str) -> int:
+        """Tick off this plant's open items of one care type; return how many."""
         async with self._lock:
             items = await self._async_own_items()
-            open_items = self._open_of(items, CARE_WATER)
-        if not open_items:
-            self._care_event.report(CARE_EVENT_TYPES[CARE_WATER])
-            return
-        for item in open_items:
-            # The list change that follows reports the watering
-            await self._hass.services.async_call(
-                TODO_DOMAIN,
-                "update_item",
-                {
-                    ATTR_ENTITY_ID: self._todo_entity_id,
-                    "item": item["uid"],
-                    "status": STATUS_COMPLETED,
-                },
-                blocking=True,
-            )
+            open_items = self._open_of(items, care)
+            for item in open_items:
+                # The list change that follows reports the care event
+                await self._hass.services.async_call(
+                    TODO_DOMAIN,
+                    "update_item",
+                    {
+                        ATTR_ENTITY_ID: self._todo_entity_id,
+                        "item": item["uid"],
+                        "status": STATUS_COMPLETED,
+                    },
+                    blocking=True,
+                )
+        return len(open_items)
 
     @callback
     def _todo_changed(self, event: Event[EventStateChangedData]) -> None:

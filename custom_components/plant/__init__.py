@@ -451,7 +451,7 @@ async def _async_start_care_tasks(
         todo_entity_id=todo_entity_id,
         intervals={CARE_FERTILIZE: fertilize_days, CARE_REPOT: repot_days},
         care_event=hass.data[DOMAIN][entry.entry_id][ATTR_CARE_EVENT],
-        moisture_is_low=lambda: plant.moisture_status == STATE_LOW,
+        moisture_status=lambda: plant.moisture_status,
     )
     try:
         await care_tasks.async_start()
@@ -1379,6 +1379,16 @@ class PlantDevice(RestoreEntity):
 
         return False
 
+    def _moisture_status_changed(self, previous: str | None) -> None:
+        """Keep the watering item in step with whether the soil is dry."""
+        if self.care_tasks is None or self.moisture_status == previous:
+            return
+        # update() runs in a worker thread; add_job hands the work to the event loop
+        if self.moisture_status == STATE_LOW:
+            self.hass.add_job(self.care_tasks.async_moisture_low)
+        elif previous == STATE_LOW:
+            self.hass.add_job(self.care_tasks.async_moisture_recovered)
+
     def _watering_detected(self) -> None:
         """Report a watering; with care tasks, also tick off the watering item."""
         # update() runs in a worker thread; add_job hands the work to the event loop
@@ -1444,12 +1454,7 @@ class PlantDevice(RestoreEntity):
                     self.max_moisture,
                     self.moisture_status,
                 )
-                if (
-                    self.care_tasks is not None
-                    and self.moisture_status == STATE_LOW
-                    and previous_moisture_status != STATE_LOW
-                ):
-                    self.hass.add_job(self.care_tasks.async_moisture_low)
+                self._moisture_status_changed(previous_moisture_status)
 
                 # Apply grace period logic: only suppress "high" problems during grace period
                 # Allow "low" problems (needs water) to trigger immediately
