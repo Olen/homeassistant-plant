@@ -73,6 +73,20 @@
       "min_vpd": {
         "name": "Minimum VPD"
       }
+    },
+    "event": {
+      "care": {
+        "name": "Care",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "watered": "Watered",
+              "fertilized": "Fertilized",
+              "repotted": "Repotted"
+            }
+          }
+        }
+      }
     }
   },
   "config": {
@@ -145,10 +159,11 @@
     "step": {
       "init": {
         "title": "Options",
-        "description": "Configure options for **{plant_name}**",
+        "description": "Configure options for **{plant_name}**\n\nCare tasks: {care_todo_list}",
         "menu_options": {
           "plant_properties": "Plant properties",
-          "replace_sensor": "Replace sensors"
+          "replace_sensor": "Replace sensors",
+          "care_tasks": "Care tasks"
         }
       },
       "plant_properties": {
@@ -188,7 +203,24 @@
         "data_description": {
           "source_device": "Pick a device, such as a soil sensor, and submit the form to fill the fields below from its entities. The form opens again so you can review them before continuing; fields you have already set are kept."
         }
+      },
+      "care_tasks": {
+        "title": "Care tasks",
+        "description": "Keep care tasks for **{plant_name}** in a to-do list. Pick an existing list, or type a name to create a new one. Plants that use the same list share it.",
+        "data": {
+          "care_todo": "Use this to-do list",
+          "care_todo_new": "Or create a new list named",
+          "fertilize_interval": "Fertilize every (days, 0 = off)",
+          "repot_interval": "Repot every (days, 0 = off)"
+        },
+        "data_description": {
+          "care_todo": "Watering is added when the soil gets dry and ticked off when watering is detected.",
+          "care_todo_new": "A new Local To-do list. If a list with this name already exists, it is used."
+        }
       }
+    },
+    "error": {
+      "todo_list_not_created": "The to-do list could not be created."
     }
   },
   "services": {
@@ -637,6 +669,18 @@
           "description": "The sensor must stay in this state for at least this long before the trigger fires."
         }
       }
+    },
+    "watered": {
+      "name": "Plant watered",
+      "description": "Triggers when the plant is watered: detected from a quick rise in soil moisture, or a watering item ticked off in its to-do list."
+    },
+    "fertilized": {
+      "name": "Plant fertilized",
+      "description": "Triggers when a fertilizing item for the plant is ticked off in its to-do list."
+    },
+    "repotted": {
+      "name": "Plant repotted",
+      "description": "Triggers when a repotting item for the plant is ticked off in its to-do list."
     }
   },
   "conditions": {

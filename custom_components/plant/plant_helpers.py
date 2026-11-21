@@ -16,6 +16,7 @@ from homeassistant.const import ATTR_ENTITY_PICTURE, ATTR_NAME, UnitOfTemperatur
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.temperature import display_temp
 
 from .const import (
@@ -163,6 +164,14 @@ def _clamp_dli(value: float, bound: str, species: str | None) -> float:
         )
         return DLI_SANITY_MAX
     return value
+
+
+def display_name(hass: HomeAssistant, entity: Entity) -> str:
+    """The name Home Assistant shows for an entity (device name plus entity name)."""
+    state = hass.states.get(entity.entity_id)
+    if state is None:
+        return entity.name
+    return state.name
 
 
 class PlantHelper:
