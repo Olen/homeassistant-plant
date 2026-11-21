@@ -98,6 +98,7 @@ from .const import (
     FLOW_TEMPERATURE_TRIGGER,
     FLOW_VPD_TRIGGER,
     HYSTERESIS_FRACTION,
+    MOISTURE_HYSTERESIS_MIN_BAND,
     MOISTURE_INCREASE_THRESHOLD,
     OPB_DISPLAY_PID,
     RESTORE_GRACE_PERIOD,
@@ -1212,7 +1213,9 @@ class PlantDevice(RestoreEntity):
         except AttributeError:
             return None
 
-    def _check_threshold(self, value, min_entity, max_entity, current_status):
+    def _check_threshold(
+        self, value, min_entity, max_entity, current_status, min_band: float = 0.0
+    ):
         """Check a value against min/max thresholds with hysteresis.
 
         Returns STATE_LOW, STATE_HIGH, or STATE_OK.
@@ -1248,9 +1251,15 @@ class PlantDevice(RestoreEntity):
         # can't exceed a narrow OK range (e.g. min=98, max=100): otherwise a
         # clear point would fall outside [min, max] and the state could never
         # return to OK (it would stick or flip straight to the opposite state).
-        span_band = (max_val - min_val) * HYSTERESIS_FRACTION
+        span = max_val - min_val
+        span_band = span * HYSTERESIS_FRACTION
         band_low = min(abs(min_val) * HYSTERESIS_FRACTION, span_band)
         band_high = min(abs(max_val) * HYSTERESIS_FRACTION, span_band)
+        # Never narrower than the sensor's noise (min_band), but at most half the
+        # OK range so both clear points stay inside it.
+        floor = min(min_band, span / 2)
+        band_low = max(band_low, floor)
+        band_high = max(band_high, floor)
 
         if value < min_val:
             new_status = STATE_LOW
@@ -1450,6 +1459,7 @@ class PlantDevice(RestoreEntity):
                     self.min_moisture,
                     self.max_moisture,
                     self.moisture_status,
+                    min_band=MOISTURE_HYSTERESIS_MIN_BAND,
                 )
                 # Watered: a quick rise, or the soil is no longer dry (the
                 # status already applies the hysteresis band)
