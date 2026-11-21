@@ -241,6 +241,9 @@ OPB_INCLUDE_CARE = "care"
 # (not the max-min span) so wide-range sensors with a small minimum don't get
 # an over-inflated low-side margin (see issue #465).
 HYSTERESIS_FRACTION = 0.05
+# Moisture sensors report whole percent and flicker by up to 2 points near a
+# threshold; a narrower band lets a low/ok status flap on noise alone.
+MOISTURE_HYSTERESIS_MIN_BAND = 2.0
 
 # Grace period after watering: delay before reporting moisture "high" problem
 # This prevents false alarms immediately after watering when moisture spikes

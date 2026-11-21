@@ -1638,8 +1638,8 @@ class TestHysteresis:
     ) -> None:
         """Test that moisture LOW state holds when value is within hysteresis band.
 
-        Default moisture: min=20, max=60, range=40, band=2.0 (5% of 40).
-        Enters PROBLEM at <20, should stay PROBLEM until >22.
+        Default moisture: min=20, max=60; the band is the 2-point moisture minimum
+        (5% of 20 would be 1). Enters PROBLEM at <20, stays PROBLEM until >22.
         """
         plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
 
@@ -1733,6 +1733,58 @@ class TestHysteresis:
         await update_plant_sensors(hass, init_integration.entry_id)
         assert plant.moisture_status == STATE_OK
         assert plant.state == STATE_OK
+
+    async def test_moisture_flicker_across_the_minimum_stays_low(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """Whole-percent readings flickering 2 points must not flap the status.
+
+        min=20: a 5% band (1 point) would clear at 22 and flap on an 18/22
+        flicker; the 2-point moisture minimum holds LOW until >22.
+        """
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        statuses = []
+        for moisture in (18.0, 22.0, 18.0, 22.0, 18.0, 22.0, 23.0):
+            await set_external_sensor_states(
+                hass,
+                temperature=25.0,
+                moisture=moisture,
+                conductivity=1000.0,
+                illuminance=5000.0,
+                humidity=40.0,
+            )
+            await update_plant_sensors(hass, init_integration.entry_id)
+            statuses.append(plant.moisture_status)
+
+        assert statuses == [STATE_LOW] * 6 + [STATE_OK]
+
+    async def test_minimum_band_is_capped_at_half_a_narrow_range(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """A 2-point minimum band in a 2-point range must still let LOW clear."""
+        from types import SimpleNamespace
+
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        min_entity = SimpleNamespace(state="40", entity_id="number.min")
+        max_entity = SimpleNamespace(state="42", entity_id="number.max")
+
+        # The band is capped at half the range (1 point): holds at 41, clears above
+        assert (
+            plant._check_threshold(
+                41.0, min_entity, max_entity, STATE_LOW, min_band=2.0
+            )
+            == STATE_LOW
+        )
+        assert (
+            plant._check_threshold(
+                41.5, min_entity, max_entity, STATE_LOW, min_band=2.0
+            )
+            == STATE_OK
+        )
 
     async def test_temperature_low_holds_within_hysteresis_band(
         self,
