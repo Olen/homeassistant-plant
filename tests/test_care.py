@@ -350,14 +350,14 @@ class TestWateredRule:
     async def test_rise_inside_the_hysteresis_band_is_not_watered(
         self, hass: HomeAssistant, plant_config_data: dict[str, Any]
     ) -> None:
-        """Min 20 with a 1-point band: still low at 21, no longer low at 22."""
+        """Min 20 with the 2-point moisture band: still low at 22, not at 23."""
         await _setup_plant(hass, plant_config_data, {})
         await _set_moisture(hass, 15)
 
-        await _set_moisture(hass, 21)
+        await _set_moisture(hass, 22)
         assert _care_events(hass) == []
 
-        await _set_moisture(hass, 22)
+        await _set_moisture(hass, 23)
         assert _care_events(hass) == ["watered"]
 
     async def test_small_rise_in_moist_soil_is_not_watered(
