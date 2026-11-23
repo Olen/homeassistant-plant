@@ -102,6 +102,63 @@
       }
     }
   },
+  "entity_component": {
+    "plant": {
+      "state_attributes": {
+        "species": {
+          "name": "Faj"
+        },
+        "species_original": {
+          "name": "Eredeti faj"
+        },
+        "problems": {
+          "name": "Problémák"
+        },
+        "moisture_status": {
+          "name": "Talajnedvesség állapota"
+        },
+        "temperature_status": {
+          "name": "Hőmérséklet állapota"
+        },
+        "conductivity_status": {
+          "name": "Vezetőképesség állapota"
+        },
+        "illuminance_status": {
+          "name": "Megvilágítás állapota"
+        },
+        "humidity_status": {
+          "name": "Páratartalom állapota"
+        },
+        "co2_status": {
+          "name": "CO2 állapota"
+        },
+        "soil_temperature_status": {
+          "name": "Talajhőmérséklet állapota"
+        },
+        "dli_status": {
+          "name": "DLI állapota"
+        },
+        "vpd_status": {
+          "name": "VPD állapota"
+        },
+        "care_watering": {
+          "name": "Öntözés"
+        },
+        "care_sunlight": {
+          "name": "Napfény"
+        },
+        "care_soil": {
+          "name": "Talaj"
+        },
+        "care_pruning": {
+          "name": "Metszés"
+        },
+        "care_fertilization": {
+          "name": "Tápanyag-utánpótlás"
+        }
+      }
+    }
+  },
   "config": {
     "step": {
       "user": {

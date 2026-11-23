@@ -102,6 +102,63 @@
       }
     }
   },
+  "entity_component": {
+    "plant": {
+      "state_attributes": {
+        "species": {
+          "name": "Art"
+        },
+        "species_original": {
+          "name": "Oprindelig art"
+        },
+        "problems": {
+          "name": "Problemer"
+        },
+        "moisture_status": {
+          "name": "Status for jordfugtighed"
+        },
+        "temperature_status": {
+          "name": "Status for temperatur"
+        },
+        "conductivity_status": {
+          "name": "Status for ledningsevne"
+        },
+        "illuminance_status": {
+          "name": "Status for belysning"
+        },
+        "humidity_status": {
+          "name": "Status for luftfugtighed"
+        },
+        "co2_status": {
+          "name": "Status for CO2"
+        },
+        "soil_temperature_status": {
+          "name": "Status for jordtemperatur"
+        },
+        "dli_status": {
+          "name": "Status for DLI"
+        },
+        "vpd_status": {
+          "name": "Status for VPD"
+        },
+        "care_watering": {
+          "name": "Vanding"
+        },
+        "care_sunlight": {
+          "name": "Sollys"
+        },
+        "care_soil": {
+          "name": "Jord"
+        },
+        "care_pruning": {
+          "name": "Beskæring"
+        },
+        "care_fertilization": {
+          "name": "Gødning"
+        }
+      }
+    }
+  },
   "config": {
     "step": {
       "user": {

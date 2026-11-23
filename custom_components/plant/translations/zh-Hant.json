@@ -102,6 +102,63 @@
       }
     }
   },
+  "entity_component": {
+    "plant": {
+      "state_attributes": {
+        "species": {
+          "name": "品種"
+        },
+        "species_original": {
+          "name": "原始品種"
+        },
+        "problems": {
+          "name": "問題"
+        },
+        "moisture_status": {
+          "name": "土壤濕度狀態"
+        },
+        "temperature_status": {
+          "name": "溫度狀態"
+        },
+        "conductivity_status": {
+          "name": "電導率狀態"
+        },
+        "illuminance_status": {
+          "name": "光照度狀態"
+        },
+        "humidity_status": {
+          "name": "空氣濕度狀態"
+        },
+        "co2_status": {
+          "name": "CO2 狀態"
+        },
+        "soil_temperature_status": {
+          "name": "土壤溫度狀態"
+        },
+        "dli_status": {
+          "name": "DLI 狀態"
+        },
+        "vpd_status": {
+          "name": "VPD 狀態"
+        },
+        "care_watering": {
+          "name": "澆水"
+        },
+        "care_sunlight": {
+          "name": "光照"
+        },
+        "care_soil": {
+          "name": "土壤"
+        },
+        "care_pruning": {
+          "name": "修剪"
+        },
+        "care_fertilization": {
+          "name": "施肥"
+        }
+      }
+    }
+  },
   "config": {
     "step": {
       "user": {

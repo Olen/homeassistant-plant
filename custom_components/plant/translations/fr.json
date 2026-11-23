@@ -102,6 +102,63 @@
       }
     }
   },
+  "entity_component": {
+    "plant": {
+      "state_attributes": {
+        "species": {
+          "name": "Espèce"
+        },
+        "species_original": {
+          "name": "Espèce d'origine"
+        },
+        "problems": {
+          "name": "Problèmes"
+        },
+        "moisture_status": {
+          "name": "État de l'humidité du sol"
+        },
+        "temperature_status": {
+          "name": "État de la température"
+        },
+        "conductivity_status": {
+          "name": "État de la conductivité"
+        },
+        "illuminance_status": {
+          "name": "État de l'éclairement"
+        },
+        "humidity_status": {
+          "name": "État de l'humidité de l'air"
+        },
+        "co2_status": {
+          "name": "État du CO2"
+        },
+        "soil_temperature_status": {
+          "name": "État de la température du sol"
+        },
+        "dli_status": {
+          "name": "État du DLI"
+        },
+        "vpd_status": {
+          "name": "État du VPD"
+        },
+        "care_watering": {
+          "name": "Arrosage"
+        },
+        "care_sunlight": {
+          "name": "Lumière du soleil"
+        },
+        "care_soil": {
+          "name": "Sol"
+        },
+        "care_pruning": {
+          "name": "Taille"
+        },
+        "care_fertilization": {
+          "name": "Fertilisation"
+        }
+      }
+    }
+  },
   "config": {
     "step": {
       "user": {
