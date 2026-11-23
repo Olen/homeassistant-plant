@@ -391,7 +391,6 @@ class TestThresholdEntityProperties:
 
         for threshold in plant.threshold_entities:
             device_info = threshold.device_info
-            assert "identifiers" in device_info
             assert (DOMAIN, plant.unique_id) in device_info_field(
                 device_info, "identifiers"
             )

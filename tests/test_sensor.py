@@ -980,7 +980,6 @@ class TestSensorDeviceInfo:
 
         for sensor in plant.meter_entities:
             device_info = sensor.device_info
-            assert "identifiers" in device_info
             assert (DOMAIN, plant.unique_id) in device_info_field(
                 device_info, "identifiers"
             )
@@ -995,7 +994,6 @@ class TestSensorDeviceInfo:
 
         for sensor in plant.integral_entities:
             device_info = sensor.device_info
-            assert "identifiers" in device_info
             assert (DOMAIN, plant.unique_id) in device_info_field(
                 device_info, "identifiers"
             )
