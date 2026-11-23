@@ -17,12 +17,6 @@
       "humidity": {
         "name": "Páratartalom"
       },
-      "co2": {
-        "name": "CO2"
-      },
-      "soil_temperature": {
-        "name": "Talajhőmérséklet"
-      },
       "ppfd": {
         "name": "PPFD"
       },
@@ -32,11 +26,17 @@
       "dli": {
         "name": "Napi fényintegrál"
       },
-      "dli_24h": {
-        "name": "DLI (24 órás gördülő)"
-      },
       "vpd": {
         "name": "Gőznyomáshiány"
+      },
+      "co2": {
+        "name": "CO2"
+      },
+      "soil_temperature": {
+        "name": "Talajhőmérséklet"
+      },
+      "dli_24h": {
+        "name": "DLI (24 órás gördülő)"
       }
     },
     "number": {
@@ -76,6 +76,12 @@
       "min_humidity": {
         "name": "Min. páratartalom"
       },
+      "max_vpd": {
+        "name": "Max. VPD"
+      },
+      "min_vpd": {
+        "name": "Min. VPD"
+      },
       "max_co2": {
         "name": "Max. CO2"
       },
@@ -87,12 +93,6 @@
       },
       "min_soil_temperature": {
         "name": "Min. talajhőmérséklet"
-      },
-      "max_vpd": {
-        "name": "Max. VPD"
-      },
-      "min_vpd": {
-        "name": "Min. VPD"
       },
       "lux_to_ppfd": {
         "name": "Lux-PPFD átalakítási tényező"
@@ -229,6 +229,640 @@
           "description": "Az új érzékelő entitás azonosítója. Hagyja üresen az érzékelő eltávolításához."
         }
       }
+    }
+  },
+  "triggers": {
+    "problem_detected": {
+      "name": "Probléma észlelve",
+      "description": "Akkor aktiválódik, ha a növénynél probléma lép fel (bármelyik érték átlépi a küszöböt).",
+      "fields": {
+        "behavior": {
+          "name": "Viselkedés",
+          "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
+        }
+      }
+    },
+    "problem_cleared": {
+      "name": "Probléma megszűnt",
+      "description": "Akkor aktiválódik, ha a növény utolsó problémája is megszűnik, és minden érték visszatér a normál tartományba.",
+      "fields": {
+        "behavior": {
+          "name": "Viselkedés",
+          "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
+        }
+      }
+    },
+    "moisture_became_low": {
+      "name": "Talajnedvesség alacsonyra csökkent",
+      "description": "Akkor aktiválódik, ha a növény talajnedvessége a beállított minimum alá csökken.",
+      "fields": {
+        "behavior": {
+          "name": "Viselkedés",
+          "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
+        }
+      }
+    },
+    "moisture_became_high": {
+      "name": "Talajnedvesség magasra emelkedett",
+      "description": "Akkor aktiválódik, ha a növény talajnedvessége a beállított maximum fölé emelkedik.",
+      "fields": {
+        "behavior": {
+          "name": "Viselkedés",
+          "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
+        }
+      }
+    },
+    "moisture_became_ok": {
+      "name": "Talajnedvesség normalizálódott",
+      "description": "Akkor aktiválódik, ha a növény talajnedvessége visszatér a normál tartományba.",
+      "fields": {
+        "behavior": {
+          "name": "Viselkedés",
+          "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
+        }
+      }
+    },
+    "conductivity_became_low": {
+      "name": "Vezetőképesség alacsonyra csökkent",
+      "description": "Akkor aktiválódik, ha a növény vezetőképessége a beállított minimum alá csökken.",
+      "fields": {
+        "behavior": {
+          "name": "Viselkedés",
+          "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
+        }
+      }
+    },
+    "conductivity_became_high": {
+      "name": "Vezetőképesség magasra emelkedett",
+      "description": "Akkor aktiválódik, ha a növény vezetőképessége a beállított maximum fölé emelkedik.",
+      "fields": {
+        "behavior": {
+          "name": "Viselkedés",
+          "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
+        }
+      }
+    },
+    "conductivity_became_ok": {
+      "name": "Vezetőképesség normalizálódott",
+      "description": "Akkor aktiválódik, ha a növény vezetőképessége visszatér a normál tartományba.",
+      "fields": {
+        "behavior": {
+          "name": "Viselkedés",
+          "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
+        }
+      }
+    },
+    "temperature_became_low": {
+      "name": "Hőmérséklet alacsonyra csökkent",
+      "description": "Akkor aktiválódik, ha a növény hőmérséklete a beállított minimum alá csökken.",
+      "fields": {
+        "behavior": {
+          "name": "Viselkedés",
+          "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
+        }
+      }
+    },
+    "temperature_became_high": {
+      "name": "Hőmérséklet magasra emelkedett",
+      "description": "Akkor aktiválódik, ha a növény hőmérséklete a beállított maximum fölé emelkedik.",
+      "fields": {
+        "behavior": {
+          "name": "Viselkedés",
+          "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
+        }
+      }
+    },
+    "temperature_became_ok": {
+      "name": "Hőmérséklet normalizálódott",
+      "description": "Akkor aktiválódik, ha a növény hőmérséklete visszatér a normál tartományba.",
+      "fields": {
+        "behavior": {
+          "name": "Viselkedés",
+          "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
+        }
+      }
+    },
+    "soil_temperature_became_low": {
+      "name": "Talajhőmérséklet alacsonyra csökkent",
+      "description": "Akkor aktiválódik, ha a növény talajhőmérséklete a beállított minimum alá csökken.",
+      "fields": {
+        "behavior": {
+          "name": "Viselkedés",
+          "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
+        }
+      }
+    },
+    "soil_temperature_became_high": {
+      "name": "Talajhőmérséklet magasra emelkedett",
+      "description": "Akkor aktiválódik, ha a növény talajhőmérséklete a beállított maximum fölé emelkedik.",
+      "fields": {
+        "behavior": {
+          "name": "Viselkedés",
+          "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
+        }
+      }
+    },
+    "soil_temperature_became_ok": {
+      "name": "Talajhőmérséklet normalizálódott",
+      "description": "Akkor aktiválódik, ha a növény talajhőmérséklete visszatér a normál tartományba.",
+      "fields": {
+        "behavior": {
+          "name": "Viselkedés",
+          "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
+        }
+      }
+    },
+    "humidity_became_low": {
+      "name": "Páratartalom alacsonyra csökkent",
+      "description": "Akkor aktiválódik, ha a növény páratartalma a beállított minimum alá csökken.",
+      "fields": {
+        "behavior": {
+          "name": "Viselkedés",
+          "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
+        }
+      }
+    },
+    "humidity_became_high": {
+      "name": "Páratartalom magasra emelkedett",
+      "description": "Akkor aktiválódik, ha a növény páratartalma a beállított maximum fölé emelkedik.",
+      "fields": {
+        "behavior": {
+          "name": "Viselkedés",
+          "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
+        }
+      }
+    },
+    "humidity_became_ok": {
+      "name": "Páratartalom normalizálódott",
+      "description": "Akkor aktiválódik, ha a növény páratartalma visszatér a normál tartományba.",
+      "fields": {
+        "behavior": {
+          "name": "Viselkedés",
+          "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
+        }
+      }
+    },
+    "illuminance_became_low": {
+      "name": "Megvilágítás alacsonyra csökkent",
+      "description": "Akkor aktiválódik, ha a növény megvilágítása a beállított minimum alá csökken.",
+      "fields": {
+        "behavior": {
+          "name": "Viselkedés",
+          "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
+        }
+      }
+    },
+    "illuminance_became_high": {
+      "name": "Megvilágítás magasra emelkedett",
+      "description": "Akkor aktiválódik, ha a növény megvilágítása a beállított maximum fölé emelkedik.",
+      "fields": {
+        "behavior": {
+          "name": "Viselkedés",
+          "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
+        }
+      }
+    },
+    "illuminance_became_ok": {
+      "name": "Megvilágítás normalizálódott",
+      "description": "Akkor aktiválódik, ha a növény megvilágítása visszatér a normál tartományba.",
+      "fields": {
+        "behavior": {
+          "name": "Viselkedés",
+          "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
+        }
+      }
+    },
+    "co2_became_low": {
+      "name": "CO2 alacsonyra csökkent",
+      "description": "Akkor aktiválódik, ha a növény CO2-szintje a beállított minimum alá csökken.",
+      "fields": {
+        "behavior": {
+          "name": "Viselkedés",
+          "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
+        }
+      }
+    },
+    "co2_became_high": {
+      "name": "CO2 magasra emelkedett",
+      "description": "Akkor aktiválódik, ha a növény CO2-szintje a beállított maximum fölé emelkedik.",
+      "fields": {
+        "behavior": {
+          "name": "Viselkedés",
+          "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
+        }
+      }
+    },
+    "co2_became_ok": {
+      "name": "CO2 normalizálódott",
+      "description": "Akkor aktiválódik, ha a növény CO2-szintje visszatér a normál tartományba.",
+      "fields": {
+        "behavior": {
+          "name": "Viselkedés",
+          "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
+        }
+      }
+    },
+    "dli_became_low": {
+      "name": "DLI alacsonyra csökkent",
+      "description": "Akkor aktiválódik, ha a növény DLI-je a beállított minimum alá csökken.",
+      "fields": {
+        "behavior": {
+          "name": "Viselkedés",
+          "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
+        }
+      }
+    },
+    "dli_became_high": {
+      "name": "DLI magasra emelkedett",
+      "description": "Akkor aktiválódik, ha a növény DLI-je a beállított maximum fölé emelkedik.",
+      "fields": {
+        "behavior": {
+          "name": "Viselkedés",
+          "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
+        }
+      }
+    },
+    "dli_became_ok": {
+      "name": "DLI normalizálódott",
+      "description": "Akkor aktiválódik, ha a növény DLI-je visszatér a normál tartományba.",
+      "fields": {
+        "behavior": {
+          "name": "Viselkedés",
+          "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
+        }
+      }
+    },
+    "vpd_became_low": {
+      "name": "VPD alacsonyra csökkent",
+      "description": "Akkor aktiválódik, ha a növény VPD-je a beállított minimum alá csökken.",
+      "fields": {
+        "behavior": {
+          "name": "Viselkedés",
+          "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
+        }
+      }
+    },
+    "vpd_became_high": {
+      "name": "VPD magasra emelkedett",
+      "description": "Akkor aktiválódik, ha a növény VPD-je a beállított maximum fölé emelkedik.",
+      "fields": {
+        "behavior": {
+          "name": "Viselkedés",
+          "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
+        }
+      }
+    },
+    "vpd_became_ok": {
+      "name": "VPD normalizálódott",
+      "description": "Akkor aktiválódik, ha a növény VPD-je visszatér a normál tartományba.",
+      "fields": {
+        "behavior": {
+          "name": "Viselkedés",
+          "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
+        }
+      }
+    },
+    "moisture_sensor_became_stale": {
+      "name": "Talajnedvesség-érzékelő elavult",
+      "description": "Akkor aktiválódik, ha a növény talajnedvesség-érzékelője nem küld több frissítést.",
+      "fields": {
+        "for": {
+          "name": "Időtartam",
+          "description": "Az érzékelőnek legalább ennyi ideig ebben az állapotban kell maradnia, mielőtt az eseményindító aktiválódik."
+        }
+      }
+    },
+    "moisture_sensor_became_fresh": {
+      "name": "Talajnedvesség-érzékelő újra él",
+      "description": "Akkor aktiválódik, ha a növény talajnedvesség-érzékelője ismét frissítéseket küld.",
+      "fields": {
+        "for": {
+          "name": "Időtartam",
+          "description": "Az érzékelőnek legalább ennyi ideig ebben az állapotban kell maradnia, mielőtt az eseményindító aktiválódik."
+        }
+      }
+    },
+    "conductivity_sensor_became_stale": {
+      "name": "Vezetőképesség-érzékelő elavult",
+      "description": "Akkor aktiválódik, ha a növény vezetőképesség-érzékelője nem küld több frissítést.",
+      "fields": {
+        "for": {
+          "name": "Időtartam",
+          "description": "Az érzékelőnek legalább ennyi ideig ebben az állapotban kell maradnia, mielőtt az eseményindító aktiválódik."
+        }
+      }
+    },
+    "conductivity_sensor_became_fresh": {
+      "name": "Vezetőképesség-érzékelő újra él",
+      "description": "Akkor aktiválódik, ha a növény vezetőképesség-érzékelője ismét frissítéseket küld.",
+      "fields": {
+        "for": {
+          "name": "Időtartam",
+          "description": "Az érzékelőnek legalább ennyi ideig ebben az állapotban kell maradnia, mielőtt az eseményindító aktiválódik."
+        }
+      }
+    },
+    "temperature_sensor_became_stale": {
+      "name": "Hőmérséklet-érzékelő elavult",
+      "description": "Akkor aktiválódik, ha a növény hőmérséklet-érzékelője nem küld több frissítést.",
+      "fields": {
+        "for": {
+          "name": "Időtartam",
+          "description": "Az érzékelőnek legalább ennyi ideig ebben az állapotban kell maradnia, mielőtt az eseményindító aktiválódik."
+        }
+      }
+    },
+    "temperature_sensor_became_fresh": {
+      "name": "Hőmérséklet-érzékelő újra él",
+      "description": "Akkor aktiválódik, ha a növény hőmérséklet-érzékelője ismét frissítéseket küld.",
+      "fields": {
+        "for": {
+          "name": "Időtartam",
+          "description": "Az érzékelőnek legalább ennyi ideig ebben az állapotban kell maradnia, mielőtt az eseményindító aktiválódik."
+        }
+      }
+    },
+    "soil_temperature_sensor_became_stale": {
+      "name": "Talajhőmérséklet-érzékelő elavult",
+      "description": "Akkor aktiválódik, ha a növény talajhőmérséklet-érzékelője nem küld több frissítést.",
+      "fields": {
+        "for": {
+          "name": "Időtartam",
+          "description": "Az érzékelőnek legalább ennyi ideig ebben az állapotban kell maradnia, mielőtt az eseményindító aktiválódik."
+        }
+      }
+    },
+    "soil_temperature_sensor_became_fresh": {
+      "name": "Talajhőmérséklet-érzékelő újra él",
+      "description": "Akkor aktiválódik, ha a növény talajhőmérséklet-érzékelője ismét frissítéseket küld.",
+      "fields": {
+        "for": {
+          "name": "Időtartam",
+          "description": "Az érzékelőnek legalább ennyi ideig ebben az állapotban kell maradnia, mielőtt az eseményindító aktiválódik."
+        }
+      }
+    },
+    "humidity_sensor_became_stale": {
+      "name": "Páratartalom-érzékelő elavult",
+      "description": "Akkor aktiválódik, ha a növény páratartalom-érzékelője nem küld több frissítést.",
+      "fields": {
+        "for": {
+          "name": "Időtartam",
+          "description": "Az érzékelőnek legalább ennyi ideig ebben az állapotban kell maradnia, mielőtt az eseményindító aktiválódik."
+        }
+      }
+    },
+    "humidity_sensor_became_fresh": {
+      "name": "Páratartalom-érzékelő újra él",
+      "description": "Akkor aktiválódik, ha a növény páratartalom-érzékelője ismét frissítéseket küld.",
+      "fields": {
+        "for": {
+          "name": "Időtartam",
+          "description": "Az érzékelőnek legalább ennyi ideig ebben az állapotban kell maradnia, mielőtt az eseményindító aktiválódik."
+        }
+      }
+    },
+    "illuminance_sensor_became_stale": {
+      "name": "Megvilágítás-érzékelő elavult",
+      "description": "Akkor aktiválódik, ha a növény megvilágítás-érzékelője nem küld több frissítést.",
+      "fields": {
+        "for": {
+          "name": "Időtartam",
+          "description": "Az érzékelőnek legalább ennyi ideig ebben az állapotban kell maradnia, mielőtt az eseményindító aktiválódik."
+        }
+      }
+    },
+    "illuminance_sensor_became_fresh": {
+      "name": "Megvilágítás-érzékelő újra él",
+      "description": "Akkor aktiválódik, ha a növény megvilágítás-érzékelője ismét frissítéseket küld.",
+      "fields": {
+        "for": {
+          "name": "Időtartam",
+          "description": "Az érzékelőnek legalább ennyi ideig ebben az állapotban kell maradnia, mielőtt az eseményindító aktiválódik."
+        }
+      }
+    },
+    "co2_sensor_became_stale": {
+      "name": "CO2-érzékelő elavult",
+      "description": "Akkor aktiválódik, ha a növény CO2-érzékelője nem küld több frissítést.",
+      "fields": {
+        "for": {
+          "name": "Időtartam",
+          "description": "Az érzékelőnek legalább ennyi ideig ebben az állapotban kell maradnia, mielőtt az eseményindító aktiválódik."
+        }
+      }
+    },
+    "co2_sensor_became_fresh": {
+      "name": "CO2-érzékelő újra él",
+      "description": "Akkor aktiválódik, ha a növény CO2-érzékelője ismét frissítéseket küld.",
+      "fields": {
+        "for": {
+          "name": "Időtartam",
+          "description": "Az érzékelőnek legalább ennyi ideig ebben az állapotban kell maradnia, mielőtt az eseményindító aktiválódik."
+        }
+      }
+    }
+  },
+  "conditions": {
+    "has_problem": {
+      "name": "Probléma van",
+      "description": "Teljesül, amíg a növénynél bármilyen probléma fennáll."
+    },
+    "moisture_is_low": {
+      "name": "Talajnedvesség alacsony",
+      "description": "Teljesül, amíg a növény talajnedvessége a beállított minimum alatt van."
+    },
+    "moisture_is_high": {
+      "name": "Talajnedvesség magas",
+      "description": "Teljesül, amíg a növény talajnedvessége a beállított maximum felett van."
+    },
+    "moisture_is_ok": {
+      "name": "Talajnedvesség normális",
+      "description": "Teljesül, amíg a növény talajnedvessége a normál tartományon belül van."
+    },
+    "conductivity_is_low": {
+      "name": "Vezetőképesség alacsony",
+      "description": "Teljesül, amíg a növény vezetőképessége a beállított minimum alatt van."
+    },
+    "conductivity_is_high": {
+      "name": "Vezetőképesség magas",
+      "description": "Teljesül, amíg a növény vezetőképessége a beállított maximum felett van."
+    },
+    "conductivity_is_ok": {
+      "name": "Vezetőképesség normális",
+      "description": "Teljesül, amíg a növény vezetőképessége a normál tartományon belül van."
+    },
+    "temperature_is_low": {
+      "name": "Hőmérséklet alacsony",
+      "description": "Teljesül, amíg a növény hőmérséklete a beállított minimum alatt van."
+    },
+    "temperature_is_high": {
+      "name": "Hőmérséklet magas",
+      "description": "Teljesül, amíg a növény hőmérséklete a beállított maximum felett van."
+    },
+    "temperature_is_ok": {
+      "name": "Hőmérséklet normális",
+      "description": "Teljesül, amíg a növény hőmérséklete a normál tartományon belül van."
+    },
+    "soil_temperature_is_low": {
+      "name": "Talajhőmérséklet alacsony",
+      "description": "Teljesül, amíg a növény talajhőmérséklete a beállított minimum alatt van."
+    },
+    "soil_temperature_is_high": {
+      "name": "Talajhőmérséklet magas",
+      "description": "Teljesül, amíg a növény talajhőmérséklete a beállított maximum felett van."
+    },
+    "soil_temperature_is_ok": {
+      "name": "Talajhőmérséklet normális",
+      "description": "Teljesül, amíg a növény talajhőmérséklete a normál tartományon belül van."
+    },
+    "humidity_is_low": {
+      "name": "Páratartalom alacsony",
+      "description": "Teljesül, amíg a növény páratartalma a beállított minimum alatt van."
+    },
+    "humidity_is_high": {
+      "name": "Páratartalom magas",
+      "description": "Teljesül, amíg a növény páratartalma a beállított maximum felett van."
+    },
+    "humidity_is_ok": {
+      "name": "Páratartalom normális",
+      "description": "Teljesül, amíg a növény páratartalma a normál tartományon belül van."
+    },
+    "illuminance_is_low": {
+      "name": "Megvilágítás alacsony",
+      "description": "Teljesül, amíg a növény megvilágítása a beállított minimum alatt van."
+    },
+    "illuminance_is_high": {
+      "name": "Megvilágítás magas",
+      "description": "Teljesül, amíg a növény megvilágítása a beállított maximum felett van."
+    },
+    "illuminance_is_ok": {
+      "name": "Megvilágítás normális",
+      "description": "Teljesül, amíg a növény megvilágítása a normál tartományon belül van."
+    },
+    "co2_is_low": {
+      "name": "CO2 alacsony",
+      "description": "Teljesül, amíg a növény CO2-szintje a beállított minimum alatt van."
+    },
+    "co2_is_high": {
+      "name": "CO2 magas",
+      "description": "Teljesül, amíg a növény CO2-szintje a beállított maximum felett van."
+    },
+    "co2_is_ok": {
+      "name": "CO2 normális",
+      "description": "Teljesül, amíg a növény CO2-szintje a normál tartományon belül van."
+    },
+    "dli_is_low": {
+      "name": "DLI alacsony",
+      "description": "Teljesül, amíg a növény DLI-je a beállított minimum alatt van."
+    },
+    "dli_is_high": {
+      "name": "DLI magas",
+      "description": "Teljesül, amíg a növény DLI-je a beállított maximum felett van."
+    },
+    "dli_is_ok": {
+      "name": "DLI normális",
+      "description": "Teljesül, amíg a növény DLI-je a normál tartományon belül van."
+    },
+    "vpd_is_low": {
+      "name": "VPD alacsony",
+      "description": "Teljesül, amíg a növény VPD-je a beállított minimum alatt van."
+    },
+    "vpd_is_high": {
+      "name": "VPD magas",
+      "description": "Teljesül, amíg a növény VPD-je a beállított maximum felett van."
+    },
+    "vpd_is_ok": {
+      "name": "VPD normális",
+      "description": "Teljesül, amíg a növény VPD-je a normál tartományon belül van."
+    },
+    "moisture_sensor_is_stale": {
+      "name": "Talajnedvesség-érzékelő elavult",
+      "description": "Teljesül, amíg a növény talajnedvesség-érzékelője a beállított ideje nem küldött frissítést.",
+      "fields": {
+        "for": {
+          "name": "Időtartam",
+          "description": "Az érzékelőnek legalább ennyi ideig elavultnak kellett lennie, hogy a feltétel teljesüljön."
+        }
+      }
+    },
+    "conductivity_sensor_is_stale": {
+      "name": "Vezetőképesség-érzékelő elavult",
+      "description": "Teljesül, amíg a növény vezetőképesség-érzékelője a beállított ideje nem küldött frissítést.",
+      "fields": {
+        "for": {
+          "name": "Időtartam",
+          "description": "Az érzékelőnek legalább ennyi ideig elavultnak kellett lennie, hogy a feltétel teljesüljön."
+        }
+      }
+    },
+    "temperature_sensor_is_stale": {
+      "name": "Hőmérséklet-érzékelő elavult",
+      "description": "Teljesül, amíg a növény hőmérséklet-érzékelője a beállított ideje nem küldött frissítést.",
+      "fields": {
+        "for": {
+          "name": "Időtartam",
+          "description": "Az érzékelőnek legalább ennyi ideig elavultnak kellett lennie, hogy a feltétel teljesüljön."
+        }
+      }
+    },
+    "soil_temperature_sensor_is_stale": {
+      "name": "Talajhőmérséklet-érzékelő elavult",
+      "description": "Teljesül, amíg a növény talajhőmérséklet-érzékelője a beállított ideje nem küldött frissítést.",
+      "fields": {
+        "for": {
+          "name": "Időtartam",
+          "description": "Az érzékelőnek legalább ennyi ideig elavultnak kellett lennie, hogy a feltétel teljesüljön."
+        }
+      }
+    },
+    "humidity_sensor_is_stale": {
+      "name": "Páratartalom-érzékelő elavult",
+      "description": "Teljesül, amíg a növény páratartalom-érzékelője a beállított ideje nem küldött frissítést.",
+      "fields": {
+        "for": {
+          "name": "Időtartam",
+          "description": "Az érzékelőnek legalább ennyi ideig elavultnak kellett lennie, hogy a feltétel teljesüljön."
+        }
+      }
+    },
+    "illuminance_sensor_is_stale": {
+      "name": "Megvilágítás-érzékelő elavult",
+      "description": "Teljesül, amíg a növény megvilágítás-érzékelője a beállított ideje nem küldött frissítést.",
+      "fields": {
+        "for": {
+          "name": "Időtartam",
+          "description": "Az érzékelőnek legalább ennyi ideig elavultnak kellett lennie, hogy a feltétel teljesüljön."
+        }
+      }
+    },
+    "co2_sensor_is_stale": {
+      "name": "CO2-érzékelő elavult",
+      "description": "Teljesül, amíg a növény CO2-érzékelője a beállított ideje nem küldött frissítést.",
+      "fields": {
+        "for": {
+          "name": "Időtartam",
+          "description": "Az érzékelőnek legalább ennyi ideig elavultnak kellett lennie, hogy a feltétel teljesüljön."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "platform_setup_failed": {
+      "message": "A növény entitásplatformját nem sikerült beállítani."
+    },
+    "plant_entity_not_added": {
+      "message": "A(z) {entity_id} növényentitás nem került hozzáadásra a Home Assistanthoz, valószínűleg mert az egyedi azonosítója már használatban van."
+    }
+  },
+  "issues": {
+    "other_flower_card": {
+      "title": "A Flower card kétszer van telepítve",
+      "description": "A Flower card mostantól a Plant Monitor integrációval együtt érkezik. A vezérlőpultjai egy másik másolatot is betöltenek: {urls}\n\nTávolítsa el azt a másolatot: távolítsa el a Flower Card-ot a Marketplace-ben (a Home Assistant 2026.11 előtt HACS), vagy törölje a saját maga által hozzáadott erőforrást (a Beállítások → Vezérlőpultok → Erőforrások alatt, vagy a YAML-konfiguráció `lovelace` erőforrásai közül). A vezérlőpultok közben is működnek. A Plant Monitor átveszi a helyét, amint a másik másolat eltűnik; ha az erőforrásai YAML-ban vannak, előbb indítsa újra a Home Assistantot. Ezután frissítse a böngészőt."
+    },
+    "missing_flower_card": {
+      "title": "Egy vezérlőpult-erőforrás eltávolított Flower card-ra mutat",
+      "description": "A vezérlőpult-erőforrások között még szerepel egy Flower card, amelynek a fájlja már nem létezik: {urls}\n\nEz a bejegyzés már nem számít telepített kártyának, ezért nem akadályozza, hogy a Plant Monitor betöltse a sajátját. Törölje a megmaradt erőforrást a Beállítások → Vezérlőpultok → Erőforrások alatt, vagy a YAML-konfiguráció `lovelace` erőforrásai közül, hogy a böngésző ne kérje tovább a hiányzó fájlt."
     }
   }
 }
