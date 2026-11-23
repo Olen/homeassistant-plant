@@ -17,12 +17,6 @@
       "humidity": {
         "name": "空气湿度"
       },
-      "co2": {
-        "name": "二氧化碳"
-      },
-      "soil_temperature": {
-        "name": "土壤温度"
-      },
       "ppfd": {
         "name": "PPFD"
       },
@@ -32,11 +26,17 @@
       "dli": {
         "name": "每日光照积分"
       },
-      "dli_24h": {
-        "name": "DLI (24小时滚动)"
-      },
       "vpd": {
         "name": "饱和水汽压差"
+      },
+      "co2": {
+        "name": "二氧化碳"
+      },
+      "soil_temperature": {
+        "name": "土壤温度"
+      },
+      "dli_24h": {
+        "name": "DLI (24小时滚动)"
       }
     },
     "number": {
@@ -76,6 +76,12 @@
       "min_humidity": {
         "name": "最小空气湿度"
       },
+      "max_vpd": {
+        "name": "最大VPD"
+      },
+      "min_vpd": {
+        "name": "最小VPD"
+      },
       "max_co2": {
         "name": "最大二氧化碳"
       },
@@ -87,12 +93,6 @@
       },
       "min_soil_temperature": {
         "name": "最低土壤温度"
-      },
-      "max_vpd": {
-        "name": "最大VPD"
-      },
-      "min_vpd": {
-        "name": "最小VPD"
       },
       "lux_to_ppfd": {
         "name": "勒克斯转PPFD系数"
@@ -229,6 +229,640 @@
           "description": "新传感器的实体ID。留空以移除传感器。"
         }
       }
+    }
+  },
+  "triggers": {
+    "problem_detected": {
+      "name": "检测到问题",
+      "description": "植物出现问题时触发（任一读数超出阈值）。",
+      "fields": {
+        "behavior": {
+          "name": "行为",
+          "description": "触发器是对每个目标植物分别触发，还是对整个群组只触发一次。"
+        }
+      }
+    },
+    "problem_cleared": {
+      "name": "问题已解除",
+      "description": "植物的最后一个问题解除、所有读数都恢复正常时触发。",
+      "fields": {
+        "behavior": {
+          "name": "行为",
+          "description": "触发器是对每个目标植物分别触发，还是对整个群组只触发一次。"
+        }
+      }
+    },
+    "moisture_became_low": {
+      "name": "土壤湿度过低",
+      "description": "植物的土壤湿度低于设定的下限时触发。",
+      "fields": {
+        "behavior": {
+          "name": "行为",
+          "description": "触发器是对每个目标植物分别触发，还是对整个群组只触发一次。"
+        }
+      }
+    },
+    "moisture_became_high": {
+      "name": "土壤湿度过高",
+      "description": "植物的土壤湿度高于设定的上限时触发。",
+      "fields": {
+        "behavior": {
+          "name": "行为",
+          "description": "触发器是对每个目标植物分别触发，还是对整个群组只触发一次。"
+        }
+      }
+    },
+    "moisture_became_ok": {
+      "name": "土壤湿度恢复正常",
+      "description": "植物的土壤湿度回到正常范围时触发。",
+      "fields": {
+        "behavior": {
+          "name": "行为",
+          "description": "触发器是对每个目标植物分别触发，还是对整个群组只触发一次。"
+        }
+      }
+    },
+    "conductivity_became_low": {
+      "name": "电导率过低",
+      "description": "植物的电导率低于设定的下限时触发。",
+      "fields": {
+        "behavior": {
+          "name": "行为",
+          "description": "触发器是对每个目标植物分别触发，还是对整个群组只触发一次。"
+        }
+      }
+    },
+    "conductivity_became_high": {
+      "name": "电导率过高",
+      "description": "植物的电导率高于设定的上限时触发。",
+      "fields": {
+        "behavior": {
+          "name": "行为",
+          "description": "触发器是对每个目标植物分别触发，还是对整个群组只触发一次。"
+        }
+      }
+    },
+    "conductivity_became_ok": {
+      "name": "电导率恢复正常",
+      "description": "植物的电导率回到正常范围时触发。",
+      "fields": {
+        "behavior": {
+          "name": "行为",
+          "description": "触发器是对每个目标植物分别触发，还是对整个群组只触发一次。"
+        }
+      }
+    },
+    "temperature_became_low": {
+      "name": "温度过低",
+      "description": "植物的温度低于设定的下限时触发。",
+      "fields": {
+        "behavior": {
+          "name": "行为",
+          "description": "触发器是对每个目标植物分别触发，还是对整个群组只触发一次。"
+        }
+      }
+    },
+    "temperature_became_high": {
+      "name": "温度过高",
+      "description": "植物的温度高于设定的上限时触发。",
+      "fields": {
+        "behavior": {
+          "name": "行为",
+          "description": "触发器是对每个目标植物分别触发，还是对整个群组只触发一次。"
+        }
+      }
+    },
+    "temperature_became_ok": {
+      "name": "温度恢复正常",
+      "description": "植物的温度回到正常范围时触发。",
+      "fields": {
+        "behavior": {
+          "name": "行为",
+          "description": "触发器是对每个目标植物分别触发，还是对整个群组只触发一次。"
+        }
+      }
+    },
+    "soil_temperature_became_low": {
+      "name": "土壤温度过低",
+      "description": "植物的土壤温度低于设定的下限时触发。",
+      "fields": {
+        "behavior": {
+          "name": "行为",
+          "description": "触发器是对每个目标植物分别触发，还是对整个群组只触发一次。"
+        }
+      }
+    },
+    "soil_temperature_became_high": {
+      "name": "土壤温度过高",
+      "description": "植物的土壤温度高于设定的上限时触发。",
+      "fields": {
+        "behavior": {
+          "name": "行为",
+          "description": "触发器是对每个目标植物分别触发，还是对整个群组只触发一次。"
+        }
+      }
+    },
+    "soil_temperature_became_ok": {
+      "name": "土壤温度恢复正常",
+      "description": "植物的土壤温度回到正常范围时触发。",
+      "fields": {
+        "behavior": {
+          "name": "行为",
+          "description": "触发器是对每个目标植物分别触发，还是对整个群组只触发一次。"
+        }
+      }
+    },
+    "humidity_became_low": {
+      "name": "空气湿度过低",
+      "description": "植物的空气湿度低于设定的下限时触发。",
+      "fields": {
+        "behavior": {
+          "name": "行为",
+          "description": "触发器是对每个目标植物分别触发，还是对整个群组只触发一次。"
+        }
+      }
+    },
+    "humidity_became_high": {
+      "name": "空气湿度过高",
+      "description": "植物的空气湿度高于设定的上限时触发。",
+      "fields": {
+        "behavior": {
+          "name": "行为",
+          "description": "触发器是对每个目标植物分别触发，还是对整个群组只触发一次。"
+        }
+      }
+    },
+    "humidity_became_ok": {
+      "name": "空气湿度恢复正常",
+      "description": "植物的空气湿度回到正常范围时触发。",
+      "fields": {
+        "behavior": {
+          "name": "行为",
+          "description": "触发器是对每个目标植物分别触发，还是对整个群组只触发一次。"
+        }
+      }
+    },
+    "illuminance_became_low": {
+      "name": "光照强度过低",
+      "description": "植物的光照强度低于设定的下限时触发。",
+      "fields": {
+        "behavior": {
+          "name": "行为",
+          "description": "触发器是对每个目标植物分别触发，还是对整个群组只触发一次。"
+        }
+      }
+    },
+    "illuminance_became_high": {
+      "name": "光照强度过高",
+      "description": "植物的光照强度高于设定的上限时触发。",
+      "fields": {
+        "behavior": {
+          "name": "行为",
+          "description": "触发器是对每个目标植物分别触发，还是对整个群组只触发一次。"
+        }
+      }
+    },
+    "illuminance_became_ok": {
+      "name": "光照强度恢复正常",
+      "description": "植物的光照强度回到正常范围时触发。",
+      "fields": {
+        "behavior": {
+          "name": "行为",
+          "description": "触发器是对每个目标植物分别触发，还是对整个群组只触发一次。"
+        }
+      }
+    },
+    "co2_became_low": {
+      "name": "CO2 过低",
+      "description": "植物的CO2低于设定的下限时触发。",
+      "fields": {
+        "behavior": {
+          "name": "行为",
+          "description": "触发器是对每个目标植物分别触发，还是对整个群组只触发一次。"
+        }
+      }
+    },
+    "co2_became_high": {
+      "name": "CO2 过高",
+      "description": "植物的CO2高于设定的上限时触发。",
+      "fields": {
+        "behavior": {
+          "name": "行为",
+          "description": "触发器是对每个目标植物分别触发，还是对整个群组只触发一次。"
+        }
+      }
+    },
+    "co2_became_ok": {
+      "name": "CO2 恢复正常",
+      "description": "植物的CO2回到正常范围时触发。",
+      "fields": {
+        "behavior": {
+          "name": "行为",
+          "description": "触发器是对每个目标植物分别触发，还是对整个群组只触发一次。"
+        }
+      }
+    },
+    "dli_became_low": {
+      "name": "DLI过低",
+      "description": "植物的DLI低于设定的下限时触发。",
+      "fields": {
+        "behavior": {
+          "name": "行为",
+          "description": "触发器是对每个目标植物分别触发，还是对整个群组只触发一次。"
+        }
+      }
+    },
+    "dli_became_high": {
+      "name": "DLI过高",
+      "description": "植物的DLI高于设定的上限时触发。",
+      "fields": {
+        "behavior": {
+          "name": "行为",
+          "description": "触发器是对每个目标植物分别触发，还是对整个群组只触发一次。"
+        }
+      }
+    },
+    "dli_became_ok": {
+      "name": "DLI恢复正常",
+      "description": "植物的DLI回到正常范围时触发。",
+      "fields": {
+        "behavior": {
+          "name": "行为",
+          "description": "触发器是对每个目标植物分别触发，还是对整个群组只触发一次。"
+        }
+      }
+    },
+    "vpd_became_low": {
+      "name": "VPD过低",
+      "description": "植物的VPD低于设定的下限时触发。",
+      "fields": {
+        "behavior": {
+          "name": "行为",
+          "description": "触发器是对每个目标植物分别触发，还是对整个群组只触发一次。"
+        }
+      }
+    },
+    "vpd_became_high": {
+      "name": "VPD过高",
+      "description": "植物的VPD高于设定的上限时触发。",
+      "fields": {
+        "behavior": {
+          "name": "行为",
+          "description": "触发器是对每个目标植物分别触发，还是对整个群组只触发一次。"
+        }
+      }
+    },
+    "vpd_became_ok": {
+      "name": "VPD恢复正常",
+      "description": "植物的VPD回到正常范围时触发。",
+      "fields": {
+        "behavior": {
+          "name": "行为",
+          "description": "触发器是对每个目标植物分别触发，还是对整个群组只触发一次。"
+        }
+      }
+    },
+    "moisture_sensor_became_stale": {
+      "name": "土壤湿度传感器停止更新",
+      "description": "植物的土壤湿度传感器停止发送更新时触发。",
+      "fields": {
+        "for": {
+          "name": "持续时间",
+          "description": "传感器必须保持该状态至少这么长时间，触发器才会触发。"
+        }
+      }
+    },
+    "moisture_sensor_became_fresh": {
+      "name": "土壤湿度传感器恢复更新",
+      "description": "植物的土壤湿度传感器重新开始发送更新时触发。",
+      "fields": {
+        "for": {
+          "name": "持续时间",
+          "description": "传感器必须保持该状态至少这么长时间，触发器才会触发。"
+        }
+      }
+    },
+    "conductivity_sensor_became_stale": {
+      "name": "电导率传感器停止更新",
+      "description": "植物的电导率传感器停止发送更新时触发。",
+      "fields": {
+        "for": {
+          "name": "持续时间",
+          "description": "传感器必须保持该状态至少这么长时间，触发器才会触发。"
+        }
+      }
+    },
+    "conductivity_sensor_became_fresh": {
+      "name": "电导率传感器恢复更新",
+      "description": "植物的电导率传感器重新开始发送更新时触发。",
+      "fields": {
+        "for": {
+          "name": "持续时间",
+          "description": "传感器必须保持该状态至少这么长时间，触发器才会触发。"
+        }
+      }
+    },
+    "temperature_sensor_became_stale": {
+      "name": "温度传感器停止更新",
+      "description": "植物的温度传感器停止发送更新时触发。",
+      "fields": {
+        "for": {
+          "name": "持续时间",
+          "description": "传感器必须保持该状态至少这么长时间，触发器才会触发。"
+        }
+      }
+    },
+    "temperature_sensor_became_fresh": {
+      "name": "温度传感器恢复更新",
+      "description": "植物的温度传感器重新开始发送更新时触发。",
+      "fields": {
+        "for": {
+          "name": "持续时间",
+          "description": "传感器必须保持该状态至少这么长时间，触发器才会触发。"
+        }
+      }
+    },
+    "soil_temperature_sensor_became_stale": {
+      "name": "土壤温度传感器停止更新",
+      "description": "植物的土壤温度传感器停止发送更新时触发。",
+      "fields": {
+        "for": {
+          "name": "持续时间",
+          "description": "传感器必须保持该状态至少这么长时间，触发器才会触发。"
+        }
+      }
+    },
+    "soil_temperature_sensor_became_fresh": {
+      "name": "土壤温度传感器恢复更新",
+      "description": "植物的土壤温度传感器重新开始发送更新时触发。",
+      "fields": {
+        "for": {
+          "name": "持续时间",
+          "description": "传感器必须保持该状态至少这么长时间，触发器才会触发。"
+        }
+      }
+    },
+    "humidity_sensor_became_stale": {
+      "name": "空气湿度传感器停止更新",
+      "description": "植物的空气湿度传感器停止发送更新时触发。",
+      "fields": {
+        "for": {
+          "name": "持续时间",
+          "description": "传感器必须保持该状态至少这么长时间，触发器才会触发。"
+        }
+      }
+    },
+    "humidity_sensor_became_fresh": {
+      "name": "空气湿度传感器恢复更新",
+      "description": "植物的空气湿度传感器重新开始发送更新时触发。",
+      "fields": {
+        "for": {
+          "name": "持续时间",
+          "description": "传感器必须保持该状态至少这么长时间，触发器才会触发。"
+        }
+      }
+    },
+    "illuminance_sensor_became_stale": {
+      "name": "光照强度传感器停止更新",
+      "description": "植物的光照强度传感器停止发送更新时触发。",
+      "fields": {
+        "for": {
+          "name": "持续时间",
+          "description": "传感器必须保持该状态至少这么长时间，触发器才会触发。"
+        }
+      }
+    },
+    "illuminance_sensor_became_fresh": {
+      "name": "光照强度传感器恢复更新",
+      "description": "植物的光照强度传感器重新开始发送更新时触发。",
+      "fields": {
+        "for": {
+          "name": "持续时间",
+          "description": "传感器必须保持该状态至少这么长时间，触发器才会触发。"
+        }
+      }
+    },
+    "co2_sensor_became_stale": {
+      "name": "CO2 传感器停止更新",
+      "description": "植物的CO2 传感器停止发送更新时触发。",
+      "fields": {
+        "for": {
+          "name": "持续时间",
+          "description": "传感器必须保持该状态至少这么长时间，触发器才会触发。"
+        }
+      }
+    },
+    "co2_sensor_became_fresh": {
+      "name": "CO2 传感器恢复更新",
+      "description": "植物的CO2 传感器重新开始发送更新时触发。",
+      "fields": {
+        "for": {
+          "name": "持续时间",
+          "description": "传感器必须保持该状态至少这么长时间，触发器才会触发。"
+        }
+      }
+    }
+  },
+  "conditions": {
+    "has_problem": {
+      "name": "存在问题",
+      "description": "植物存在任何未解除的问题时成立。"
+    },
+    "moisture_is_low": {
+      "name": "土壤湿度过低",
+      "description": "植物的土壤湿度低于设定的下限时成立。"
+    },
+    "moisture_is_high": {
+      "name": "土壤湿度过高",
+      "description": "植物的土壤湿度高于设定的上限时成立。"
+    },
+    "moisture_is_ok": {
+      "name": "土壤湿度正常",
+      "description": "植物的土壤湿度在正常范围内时成立。"
+    },
+    "conductivity_is_low": {
+      "name": "电导率过低",
+      "description": "植物的电导率低于设定的下限时成立。"
+    },
+    "conductivity_is_high": {
+      "name": "电导率过高",
+      "description": "植物的电导率高于设定的上限时成立。"
+    },
+    "conductivity_is_ok": {
+      "name": "电导率正常",
+      "description": "植物的电导率在正常范围内时成立。"
+    },
+    "temperature_is_low": {
+      "name": "温度过低",
+      "description": "植物的温度低于设定的下限时成立。"
+    },
+    "temperature_is_high": {
+      "name": "温度过高",
+      "description": "植物的温度高于设定的上限时成立。"
+    },
+    "temperature_is_ok": {
+      "name": "温度正常",
+      "description": "植物的温度在正常范围内时成立。"
+    },
+    "soil_temperature_is_low": {
+      "name": "土壤温度过低",
+      "description": "植物的土壤温度低于设定的下限时成立。"
+    },
+    "soil_temperature_is_high": {
+      "name": "土壤温度过高",
+      "description": "植物的土壤温度高于设定的上限时成立。"
+    },
+    "soil_temperature_is_ok": {
+      "name": "土壤温度正常",
+      "description": "植物的土壤温度在正常范围内时成立。"
+    },
+    "humidity_is_low": {
+      "name": "空气湿度过低",
+      "description": "植物的空气湿度低于设定的下限时成立。"
+    },
+    "humidity_is_high": {
+      "name": "空气湿度过高",
+      "description": "植物的空气湿度高于设定的上限时成立。"
+    },
+    "humidity_is_ok": {
+      "name": "空气湿度正常",
+      "description": "植物的空气湿度在正常范围内时成立。"
+    },
+    "illuminance_is_low": {
+      "name": "光照强度过低",
+      "description": "植物的光照强度低于设定的下限时成立。"
+    },
+    "illuminance_is_high": {
+      "name": "光照强度过高",
+      "description": "植物的光照强度高于设定的上限时成立。"
+    },
+    "illuminance_is_ok": {
+      "name": "光照强度正常",
+      "description": "植物的光照强度在正常范围内时成立。"
+    },
+    "co2_is_low": {
+      "name": "CO2过低",
+      "description": "植物的CO2低于设定的下限时成立。"
+    },
+    "co2_is_high": {
+      "name": "CO2过高",
+      "description": "植物的CO2高于设定的上限时成立。"
+    },
+    "co2_is_ok": {
+      "name": "CO2正常",
+      "description": "植物的CO2在正常范围内时成立。"
+    },
+    "dli_is_low": {
+      "name": "DLI过低",
+      "description": "植物的DLI低于设定的下限时成立。"
+    },
+    "dli_is_high": {
+      "name": "DLI过高",
+      "description": "植物的DLI高于设定的上限时成立。"
+    },
+    "dli_is_ok": {
+      "name": "DLI正常",
+      "description": "植物的DLI在正常范围内时成立。"
+    },
+    "vpd_is_low": {
+      "name": "VPD过低",
+      "description": "植物的VPD低于设定的下限时成立。"
+    },
+    "vpd_is_high": {
+      "name": "VPD过高",
+      "description": "植物的VPD高于设定的上限时成立。"
+    },
+    "vpd_is_ok": {
+      "name": "VPD正常",
+      "description": "植物的VPD在正常范围内时成立。"
+    },
+    "moisture_sensor_is_stale": {
+      "name": "土壤湿度传感器未更新",
+      "description": "植物的土壤湿度传感器超过设定时间未发送更新时成立。",
+      "fields": {
+        "for": {
+          "name": "持续时间",
+          "description": "传感器必须至少这么长时间未更新，条件才会成立。"
+        }
+      }
+    },
+    "conductivity_sensor_is_stale": {
+      "name": "电导率传感器未更新",
+      "description": "植物的电导率传感器超过设定时间未发送更新时成立。",
+      "fields": {
+        "for": {
+          "name": "持续时间",
+          "description": "传感器必须至少这么长时间未更新，条件才会成立。"
+        }
+      }
+    },
+    "temperature_sensor_is_stale": {
+      "name": "温度传感器未更新",
+      "description": "植物的温度传感器超过设定时间未发送更新时成立。",
+      "fields": {
+        "for": {
+          "name": "持续时间",
+          "description": "传感器必须至少这么长时间未更新，条件才会成立。"
+        }
+      }
+    },
+    "soil_temperature_sensor_is_stale": {
+      "name": "土壤温度传感器未更新",
+      "description": "植物的土壤温度传感器超过设定时间未发送更新时成立。",
+      "fields": {
+        "for": {
+          "name": "持续时间",
+          "description": "传感器必须至少这么长时间未更新，条件才会成立。"
+        }
+      }
+    },
+    "humidity_sensor_is_stale": {
+      "name": "空气湿度传感器未更新",
+      "description": "植物的空气湿度传感器超过设定时间未发送更新时成立。",
+      "fields": {
+        "for": {
+          "name": "持续时间",
+          "description": "传感器必须至少这么长时间未更新，条件才会成立。"
+        }
+      }
+    },
+    "illuminance_sensor_is_stale": {
+      "name": "光照强度传感器未更新",
+      "description": "植物的光照强度传感器超过设定时间未发送更新时成立。",
+      "fields": {
+        "for": {
+          "name": "持续时间",
+          "description": "传感器必须至少这么长时间未更新，条件才会成立。"
+        }
+      }
+    },
+    "co2_sensor_is_stale": {
+      "name": "CO2 传感器未更新",
+      "description": "植物的CO2 传感器超过设定时间未发送更新时成立。",
+      "fields": {
+        "for": {
+          "name": "持续时间",
+          "description": "传感器必须至少这么长时间未更新，条件才会成立。"
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "platform_setup_failed": {
+      "message": "无法设置植物实体平台。"
+    },
+    "plant_entity_not_added": {
+      "message": "植物实体 {entity_id} 未添加到 Home Assistant，可能是因为它的唯一 ID 已被使用。"
+    }
+  },
+  "issues": {
+    "other_flower_card": {
+      "title": "Flower card 被重复安装",
+      "description": "Plant Monitor 集成现在已内置 flower card。您的仪表板还额外加载了另一份：{urls}\n\n请移除那一份：在 Marketplace 中卸载 Flower Card（Home Assistant 2026.11 之前为 HACS），或删除您自行添加的资源（在“设置 → 仪表板 → 资源”中，或 YAML 配置中的 `lovelace` 资源）。在此期间仪表板仍可正常使用。另一份移除后，Plant Monitor 会立即接手；如果资源写在 YAML 中，请先重启 Home Assistant。之后请刷新浏览器。"
+    },
+    "missing_flower_card": {
+      "title": "仪表板资源指向已移除的 flower card",
+      "description": "您的仪表板资源中仍列有一个文件已不存在的 flower card：{urls}\n\n该条目已不算作已安装的卡片，因此不会妨碍 Plant Monitor 加载自己的卡片。请在“设置 → 仪表板 → 资源”或 YAML 配置中的 `lovelace` 资源里删除这个残留条目，浏览器就不会再请求那个不存在的文件。"
     }
   }
 }
