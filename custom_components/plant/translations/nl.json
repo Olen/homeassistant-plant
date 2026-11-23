@@ -37,6 +37,9 @@
       },
       "vpd": {
         "name": "Dampdrukdeficit"
+      },
+      "next_watering": {
+        "name": "Volgende watergift"
       }
     },
     "number": {

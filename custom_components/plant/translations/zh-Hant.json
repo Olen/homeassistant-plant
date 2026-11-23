@@ -37,6 +37,9 @@
       },
       "vpd": {
         "name": "飽和水氣壓差"
+      },
+      "next_watering": {
+        "name": "下次澆水"
       }
     },
     "number": {

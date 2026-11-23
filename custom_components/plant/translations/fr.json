@@ -37,6 +37,9 @@
       },
       "vpd": {
         "name": "Déficit de pression de vapeur"
+      },
+      "next_watering": {
+        "name": "Prochain arrosage"
       }
     },
     "number": {

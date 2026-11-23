@@ -52,7 +52,9 @@ def test_rising_or_flat_returns_none(step: float) -> None:
 
 
 def test_too_few_readings_returns_none() -> None:
-    readings = _hourly(40.0, -2.0, 5, NOW)
+    readings = [
+        (NOW - timedelta(hours=4 * (4 - index)), 40.0 - 2 * index) for index in range(5)
+    ]
 
     assert predict_dry_time(readings, 15.0, NOW) is None
 

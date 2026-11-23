@@ -37,6 +37,9 @@
       },
       "vpd": {
         "name": "Défice de pressão de vapor"
+      },
+      "next_watering": {
+        "name": "Próxima rega"
       }
     },
     "number": {

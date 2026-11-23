@@ -37,6 +37,9 @@
       },
       "vpd": {
         "name": "Damptrykkdefisitt"
+      },
+      "next_watering": {
+        "name": "Neste vanning"
       }
     },
     "number": {
