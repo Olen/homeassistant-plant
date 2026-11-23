@@ -138,3 +138,22 @@ async def test_plant_attributes_have_translated_names(
 
     await hass.config_entries.async_unload(entry.entry_id)
     await hass.async_block_till_done()
+
+
+def _keys(data: dict, prefix: str = "") -> set[str]:
+    keys = set()
+    for key, value in data.items():
+        path = f"{prefix}.{key}" if prefix else key
+        if isinstance(value, dict):
+            keys |= _keys(value, path)
+        else:
+            keys.add(path)
+    return keys
+
+
+def test_strings_and_english_translation_have_the_same_keys() -> None:
+    """strings.json is the source; en.json (what HA reads) must match it."""
+    strings = _keys(_load("strings.json"))
+    english = _keys(_load("translations/en.json"))
+    assert sorted(strings - english) == []
+    assert sorted(english - strings) == []

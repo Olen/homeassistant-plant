@@ -17,6 +17,12 @@
       "humidity": {
         "name": "Air humidity"
       },
+      "co2": {
+        "name": "CO2"
+      },
+      "soil_temperature": {
+        "name": "Soil temperature"
+      },
       "ppfd": {
         "name": "PPFD"
       },
@@ -25,6 +31,9 @@
       },
       "dli": {
         "name": "Daily light integral"
+      },
+      "dli_24h": {
+        "name": "DLI (24h rolling)"
       },
       "vpd": {
         "name": "Vapour pressure deficit"
@@ -67,11 +76,26 @@
       "min_humidity": {
         "name": "Minimum air humidity"
       },
+      "max_co2": {
+        "name": "Max CO2"
+      },
+      "min_co2": {
+        "name": "Min CO2"
+      },
+      "max_soil_temperature": {
+        "name": "Max soil temperature"
+      },
+      "min_soil_temperature": {
+        "name": "Min soil temperature"
+      },
       "max_vpd": {
         "name": "Maximum VPD"
       },
       "min_vpd": {
         "name": "Minimum VPD"
+      },
+      "lux_to_ppfd": {
+        "name": "Lux to PPFD factor"
       }
     }
   },
