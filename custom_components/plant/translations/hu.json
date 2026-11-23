@@ -294,7 +294,7 @@
       "description": "Akkor aktiválódik, ha a növénynél probléma lép fel (bármelyik érték átlépi a küszöböt).",
       "fields": {
         "behavior": {
-          "name": "Viselkedés",
+          "name": "Aktiválódik, amikor",
           "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
         }
       }
@@ -304,7 +304,7 @@
       "description": "Akkor aktiválódik, ha a növény utolsó problémája is megszűnik, és minden érték visszatér a normál tartományba.",
       "fields": {
         "behavior": {
-          "name": "Viselkedés",
+          "name": "Aktiválódik, amikor",
           "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
         }
       }
@@ -314,7 +314,7 @@
       "description": "Akkor aktiválódik, ha a növény talajnedvessége a beállított minimum alá csökken.",
       "fields": {
         "behavior": {
-          "name": "Viselkedés",
+          "name": "Aktiválódik, amikor",
           "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
         }
       }
@@ -324,7 +324,7 @@
       "description": "Akkor aktiválódik, ha a növény talajnedvessége a beállított maximum fölé emelkedik.",
       "fields": {
         "behavior": {
-          "name": "Viselkedés",
+          "name": "Aktiválódik, amikor",
           "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
         }
       }
@@ -334,7 +334,7 @@
       "description": "Akkor aktiválódik, ha a növény talajnedvessége visszatér a normál tartományba.",
       "fields": {
         "behavior": {
-          "name": "Viselkedés",
+          "name": "Aktiválódik, amikor",
           "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
         }
       }
@@ -344,7 +344,7 @@
       "description": "Akkor aktiválódik, ha a növény vezetőképessége a beállított minimum alá csökken.",
       "fields": {
         "behavior": {
-          "name": "Viselkedés",
+          "name": "Aktiválódik, amikor",
           "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
         }
       }
@@ -354,7 +354,7 @@
       "description": "Akkor aktiválódik, ha a növény vezetőképessége a beállított maximum fölé emelkedik.",
       "fields": {
         "behavior": {
-          "name": "Viselkedés",
+          "name": "Aktiválódik, amikor",
           "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
         }
       }
@@ -364,7 +364,7 @@
       "description": "Akkor aktiválódik, ha a növény vezetőképessége visszatér a normál tartományba.",
       "fields": {
         "behavior": {
-          "name": "Viselkedés",
+          "name": "Aktiválódik, amikor",
           "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
         }
       }
@@ -374,7 +374,7 @@
       "description": "Akkor aktiválódik, ha a növény hőmérséklete a beállított minimum alá csökken.",
       "fields": {
         "behavior": {
-          "name": "Viselkedés",
+          "name": "Aktiválódik, amikor",
           "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
         }
       }
@@ -384,7 +384,7 @@
       "description": "Akkor aktiválódik, ha a növény hőmérséklete a beállított maximum fölé emelkedik.",
       "fields": {
         "behavior": {
-          "name": "Viselkedés",
+          "name": "Aktiválódik, amikor",
           "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
         }
       }
@@ -394,7 +394,7 @@
       "description": "Akkor aktiválódik, ha a növény hőmérséklete visszatér a normál tartományba.",
       "fields": {
         "behavior": {
-          "name": "Viselkedés",
+          "name": "Aktiválódik, amikor",
           "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
         }
       }
@@ -404,7 +404,7 @@
       "description": "Akkor aktiválódik, ha a növény talajhőmérséklete a beállított minimum alá csökken.",
       "fields": {
         "behavior": {
-          "name": "Viselkedés",
+          "name": "Aktiválódik, amikor",
           "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
         }
       }
@@ -414,7 +414,7 @@
       "description": "Akkor aktiválódik, ha a növény talajhőmérséklete a beállított maximum fölé emelkedik.",
       "fields": {
         "behavior": {
-          "name": "Viselkedés",
+          "name": "Aktiválódik, amikor",
           "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
         }
       }
@@ -424,7 +424,7 @@
       "description": "Akkor aktiválódik, ha a növény talajhőmérséklete visszatér a normál tartományba.",
       "fields": {
         "behavior": {
-          "name": "Viselkedés",
+          "name": "Aktiválódik, amikor",
           "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
         }
       }
@@ -434,7 +434,7 @@
       "description": "Akkor aktiválódik, ha a növény páratartalma a beállított minimum alá csökken.",
       "fields": {
         "behavior": {
-          "name": "Viselkedés",
+          "name": "Aktiválódik, amikor",
           "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
         }
       }
@@ -444,7 +444,7 @@
       "description": "Akkor aktiválódik, ha a növény páratartalma a beállított maximum fölé emelkedik.",
       "fields": {
         "behavior": {
-          "name": "Viselkedés",
+          "name": "Aktiválódik, amikor",
           "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
         }
       }
@@ -454,7 +454,7 @@
       "description": "Akkor aktiválódik, ha a növény páratartalma visszatér a normál tartományba.",
       "fields": {
         "behavior": {
-          "name": "Viselkedés",
+          "name": "Aktiválódik, amikor",
           "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
         }
       }
@@ -464,7 +464,7 @@
       "description": "Akkor aktiválódik, ha a növény megvilágítása a beállított minimum alá csökken.",
       "fields": {
         "behavior": {
-          "name": "Viselkedés",
+          "name": "Aktiválódik, amikor",
           "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
         }
       }
@@ -474,7 +474,7 @@
       "description": "Akkor aktiválódik, ha a növény megvilágítása a beállított maximum fölé emelkedik.",
       "fields": {
         "behavior": {
-          "name": "Viselkedés",
+          "name": "Aktiválódik, amikor",
           "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
         }
       }
@@ -484,7 +484,7 @@
       "description": "Akkor aktiválódik, ha a növény megvilágítása visszatér a normál tartományba.",
       "fields": {
         "behavior": {
-          "name": "Viselkedés",
+          "name": "Aktiválódik, amikor",
           "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
         }
       }
@@ -494,7 +494,7 @@
       "description": "Akkor aktiválódik, ha a növény CO2-szintje a beállított minimum alá csökken.",
       "fields": {
         "behavior": {
-          "name": "Viselkedés",
+          "name": "Aktiválódik, amikor",
           "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
         }
       }
@@ -504,7 +504,7 @@
       "description": "Akkor aktiválódik, ha a növény CO2-szintje a beállított maximum fölé emelkedik.",
       "fields": {
         "behavior": {
-          "name": "Viselkedés",
+          "name": "Aktiválódik, amikor",
           "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
         }
       }
@@ -514,7 +514,7 @@
       "description": "Akkor aktiválódik, ha a növény CO2-szintje visszatér a normál tartományba.",
       "fields": {
         "behavior": {
-          "name": "Viselkedés",
+          "name": "Aktiválódik, amikor",
           "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
         }
       }
@@ -524,7 +524,7 @@
       "description": "Akkor aktiválódik, ha a növény DLI-je a beállított minimum alá csökken.",
       "fields": {
         "behavior": {
-          "name": "Viselkedés",
+          "name": "Aktiválódik, amikor",
           "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
         }
       }
@@ -534,7 +534,7 @@
       "description": "Akkor aktiválódik, ha a növény DLI-je a beállított maximum fölé emelkedik.",
       "fields": {
         "behavior": {
-          "name": "Viselkedés",
+          "name": "Aktiválódik, amikor",
           "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
         }
       }
@@ -544,7 +544,7 @@
       "description": "Akkor aktiválódik, ha a növény DLI-je visszatér a normál tartományba.",
       "fields": {
         "behavior": {
-          "name": "Viselkedés",
+          "name": "Aktiválódik, amikor",
           "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
         }
       }
@@ -554,7 +554,7 @@
       "description": "Akkor aktiválódik, ha a növény VPD-je a beállított minimum alá csökken.",
       "fields": {
         "behavior": {
-          "name": "Viselkedés",
+          "name": "Aktiválódik, amikor",
           "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
         }
       }
@@ -564,7 +564,7 @@
       "description": "Akkor aktiválódik, ha a növény VPD-je a beállított maximum fölé emelkedik.",
       "fields": {
         "behavior": {
-          "name": "Viselkedés",
+          "name": "Aktiválódik, amikor",
           "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
         }
       }
@@ -574,7 +574,7 @@
       "description": "Akkor aktiválódik, ha a növény VPD-je visszatér a normál tartományba.",
       "fields": {
         "behavior": {
-          "name": "Viselkedés",
+          "name": "Aktiválódik, amikor",
           "description": "Meghatározza, hogy az eseményindító minden érintett növénynél külön aktiválódik, vagy csak egyszer az egész csoportra."
         }
       }
@@ -584,7 +584,7 @@
       "description": "Akkor aktiválódik, ha a növény talajnedvesség-érzékelője nem küld több frissítést.",
       "fields": {
         "for": {
-          "name": "Időtartam",
+          "name": "Legalább ennyi ideig",
           "description": "Az érzékelőnek legalább ennyi ideig ebben az állapotban kell maradnia, mielőtt az eseményindító aktiválódik."
         }
       }
@@ -594,7 +594,7 @@
       "description": "Akkor aktiválódik, ha a növény talajnedvesség-érzékelője ismét frissítéseket küld.",
       "fields": {
         "for": {
-          "name": "Időtartam",
+          "name": "Legalább ennyi ideig",
           "description": "Az érzékelőnek legalább ennyi ideig ebben az állapotban kell maradnia, mielőtt az eseményindító aktiválódik."
         }
       }
@@ -604,7 +604,7 @@
       "description": "Akkor aktiválódik, ha a növény vezetőképesség-érzékelője nem küld több frissítést.",
       "fields": {
         "for": {
-          "name": "Időtartam",
+          "name": "Legalább ennyi ideig",
           "description": "Az érzékelőnek legalább ennyi ideig ebben az állapotban kell maradnia, mielőtt az eseményindító aktiválódik."
         }
       }
@@ -614,7 +614,7 @@
       "description": "Akkor aktiválódik, ha a növény vezetőképesség-érzékelője ismét frissítéseket küld.",
       "fields": {
         "for": {
-          "name": "Időtartam",
+          "name": "Legalább ennyi ideig",
           "description": "Az érzékelőnek legalább ennyi ideig ebben az állapotban kell maradnia, mielőtt az eseményindító aktiválódik."
         }
       }
@@ -624,7 +624,7 @@
       "description": "Akkor aktiválódik, ha a növény hőmérséklet-érzékelője nem küld több frissítést.",
       "fields": {
         "for": {
-          "name": "Időtartam",
+          "name": "Legalább ennyi ideig",
           "description": "Az érzékelőnek legalább ennyi ideig ebben az állapotban kell maradnia, mielőtt az eseményindító aktiválódik."
         }
       }
@@ -634,7 +634,7 @@
       "description": "Akkor aktiválódik, ha a növény hőmérséklet-érzékelője ismét frissítéseket küld.",
       "fields": {
         "for": {
-          "name": "Időtartam",
+          "name": "Legalább ennyi ideig",
           "description": "Az érzékelőnek legalább ennyi ideig ebben az állapotban kell maradnia, mielőtt az eseményindító aktiválódik."
         }
       }
@@ -644,7 +644,7 @@
       "description": "Akkor aktiválódik, ha a növény talajhőmérséklet-érzékelője nem küld több frissítést.",
       "fields": {
         "for": {
-          "name": "Időtartam",
+          "name": "Legalább ennyi ideig",
           "description": "Az érzékelőnek legalább ennyi ideig ebben az állapotban kell maradnia, mielőtt az eseményindító aktiválódik."
         }
       }
@@ -654,7 +654,7 @@
       "description": "Akkor aktiválódik, ha a növény talajhőmérséklet-érzékelője ismét frissítéseket küld.",
       "fields": {
         "for": {
-          "name": "Időtartam",
+          "name": "Legalább ennyi ideig",
           "description": "Az érzékelőnek legalább ennyi ideig ebben az állapotban kell maradnia, mielőtt az eseményindító aktiválódik."
         }
       }
@@ -664,7 +664,7 @@
       "description": "Akkor aktiválódik, ha a növény páratartalom-érzékelője nem küld több frissítést.",
       "fields": {
         "for": {
-          "name": "Időtartam",
+          "name": "Legalább ennyi ideig",
           "description": "Az érzékelőnek legalább ennyi ideig ebben az állapotban kell maradnia, mielőtt az eseményindító aktiválódik."
         }
       }
@@ -674,7 +674,7 @@
       "description": "Akkor aktiválódik, ha a növény páratartalom-érzékelője ismét frissítéseket küld.",
       "fields": {
         "for": {
-          "name": "Időtartam",
+          "name": "Legalább ennyi ideig",
           "description": "Az érzékelőnek legalább ennyi ideig ebben az állapotban kell maradnia, mielőtt az eseményindító aktiválódik."
         }
       }
@@ -684,7 +684,7 @@
       "description": "Akkor aktiválódik, ha a növény megvilágítás-érzékelője nem küld több frissítést.",
       "fields": {
         "for": {
-          "name": "Időtartam",
+          "name": "Legalább ennyi ideig",
           "description": "Az érzékelőnek legalább ennyi ideig ebben az állapotban kell maradnia, mielőtt az eseményindító aktiválódik."
         }
       }
@@ -694,7 +694,7 @@
       "description": "Akkor aktiválódik, ha a növény megvilágítás-érzékelője ismét frissítéseket küld.",
       "fields": {
         "for": {
-          "name": "Időtartam",
+          "name": "Legalább ennyi ideig",
           "description": "Az érzékelőnek legalább ennyi ideig ebben az állapotban kell maradnia, mielőtt az eseményindító aktiválódik."
         }
       }
@@ -704,7 +704,7 @@
       "description": "Akkor aktiválódik, ha a növény CO2-érzékelője nem küld több frissítést.",
       "fields": {
         "for": {
-          "name": "Időtartam",
+          "name": "Legalább ennyi ideig",
           "description": "Az érzékelőnek legalább ennyi ideig ebben az állapotban kell maradnia, mielőtt az eseményindító aktiválódik."
         }
       }
@@ -714,7 +714,7 @@
       "description": "Akkor aktiválódik, ha a növény CO2-érzékelője ismét frissítéseket küld.",
       "fields": {
         "for": {
-          "name": "Időtartam",
+          "name": "Legalább ennyi ideig",
           "description": "Az érzékelőnek legalább ennyi ideig ebben az állapotban kell maradnia, mielőtt az eseményindító aktiválódik."
         }
       }
@@ -838,7 +838,7 @@
       "description": "Teljesül, amíg a növény talajnedvesség-érzékelője a beállított ideje nem küldött frissítést.",
       "fields": {
         "for": {
-          "name": "Időtartam",
+          "name": "Legalább",
           "description": "Az érzékelőnek legalább ennyi ideig elavultnak kellett lennie, hogy a feltétel teljesüljön."
         }
       }
@@ -848,7 +848,7 @@
       "description": "Teljesül, amíg a növény vezetőképesség-érzékelője a beállított ideje nem küldött frissítést.",
       "fields": {
         "for": {
-          "name": "Időtartam",
+          "name": "Legalább",
           "description": "Az érzékelőnek legalább ennyi ideig elavultnak kellett lennie, hogy a feltétel teljesüljön."
         }
       }
@@ -858,7 +858,7 @@
       "description": "Teljesül, amíg a növény hőmérséklet-érzékelője a beállított ideje nem küldött frissítést.",
       "fields": {
         "for": {
-          "name": "Időtartam",
+          "name": "Legalább",
           "description": "Az érzékelőnek legalább ennyi ideig elavultnak kellett lennie, hogy a feltétel teljesüljön."
         }
       }
@@ -868,7 +868,7 @@
       "description": "Teljesül, amíg a növény talajhőmérséklet-érzékelője a beállított ideje nem küldött frissítést.",
       "fields": {
         "for": {
-          "name": "Időtartam",
+          "name": "Legalább",
           "description": "Az érzékelőnek legalább ennyi ideig elavultnak kellett lennie, hogy a feltétel teljesüljön."
         }
       }
@@ -878,7 +878,7 @@
       "description": "Teljesül, amíg a növény páratartalom-érzékelője a beállított ideje nem küldött frissítést.",
       "fields": {
         "for": {
-          "name": "Időtartam",
+          "name": "Legalább",
           "description": "Az érzékelőnek legalább ennyi ideig elavultnak kellett lennie, hogy a feltétel teljesüljön."
         }
       }
@@ -888,7 +888,7 @@
       "description": "Teljesül, amíg a növény megvilágítás-érzékelője a beállított ideje nem küldött frissítést.",
       "fields": {
         "for": {
-          "name": "Időtartam",
+          "name": "Legalább",
           "description": "Az érzékelőnek legalább ennyi ideig elavultnak kellett lennie, hogy a feltétel teljesüljön."
         }
       }
@@ -898,7 +898,7 @@
       "description": "Teljesül, amíg a növény CO2-érzékelője a beállított ideje nem küldött frissítést.",
       "fields": {
         "for": {
-          "name": "Időtartam",
+          "name": "Legalább",
           "description": "Az érzékelőnek legalább ennyi ideig elavultnak kellett lennie, hogy a feltétel teljesüljön."
         }
       }
