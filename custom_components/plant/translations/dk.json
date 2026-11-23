@@ -17,12 +17,6 @@
       "humidity": {
         "name": "Luftfugtighed"
       },
-      "co2": {
-        "name": "CO2"
-      },
-      "soil_temperature": {
-        "name": "Jordtemperatur"
-      },
       "ppfd": {
         "name": "PPFD"
       },
@@ -32,11 +26,17 @@
       "dli": {
         "name": "Daglig lysintegral"
       },
-      "dli_24h": {
-        "name": "DLI (24t rullende)"
-      },
       "vpd": {
         "name": "Damptryksdeficit"
+      },
+      "co2": {
+        "name": "CO2"
+      },
+      "soil_temperature": {
+        "name": "Jordtemperatur"
+      },
+      "dli_24h": {
+        "name": "DLI (24t rullende)"
       }
     },
     "number": {
@@ -76,6 +76,12 @@
       "min_humidity": {
         "name": "Min. luftfugtighed"
       },
+      "max_vpd": {
+        "name": "Maks. VPD"
+      },
+      "min_vpd": {
+        "name": "Min. VPD"
+      },
       "max_co2": {
         "name": "Maks. CO2"
       },
@@ -87,12 +93,6 @@
       },
       "min_soil_temperature": {
         "name": "Min. jordtemperatur"
-      },
-      "max_vpd": {
-        "name": "Maks. VPD"
-      },
-      "min_vpd": {
-        "name": "Min. VPD"
       },
       "lux_to_ppfd": {
         "name": "Lux til PPFD faktor"
@@ -229,6 +229,640 @@
           "description": "Entitets-ID for den nye sensor. Lad være tom for at fjerne sensoren."
         }
       }
+    }
+  },
+  "triggers": {
+    "problem_detected": {
+      "name": "Problem registreret",
+      "description": "Udløses, når planten får et problem (en måling krydser sin grænseværdi).",
+      "fields": {
+        "behavior": {
+          "name": "Adfærd",
+          "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
+        }
+      }
+    },
+    "problem_cleared": {
+      "name": "Problem løst",
+      "description": "Udløses, når plantens sidste problem er løst, og alle målinger er normale igen.",
+      "fields": {
+        "behavior": {
+          "name": "Adfærd",
+          "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
+        }
+      }
+    },
+    "moisture_became_low": {
+      "name": "Jordfugtighed blev lav",
+      "description": "Udløses, når plantens jordfugtighed falder under det konfigurerede minimum.",
+      "fields": {
+        "behavior": {
+          "name": "Adfærd",
+          "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
+        }
+      }
+    },
+    "moisture_became_high": {
+      "name": "Jordfugtighed blev høj",
+      "description": "Udløses, når plantens jordfugtighed stiger over det konfigurerede maksimum.",
+      "fields": {
+        "behavior": {
+          "name": "Adfærd",
+          "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
+        }
+      }
+    },
+    "moisture_became_ok": {
+      "name": "Jordfugtighed blev normal",
+      "description": "Udløses, når plantens jordfugtighed vender tilbage til det normale område.",
+      "fields": {
+        "behavior": {
+          "name": "Adfærd",
+          "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
+        }
+      }
+    },
+    "conductivity_became_low": {
+      "name": "Ledningsevne blev lav",
+      "description": "Udløses, når plantens ledningsevne falder under det konfigurerede minimum.",
+      "fields": {
+        "behavior": {
+          "name": "Adfærd",
+          "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
+        }
+      }
+    },
+    "conductivity_became_high": {
+      "name": "Ledningsevne blev høj",
+      "description": "Udløses, når plantens ledningsevne stiger over det konfigurerede maksimum.",
+      "fields": {
+        "behavior": {
+          "name": "Adfærd",
+          "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
+        }
+      }
+    },
+    "conductivity_became_ok": {
+      "name": "Ledningsevne blev normal",
+      "description": "Udløses, når plantens ledningsevne vender tilbage til det normale område.",
+      "fields": {
+        "behavior": {
+          "name": "Adfærd",
+          "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
+        }
+      }
+    },
+    "temperature_became_low": {
+      "name": "Temperatur blev lav",
+      "description": "Udløses, når plantens temperatur falder under det konfigurerede minimum.",
+      "fields": {
+        "behavior": {
+          "name": "Adfærd",
+          "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
+        }
+      }
+    },
+    "temperature_became_high": {
+      "name": "Temperatur blev høj",
+      "description": "Udløses, når plantens temperatur stiger over det konfigurerede maksimum.",
+      "fields": {
+        "behavior": {
+          "name": "Adfærd",
+          "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
+        }
+      }
+    },
+    "temperature_became_ok": {
+      "name": "Temperatur blev normal",
+      "description": "Udløses, når plantens temperatur vender tilbage til det normale område.",
+      "fields": {
+        "behavior": {
+          "name": "Adfærd",
+          "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
+        }
+      }
+    },
+    "soil_temperature_became_low": {
+      "name": "Jordtemperatur blev lav",
+      "description": "Udløses, når plantens jordtemperatur falder under det konfigurerede minimum.",
+      "fields": {
+        "behavior": {
+          "name": "Adfærd",
+          "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
+        }
+      }
+    },
+    "soil_temperature_became_high": {
+      "name": "Jordtemperatur blev høj",
+      "description": "Udløses, når plantens jordtemperatur stiger over det konfigurerede maksimum.",
+      "fields": {
+        "behavior": {
+          "name": "Adfærd",
+          "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
+        }
+      }
+    },
+    "soil_temperature_became_ok": {
+      "name": "Jordtemperatur blev normal",
+      "description": "Udløses, når plantens jordtemperatur vender tilbage til det normale område.",
+      "fields": {
+        "behavior": {
+          "name": "Adfærd",
+          "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
+        }
+      }
+    },
+    "humidity_became_low": {
+      "name": "Luftfugtighed blev lav",
+      "description": "Udløses, når plantens luftfugtighed falder under det konfigurerede minimum.",
+      "fields": {
+        "behavior": {
+          "name": "Adfærd",
+          "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
+        }
+      }
+    },
+    "humidity_became_high": {
+      "name": "Luftfugtighed blev høj",
+      "description": "Udløses, når plantens luftfugtighed stiger over det konfigurerede maksimum.",
+      "fields": {
+        "behavior": {
+          "name": "Adfærd",
+          "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
+        }
+      }
+    },
+    "humidity_became_ok": {
+      "name": "Luftfugtighed blev normal",
+      "description": "Udløses, når plantens luftfugtighed vender tilbage til det normale område.",
+      "fields": {
+        "behavior": {
+          "name": "Adfærd",
+          "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
+        }
+      }
+    },
+    "illuminance_became_low": {
+      "name": "Belysningsstyrke blev lav",
+      "description": "Udløses, når plantens belysningsstyrke falder under det konfigurerede minimum.",
+      "fields": {
+        "behavior": {
+          "name": "Adfærd",
+          "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
+        }
+      }
+    },
+    "illuminance_became_high": {
+      "name": "Belysningsstyrke blev høj",
+      "description": "Udløses, når plantens belysningsstyrke stiger over det konfigurerede maksimum.",
+      "fields": {
+        "behavior": {
+          "name": "Adfærd",
+          "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
+        }
+      }
+    },
+    "illuminance_became_ok": {
+      "name": "Belysningsstyrke blev normal",
+      "description": "Udløses, når plantens belysningsstyrke vender tilbage til det normale område.",
+      "fields": {
+        "behavior": {
+          "name": "Adfærd",
+          "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
+        }
+      }
+    },
+    "co2_became_low": {
+      "name": "CO2-niveau blev lavt",
+      "description": "Udløses, når plantens CO2-niveau falder under det konfigurerede minimum.",
+      "fields": {
+        "behavior": {
+          "name": "Adfærd",
+          "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
+        }
+      }
+    },
+    "co2_became_high": {
+      "name": "CO2-niveau blev højt",
+      "description": "Udløses, når plantens CO2-niveau stiger over det konfigurerede maksimum.",
+      "fields": {
+        "behavior": {
+          "name": "Adfærd",
+          "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
+        }
+      }
+    },
+    "co2_became_ok": {
+      "name": "CO2-niveau blev normalt",
+      "description": "Udløses, når plantens CO2-niveau vender tilbage til det normale område.",
+      "fields": {
+        "behavior": {
+          "name": "Adfærd",
+          "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
+        }
+      }
+    },
+    "dli_became_low": {
+      "name": "DLI blev lav",
+      "description": "Udløses, når plantens DLI falder under det konfigurerede minimum.",
+      "fields": {
+        "behavior": {
+          "name": "Adfærd",
+          "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
+        }
+      }
+    },
+    "dli_became_high": {
+      "name": "DLI blev høj",
+      "description": "Udløses, når plantens DLI stiger over det konfigurerede maksimum.",
+      "fields": {
+        "behavior": {
+          "name": "Adfærd",
+          "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
+        }
+      }
+    },
+    "dli_became_ok": {
+      "name": "DLI blev normal",
+      "description": "Udløses, når plantens DLI vender tilbage til det normale område.",
+      "fields": {
+        "behavior": {
+          "name": "Adfærd",
+          "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
+        }
+      }
+    },
+    "vpd_became_low": {
+      "name": "VPD blev lav",
+      "description": "Udløses, når plantens VPD falder under det konfigurerede minimum.",
+      "fields": {
+        "behavior": {
+          "name": "Adfærd",
+          "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
+        }
+      }
+    },
+    "vpd_became_high": {
+      "name": "VPD blev høj",
+      "description": "Udløses, når plantens VPD stiger over det konfigurerede maksimum.",
+      "fields": {
+        "behavior": {
+          "name": "Adfærd",
+          "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
+        }
+      }
+    },
+    "vpd_became_ok": {
+      "name": "VPD blev normal",
+      "description": "Udløses, når plantens VPD vender tilbage til det normale område.",
+      "fields": {
+        "behavior": {
+          "name": "Adfærd",
+          "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
+        }
+      }
+    },
+    "moisture_sensor_became_stale": {
+      "name": "Jordfugtighedsensor blev forældet",
+      "description": "Udløses, når plantens jordfugtighedsensor holder op med at sende opdateringer.",
+      "fields": {
+        "for": {
+          "name": "I",
+          "description": "Sensoren skal have været i denne tilstand i mindst så lang tid, før udløseren aktiveres."
+        }
+      }
+    },
+    "moisture_sensor_became_fresh": {
+      "name": "Jordfugtighedsensor blev aktiv",
+      "description": "Udløses, når plantens jordfugtighedsensor begynder at sende opdateringer igen.",
+      "fields": {
+        "for": {
+          "name": "I",
+          "description": "Sensoren skal have været i denne tilstand i mindst så lang tid, før udløseren aktiveres."
+        }
+      }
+    },
+    "conductivity_sensor_became_stale": {
+      "name": "Ledningsevnesensor blev forældet",
+      "description": "Udløses, når plantens ledningsevnesensor holder op med at sende opdateringer.",
+      "fields": {
+        "for": {
+          "name": "I",
+          "description": "Sensoren skal have været i denne tilstand i mindst så lang tid, før udløseren aktiveres."
+        }
+      }
+    },
+    "conductivity_sensor_became_fresh": {
+      "name": "Ledningsevnesensor blev aktiv",
+      "description": "Udløses, når plantens ledningsevnesensor begynder at sende opdateringer igen.",
+      "fields": {
+        "for": {
+          "name": "I",
+          "description": "Sensoren skal have været i denne tilstand i mindst så lang tid, før udløseren aktiveres."
+        }
+      }
+    },
+    "temperature_sensor_became_stale": {
+      "name": "Temperatursensor blev forældet",
+      "description": "Udløses, når plantens temperatursensor holder op med at sende opdateringer.",
+      "fields": {
+        "for": {
+          "name": "I",
+          "description": "Sensoren skal have været i denne tilstand i mindst så lang tid, før udløseren aktiveres."
+        }
+      }
+    },
+    "temperature_sensor_became_fresh": {
+      "name": "Temperatursensor blev aktiv",
+      "description": "Udløses, når plantens temperatursensor begynder at sende opdateringer igen.",
+      "fields": {
+        "for": {
+          "name": "I",
+          "description": "Sensoren skal have været i denne tilstand i mindst så lang tid, før udløseren aktiveres."
+        }
+      }
+    },
+    "soil_temperature_sensor_became_stale": {
+      "name": "Jordtemperatursensor blev forældet",
+      "description": "Udløses, når plantens jordtemperatursensor holder op med at sende opdateringer.",
+      "fields": {
+        "for": {
+          "name": "I",
+          "description": "Sensoren skal have været i denne tilstand i mindst så lang tid, før udløseren aktiveres."
+        }
+      }
+    },
+    "soil_temperature_sensor_became_fresh": {
+      "name": "Jordtemperatursensor blev aktiv",
+      "description": "Udløses, når plantens jordtemperatursensor begynder at sende opdateringer igen.",
+      "fields": {
+        "for": {
+          "name": "I",
+          "description": "Sensoren skal have været i denne tilstand i mindst så lang tid, før udløseren aktiveres."
+        }
+      }
+    },
+    "humidity_sensor_became_stale": {
+      "name": "Luftfugtighedsensor blev forældet",
+      "description": "Udløses, når plantens luftfugtighedsensor holder op med at sende opdateringer.",
+      "fields": {
+        "for": {
+          "name": "I",
+          "description": "Sensoren skal have været i denne tilstand i mindst så lang tid, før udløseren aktiveres."
+        }
+      }
+    },
+    "humidity_sensor_became_fresh": {
+      "name": "Luftfugtighedsensor blev aktiv",
+      "description": "Udløses, når plantens luftfugtighedsensor begynder at sende opdateringer igen.",
+      "fields": {
+        "for": {
+          "name": "I",
+          "description": "Sensoren skal have været i denne tilstand i mindst så lang tid, før udløseren aktiveres."
+        }
+      }
+    },
+    "illuminance_sensor_became_stale": {
+      "name": "Belysningsstyrkesensor blev forældet",
+      "description": "Udløses, når plantens belysningsstyrkesensor holder op med at sende opdateringer.",
+      "fields": {
+        "for": {
+          "name": "I",
+          "description": "Sensoren skal have været i denne tilstand i mindst så lang tid, før udløseren aktiveres."
+        }
+      }
+    },
+    "illuminance_sensor_became_fresh": {
+      "name": "Belysningsstyrkesensor blev aktiv",
+      "description": "Udløses, når plantens belysningsstyrkesensor begynder at sende opdateringer igen.",
+      "fields": {
+        "for": {
+          "name": "I",
+          "description": "Sensoren skal have været i denne tilstand i mindst så lang tid, før udløseren aktiveres."
+        }
+      }
+    },
+    "co2_sensor_became_stale": {
+      "name": "CO2-sensor blev forældet",
+      "description": "Udløses, når plantens CO2-sensor holder op med at sende opdateringer.",
+      "fields": {
+        "for": {
+          "name": "I",
+          "description": "Sensoren skal have været i denne tilstand i mindst så lang tid, før udløseren aktiveres."
+        }
+      }
+    },
+    "co2_sensor_became_fresh": {
+      "name": "CO2-sensor blev aktiv",
+      "description": "Udløses, når plantens CO2-sensor begynder at sende opdateringer igen.",
+      "fields": {
+        "for": {
+          "name": "I",
+          "description": "Sensoren skal have været i denne tilstand i mindst så lang tid, før udløseren aktiveres."
+        }
+      }
+    }
+  },
+  "conditions": {
+    "has_problem": {
+      "name": "Har et problem",
+      "description": "Er opfyldt, så længe planten har et aktivt problem."
+    },
+    "moisture_is_low": {
+      "name": "Jordfugtighed er lav",
+      "description": "Er opfyldt, så længe plantens jordfugtighed er under det konfigurerede minimum."
+    },
+    "moisture_is_high": {
+      "name": "Jordfugtighed er høj",
+      "description": "Er opfyldt, så længe plantens jordfugtighed er over det konfigurerede maksimum."
+    },
+    "moisture_is_ok": {
+      "name": "Jordfugtighed er normal",
+      "description": "Er opfyldt, så længe plantens jordfugtighed er inden for det normale område."
+    },
+    "conductivity_is_low": {
+      "name": "Ledningsevne er lav",
+      "description": "Er opfyldt, så længe plantens ledningsevne er under det konfigurerede minimum."
+    },
+    "conductivity_is_high": {
+      "name": "Ledningsevne er høj",
+      "description": "Er opfyldt, så længe plantens ledningsevne er over det konfigurerede maksimum."
+    },
+    "conductivity_is_ok": {
+      "name": "Ledningsevne er normal",
+      "description": "Er opfyldt, så længe plantens ledningsevne er inden for det normale område."
+    },
+    "temperature_is_low": {
+      "name": "Temperatur er lav",
+      "description": "Er opfyldt, så længe plantens temperatur er under det konfigurerede minimum."
+    },
+    "temperature_is_high": {
+      "name": "Temperatur er høj",
+      "description": "Er opfyldt, så længe plantens temperatur er over det konfigurerede maksimum."
+    },
+    "temperature_is_ok": {
+      "name": "Temperatur er normal",
+      "description": "Er opfyldt, så længe plantens temperatur er inden for det normale område."
+    },
+    "soil_temperature_is_low": {
+      "name": "Jordtemperatur er lav",
+      "description": "Er opfyldt, så længe plantens jordtemperatur er under det konfigurerede minimum."
+    },
+    "soil_temperature_is_high": {
+      "name": "Jordtemperatur er høj",
+      "description": "Er opfyldt, så længe plantens jordtemperatur er over det konfigurerede maksimum."
+    },
+    "soil_temperature_is_ok": {
+      "name": "Jordtemperatur er normal",
+      "description": "Er opfyldt, så længe plantens jordtemperatur er inden for det normale område."
+    },
+    "humidity_is_low": {
+      "name": "Luftfugtighed er lav",
+      "description": "Er opfyldt, så længe plantens luftfugtighed er under det konfigurerede minimum."
+    },
+    "humidity_is_high": {
+      "name": "Luftfugtighed er høj",
+      "description": "Er opfyldt, så længe plantens luftfugtighed er over det konfigurerede maksimum."
+    },
+    "humidity_is_ok": {
+      "name": "Luftfugtighed er normal",
+      "description": "Er opfyldt, så længe plantens luftfugtighed er inden for det normale område."
+    },
+    "illuminance_is_low": {
+      "name": "Belysningsstyrke er lav",
+      "description": "Er opfyldt, så længe plantens belysningsstyrke er under det konfigurerede minimum."
+    },
+    "illuminance_is_high": {
+      "name": "Belysningsstyrke er høj",
+      "description": "Er opfyldt, så længe plantens belysningsstyrke er over det konfigurerede maksimum."
+    },
+    "illuminance_is_ok": {
+      "name": "Belysningsstyrke er normal",
+      "description": "Er opfyldt, så længe plantens belysningsstyrke er inden for det normale område."
+    },
+    "co2_is_low": {
+      "name": "CO2-niveau er lavt",
+      "description": "Er opfyldt, så længe plantens CO2-niveau er under det konfigurerede minimum."
+    },
+    "co2_is_high": {
+      "name": "CO2-niveau er højt",
+      "description": "Er opfyldt, så længe plantens CO2-niveau er over det konfigurerede maksimum."
+    },
+    "co2_is_ok": {
+      "name": "CO2-niveau er normalt",
+      "description": "Er opfyldt, så længe plantens CO2-niveau er inden for det normale område."
+    },
+    "dli_is_low": {
+      "name": "DLI er lav",
+      "description": "Er opfyldt, så længe plantens DLI er under det konfigurerede minimum."
+    },
+    "dli_is_high": {
+      "name": "DLI er høj",
+      "description": "Er opfyldt, så længe plantens DLI er over det konfigurerede maksimum."
+    },
+    "dli_is_ok": {
+      "name": "DLI er normal",
+      "description": "Er opfyldt, så længe plantens DLI er inden for det normale område."
+    },
+    "vpd_is_low": {
+      "name": "VPD er lav",
+      "description": "Er opfyldt, så længe plantens VPD er under det konfigurerede minimum."
+    },
+    "vpd_is_high": {
+      "name": "VPD er høj",
+      "description": "Er opfyldt, så længe plantens VPD er over det konfigurerede maksimum."
+    },
+    "vpd_is_ok": {
+      "name": "VPD er normal",
+      "description": "Er opfyldt, så længe plantens VPD er inden for det normale område."
+    },
+    "moisture_sensor_is_stale": {
+      "name": "Jordfugtighedsensor er forældet",
+      "description": "Er opfyldt, så længe plantens jordfugtighedsensor ikke har sendt opdateringer i den konfigurerede tid.",
+      "fields": {
+        "for": {
+          "name": "I",
+          "description": "Sensoren skal have været forældet i mindst så lang tid, for at betingelsen er opfyldt."
+        }
+      }
+    },
+    "conductivity_sensor_is_stale": {
+      "name": "Ledningsevnesensor er forældet",
+      "description": "Er opfyldt, så længe plantens ledningsevnesensor ikke har sendt opdateringer i den konfigurerede tid.",
+      "fields": {
+        "for": {
+          "name": "I",
+          "description": "Sensoren skal have været forældet i mindst så lang tid, for at betingelsen er opfyldt."
+        }
+      }
+    },
+    "temperature_sensor_is_stale": {
+      "name": "Temperatursensor er forældet",
+      "description": "Er opfyldt, så længe plantens temperatursensor ikke har sendt opdateringer i den konfigurerede tid.",
+      "fields": {
+        "for": {
+          "name": "I",
+          "description": "Sensoren skal have været forældet i mindst så lang tid, for at betingelsen er opfyldt."
+        }
+      }
+    },
+    "soil_temperature_sensor_is_stale": {
+      "name": "Jordtemperatursensor er forældet",
+      "description": "Er opfyldt, så længe plantens jordtemperatursensor ikke har sendt opdateringer i den konfigurerede tid.",
+      "fields": {
+        "for": {
+          "name": "I",
+          "description": "Sensoren skal have været forældet i mindst så lang tid, for at betingelsen er opfyldt."
+        }
+      }
+    },
+    "humidity_sensor_is_stale": {
+      "name": "Luftfugtighedsensor er forældet",
+      "description": "Er opfyldt, så længe plantens luftfugtighedsensor ikke har sendt opdateringer i den konfigurerede tid.",
+      "fields": {
+        "for": {
+          "name": "I",
+          "description": "Sensoren skal have været forældet i mindst så lang tid, for at betingelsen er opfyldt."
+        }
+      }
+    },
+    "illuminance_sensor_is_stale": {
+      "name": "Belysningsstyrkesensor er forældet",
+      "description": "Er opfyldt, så længe plantens belysningsstyrkesensor ikke har sendt opdateringer i den konfigurerede tid.",
+      "fields": {
+        "for": {
+          "name": "I",
+          "description": "Sensoren skal have været forældet i mindst så lang tid, for at betingelsen er opfyldt."
+        }
+      }
+    },
+    "co2_sensor_is_stale": {
+      "name": "CO2-sensor er forældet",
+      "description": "Er opfyldt, så længe plantens CO2-sensor ikke har sendt opdateringer i den konfigurerede tid.",
+      "fields": {
+        "for": {
+          "name": "I",
+          "description": "Sensoren skal have været forældet i mindst så lang tid, for at betingelsen er opfyldt."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "platform_setup_failed": {
+      "message": "Plante-entitetsplatformen kunne ikke sættes op."
+    },
+    "plant_entity_not_added": {
+      "message": "Plante-entiteten {entity_id} blev ikke føjet til Home Assistant, muligvis fordi dens unikke ID allerede er i brug."
+    }
+  },
+  "issues": {
+    "other_flower_card": {
+      "title": "Flower card er installeret to gange",
+      "description": "Flower card følger nu med Plant Monitor-integrationen. Dine dashboards indlæser også en anden kopi: {urls}\n\nFjern den kopi: afinstaller Flower Card i Marketplace (HACS før Home Assistant 2026.11), eller slet den ressource, du selv har tilføjet (under Indstillinger → Dashboards → Ressourcer, eller fra `lovelace`-ressourcerne i din YAML-konfiguration). Dine dashboards fortsætter med at virke i mellemtiden. Plant Monitor overtager, så snart den anden kopi er væk; hvis dine ressourcer ligger i YAML, skal du først genstarte Home Assistant. Opdater browseren bagefter."
+    },
+    "missing_flower_card": {
+      "title": "En dashboard-ressource peger på et fjernet flower card",
+      "description": "Dine dashboard-ressourcer angiver stadig et flower card, hvis fil er væk: {urls}\n\nDen post tæller ikke længere som et installeret kort, så den forhindrer ikke Plant Monitor i at indlæse sit eget. Slet den efterladte ressource under Indstillinger → Dashboards → Ressourcer, eller fra `lovelace`-ressourcerne i din YAML-konfiguration, så browseren holder op med at bede om den manglende fil."
     }
   }
 }
