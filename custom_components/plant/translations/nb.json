@@ -241,16 +241,16 @@
           "force_update": "Tving oppdatering av data fra OpenPlantbook",
           "display_pid": "Planteart som skal vises",
           "entity_picture": "Bilde-URL. Oppdateres automatisk hvis arten finnes i OpenPlantbook",
-          "illuminance_trigger": "Bruk lysstyrke som problemutløser",
-          "dli_trigger": "Bruk daglig lysintegral (DLI) som problemutløser",
-          "humidity_trigger": "Bruk luftfuktighet som problemutløser",
-          "conductivity_trigger": "Bruk ledningsevne som problemutløser",
-          "moisture_trigger": "Bruk jordfuktighet som problemutløser",
+          "illuminance_trigger": "La lysstyrke trigge «problem»-status",
+          "dli_trigger": "La daglig lysintegral (DLI) trigge «problem»-status",
+          "humidity_trigger": "La luftfuktighet trigge «problem»-status",
+          "conductivity_trigger": "La ledningsevne trigge «problem»-status",
+          "moisture_trigger": "La jordfuktighet trigge «problem»-status",
           "moisture_grace_period": "Moisture grace period after watering (seconds, 0-86400)",
-          "temperature_trigger": "Bruk temperatur som problemutløser",
-          "co2_trigger": "Bruk CO2 som problemutløser",
-          "soil_temperature_trigger": "Bruk jordtemperatur som problemutløser",
-          "vpd_trigger": "Bruk VPD som problemutløser"
+          "temperature_trigger": "La temperatur trigge «problem»-status",
+          "co2_trigger": "La CO2 trigge «problem»-status",
+          "soil_temperature_trigger": "La jordtemperatur trigge «problem»-status",
+          "vpd_trigger": "La VPD trigge «problem»-status"
         }
       },
       "replace_sensor": {
