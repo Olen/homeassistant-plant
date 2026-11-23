@@ -294,7 +294,7 @@
       "description": "Gaat af wanneer de plant een probleem krijgt (een meetwaarde overschrijdt de drempel).",
       "fields": {
         "behavior": {
-          "name": "Gedrag",
+          "name": "Activeer wanneer",
           "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
         }
       }
@@ -304,7 +304,7 @@
       "description": "Gaat af wanneer het laatste probleem van de plant is opgelost en alle meetwaarden weer normaal zijn.",
       "fields": {
         "behavior": {
-          "name": "Gedrag",
+          "name": "Activeer wanneer",
           "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
         }
       }
@@ -314,7 +314,7 @@
       "description": "Gaat af wanneer de bodemvochtigheid van de plant onder het ingestelde minimum komt.",
       "fields": {
         "behavior": {
-          "name": "Gedrag",
+          "name": "Activeer wanneer",
           "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
         }
       }
@@ -324,7 +324,7 @@
       "description": "Gaat af wanneer de bodemvochtigheid van de plant boven het ingestelde maximum komt.",
       "fields": {
         "behavior": {
-          "name": "Gedrag",
+          "name": "Activeer wanneer",
           "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
         }
       }
@@ -334,7 +334,7 @@
       "description": "Gaat af wanneer de bodemvochtigheid van de plant weer binnen het normale bereik komt.",
       "fields": {
         "behavior": {
-          "name": "Gedrag",
+          "name": "Activeer wanneer",
           "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
         }
       }
@@ -344,7 +344,7 @@
       "description": "Gaat af wanneer de geleidbaarheid van de plant onder het ingestelde minimum komt.",
       "fields": {
         "behavior": {
-          "name": "Gedrag",
+          "name": "Activeer wanneer",
           "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
         }
       }
@@ -354,7 +354,7 @@
       "description": "Gaat af wanneer de geleidbaarheid van de plant boven het ingestelde maximum komt.",
       "fields": {
         "behavior": {
-          "name": "Gedrag",
+          "name": "Activeer wanneer",
           "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
         }
       }
@@ -364,7 +364,7 @@
       "description": "Gaat af wanneer de geleidbaarheid van de plant weer binnen het normale bereik komt.",
       "fields": {
         "behavior": {
-          "name": "Gedrag",
+          "name": "Activeer wanneer",
           "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
         }
       }
@@ -374,7 +374,7 @@
       "description": "Gaat af wanneer de temperatuur van de plant onder het ingestelde minimum komt.",
       "fields": {
         "behavior": {
-          "name": "Gedrag",
+          "name": "Activeer wanneer",
           "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
         }
       }
@@ -384,7 +384,7 @@
       "description": "Gaat af wanneer de temperatuur van de plant boven het ingestelde maximum komt.",
       "fields": {
         "behavior": {
-          "name": "Gedrag",
+          "name": "Activeer wanneer",
           "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
         }
       }
@@ -394,7 +394,7 @@
       "description": "Gaat af wanneer de temperatuur van de plant weer binnen het normale bereik komt.",
       "fields": {
         "behavior": {
-          "name": "Gedrag",
+          "name": "Activeer wanneer",
           "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
         }
       }
@@ -404,7 +404,7 @@
       "description": "Gaat af wanneer de bodemtemperatuur van de plant onder het ingestelde minimum komt.",
       "fields": {
         "behavior": {
-          "name": "Gedrag",
+          "name": "Activeer wanneer",
           "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
         }
       }
@@ -414,7 +414,7 @@
       "description": "Gaat af wanneer de bodemtemperatuur van de plant boven het ingestelde maximum komt.",
       "fields": {
         "behavior": {
-          "name": "Gedrag",
+          "name": "Activeer wanneer",
           "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
         }
       }
@@ -424,7 +424,7 @@
       "description": "Gaat af wanneer de bodemtemperatuur van de plant weer binnen het normale bereik komt.",
       "fields": {
         "behavior": {
-          "name": "Gedrag",
+          "name": "Activeer wanneer",
           "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
         }
       }
@@ -434,7 +434,7 @@
       "description": "Gaat af wanneer de luchtvochtigheid van de plant onder het ingestelde minimum komt.",
       "fields": {
         "behavior": {
-          "name": "Gedrag",
+          "name": "Activeer wanneer",
           "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
         }
       }
@@ -444,7 +444,7 @@
       "description": "Gaat af wanneer de luchtvochtigheid van de plant boven het ingestelde maximum komt.",
       "fields": {
         "behavior": {
-          "name": "Gedrag",
+          "name": "Activeer wanneer",
           "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
         }
       }
@@ -454,7 +454,7 @@
       "description": "Gaat af wanneer de luchtvochtigheid van de plant weer binnen het normale bereik komt.",
       "fields": {
         "behavior": {
-          "name": "Gedrag",
+          "name": "Activeer wanneer",
           "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
         }
       }
@@ -464,7 +464,7 @@
       "description": "Gaat af wanneer de lichtsterkte van de plant onder het ingestelde minimum komt.",
       "fields": {
         "behavior": {
-          "name": "Gedrag",
+          "name": "Activeer wanneer",
           "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
         }
       }
@@ -474,7 +474,7 @@
       "description": "Gaat af wanneer de lichtsterkte van de plant boven het ingestelde maximum komt.",
       "fields": {
         "behavior": {
-          "name": "Gedrag",
+          "name": "Activeer wanneer",
           "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
         }
       }
@@ -484,7 +484,7 @@
       "description": "Gaat af wanneer de lichtsterkte van de plant weer binnen het normale bereik komt.",
       "fields": {
         "behavior": {
-          "name": "Gedrag",
+          "name": "Activeer wanneer",
           "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
         }
       }
@@ -494,7 +494,7 @@
       "description": "Gaat af wanneer de CO2 van de plant onder het ingestelde minimum komt.",
       "fields": {
         "behavior": {
-          "name": "Gedrag",
+          "name": "Activeer wanneer",
           "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
         }
       }
@@ -504,7 +504,7 @@
       "description": "Gaat af wanneer de CO2 van de plant boven het ingestelde maximum komt.",
       "fields": {
         "behavior": {
-          "name": "Gedrag",
+          "name": "Activeer wanneer",
           "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
         }
       }
@@ -514,7 +514,7 @@
       "description": "Gaat af wanneer de CO2 van de plant weer binnen het normale bereik komt.",
       "fields": {
         "behavior": {
-          "name": "Gedrag",
+          "name": "Activeer wanneer",
           "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
         }
       }
@@ -524,7 +524,7 @@
       "description": "Gaat af wanneer de DLI van de plant onder het ingestelde minimum komt.",
       "fields": {
         "behavior": {
-          "name": "Gedrag",
+          "name": "Activeer wanneer",
           "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
         }
       }
@@ -534,7 +534,7 @@
       "description": "Gaat af wanneer de DLI van de plant boven het ingestelde maximum komt.",
       "fields": {
         "behavior": {
-          "name": "Gedrag",
+          "name": "Activeer wanneer",
           "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
         }
       }
@@ -544,7 +544,7 @@
       "description": "Gaat af wanneer de DLI van de plant weer binnen het normale bereik komt.",
       "fields": {
         "behavior": {
-          "name": "Gedrag",
+          "name": "Activeer wanneer",
           "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
         }
       }
@@ -554,7 +554,7 @@
       "description": "Gaat af wanneer de VPD van de plant onder het ingestelde minimum komt.",
       "fields": {
         "behavior": {
-          "name": "Gedrag",
+          "name": "Activeer wanneer",
           "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
         }
       }
@@ -564,7 +564,7 @@
       "description": "Gaat af wanneer de VPD van de plant boven het ingestelde maximum komt.",
       "fields": {
         "behavior": {
-          "name": "Gedrag",
+          "name": "Activeer wanneer",
           "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
         }
       }
@@ -574,7 +574,7 @@
       "description": "Gaat af wanneer de VPD van de plant weer binnen het normale bereik komt.",
       "fields": {
         "behavior": {
-          "name": "Gedrag",
+          "name": "Activeer wanneer",
           "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
         }
       }
@@ -584,7 +584,7 @@
       "description": "Gaat af wanneer de bodemvochtigheidssensor van de plant geen updates meer stuurt.",
       "fields": {
         "for": {
-          "name": "Gedurende",
+          "name": "Voor minstens",
           "description": "De sensor moet minstens zo lang in deze status blijven voordat de trigger afgaat."
         }
       }
@@ -594,7 +594,7 @@
       "description": "Gaat af wanneer de bodemvochtigheidssensor van de plant weer updates stuurt.",
       "fields": {
         "for": {
-          "name": "Gedurende",
+          "name": "Voor minstens",
           "description": "De sensor moet minstens zo lang in deze status blijven voordat de trigger afgaat."
         }
       }
@@ -604,7 +604,7 @@
       "description": "Gaat af wanneer de geleidbaarheidssensor van de plant geen updates meer stuurt.",
       "fields": {
         "for": {
-          "name": "Gedurende",
+          "name": "Voor minstens",
           "description": "De sensor moet minstens zo lang in deze status blijven voordat de trigger afgaat."
         }
       }
@@ -614,7 +614,7 @@
       "description": "Gaat af wanneer de geleidbaarheidssensor van de plant weer updates stuurt.",
       "fields": {
         "for": {
-          "name": "Gedurende",
+          "name": "Voor minstens",
           "description": "De sensor moet minstens zo lang in deze status blijven voordat de trigger afgaat."
         }
       }
@@ -624,7 +624,7 @@
       "description": "Gaat af wanneer de temperatuursensor van de plant geen updates meer stuurt.",
       "fields": {
         "for": {
-          "name": "Gedurende",
+          "name": "Voor minstens",
           "description": "De sensor moet minstens zo lang in deze status blijven voordat de trigger afgaat."
         }
       }
@@ -634,7 +634,7 @@
       "description": "Gaat af wanneer de temperatuursensor van de plant weer updates stuurt.",
       "fields": {
         "for": {
-          "name": "Gedurende",
+          "name": "Voor minstens",
           "description": "De sensor moet minstens zo lang in deze status blijven voordat de trigger afgaat."
         }
       }
@@ -644,7 +644,7 @@
       "description": "Gaat af wanneer de bodemtemperatuursensor van de plant geen updates meer stuurt.",
       "fields": {
         "for": {
-          "name": "Gedurende",
+          "name": "Voor minstens",
           "description": "De sensor moet minstens zo lang in deze status blijven voordat de trigger afgaat."
         }
       }
@@ -654,7 +654,7 @@
       "description": "Gaat af wanneer de bodemtemperatuursensor van de plant weer updates stuurt.",
       "fields": {
         "for": {
-          "name": "Gedurende",
+          "name": "Voor minstens",
           "description": "De sensor moet minstens zo lang in deze status blijven voordat de trigger afgaat."
         }
       }
@@ -664,7 +664,7 @@
       "description": "Gaat af wanneer de luchtvochtigheidssensor van de plant geen updates meer stuurt.",
       "fields": {
         "for": {
-          "name": "Gedurende",
+          "name": "Voor minstens",
           "description": "De sensor moet minstens zo lang in deze status blijven voordat de trigger afgaat."
         }
       }
@@ -674,7 +674,7 @@
       "description": "Gaat af wanneer de luchtvochtigheidssensor van de plant weer updates stuurt.",
       "fields": {
         "for": {
-          "name": "Gedurende",
+          "name": "Voor minstens",
           "description": "De sensor moet minstens zo lang in deze status blijven voordat de trigger afgaat."
         }
       }
@@ -684,7 +684,7 @@
       "description": "Gaat af wanneer de lichtsterktesensor van de plant geen updates meer stuurt.",
       "fields": {
         "for": {
-          "name": "Gedurende",
+          "name": "Voor minstens",
           "description": "De sensor moet minstens zo lang in deze status blijven voordat de trigger afgaat."
         }
       }
@@ -694,7 +694,7 @@
       "description": "Gaat af wanneer de lichtsterktesensor van de plant weer updates stuurt.",
       "fields": {
         "for": {
-          "name": "Gedurende",
+          "name": "Voor minstens",
           "description": "De sensor moet minstens zo lang in deze status blijven voordat de trigger afgaat."
         }
       }
@@ -704,7 +704,7 @@
       "description": "Gaat af wanneer de CO2-sensor van de plant geen updates meer stuurt.",
       "fields": {
         "for": {
-          "name": "Gedurende",
+          "name": "Voor minstens",
           "description": "De sensor moet minstens zo lang in deze status blijven voordat de trigger afgaat."
         }
       }
@@ -714,7 +714,7 @@
       "description": "Gaat af wanneer de CO2-sensor van de plant weer updates stuurt.",
       "fields": {
         "for": {
-          "name": "Gedurende",
+          "name": "Voor minstens",
           "description": "De sensor moet minstens zo lang in deze status blijven voordat de trigger afgaat."
         }
       }
@@ -838,7 +838,7 @@
       "description": "Slaagt zolang de bodemvochtigheidssensor van de plant gedurende de ingestelde tijd geen updates heeft gestuurd.",
       "fields": {
         "for": {
-          "name": "Gedurende",
+          "name": "Voor minstens",
           "description": "De sensor moet minstens zo lang verouderd zijn om aan de voorwaarde te voldoen."
         }
       }
@@ -848,7 +848,7 @@
       "description": "Slaagt zolang de geleidbaarheidssensor van de plant gedurende de ingestelde tijd geen updates heeft gestuurd.",
       "fields": {
         "for": {
-          "name": "Gedurende",
+          "name": "Voor minstens",
           "description": "De sensor moet minstens zo lang verouderd zijn om aan de voorwaarde te voldoen."
         }
       }
@@ -858,7 +858,7 @@
       "description": "Slaagt zolang de temperatuursensor van de plant gedurende de ingestelde tijd geen updates heeft gestuurd.",
       "fields": {
         "for": {
-          "name": "Gedurende",
+          "name": "Voor minstens",
           "description": "De sensor moet minstens zo lang verouderd zijn om aan de voorwaarde te voldoen."
         }
       }
@@ -868,7 +868,7 @@
       "description": "Slaagt zolang de bodemtemperatuursensor van de plant gedurende de ingestelde tijd geen updates heeft gestuurd.",
       "fields": {
         "for": {
-          "name": "Gedurende",
+          "name": "Voor minstens",
           "description": "De sensor moet minstens zo lang verouderd zijn om aan de voorwaarde te voldoen."
         }
       }
@@ -878,7 +878,7 @@
       "description": "Slaagt zolang de luchtvochtigheidssensor van de plant gedurende de ingestelde tijd geen updates heeft gestuurd.",
       "fields": {
         "for": {
-          "name": "Gedurende",
+          "name": "Voor minstens",
           "description": "De sensor moet minstens zo lang verouderd zijn om aan de voorwaarde te voldoen."
         }
       }
@@ -888,7 +888,7 @@
       "description": "Slaagt zolang de lichtsterktesensor van de plant gedurende de ingestelde tijd geen updates heeft gestuurd.",
       "fields": {
         "for": {
-          "name": "Gedurende",
+          "name": "Voor minstens",
           "description": "De sensor moet minstens zo lang verouderd zijn om aan de voorwaarde te voldoen."
         }
       }
@@ -898,7 +898,7 @@
       "description": "Slaagt zolang de CO2-sensor van de plant gedurende de ingestelde tijd geen updates heeft gestuurd.",
       "fields": {
         "for": {
-          "name": "Gedurende",
+          "name": "Voor minstens",
           "description": "De sensor moet minstens zo lang verouderd zijn om aan de voorwaarde te voldoen."
         }
       }
