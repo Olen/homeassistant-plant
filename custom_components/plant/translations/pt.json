@@ -17,12 +17,6 @@
       "humidity": {
         "name": "Humidade do ar"
       },
-      "co2": {
-        "name": "CO2"
-      },
-      "soil_temperature": {
-        "name": "Temperatura do solo"
-      },
       "ppfd": {
         "name": "PPFD"
       },
@@ -32,11 +26,17 @@
       "dli": {
         "name": "Integral de luz diária"
       },
-      "dli_24h": {
-        "name": "DLI (24h contínuo)"
-      },
       "vpd": {
         "name": "Défice de pressão de vapor"
+      },
+      "co2": {
+        "name": "CO2"
+      },
+      "soil_temperature": {
+        "name": "Temperatura do solo"
+      },
+      "dli_24h": {
+        "name": "DLI (24h contínuo)"
       }
     },
     "number": {
@@ -76,6 +76,12 @@
       "min_humidity": {
         "name": "Mín. humidade do ar"
       },
+      "max_vpd": {
+        "name": "Máx. VPD"
+      },
+      "min_vpd": {
+        "name": "Mín. VPD"
+      },
       "max_co2": {
         "name": "Máx. CO2"
       },
@@ -87,12 +93,6 @@
       },
       "min_soil_temperature": {
         "name": "Mín. temperatura do solo"
-      },
-      "max_vpd": {
-        "name": "Máx. VPD"
-      },
-      "min_vpd": {
-        "name": "Mín. VPD"
       },
       "lux_to_ppfd": {
         "name": "Fator Lux para PPFD"
@@ -229,6 +229,640 @@
           "description": "ID da entidade do novo sensor. Deixe em branco para remover o sensor."
         }
       }
+    }
+  },
+  "triggers": {
+    "problem_detected": {
+      "name": "Problema detetado",
+      "description": "Aciona quando a planta desenvolve um problema (qualquer leitura ultrapassa o limite).",
+      "fields": {
+        "behavior": {
+          "name": "Comportamento",
+          "description": "Define se o acionador dispara para cada planta selecionada ou apenas uma vez para o grupo."
+        }
+      }
+    },
+    "problem_cleared": {
+      "name": "Problema resolvido",
+      "description": "Aciona quando o último problema da planta é resolvido e todas as leituras voltam ao normal.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamento",
+          "description": "Define se o acionador dispara para cada planta selecionada ou apenas uma vez para o grupo."
+        }
+      }
+    },
+    "moisture_became_low": {
+      "name": "Humidade do solo ficou baixa",
+      "description": "Aciona quando a humidade do solo da planta desce abaixo do mínimo configurado.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamento",
+          "description": "Define se o acionador dispara para cada planta selecionada ou apenas uma vez para o grupo."
+        }
+      }
+    },
+    "moisture_became_high": {
+      "name": "Humidade do solo ficou alta",
+      "description": "Aciona quando a humidade do solo da planta sobe acima do máximo configurado.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamento",
+          "description": "Define se o acionador dispara para cada planta selecionada ou apenas uma vez para o grupo."
+        }
+      }
+    },
+    "moisture_became_ok": {
+      "name": "Humidade do solo ficou normal",
+      "description": "Aciona quando a humidade do solo da planta volta ao intervalo normal.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamento",
+          "description": "Define se o acionador dispara para cada planta selecionada ou apenas uma vez para o grupo."
+        }
+      }
+    },
+    "conductivity_became_low": {
+      "name": "Condutividade ficou baixa",
+      "description": "Aciona quando a condutividade da planta desce abaixo do mínimo configurado.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamento",
+          "description": "Define se o acionador dispara para cada planta selecionada ou apenas uma vez para o grupo."
+        }
+      }
+    },
+    "conductivity_became_high": {
+      "name": "Condutividade ficou alta",
+      "description": "Aciona quando a condutividade da planta sobe acima do máximo configurado.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamento",
+          "description": "Define se o acionador dispara para cada planta selecionada ou apenas uma vez para o grupo."
+        }
+      }
+    },
+    "conductivity_became_ok": {
+      "name": "Condutividade ficou normal",
+      "description": "Aciona quando a condutividade da planta volta ao intervalo normal.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamento",
+          "description": "Define se o acionador dispara para cada planta selecionada ou apenas uma vez para o grupo."
+        }
+      }
+    },
+    "temperature_became_low": {
+      "name": "Temperatura ficou baixa",
+      "description": "Aciona quando a temperatura da planta desce abaixo do mínimo configurado.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamento",
+          "description": "Define se o acionador dispara para cada planta selecionada ou apenas uma vez para o grupo."
+        }
+      }
+    },
+    "temperature_became_high": {
+      "name": "Temperatura ficou alta",
+      "description": "Aciona quando a temperatura da planta sobe acima do máximo configurado.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamento",
+          "description": "Define se o acionador dispara para cada planta selecionada ou apenas uma vez para o grupo."
+        }
+      }
+    },
+    "temperature_became_ok": {
+      "name": "Temperatura ficou normal",
+      "description": "Aciona quando a temperatura da planta volta ao intervalo normal.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamento",
+          "description": "Define se o acionador dispara para cada planta selecionada ou apenas uma vez para o grupo."
+        }
+      }
+    },
+    "soil_temperature_became_low": {
+      "name": "Temperatura do solo ficou baixa",
+      "description": "Aciona quando a temperatura do solo da planta desce abaixo do mínimo configurado.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamento",
+          "description": "Define se o acionador dispara para cada planta selecionada ou apenas uma vez para o grupo."
+        }
+      }
+    },
+    "soil_temperature_became_high": {
+      "name": "Temperatura do solo ficou alta",
+      "description": "Aciona quando a temperatura do solo da planta sobe acima do máximo configurado.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamento",
+          "description": "Define se o acionador dispara para cada planta selecionada ou apenas uma vez para o grupo."
+        }
+      }
+    },
+    "soil_temperature_became_ok": {
+      "name": "Temperatura do solo ficou normal",
+      "description": "Aciona quando a temperatura do solo da planta volta ao intervalo normal.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamento",
+          "description": "Define se o acionador dispara para cada planta selecionada ou apenas uma vez para o grupo."
+        }
+      }
+    },
+    "humidity_became_low": {
+      "name": "Humidade do ar ficou baixa",
+      "description": "Aciona quando a humidade do ar da planta desce abaixo do mínimo configurado.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamento",
+          "description": "Define se o acionador dispara para cada planta selecionada ou apenas uma vez para o grupo."
+        }
+      }
+    },
+    "humidity_became_high": {
+      "name": "Humidade do ar ficou alta",
+      "description": "Aciona quando a humidade do ar da planta sobe acima do máximo configurado.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamento",
+          "description": "Define se o acionador dispara para cada planta selecionada ou apenas uma vez para o grupo."
+        }
+      }
+    },
+    "humidity_became_ok": {
+      "name": "Humidade do ar ficou normal",
+      "description": "Aciona quando a humidade do ar da planta volta ao intervalo normal.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamento",
+          "description": "Define se o acionador dispara para cada planta selecionada ou apenas uma vez para o grupo."
+        }
+      }
+    },
+    "illuminance_became_low": {
+      "name": "Iluminância ficou baixa",
+      "description": "Aciona quando a iluminância da planta desce abaixo do mínimo configurado.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamento",
+          "description": "Define se o acionador dispara para cada planta selecionada ou apenas uma vez para o grupo."
+        }
+      }
+    },
+    "illuminance_became_high": {
+      "name": "Iluminância ficou alta",
+      "description": "Aciona quando a iluminância da planta sobe acima do máximo configurado.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamento",
+          "description": "Define se o acionador dispara para cada planta selecionada ou apenas uma vez para o grupo."
+        }
+      }
+    },
+    "illuminance_became_ok": {
+      "name": "Iluminância ficou normal",
+      "description": "Aciona quando a iluminância da planta volta ao intervalo normal.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamento",
+          "description": "Define se o acionador dispara para cada planta selecionada ou apenas uma vez para o grupo."
+        }
+      }
+    },
+    "co2_became_low": {
+      "name": "CO2 ficou baixo",
+      "description": "Aciona quando o CO2 da planta desce abaixo do mínimo configurado.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamento",
+          "description": "Define se o acionador dispara para cada planta selecionada ou apenas uma vez para o grupo."
+        }
+      }
+    },
+    "co2_became_high": {
+      "name": "CO2 ficou alto",
+      "description": "Aciona quando o CO2 da planta sobe acima do máximo configurado.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamento",
+          "description": "Define se o acionador dispara para cada planta selecionada ou apenas uma vez para o grupo."
+        }
+      }
+    },
+    "co2_became_ok": {
+      "name": "CO2 ficou normal",
+      "description": "Aciona quando o CO2 da planta volta ao intervalo normal.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamento",
+          "description": "Define se o acionador dispara para cada planta selecionada ou apenas uma vez para o grupo."
+        }
+      }
+    },
+    "dli_became_low": {
+      "name": "DLI ficou baixo",
+      "description": "Aciona quando o DLI da planta desce abaixo do mínimo configurado.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamento",
+          "description": "Define se o acionador dispara para cada planta selecionada ou apenas uma vez para o grupo."
+        }
+      }
+    },
+    "dli_became_high": {
+      "name": "DLI ficou alto",
+      "description": "Aciona quando o DLI da planta sobe acima do máximo configurado.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamento",
+          "description": "Define se o acionador dispara para cada planta selecionada ou apenas uma vez para o grupo."
+        }
+      }
+    },
+    "dli_became_ok": {
+      "name": "DLI ficou normal",
+      "description": "Aciona quando o DLI da planta volta ao intervalo normal.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamento",
+          "description": "Define se o acionador dispara para cada planta selecionada ou apenas uma vez para o grupo."
+        }
+      }
+    },
+    "vpd_became_low": {
+      "name": "VPD ficou baixo",
+      "description": "Aciona quando o VPD da planta desce abaixo do mínimo configurado.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamento",
+          "description": "Define se o acionador dispara para cada planta selecionada ou apenas uma vez para o grupo."
+        }
+      }
+    },
+    "vpd_became_high": {
+      "name": "VPD ficou alto",
+      "description": "Aciona quando o VPD da planta sobe acima do máximo configurado.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamento",
+          "description": "Define se o acionador dispara para cada planta selecionada ou apenas uma vez para o grupo."
+        }
+      }
+    },
+    "vpd_became_ok": {
+      "name": "VPD ficou normal",
+      "description": "Aciona quando o VPD da planta volta ao intervalo normal.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamento",
+          "description": "Define se o acionador dispara para cada planta selecionada ou apenas uma vez para o grupo."
+        }
+      }
+    },
+    "moisture_sensor_became_stale": {
+      "name": "Sensor de humidade do solo sem atualizações",
+      "description": "Aciona quando o sensor de humidade do solo da planta deixa de enviar atualizações.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "O sensor tem de permanecer neste estado durante pelo menos este tempo antes de o acionador disparar."
+        }
+      }
+    },
+    "moisture_sensor_became_fresh": {
+      "name": "Sensor de humidade do solo novamente ativo",
+      "description": "Aciona quando o sensor de humidade do solo da planta volta a enviar atualizações.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "O sensor tem de permanecer neste estado durante pelo menos este tempo antes de o acionador disparar."
+        }
+      }
+    },
+    "conductivity_sensor_became_stale": {
+      "name": "Sensor de condutividade sem atualizações",
+      "description": "Aciona quando o sensor de condutividade da planta deixa de enviar atualizações.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "O sensor tem de permanecer neste estado durante pelo menos este tempo antes de o acionador disparar."
+        }
+      }
+    },
+    "conductivity_sensor_became_fresh": {
+      "name": "Sensor de condutividade novamente ativo",
+      "description": "Aciona quando o sensor de condutividade da planta volta a enviar atualizações.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "O sensor tem de permanecer neste estado durante pelo menos este tempo antes de o acionador disparar."
+        }
+      }
+    },
+    "temperature_sensor_became_stale": {
+      "name": "Sensor de temperatura sem atualizações",
+      "description": "Aciona quando o sensor de temperatura da planta deixa de enviar atualizações.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "O sensor tem de permanecer neste estado durante pelo menos este tempo antes de o acionador disparar."
+        }
+      }
+    },
+    "temperature_sensor_became_fresh": {
+      "name": "Sensor de temperatura novamente ativo",
+      "description": "Aciona quando o sensor de temperatura da planta volta a enviar atualizações.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "O sensor tem de permanecer neste estado durante pelo menos este tempo antes de o acionador disparar."
+        }
+      }
+    },
+    "soil_temperature_sensor_became_stale": {
+      "name": "Sensor de temperatura do solo sem atualizações",
+      "description": "Aciona quando o sensor de temperatura do solo da planta deixa de enviar atualizações.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "O sensor tem de permanecer neste estado durante pelo menos este tempo antes de o acionador disparar."
+        }
+      }
+    },
+    "soil_temperature_sensor_became_fresh": {
+      "name": "Sensor de temperatura do solo novamente ativo",
+      "description": "Aciona quando o sensor de temperatura do solo da planta volta a enviar atualizações.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "O sensor tem de permanecer neste estado durante pelo menos este tempo antes de o acionador disparar."
+        }
+      }
+    },
+    "humidity_sensor_became_stale": {
+      "name": "Sensor de humidade do ar sem atualizações",
+      "description": "Aciona quando o sensor de humidade do ar da planta deixa de enviar atualizações.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "O sensor tem de permanecer neste estado durante pelo menos este tempo antes de o acionador disparar."
+        }
+      }
+    },
+    "humidity_sensor_became_fresh": {
+      "name": "Sensor de humidade do ar novamente ativo",
+      "description": "Aciona quando o sensor de humidade do ar da planta volta a enviar atualizações.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "O sensor tem de permanecer neste estado durante pelo menos este tempo antes de o acionador disparar."
+        }
+      }
+    },
+    "illuminance_sensor_became_stale": {
+      "name": "Sensor de iluminância sem atualizações",
+      "description": "Aciona quando o sensor de iluminância da planta deixa de enviar atualizações.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "O sensor tem de permanecer neste estado durante pelo menos este tempo antes de o acionador disparar."
+        }
+      }
+    },
+    "illuminance_sensor_became_fresh": {
+      "name": "Sensor de iluminância novamente ativo",
+      "description": "Aciona quando o sensor de iluminância da planta volta a enviar atualizações.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "O sensor tem de permanecer neste estado durante pelo menos este tempo antes de o acionador disparar."
+        }
+      }
+    },
+    "co2_sensor_became_stale": {
+      "name": "Sensor de CO2 sem atualizações",
+      "description": "Aciona quando o sensor de CO2 da planta deixa de enviar atualizações.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "O sensor tem de permanecer neste estado durante pelo menos este tempo antes de o acionador disparar."
+        }
+      }
+    },
+    "co2_sensor_became_fresh": {
+      "name": "Sensor de CO2 novamente ativo",
+      "description": "Aciona quando o sensor de CO2 da planta volta a enviar atualizações.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "O sensor tem de permanecer neste estado durante pelo menos este tempo antes de o acionador disparar."
+        }
+      }
+    }
+  },
+  "conditions": {
+    "has_problem": {
+      "name": "Tem um problema",
+      "description": "Verdadeira enquanto a planta tiver algum problema ativo."
+    },
+    "moisture_is_low": {
+      "name": "Humidade do solo está baixa",
+      "description": "Verdadeira enquanto a humidade do solo da planta estiver abaixo do mínimo configurado."
+    },
+    "moisture_is_high": {
+      "name": "Humidade do solo está alta",
+      "description": "Verdadeira enquanto a humidade do solo da planta estiver acima do máximo configurado."
+    },
+    "moisture_is_ok": {
+      "name": "Humidade do solo está normal",
+      "description": "Verdadeira enquanto a humidade do solo da planta estiver dentro do intervalo normal."
+    },
+    "conductivity_is_low": {
+      "name": "Condutividade está baixa",
+      "description": "Verdadeira enquanto a condutividade da planta estiver abaixo do mínimo configurado."
+    },
+    "conductivity_is_high": {
+      "name": "Condutividade está alta",
+      "description": "Verdadeira enquanto a condutividade da planta estiver acima do máximo configurado."
+    },
+    "conductivity_is_ok": {
+      "name": "Condutividade está normal",
+      "description": "Verdadeira enquanto a condutividade da planta estiver dentro do intervalo normal."
+    },
+    "temperature_is_low": {
+      "name": "Temperatura está baixa",
+      "description": "Verdadeira enquanto a temperatura da planta estiver abaixo do mínimo configurado."
+    },
+    "temperature_is_high": {
+      "name": "Temperatura está alta",
+      "description": "Verdadeira enquanto a temperatura da planta estiver acima do máximo configurado."
+    },
+    "temperature_is_ok": {
+      "name": "Temperatura está normal",
+      "description": "Verdadeira enquanto a temperatura da planta estiver dentro do intervalo normal."
+    },
+    "soil_temperature_is_low": {
+      "name": "Temperatura do solo está baixa",
+      "description": "Verdadeira enquanto a temperatura do solo da planta estiver abaixo do mínimo configurado."
+    },
+    "soil_temperature_is_high": {
+      "name": "Temperatura do solo está alta",
+      "description": "Verdadeira enquanto a temperatura do solo da planta estiver acima do máximo configurado."
+    },
+    "soil_temperature_is_ok": {
+      "name": "Temperatura do solo está normal",
+      "description": "Verdadeira enquanto a temperatura do solo da planta estiver dentro do intervalo normal."
+    },
+    "humidity_is_low": {
+      "name": "Humidade do ar está baixa",
+      "description": "Verdadeira enquanto a humidade do ar da planta estiver abaixo do mínimo configurado."
+    },
+    "humidity_is_high": {
+      "name": "Humidade do ar está alta",
+      "description": "Verdadeira enquanto a humidade do ar da planta estiver acima do máximo configurado."
+    },
+    "humidity_is_ok": {
+      "name": "Humidade do ar está normal",
+      "description": "Verdadeira enquanto a humidade do ar da planta estiver dentro do intervalo normal."
+    },
+    "illuminance_is_low": {
+      "name": "Iluminância está baixa",
+      "description": "Verdadeira enquanto a iluminância da planta estiver abaixo do mínimo configurado."
+    },
+    "illuminance_is_high": {
+      "name": "Iluminância está alta",
+      "description": "Verdadeira enquanto a iluminância da planta estiver acima do máximo configurado."
+    },
+    "illuminance_is_ok": {
+      "name": "Iluminância está normal",
+      "description": "Verdadeira enquanto a iluminância da planta estiver dentro do intervalo normal."
+    },
+    "co2_is_low": {
+      "name": "CO2 está baixo",
+      "description": "Verdadeira enquanto o CO2 da planta estiver abaixo do mínimo configurado."
+    },
+    "co2_is_high": {
+      "name": "CO2 está alto",
+      "description": "Verdadeira enquanto o CO2 da planta estiver acima do máximo configurado."
+    },
+    "co2_is_ok": {
+      "name": "CO2 está normal",
+      "description": "Verdadeira enquanto o CO2 da planta estiver dentro do intervalo normal."
+    },
+    "dli_is_low": {
+      "name": "DLI está baixo",
+      "description": "Verdadeira enquanto o DLI da planta estiver abaixo do mínimo configurado."
+    },
+    "dli_is_high": {
+      "name": "DLI está alto",
+      "description": "Verdadeira enquanto o DLI da planta estiver acima do máximo configurado."
+    },
+    "dli_is_ok": {
+      "name": "DLI está normal",
+      "description": "Verdadeira enquanto o DLI da planta estiver dentro do intervalo normal."
+    },
+    "vpd_is_low": {
+      "name": "VPD está baixo",
+      "description": "Verdadeira enquanto o VPD da planta estiver abaixo do mínimo configurado."
+    },
+    "vpd_is_high": {
+      "name": "VPD está alto",
+      "description": "Verdadeira enquanto o VPD da planta estiver acima do máximo configurado."
+    },
+    "vpd_is_ok": {
+      "name": "VPD está normal",
+      "description": "Verdadeira enquanto o VPD da planta estiver dentro do intervalo normal."
+    },
+    "moisture_sensor_is_stale": {
+      "name": "Sensor de humidade do solo sem atualizações",
+      "description": "Verdadeira enquanto o sensor de humidade do solo da planta não enviar atualizações durante o tempo configurado.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "O sensor tem de estar sem atualizações durante pelo menos este tempo para a condição ser verdadeira."
+        }
+      }
+    },
+    "conductivity_sensor_is_stale": {
+      "name": "Sensor de condutividade sem atualizações",
+      "description": "Verdadeira enquanto o sensor de condutividade da planta não enviar atualizações durante o tempo configurado.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "O sensor tem de estar sem atualizações durante pelo menos este tempo para a condição ser verdadeira."
+        }
+      }
+    },
+    "temperature_sensor_is_stale": {
+      "name": "Sensor de temperatura sem atualizações",
+      "description": "Verdadeira enquanto o sensor de temperatura da planta não enviar atualizações durante o tempo configurado.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "O sensor tem de estar sem atualizações durante pelo menos este tempo para a condição ser verdadeira."
+        }
+      }
+    },
+    "soil_temperature_sensor_is_stale": {
+      "name": "Sensor de temperatura do solo sem atualizações",
+      "description": "Verdadeira enquanto o sensor de temperatura do solo da planta não enviar atualizações durante o tempo configurado.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "O sensor tem de estar sem atualizações durante pelo menos este tempo para a condição ser verdadeira."
+        }
+      }
+    },
+    "humidity_sensor_is_stale": {
+      "name": "Sensor de humidade do ar sem atualizações",
+      "description": "Verdadeira enquanto o sensor de humidade do ar da planta não enviar atualizações durante o tempo configurado.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "O sensor tem de estar sem atualizações durante pelo menos este tempo para a condição ser verdadeira."
+        }
+      }
+    },
+    "illuminance_sensor_is_stale": {
+      "name": "Sensor de iluminância sem atualizações",
+      "description": "Verdadeira enquanto o sensor de iluminância da planta não enviar atualizações durante o tempo configurado.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "O sensor tem de estar sem atualizações durante pelo menos este tempo para a condição ser verdadeira."
+        }
+      }
+    },
+    "co2_sensor_is_stale": {
+      "name": "Sensor de CO2 sem atualizações",
+      "description": "Verdadeira enquanto o sensor de CO2 da planta não enviar atualizações durante o tempo configurado.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "O sensor tem de estar sem atualizações durante pelo menos este tempo para a condição ser verdadeira."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "platform_setup_failed": {
+      "message": "Não foi possível configurar a plataforma de entidades de planta."
+    },
+    "plant_entity_not_added": {
+      "message": "A entidade de planta {entity_id} não foi adicionada ao Home Assistant, possivelmente porque o seu ID único já está em uso."
+    }
+  },
+  "issues": {
+    "other_flower_card": {
+      "title": "O cartão de flor está instalado duas vezes",
+      "description": "O cartão de flor passou a vir incluído na integração Plant Monitor. Os seus painéis também carregam outra cópia: {urls}\n\nRemova essa cópia: desinstale o Flower Card no Marketplace (HACS antes do Home Assistant 2026.11) ou elimine o recurso que adicionou manualmente (em Definições → Painéis → Recursos, ou nos recursos `lovelace` da sua configuração YAML). Entretanto, os seus painéis continuam a funcionar. O Plant Monitor assume assim que a outra cópia desaparecer; se os seus recursos estiverem em YAML, reinicie primeiro o Home Assistant. Depois, atualize o navegador."
+    },
+    "missing_flower_card": {
+      "title": "Um recurso do painel aponta para um cartão de flor removido",
+      "description": "Os recursos do seu painel ainda incluem um cartão de flor cujo ficheiro já não existe: {urls}\n\nEssa entrada deixou de contar como cartão instalado, por isso não impede o Plant Monitor de carregar o seu. Elimine o recurso que sobrou em Definições → Painéis → Recursos, ou nos recursos `lovelace` da sua configuração YAML, para que o navegador deixe de pedir o ficheiro em falta."
     }
   }
 }
