@@ -294,7 +294,7 @@
       "description": "Udløses, når planten får et problem (en måling krydser sin grænseværdi).",
       "fields": {
         "behavior": {
-          "name": "Adfærd",
+          "name": "Udløs når",
           "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
         }
       }
@@ -304,7 +304,7 @@
       "description": "Udløses, når plantens sidste problem er løst, og alle målinger er normale igen.",
       "fields": {
         "behavior": {
-          "name": "Adfærd",
+          "name": "Udløs når",
           "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
         }
       }
@@ -314,7 +314,7 @@
       "description": "Udløses, når plantens jordfugtighed falder under det konfigurerede minimum.",
       "fields": {
         "behavior": {
-          "name": "Adfærd",
+          "name": "Udløs når",
           "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
         }
       }
@@ -324,7 +324,7 @@
       "description": "Udløses, når plantens jordfugtighed stiger over det konfigurerede maksimum.",
       "fields": {
         "behavior": {
-          "name": "Adfærd",
+          "name": "Udløs når",
           "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
         }
       }
@@ -334,7 +334,7 @@
       "description": "Udløses, når plantens jordfugtighed vender tilbage til det normale område.",
       "fields": {
         "behavior": {
-          "name": "Adfærd",
+          "name": "Udløs når",
           "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
         }
       }
@@ -344,7 +344,7 @@
       "description": "Udløses, når plantens ledningsevne falder under det konfigurerede minimum.",
       "fields": {
         "behavior": {
-          "name": "Adfærd",
+          "name": "Udløs når",
           "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
         }
       }
@@ -354,7 +354,7 @@
       "description": "Udløses, når plantens ledningsevne stiger over det konfigurerede maksimum.",
       "fields": {
         "behavior": {
-          "name": "Adfærd",
+          "name": "Udløs når",
           "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
         }
       }
@@ -364,7 +364,7 @@
       "description": "Udløses, når plantens ledningsevne vender tilbage til det normale område.",
       "fields": {
         "behavior": {
-          "name": "Adfærd",
+          "name": "Udløs når",
           "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
         }
       }
@@ -374,7 +374,7 @@
       "description": "Udløses, når plantens temperatur falder under det konfigurerede minimum.",
       "fields": {
         "behavior": {
-          "name": "Adfærd",
+          "name": "Udløs når",
           "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
         }
       }
@@ -384,7 +384,7 @@
       "description": "Udløses, når plantens temperatur stiger over det konfigurerede maksimum.",
       "fields": {
         "behavior": {
-          "name": "Adfærd",
+          "name": "Udløs når",
           "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
         }
       }
@@ -394,7 +394,7 @@
       "description": "Udløses, når plantens temperatur vender tilbage til det normale område.",
       "fields": {
         "behavior": {
-          "name": "Adfærd",
+          "name": "Udløs når",
           "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
         }
       }
@@ -404,7 +404,7 @@
       "description": "Udløses, når plantens jordtemperatur falder under det konfigurerede minimum.",
       "fields": {
         "behavior": {
-          "name": "Adfærd",
+          "name": "Udløs når",
           "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
         }
       }
@@ -414,7 +414,7 @@
       "description": "Udløses, når plantens jordtemperatur stiger over det konfigurerede maksimum.",
       "fields": {
         "behavior": {
-          "name": "Adfærd",
+          "name": "Udløs når",
           "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
         }
       }
@@ -424,7 +424,7 @@
       "description": "Udløses, når plantens jordtemperatur vender tilbage til det normale område.",
       "fields": {
         "behavior": {
-          "name": "Adfærd",
+          "name": "Udløs når",
           "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
         }
       }
@@ -434,7 +434,7 @@
       "description": "Udløses, når plantens luftfugtighed falder under det konfigurerede minimum.",
       "fields": {
         "behavior": {
-          "name": "Adfærd",
+          "name": "Udløs når",
           "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
         }
       }
@@ -444,7 +444,7 @@
       "description": "Udløses, når plantens luftfugtighed stiger over det konfigurerede maksimum.",
       "fields": {
         "behavior": {
-          "name": "Adfærd",
+          "name": "Udløs når",
           "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
         }
       }
@@ -454,7 +454,7 @@
       "description": "Udløses, når plantens luftfugtighed vender tilbage til det normale område.",
       "fields": {
         "behavior": {
-          "name": "Adfærd",
+          "name": "Udløs når",
           "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
         }
       }
@@ -464,7 +464,7 @@
       "description": "Udløses, når plantens belysningsstyrke falder under det konfigurerede minimum.",
       "fields": {
         "behavior": {
-          "name": "Adfærd",
+          "name": "Udløs når",
           "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
         }
       }
@@ -474,7 +474,7 @@
       "description": "Udløses, når plantens belysningsstyrke stiger over det konfigurerede maksimum.",
       "fields": {
         "behavior": {
-          "name": "Adfærd",
+          "name": "Udløs når",
           "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
         }
       }
@@ -484,7 +484,7 @@
       "description": "Udløses, når plantens belysningsstyrke vender tilbage til det normale område.",
       "fields": {
         "behavior": {
-          "name": "Adfærd",
+          "name": "Udløs når",
           "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
         }
       }
@@ -494,7 +494,7 @@
       "description": "Udløses, når plantens CO2-niveau falder under det konfigurerede minimum.",
       "fields": {
         "behavior": {
-          "name": "Adfærd",
+          "name": "Udløs når",
           "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
         }
       }
@@ -504,7 +504,7 @@
       "description": "Udløses, når plantens CO2-niveau stiger over det konfigurerede maksimum.",
       "fields": {
         "behavior": {
-          "name": "Adfærd",
+          "name": "Udløs når",
           "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
         }
       }
@@ -514,7 +514,7 @@
       "description": "Udløses, når plantens CO2-niveau vender tilbage til det normale område.",
       "fields": {
         "behavior": {
-          "name": "Adfærd",
+          "name": "Udløs når",
           "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
         }
       }
@@ -524,7 +524,7 @@
       "description": "Udløses, når plantens DLI falder under det konfigurerede minimum.",
       "fields": {
         "behavior": {
-          "name": "Adfærd",
+          "name": "Udløs når",
           "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
         }
       }
@@ -534,7 +534,7 @@
       "description": "Udløses, når plantens DLI stiger over det konfigurerede maksimum.",
       "fields": {
         "behavior": {
-          "name": "Adfærd",
+          "name": "Udløs når",
           "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
         }
       }
@@ -544,7 +544,7 @@
       "description": "Udløses, når plantens DLI vender tilbage til det normale område.",
       "fields": {
         "behavior": {
-          "name": "Adfærd",
+          "name": "Udløs når",
           "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
         }
       }
@@ -554,7 +554,7 @@
       "description": "Udløses, når plantens VPD falder under det konfigurerede minimum.",
       "fields": {
         "behavior": {
-          "name": "Adfærd",
+          "name": "Udløs når",
           "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
         }
       }
@@ -564,7 +564,7 @@
       "description": "Udløses, når plantens VPD stiger over det konfigurerede maksimum.",
       "fields": {
         "behavior": {
-          "name": "Adfærd",
+          "name": "Udløs når",
           "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
         }
       }
@@ -574,7 +574,7 @@
       "description": "Udløses, når plantens VPD vender tilbage til det normale område.",
       "fields": {
         "behavior": {
-          "name": "Adfærd",
+          "name": "Udløs når",
           "description": "Om udløseren aktiveres for hver valgt plante eller kun én gang for gruppen."
         }
       }
@@ -584,7 +584,7 @@
       "description": "Udløses, når plantens jordfugtighedsensor holder op med at sende opdateringer.",
       "fields": {
         "for": {
-          "name": "I",
+          "name": "I mindst",
           "description": "Sensoren skal have været i denne tilstand i mindst så lang tid, før udløseren aktiveres."
         }
       }
@@ -594,7 +594,7 @@
       "description": "Udløses, når plantens jordfugtighedsensor begynder at sende opdateringer igen.",
       "fields": {
         "for": {
-          "name": "I",
+          "name": "I mindst",
           "description": "Sensoren skal have været i denne tilstand i mindst så lang tid, før udløseren aktiveres."
         }
       }
@@ -604,7 +604,7 @@
       "description": "Udløses, når plantens ledningsevnesensor holder op med at sende opdateringer.",
       "fields": {
         "for": {
-          "name": "I",
+          "name": "I mindst",
           "description": "Sensoren skal have været i denne tilstand i mindst så lang tid, før udløseren aktiveres."
         }
       }
@@ -614,7 +614,7 @@
       "description": "Udløses, når plantens ledningsevnesensor begynder at sende opdateringer igen.",
       "fields": {
         "for": {
-          "name": "I",
+          "name": "I mindst",
           "description": "Sensoren skal have været i denne tilstand i mindst så lang tid, før udløseren aktiveres."
         }
       }
@@ -624,7 +624,7 @@
       "description": "Udløses, når plantens temperatursensor holder op med at sende opdateringer.",
       "fields": {
         "for": {
-          "name": "I",
+          "name": "I mindst",
           "description": "Sensoren skal have været i denne tilstand i mindst så lang tid, før udløseren aktiveres."
         }
       }
@@ -634,7 +634,7 @@
       "description": "Udløses, når plantens temperatursensor begynder at sende opdateringer igen.",
       "fields": {
         "for": {
-          "name": "I",
+          "name": "I mindst",
           "description": "Sensoren skal have været i denne tilstand i mindst så lang tid, før udløseren aktiveres."
         }
       }
@@ -644,7 +644,7 @@
       "description": "Udløses, når plantens jordtemperatursensor holder op med at sende opdateringer.",
       "fields": {
         "for": {
-          "name": "I",
+          "name": "I mindst",
           "description": "Sensoren skal have været i denne tilstand i mindst så lang tid, før udløseren aktiveres."
         }
       }
@@ -654,7 +654,7 @@
       "description": "Udløses, når plantens jordtemperatursensor begynder at sende opdateringer igen.",
       "fields": {
         "for": {
-          "name": "I",
+          "name": "I mindst",
           "description": "Sensoren skal have været i denne tilstand i mindst så lang tid, før udløseren aktiveres."
         }
       }
@@ -664,7 +664,7 @@
       "description": "Udløses, når plantens luftfugtighedsensor holder op med at sende opdateringer.",
       "fields": {
         "for": {
-          "name": "I",
+          "name": "I mindst",
           "description": "Sensoren skal have været i denne tilstand i mindst så lang tid, før udløseren aktiveres."
         }
       }
@@ -674,7 +674,7 @@
       "description": "Udløses, når plantens luftfugtighedsensor begynder at sende opdateringer igen.",
       "fields": {
         "for": {
-          "name": "I",
+          "name": "I mindst",
           "description": "Sensoren skal have været i denne tilstand i mindst så lang tid, før udløseren aktiveres."
         }
       }
@@ -684,7 +684,7 @@
       "description": "Udløses, når plantens belysningsstyrkesensor holder op med at sende opdateringer.",
       "fields": {
         "for": {
-          "name": "I",
+          "name": "I mindst",
           "description": "Sensoren skal have været i denne tilstand i mindst så lang tid, før udløseren aktiveres."
         }
       }
@@ -694,7 +694,7 @@
       "description": "Udløses, når plantens belysningsstyrkesensor begynder at sende opdateringer igen.",
       "fields": {
         "for": {
-          "name": "I",
+          "name": "I mindst",
           "description": "Sensoren skal have været i denne tilstand i mindst så lang tid, før udløseren aktiveres."
         }
       }
@@ -704,7 +704,7 @@
       "description": "Udløses, når plantens CO2-sensor holder op med at sende opdateringer.",
       "fields": {
         "for": {
-          "name": "I",
+          "name": "I mindst",
           "description": "Sensoren skal have været i denne tilstand i mindst så lang tid, før udløseren aktiveres."
         }
       }
@@ -714,7 +714,7 @@
       "description": "Udløses, når plantens CO2-sensor begynder at sende opdateringer igen.",
       "fields": {
         "for": {
-          "name": "I",
+          "name": "I mindst",
           "description": "Sensoren skal have været i denne tilstand i mindst så lang tid, før udløseren aktiveres."
         }
       }
@@ -838,7 +838,7 @@
       "description": "Er opfyldt, så længe plantens jordfugtighedsensor ikke har sendt opdateringer i den konfigurerede tid.",
       "fields": {
         "for": {
-          "name": "I",
+          "name": "I mindst",
           "description": "Sensoren skal have været forældet i mindst så lang tid, for at betingelsen er opfyldt."
         }
       }
@@ -848,7 +848,7 @@
       "description": "Er opfyldt, så længe plantens ledningsevnesensor ikke har sendt opdateringer i den konfigurerede tid.",
       "fields": {
         "for": {
-          "name": "I",
+          "name": "I mindst",
           "description": "Sensoren skal have været forældet i mindst så lang tid, for at betingelsen er opfyldt."
         }
       }
@@ -858,7 +858,7 @@
       "description": "Er opfyldt, så længe plantens temperatursensor ikke har sendt opdateringer i den konfigurerede tid.",
       "fields": {
         "for": {
-          "name": "I",
+          "name": "I mindst",
           "description": "Sensoren skal have været forældet i mindst så lang tid, for at betingelsen er opfyldt."
         }
       }
@@ -868,7 +868,7 @@
       "description": "Er opfyldt, så længe plantens jordtemperatursensor ikke har sendt opdateringer i den konfigurerede tid.",
       "fields": {
         "for": {
-          "name": "I",
+          "name": "I mindst",
           "description": "Sensoren skal have været forældet i mindst så lang tid, for at betingelsen er opfyldt."
         }
       }
@@ -878,7 +878,7 @@
       "description": "Er opfyldt, så længe plantens luftfugtighedsensor ikke har sendt opdateringer i den konfigurerede tid.",
       "fields": {
         "for": {
-          "name": "I",
+          "name": "I mindst",
           "description": "Sensoren skal have været forældet i mindst så lang tid, for at betingelsen er opfyldt."
         }
       }
@@ -888,7 +888,7 @@
       "description": "Er opfyldt, så længe plantens belysningsstyrkesensor ikke har sendt opdateringer i den konfigurerede tid.",
       "fields": {
         "for": {
-          "name": "I",
+          "name": "I mindst",
           "description": "Sensoren skal have været forældet i mindst så lang tid, for at betingelsen er opfyldt."
         }
       }
@@ -898,7 +898,7 @@
       "description": "Er opfyldt, så længe plantens CO2-sensor ikke har sendt opdateringer i den konfigurerede tid.",
       "fields": {
         "for": {
-          "name": "I",
+          "name": "I mindst",
           "description": "Sensoren skal have været forældet i mindst så lang tid, for at betingelsen er opfyldt."
         }
       }
