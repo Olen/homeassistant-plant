@@ -659,8 +659,9 @@ class TestPlantDevice:
         plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
 
         device_info = plant.device_info
-        assert "identifiers" in device_info
-        assert "name" in device_info
+        assert (DOMAIN, plant.unique_id) in device_info_field(
+            device_info, "identifiers"
+        )
         assert device_info_field(device_info, "name") == TEST_PLANT_NAME
 
     async def test_plant_device_trigger_disabled(
