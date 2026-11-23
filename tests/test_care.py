@@ -27,7 +27,6 @@ from homeassistant.helpers.entity_platform import (
 )
 from homeassistant.setup import async_setup_component
 from homeassistant.util import dt as dt_util
-from pytest_homeassistant_custom_component.common import async_fire_time_changed
 
 from custom_components.plant.care import CareSettings, CareTasks, care_modes
 from custom_components.plant.care_trigger import is_new_care_event
@@ -60,6 +59,7 @@ from .ha_common import (
     MockModule,
     MockPlatform,
     async_capture_events,
+    async_fire_time_changed,
     mock_config_flow,
     mock_integration,
     mock_platform,
