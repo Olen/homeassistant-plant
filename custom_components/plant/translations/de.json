@@ -294,7 +294,7 @@
       "description": "Löst aus, wenn bei der Pflanze ein Problem auftritt (ein Messwert überschreitet seinen Grenzwert).",
       "fields": {
         "behavior": {
-          "name": "Verhalten",
+          "name": "Auslösen, sobald",
           "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
         }
       }
@@ -304,7 +304,7 @@
       "description": "Löst aus, wenn das letzte Problem der Pflanze behoben ist und alle Messwerte wieder normal sind.",
       "fields": {
         "behavior": {
-          "name": "Verhalten",
+          "name": "Auslösen, sobald",
           "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
         }
       }
@@ -314,7 +314,7 @@
       "description": "Löst aus, wenn der Bodenfeuchtigkeit der Pflanze unter den konfigurierten Minimalwert fällt.",
       "fields": {
         "behavior": {
-          "name": "Verhalten",
+          "name": "Auslösen, sobald",
           "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
         }
       }
@@ -324,7 +324,7 @@
       "description": "Löst aus, wenn der Bodenfeuchtigkeit der Pflanze über den konfigurierten Maximalwert steigt.",
       "fields": {
         "behavior": {
-          "name": "Verhalten",
+          "name": "Auslösen, sobald",
           "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
         }
       }
@@ -334,7 +334,7 @@
       "description": "Löst aus, wenn der Bodenfeuchtigkeit der Pflanze wieder im normalen Bereich liegt.",
       "fields": {
         "behavior": {
-          "name": "Verhalten",
+          "name": "Auslösen, sobald",
           "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
         }
       }
@@ -344,7 +344,7 @@
       "description": "Löst aus, wenn der Leitfähigkeit der Pflanze unter den konfigurierten Minimalwert fällt.",
       "fields": {
         "behavior": {
-          "name": "Verhalten",
+          "name": "Auslösen, sobald",
           "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
         }
       }
@@ -354,7 +354,7 @@
       "description": "Löst aus, wenn der Leitfähigkeit der Pflanze über den konfigurierten Maximalwert steigt.",
       "fields": {
         "behavior": {
-          "name": "Verhalten",
+          "name": "Auslösen, sobald",
           "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
         }
       }
@@ -364,7 +364,7 @@
       "description": "Löst aus, wenn der Leitfähigkeit der Pflanze wieder im normalen Bereich liegt.",
       "fields": {
         "behavior": {
-          "name": "Verhalten",
+          "name": "Auslösen, sobald",
           "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
         }
       }
@@ -374,7 +374,7 @@
       "description": "Löst aus, wenn der Temperatur der Pflanze unter den konfigurierten Minimalwert fällt.",
       "fields": {
         "behavior": {
-          "name": "Verhalten",
+          "name": "Auslösen, sobald",
           "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
         }
       }
@@ -384,7 +384,7 @@
       "description": "Löst aus, wenn der Temperatur der Pflanze über den konfigurierten Maximalwert steigt.",
       "fields": {
         "behavior": {
-          "name": "Verhalten",
+          "name": "Auslösen, sobald",
           "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
         }
       }
@@ -394,7 +394,7 @@
       "description": "Löst aus, wenn der Temperatur der Pflanze wieder im normalen Bereich liegt.",
       "fields": {
         "behavior": {
-          "name": "Verhalten",
+          "name": "Auslösen, sobald",
           "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
         }
       }
@@ -404,7 +404,7 @@
       "description": "Löst aus, wenn der Bodentemperatur der Pflanze unter den konfigurierten Minimalwert fällt.",
       "fields": {
         "behavior": {
-          "name": "Verhalten",
+          "name": "Auslösen, sobald",
           "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
         }
       }
@@ -414,7 +414,7 @@
       "description": "Löst aus, wenn der Bodentemperatur der Pflanze über den konfigurierten Maximalwert steigt.",
       "fields": {
         "behavior": {
-          "name": "Verhalten",
+          "name": "Auslösen, sobald",
           "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
         }
       }
@@ -424,7 +424,7 @@
       "description": "Löst aus, wenn der Bodentemperatur der Pflanze wieder im normalen Bereich liegt.",
       "fields": {
         "behavior": {
-          "name": "Verhalten",
+          "name": "Auslösen, sobald",
           "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
         }
       }
@@ -434,7 +434,7 @@
       "description": "Löst aus, wenn der Luftfeuchtigkeit der Pflanze unter den konfigurierten Minimalwert fällt.",
       "fields": {
         "behavior": {
-          "name": "Verhalten",
+          "name": "Auslösen, sobald",
           "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
         }
       }
@@ -444,7 +444,7 @@
       "description": "Löst aus, wenn der Luftfeuchtigkeit der Pflanze über den konfigurierten Maximalwert steigt.",
       "fields": {
         "behavior": {
-          "name": "Verhalten",
+          "name": "Auslösen, sobald",
           "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
         }
       }
@@ -454,7 +454,7 @@
       "description": "Löst aus, wenn der Luftfeuchtigkeit der Pflanze wieder im normalen Bereich liegt.",
       "fields": {
         "behavior": {
-          "name": "Verhalten",
+          "name": "Auslösen, sobald",
           "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
         }
       }
@@ -464,7 +464,7 @@
       "description": "Löst aus, wenn der Beleuchtungsstärke der Pflanze unter den konfigurierten Minimalwert fällt.",
       "fields": {
         "behavior": {
-          "name": "Verhalten",
+          "name": "Auslösen, sobald",
           "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
         }
       }
@@ -474,7 +474,7 @@
       "description": "Löst aus, wenn der Beleuchtungsstärke der Pflanze über den konfigurierten Maximalwert steigt.",
       "fields": {
         "behavior": {
-          "name": "Verhalten",
+          "name": "Auslösen, sobald",
           "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
         }
       }
@@ -484,7 +484,7 @@
       "description": "Löst aus, wenn der Beleuchtungsstärke der Pflanze wieder im normalen Bereich liegt.",
       "fields": {
         "behavior": {
-          "name": "Verhalten",
+          "name": "Auslösen, sobald",
           "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
         }
       }
@@ -494,7 +494,7 @@
       "description": "Löst aus, wenn der CO2-Wert der Pflanze unter den konfigurierten Minimalwert fällt.",
       "fields": {
         "behavior": {
-          "name": "Verhalten",
+          "name": "Auslösen, sobald",
           "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
         }
       }
@@ -504,7 +504,7 @@
       "description": "Löst aus, wenn der CO2-Wert der Pflanze über den konfigurierten Maximalwert steigt.",
       "fields": {
         "behavior": {
-          "name": "Verhalten",
+          "name": "Auslösen, sobald",
           "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
         }
       }
@@ -514,7 +514,7 @@
       "description": "Löst aus, wenn der CO2-Wert der Pflanze wieder im normalen Bereich liegt.",
       "fields": {
         "behavior": {
-          "name": "Verhalten",
+          "name": "Auslösen, sobald",
           "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
         }
       }
@@ -524,7 +524,7 @@
       "description": "Löst aus, wenn der DLI-Wert der Pflanze unter den konfigurierten Minimalwert fällt.",
       "fields": {
         "behavior": {
-          "name": "Verhalten",
+          "name": "Auslösen, sobald",
           "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
         }
       }
@@ -534,7 +534,7 @@
       "description": "Löst aus, wenn der DLI-Wert der Pflanze über den konfigurierten Maximalwert steigt.",
       "fields": {
         "behavior": {
-          "name": "Verhalten",
+          "name": "Auslösen, sobald",
           "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
         }
       }
@@ -544,7 +544,7 @@
       "description": "Löst aus, wenn der DLI-Wert der Pflanze wieder im normalen Bereich liegt.",
       "fields": {
         "behavior": {
-          "name": "Verhalten",
+          "name": "Auslösen, sobald",
           "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
         }
       }
@@ -554,7 +554,7 @@
       "description": "Löst aus, wenn der VPD-Wert der Pflanze unter den konfigurierten Minimalwert fällt.",
       "fields": {
         "behavior": {
-          "name": "Verhalten",
+          "name": "Auslösen, sobald",
           "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
         }
       }
@@ -564,7 +564,7 @@
       "description": "Löst aus, wenn der VPD-Wert der Pflanze über den konfigurierten Maximalwert steigt.",
       "fields": {
         "behavior": {
-          "name": "Verhalten",
+          "name": "Auslösen, sobald",
           "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
         }
       }
@@ -574,7 +574,7 @@
       "description": "Löst aus, wenn der VPD-Wert der Pflanze wieder im normalen Bereich liegt.",
       "fields": {
         "behavior": {
-          "name": "Verhalten",
+          "name": "Auslösen, sobald",
           "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
         }
       }
@@ -584,7 +584,7 @@
       "description": "Löst aus, wenn der Bodenfeuchtigkeitssensor der Pflanze keine Updates mehr sendet.",
       "fields": {
         "for": {
-          "name": "Für",
+          "name": "Für mindestens",
           "description": "Der Sensor muss mindestens so lange in diesem Zustand bleiben, bevor der Auslöser ausgelöst wird."
         }
       }
@@ -594,7 +594,7 @@
       "description": "Löst aus, wenn der Bodenfeuchtigkeitssensor der Pflanze wieder Updates sendet.",
       "fields": {
         "for": {
-          "name": "Für",
+          "name": "Für mindestens",
           "description": "Der Sensor muss mindestens so lange in diesem Zustand bleiben, bevor der Auslöser ausgelöst wird."
         }
       }
@@ -604,7 +604,7 @@
       "description": "Löst aus, wenn der Leitfähigkeitssensor der Pflanze keine Updates mehr sendet.",
       "fields": {
         "for": {
-          "name": "Für",
+          "name": "Für mindestens",
           "description": "Der Sensor muss mindestens so lange in diesem Zustand bleiben, bevor der Auslöser ausgelöst wird."
         }
       }
@@ -614,7 +614,7 @@
       "description": "Löst aus, wenn der Leitfähigkeitssensor der Pflanze wieder Updates sendet.",
       "fields": {
         "for": {
-          "name": "Für",
+          "name": "Für mindestens",
           "description": "Der Sensor muss mindestens so lange in diesem Zustand bleiben, bevor der Auslöser ausgelöst wird."
         }
       }
@@ -624,7 +624,7 @@
       "description": "Löst aus, wenn der Temperatursensor der Pflanze keine Updates mehr sendet.",
       "fields": {
         "for": {
-          "name": "Für",
+          "name": "Für mindestens",
           "description": "Der Sensor muss mindestens so lange in diesem Zustand bleiben, bevor der Auslöser ausgelöst wird."
         }
       }
@@ -634,7 +634,7 @@
       "description": "Löst aus, wenn der Temperatursensor der Pflanze wieder Updates sendet.",
       "fields": {
         "for": {
-          "name": "Für",
+          "name": "Für mindestens",
           "description": "Der Sensor muss mindestens so lange in diesem Zustand bleiben, bevor der Auslöser ausgelöst wird."
         }
       }
@@ -644,7 +644,7 @@
       "description": "Löst aus, wenn der Bodentemperatursensor der Pflanze keine Updates mehr sendet.",
       "fields": {
         "for": {
-          "name": "Für",
+          "name": "Für mindestens",
           "description": "Der Sensor muss mindestens so lange in diesem Zustand bleiben, bevor der Auslöser ausgelöst wird."
         }
       }
@@ -654,7 +654,7 @@
       "description": "Löst aus, wenn der Bodentemperatursensor der Pflanze wieder Updates sendet.",
       "fields": {
         "for": {
-          "name": "Für",
+          "name": "Für mindestens",
           "description": "Der Sensor muss mindestens so lange in diesem Zustand bleiben, bevor der Auslöser ausgelöst wird."
         }
       }
@@ -664,7 +664,7 @@
       "description": "Löst aus, wenn der Luftfeuchtigkeitssensor der Pflanze keine Updates mehr sendet.",
       "fields": {
         "for": {
-          "name": "Für",
+          "name": "Für mindestens",
           "description": "Der Sensor muss mindestens so lange in diesem Zustand bleiben, bevor der Auslöser ausgelöst wird."
         }
       }
@@ -674,7 +674,7 @@
       "description": "Löst aus, wenn der Luftfeuchtigkeitssensor der Pflanze wieder Updates sendet.",
       "fields": {
         "for": {
-          "name": "Für",
+          "name": "Für mindestens",
           "description": "Der Sensor muss mindestens so lange in diesem Zustand bleiben, bevor der Auslöser ausgelöst wird."
         }
       }
@@ -684,7 +684,7 @@
       "description": "Löst aus, wenn der Beleuchtungsstärkesensor der Pflanze keine Updates mehr sendet.",
       "fields": {
         "for": {
-          "name": "Für",
+          "name": "Für mindestens",
           "description": "Der Sensor muss mindestens so lange in diesem Zustand bleiben, bevor der Auslöser ausgelöst wird."
         }
       }
@@ -694,7 +694,7 @@
       "description": "Löst aus, wenn der Beleuchtungsstärkesensor der Pflanze wieder Updates sendet.",
       "fields": {
         "for": {
-          "name": "Für",
+          "name": "Für mindestens",
           "description": "Der Sensor muss mindestens so lange in diesem Zustand bleiben, bevor der Auslöser ausgelöst wird."
         }
       }
@@ -704,7 +704,7 @@
       "description": "Löst aus, wenn der CO2-Sensor der Pflanze keine Updates mehr sendet.",
       "fields": {
         "for": {
-          "name": "Für",
+          "name": "Für mindestens",
           "description": "Der Sensor muss mindestens so lange in diesem Zustand bleiben, bevor der Auslöser ausgelöst wird."
         }
       }
@@ -714,7 +714,7 @@
       "description": "Löst aus, wenn der CO2-Sensor der Pflanze wieder Updates sendet.",
       "fields": {
         "for": {
-          "name": "Für",
+          "name": "Für mindestens",
           "description": "Der Sensor muss mindestens so lange in diesem Zustand bleiben, bevor der Auslöser ausgelöst wird."
         }
       }
@@ -838,7 +838,7 @@
       "description": "Ist erfüllt, solange der Bodenfeuchtigkeitssensor der Pflanze für die konfigurierte Zeit keine Updates gesendet hat.",
       "fields": {
         "for": {
-          "name": "Für",
+          "name": "Für mindestens",
           "description": "Der Sensor muss mindestens so lange keine Daten geliefert haben, damit die Bedingung erfüllt ist."
         }
       }
@@ -848,7 +848,7 @@
       "description": "Ist erfüllt, solange der Leitfähigkeitssensor der Pflanze für die konfigurierte Zeit keine Updates gesendet hat.",
       "fields": {
         "for": {
-          "name": "Für",
+          "name": "Für mindestens",
           "description": "Der Sensor muss mindestens so lange keine Daten geliefert haben, damit die Bedingung erfüllt ist."
         }
       }
@@ -858,7 +858,7 @@
       "description": "Ist erfüllt, solange der Temperatursensor der Pflanze für die konfigurierte Zeit keine Updates gesendet hat.",
       "fields": {
         "for": {
-          "name": "Für",
+          "name": "Für mindestens",
           "description": "Der Sensor muss mindestens so lange keine Daten geliefert haben, damit die Bedingung erfüllt ist."
         }
       }
@@ -868,7 +868,7 @@
       "description": "Ist erfüllt, solange der Bodentemperatursensor der Pflanze für die konfigurierte Zeit keine Updates gesendet hat.",
       "fields": {
         "for": {
-          "name": "Für",
+          "name": "Für mindestens",
           "description": "Der Sensor muss mindestens so lange keine Daten geliefert haben, damit die Bedingung erfüllt ist."
         }
       }
@@ -878,7 +878,7 @@
       "description": "Ist erfüllt, solange der Luftfeuchtigkeitssensor der Pflanze für die konfigurierte Zeit keine Updates gesendet hat.",
       "fields": {
         "for": {
-          "name": "Für",
+          "name": "Für mindestens",
           "description": "Der Sensor muss mindestens so lange keine Daten geliefert haben, damit die Bedingung erfüllt ist."
         }
       }
@@ -888,7 +888,7 @@
       "description": "Ist erfüllt, solange der Beleuchtungsstärkesensor der Pflanze für die konfigurierte Zeit keine Updates gesendet hat.",
       "fields": {
         "for": {
-          "name": "Für",
+          "name": "Für mindestens",
           "description": "Der Sensor muss mindestens so lange keine Daten geliefert haben, damit die Bedingung erfüllt ist."
         }
       }
@@ -898,7 +898,7 @@
       "description": "Ist erfüllt, solange der CO2-Sensor der Pflanze für die konfigurierte Zeit keine Updates gesendet hat.",
       "fields": {
         "for": {
-          "name": "Für",
+          "name": "Für mindestens",
           "description": "Der Sensor muss mindestens so lange keine Daten geliefert haben, damit die Bedingung erfüllt ist."
         }
       }
