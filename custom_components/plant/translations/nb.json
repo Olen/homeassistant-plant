@@ -294,7 +294,7 @@
       "description": "Trigges når planten får et problem (en måling går over eller under grenseverdien).",
       "fields": {
         "behavior": {
-          "name": "Oppførsel",
+          "name": "Trigg når",
           "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
@@ -304,7 +304,7 @@
       "description": "Trigges når plantens siste problem er løst og alle målinger er normale igjen.",
       "fields": {
         "behavior": {
-          "name": "Oppførsel",
+          "name": "Trigg når",
           "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
@@ -314,7 +314,7 @@
       "description": "Trigges når plantens jordfuktighet faller under det konfigurerte minimumet.",
       "fields": {
         "behavior": {
-          "name": "Oppførsel",
+          "name": "Trigg når",
           "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
@@ -324,7 +324,7 @@
       "description": "Trigges når plantens jordfuktighet stiger over det konfigurerte maksimumet.",
       "fields": {
         "behavior": {
-          "name": "Oppførsel",
+          "name": "Trigg når",
           "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
@@ -334,7 +334,7 @@
       "description": "Trigges når plantens jordfuktighet går tilbake til normalområdet.",
       "fields": {
         "behavior": {
-          "name": "Oppførsel",
+          "name": "Trigg når",
           "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
@@ -344,7 +344,7 @@
       "description": "Trigges når plantens ledningsevne faller under det konfigurerte minimumet.",
       "fields": {
         "behavior": {
-          "name": "Oppførsel",
+          "name": "Trigg når",
           "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
@@ -354,7 +354,7 @@
       "description": "Trigges når plantens ledningsevne stiger over det konfigurerte maksimumet.",
       "fields": {
         "behavior": {
-          "name": "Oppførsel",
+          "name": "Trigg når",
           "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
@@ -364,7 +364,7 @@
       "description": "Trigges når plantens ledningsevne går tilbake til normalområdet.",
       "fields": {
         "behavior": {
-          "name": "Oppførsel",
+          "name": "Trigg når",
           "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
@@ -374,7 +374,7 @@
       "description": "Trigges når plantens temperatur faller under det konfigurerte minimumet.",
       "fields": {
         "behavior": {
-          "name": "Oppførsel",
+          "name": "Trigg når",
           "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
@@ -384,7 +384,7 @@
       "description": "Trigges når plantens temperatur stiger over det konfigurerte maksimumet.",
       "fields": {
         "behavior": {
-          "name": "Oppførsel",
+          "name": "Trigg når",
           "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
@@ -394,7 +394,7 @@
       "description": "Trigges når plantens temperatur går tilbake til normalområdet.",
       "fields": {
         "behavior": {
-          "name": "Oppførsel",
+          "name": "Trigg når",
           "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
@@ -404,7 +404,7 @@
       "description": "Trigges når plantens jordtemperatur faller under det konfigurerte minimumet.",
       "fields": {
         "behavior": {
-          "name": "Oppførsel",
+          "name": "Trigg når",
           "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
@@ -414,7 +414,7 @@
       "description": "Trigges når plantens jordtemperatur stiger over det konfigurerte maksimumet.",
       "fields": {
         "behavior": {
-          "name": "Oppførsel",
+          "name": "Trigg når",
           "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
@@ -424,7 +424,7 @@
       "description": "Trigges når plantens jordtemperatur går tilbake til normalområdet.",
       "fields": {
         "behavior": {
-          "name": "Oppførsel",
+          "name": "Trigg når",
           "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
@@ -434,7 +434,7 @@
       "description": "Trigges når plantens luftfuktighet faller under det konfigurerte minimumet.",
       "fields": {
         "behavior": {
-          "name": "Oppførsel",
+          "name": "Trigg når",
           "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
@@ -444,7 +444,7 @@
       "description": "Trigges når plantens luftfuktighet stiger over det konfigurerte maksimumet.",
       "fields": {
         "behavior": {
-          "name": "Oppførsel",
+          "name": "Trigg når",
           "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
@@ -454,7 +454,7 @@
       "description": "Trigges når plantens luftfuktighet går tilbake til normalområdet.",
       "fields": {
         "behavior": {
-          "name": "Oppførsel",
+          "name": "Trigg når",
           "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
@@ -464,7 +464,7 @@
       "description": "Trigges når plantens lysstyrke faller under det konfigurerte minimumet.",
       "fields": {
         "behavior": {
-          "name": "Oppførsel",
+          "name": "Trigg når",
           "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
@@ -474,7 +474,7 @@
       "description": "Trigges når plantens lysstyrke stiger over det konfigurerte maksimumet.",
       "fields": {
         "behavior": {
-          "name": "Oppførsel",
+          "name": "Trigg når",
           "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
@@ -484,7 +484,7 @@
       "description": "Trigges når plantens lysstyrke går tilbake til normalområdet.",
       "fields": {
         "behavior": {
-          "name": "Oppførsel",
+          "name": "Trigg når",
           "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
@@ -494,7 +494,7 @@
       "description": "Trigges når plantens CO2-nivå faller under det konfigurerte minimumet.",
       "fields": {
         "behavior": {
-          "name": "Oppførsel",
+          "name": "Trigg når",
           "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
@@ -504,7 +504,7 @@
       "description": "Trigges når plantens CO2-nivå stiger over det konfigurerte maksimumet.",
       "fields": {
         "behavior": {
-          "name": "Oppførsel",
+          "name": "Trigg når",
           "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
@@ -514,7 +514,7 @@
       "description": "Trigges når plantens CO2-nivå går tilbake til normalområdet.",
       "fields": {
         "behavior": {
-          "name": "Oppførsel",
+          "name": "Trigg når",
           "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
@@ -524,7 +524,7 @@
       "description": "Trigges når plantens DLI faller under det konfigurerte minimumet.",
       "fields": {
         "behavior": {
-          "name": "Oppførsel",
+          "name": "Trigg når",
           "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
@@ -534,7 +534,7 @@
       "description": "Trigges når plantens DLI stiger over det konfigurerte maksimumet.",
       "fields": {
         "behavior": {
-          "name": "Oppførsel",
+          "name": "Trigg når",
           "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
@@ -544,7 +544,7 @@
       "description": "Trigges når plantens DLI går tilbake til normalområdet.",
       "fields": {
         "behavior": {
-          "name": "Oppførsel",
+          "name": "Trigg når",
           "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
@@ -554,7 +554,7 @@
       "description": "Trigges når plantens VPD faller under det konfigurerte minimumet.",
       "fields": {
         "behavior": {
-          "name": "Oppførsel",
+          "name": "Trigg når",
           "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
@@ -564,7 +564,7 @@
       "description": "Trigges når plantens VPD stiger over det konfigurerte maksimumet.",
       "fields": {
         "behavior": {
-          "name": "Oppførsel",
+          "name": "Trigg når",
           "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
@@ -574,7 +574,7 @@
       "description": "Trigges når plantens VPD går tilbake til normalområdet.",
       "fields": {
         "behavior": {
-          "name": "Oppførsel",
+          "name": "Trigg når",
           "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
