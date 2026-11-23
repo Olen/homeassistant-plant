@@ -241,16 +241,16 @@
           "force_update": "Tving oppdatering av data fra OpenPlantbook",
           "display_pid": "Planteart som skal vises",
           "entity_picture": "Bilde-URL. Oppdateres automatisk hvis arten finnes i OpenPlantbook",
-          "illuminance_trigger": "Bruk lysstyrke som problemutløser",
-          "dli_trigger": "Bruk daglig lysintegral (DLI) som problemutløser",
-          "humidity_trigger": "Bruk luftfuktighet som problemutløser",
-          "conductivity_trigger": "Bruk ledningsevne som problemutløser",
-          "moisture_trigger": "Bruk jordfuktighet som problemutløser",
+          "illuminance_trigger": "Bruk lysstyrke som trigger for «problem»-status",
+          "dli_trigger": "Bruk daglig lysintegral (DLI) som trigger for «problem»-status",
+          "humidity_trigger": "Bruk luftfuktighet som trigger for «problem»-status",
+          "conductivity_trigger": "Bruk ledningsevne som trigger for «problem»-status",
+          "moisture_trigger": "Bruk jordfuktighet som trigger for «problem»-status",
           "moisture_grace_period": "Moisture grace period after watering (seconds, 0-86400)",
-          "temperature_trigger": "Bruk temperatur som problemutløser",
-          "co2_trigger": "Bruk CO2 som problemutløser",
-          "soil_temperature_trigger": "Bruk jordtemperatur som problemutløser",
-          "vpd_trigger": "Bruk VPD som problemutløser"
+          "temperature_trigger": "Bruk temperatur som trigger for «problem»-status",
+          "co2_trigger": "Bruk CO2 som trigger for «problem»-status",
+          "soil_temperature_trigger": "Bruk jordtemperatur som trigger for «problem»-status",
+          "vpd_trigger": "Bruk VPD som trigger for «problem»-status"
         }
       },
       "replace_sensor": {
@@ -291,431 +291,431 @@
   "triggers": {
     "problem_detected": {
       "name": "Problem oppdaget",
-      "description": "Utløses når planten får et problem (en måling går over eller under grenseverdien).",
+      "description": "Trigges når planten får et problem (en måling går over eller under grenseverdien).",
       "fields": {
         "behavior": {
           "name": "Oppførsel",
-          "description": "Om utløseren aktiveres for hver valgte plante eller bare én gang for gruppen."
+          "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
     },
     "problem_cleared": {
       "name": "Problem løst",
-      "description": "Utløses når plantens siste problem er løst og alle målinger er normale igjen.",
+      "description": "Trigges når plantens siste problem er løst og alle målinger er normale igjen.",
       "fields": {
         "behavior": {
           "name": "Oppførsel",
-          "description": "Om utløseren aktiveres for hver valgte plante eller bare én gang for gruppen."
+          "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
     },
     "moisture_became_low": {
       "name": "Jordfuktighet ble lav",
-      "description": "Utløses når plantens jordfuktighet faller under det konfigurerte minimumet.",
+      "description": "Trigges når plantens jordfuktighet faller under det konfigurerte minimumet.",
       "fields": {
         "behavior": {
           "name": "Oppførsel",
-          "description": "Om utløseren aktiveres for hver valgte plante eller bare én gang for gruppen."
+          "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
     },
     "moisture_became_high": {
       "name": "Jordfuktighet ble høy",
-      "description": "Utløses når plantens jordfuktighet stiger over det konfigurerte maksimumet.",
+      "description": "Trigges når plantens jordfuktighet stiger over det konfigurerte maksimumet.",
       "fields": {
         "behavior": {
           "name": "Oppførsel",
-          "description": "Om utløseren aktiveres for hver valgte plante eller bare én gang for gruppen."
+          "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
     },
     "moisture_became_ok": {
       "name": "Jordfuktighet ble normal",
-      "description": "Utløses når plantens jordfuktighet går tilbake til normalområdet.",
+      "description": "Trigges når plantens jordfuktighet går tilbake til normalområdet.",
       "fields": {
         "behavior": {
           "name": "Oppførsel",
-          "description": "Om utløseren aktiveres for hver valgte plante eller bare én gang for gruppen."
+          "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
     },
     "conductivity_became_low": {
       "name": "Ledningsevne ble lav",
-      "description": "Utløses når plantens ledningsevne faller under det konfigurerte minimumet.",
+      "description": "Trigges når plantens ledningsevne faller under det konfigurerte minimumet.",
       "fields": {
         "behavior": {
           "name": "Oppførsel",
-          "description": "Om utløseren aktiveres for hver valgte plante eller bare én gang for gruppen."
+          "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
     },
     "conductivity_became_high": {
       "name": "Ledningsevne ble høy",
-      "description": "Utløses når plantens ledningsevne stiger over det konfigurerte maksimumet.",
+      "description": "Trigges når plantens ledningsevne stiger over det konfigurerte maksimumet.",
       "fields": {
         "behavior": {
           "name": "Oppførsel",
-          "description": "Om utløseren aktiveres for hver valgte plante eller bare én gang for gruppen."
+          "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
     },
     "conductivity_became_ok": {
       "name": "Ledningsevne ble normal",
-      "description": "Utløses når plantens ledningsevne går tilbake til normalområdet.",
+      "description": "Trigges når plantens ledningsevne går tilbake til normalområdet.",
       "fields": {
         "behavior": {
           "name": "Oppførsel",
-          "description": "Om utløseren aktiveres for hver valgte plante eller bare én gang for gruppen."
+          "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
     },
     "temperature_became_low": {
       "name": "Temperatur ble lav",
-      "description": "Utløses når plantens temperatur faller under det konfigurerte minimumet.",
+      "description": "Trigges når plantens temperatur faller under det konfigurerte minimumet.",
       "fields": {
         "behavior": {
           "name": "Oppførsel",
-          "description": "Om utløseren aktiveres for hver valgte plante eller bare én gang for gruppen."
+          "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
     },
     "temperature_became_high": {
       "name": "Temperatur ble høy",
-      "description": "Utløses når plantens temperatur stiger over det konfigurerte maksimumet.",
+      "description": "Trigges når plantens temperatur stiger over det konfigurerte maksimumet.",
       "fields": {
         "behavior": {
           "name": "Oppførsel",
-          "description": "Om utløseren aktiveres for hver valgte plante eller bare én gang for gruppen."
+          "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
     },
     "temperature_became_ok": {
       "name": "Temperatur ble normal",
-      "description": "Utløses når plantens temperatur går tilbake til normalområdet.",
+      "description": "Trigges når plantens temperatur går tilbake til normalområdet.",
       "fields": {
         "behavior": {
           "name": "Oppførsel",
-          "description": "Om utløseren aktiveres for hver valgte plante eller bare én gang for gruppen."
+          "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
     },
     "soil_temperature_became_low": {
       "name": "Jordtemperatur ble lav",
-      "description": "Utløses når plantens jordtemperatur faller under det konfigurerte minimumet.",
+      "description": "Trigges når plantens jordtemperatur faller under det konfigurerte minimumet.",
       "fields": {
         "behavior": {
           "name": "Oppførsel",
-          "description": "Om utløseren aktiveres for hver valgte plante eller bare én gang for gruppen."
+          "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
     },
     "soil_temperature_became_high": {
       "name": "Jordtemperatur ble høy",
-      "description": "Utløses når plantens jordtemperatur stiger over det konfigurerte maksimumet.",
+      "description": "Trigges når plantens jordtemperatur stiger over det konfigurerte maksimumet.",
       "fields": {
         "behavior": {
           "name": "Oppførsel",
-          "description": "Om utløseren aktiveres for hver valgte plante eller bare én gang for gruppen."
+          "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
     },
     "soil_temperature_became_ok": {
       "name": "Jordtemperatur ble normal",
-      "description": "Utløses når plantens jordtemperatur går tilbake til normalområdet.",
+      "description": "Trigges når plantens jordtemperatur går tilbake til normalområdet.",
       "fields": {
         "behavior": {
           "name": "Oppførsel",
-          "description": "Om utløseren aktiveres for hver valgte plante eller bare én gang for gruppen."
+          "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
     },
     "humidity_became_low": {
       "name": "Luftfuktighet ble lav",
-      "description": "Utløses når plantens luftfuktighet faller under det konfigurerte minimumet.",
+      "description": "Trigges når plantens luftfuktighet faller under det konfigurerte minimumet.",
       "fields": {
         "behavior": {
           "name": "Oppførsel",
-          "description": "Om utløseren aktiveres for hver valgte plante eller bare én gang for gruppen."
+          "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
     },
     "humidity_became_high": {
       "name": "Luftfuktighet ble høy",
-      "description": "Utløses når plantens luftfuktighet stiger over det konfigurerte maksimumet.",
+      "description": "Trigges når plantens luftfuktighet stiger over det konfigurerte maksimumet.",
       "fields": {
         "behavior": {
           "name": "Oppførsel",
-          "description": "Om utløseren aktiveres for hver valgte plante eller bare én gang for gruppen."
+          "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
     },
     "humidity_became_ok": {
       "name": "Luftfuktighet ble normal",
-      "description": "Utløses når plantens luftfuktighet går tilbake til normalområdet.",
+      "description": "Trigges når plantens luftfuktighet går tilbake til normalområdet.",
       "fields": {
         "behavior": {
           "name": "Oppførsel",
-          "description": "Om utløseren aktiveres for hver valgte plante eller bare én gang for gruppen."
+          "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
     },
     "illuminance_became_low": {
       "name": "Lysstyrke ble lav",
-      "description": "Utløses når plantens lysstyrke faller under det konfigurerte minimumet.",
+      "description": "Trigges når plantens lysstyrke faller under det konfigurerte minimumet.",
       "fields": {
         "behavior": {
           "name": "Oppførsel",
-          "description": "Om utløseren aktiveres for hver valgte plante eller bare én gang for gruppen."
+          "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
     },
     "illuminance_became_high": {
       "name": "Lysstyrke ble høy",
-      "description": "Utløses når plantens lysstyrke stiger over det konfigurerte maksimumet.",
+      "description": "Trigges når plantens lysstyrke stiger over det konfigurerte maksimumet.",
       "fields": {
         "behavior": {
           "name": "Oppførsel",
-          "description": "Om utløseren aktiveres for hver valgte plante eller bare én gang for gruppen."
+          "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
     },
     "illuminance_became_ok": {
       "name": "Lysstyrke ble normal",
-      "description": "Utløses når plantens lysstyrke går tilbake til normalområdet.",
+      "description": "Trigges når plantens lysstyrke går tilbake til normalområdet.",
       "fields": {
         "behavior": {
           "name": "Oppførsel",
-          "description": "Om utløseren aktiveres for hver valgte plante eller bare én gang for gruppen."
+          "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
     },
     "co2_became_low": {
       "name": "CO2-nivå ble lavt",
-      "description": "Utløses når plantens CO2-nivå faller under det konfigurerte minimumet.",
+      "description": "Trigges når plantens CO2-nivå faller under det konfigurerte minimumet.",
       "fields": {
         "behavior": {
           "name": "Oppførsel",
-          "description": "Om utløseren aktiveres for hver valgte plante eller bare én gang for gruppen."
+          "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
     },
     "co2_became_high": {
       "name": "CO2-nivå ble høyt",
-      "description": "Utløses når plantens CO2-nivå stiger over det konfigurerte maksimumet.",
+      "description": "Trigges når plantens CO2-nivå stiger over det konfigurerte maksimumet.",
       "fields": {
         "behavior": {
           "name": "Oppførsel",
-          "description": "Om utløseren aktiveres for hver valgte plante eller bare én gang for gruppen."
+          "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
     },
     "co2_became_ok": {
       "name": "CO2-nivå ble normalt",
-      "description": "Utløses når plantens CO2-nivå går tilbake til normalområdet.",
+      "description": "Trigges når plantens CO2-nivå går tilbake til normalområdet.",
       "fields": {
         "behavior": {
           "name": "Oppførsel",
-          "description": "Om utløseren aktiveres for hver valgte plante eller bare én gang for gruppen."
+          "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
     },
     "dli_became_low": {
       "name": "DLI ble lav",
-      "description": "Utløses når plantens DLI faller under det konfigurerte minimumet.",
+      "description": "Trigges når plantens DLI faller under det konfigurerte minimumet.",
       "fields": {
         "behavior": {
           "name": "Oppførsel",
-          "description": "Om utløseren aktiveres for hver valgte plante eller bare én gang for gruppen."
+          "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
     },
     "dli_became_high": {
       "name": "DLI ble høy",
-      "description": "Utløses når plantens DLI stiger over det konfigurerte maksimumet.",
+      "description": "Trigges når plantens DLI stiger over det konfigurerte maksimumet.",
       "fields": {
         "behavior": {
           "name": "Oppførsel",
-          "description": "Om utløseren aktiveres for hver valgte plante eller bare én gang for gruppen."
+          "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
     },
     "dli_became_ok": {
       "name": "DLI ble normal",
-      "description": "Utløses når plantens DLI går tilbake til normalområdet.",
+      "description": "Trigges når plantens DLI går tilbake til normalområdet.",
       "fields": {
         "behavior": {
           "name": "Oppførsel",
-          "description": "Om utløseren aktiveres for hver valgte plante eller bare én gang for gruppen."
+          "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
     },
     "vpd_became_low": {
       "name": "VPD ble lav",
-      "description": "Utløses når plantens VPD faller under det konfigurerte minimumet.",
+      "description": "Trigges når plantens VPD faller under det konfigurerte minimumet.",
       "fields": {
         "behavior": {
           "name": "Oppførsel",
-          "description": "Om utløseren aktiveres for hver valgte plante eller bare én gang for gruppen."
+          "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
     },
     "vpd_became_high": {
       "name": "VPD ble høy",
-      "description": "Utløses når plantens VPD stiger over det konfigurerte maksimumet.",
+      "description": "Trigges når plantens VPD stiger over det konfigurerte maksimumet.",
       "fields": {
         "behavior": {
           "name": "Oppførsel",
-          "description": "Om utløseren aktiveres for hver valgte plante eller bare én gang for gruppen."
+          "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
     },
     "vpd_became_ok": {
       "name": "VPD ble normal",
-      "description": "Utløses når plantens VPD går tilbake til normalområdet.",
+      "description": "Trigges når plantens VPD går tilbake til normalområdet.",
       "fields": {
         "behavior": {
           "name": "Oppførsel",
-          "description": "Om utløseren aktiveres for hver valgte plante eller bare én gang for gruppen."
+          "description": "Om den trigges for hver valgte plante eller bare én gang for gruppen."
         }
       }
     },
     "moisture_sensor_became_stale": {
-      "name": "Jordfuktighetsensor ble utdatert",
-      "description": "Utløses når plantens jordfuktighetsensor slutter å sende oppdateringer.",
+      "name": "Jordfuktighetssensor ble utdatert",
+      "description": "Trigges når plantens jordfuktighetssensor slutter å sende oppdateringer.",
       "fields": {
         "for": {
-          "name": "I",
-          "description": "Sensoren må ha vært i denne tilstanden i minst så lang tid før utløseren aktiveres."
+          "name": "I minst",
+          "description": "Sensoren må ha vært i denne tilstanden i minst så lang tid før den trigges."
         }
       }
     },
     "moisture_sensor_became_fresh": {
-      "name": "Jordfuktighetsensor ble aktiv",
-      "description": "Utløses når plantens jordfuktighetsensor begynner å sende oppdateringer igjen.",
+      "name": "Jordfuktighetssensor ble aktiv",
+      "description": "Trigges når plantens jordfuktighetssensor begynner å sende oppdateringer igjen.",
       "fields": {
         "for": {
-          "name": "I",
-          "description": "Sensoren må ha vært i denne tilstanden i minst så lang tid før utløseren aktiveres."
+          "name": "I minst",
+          "description": "Sensoren må ha vært i denne tilstanden i minst så lang tid før den trigges."
         }
       }
     },
     "conductivity_sensor_became_stale": {
       "name": "Ledningsevnesensor ble utdatert",
-      "description": "Utløses når plantens ledningsevnesensor slutter å sende oppdateringer.",
+      "description": "Trigges når plantens ledningsevnesensor slutter å sende oppdateringer.",
       "fields": {
         "for": {
-          "name": "I",
-          "description": "Sensoren må ha vært i denne tilstanden i minst så lang tid før utløseren aktiveres."
+          "name": "I minst",
+          "description": "Sensoren må ha vært i denne tilstanden i minst så lang tid før den trigges."
         }
       }
     },
     "conductivity_sensor_became_fresh": {
       "name": "Ledningsevnesensor ble aktiv",
-      "description": "Utløses når plantens ledningsevnesensor begynner å sende oppdateringer igjen.",
+      "description": "Trigges når plantens ledningsevnesensor begynner å sende oppdateringer igjen.",
       "fields": {
         "for": {
-          "name": "I",
-          "description": "Sensoren må ha vært i denne tilstanden i minst så lang tid før utløseren aktiveres."
+          "name": "I minst",
+          "description": "Sensoren må ha vært i denne tilstanden i minst så lang tid før den trigges."
         }
       }
     },
     "temperature_sensor_became_stale": {
       "name": "Temperatursensor ble utdatert",
-      "description": "Utløses når plantens temperatursensor slutter å sende oppdateringer.",
+      "description": "Trigges når plantens temperatursensor slutter å sende oppdateringer.",
       "fields": {
         "for": {
-          "name": "I",
-          "description": "Sensoren må ha vært i denne tilstanden i minst så lang tid før utløseren aktiveres."
+          "name": "I minst",
+          "description": "Sensoren må ha vært i denne tilstanden i minst så lang tid før den trigges."
         }
       }
     },
     "temperature_sensor_became_fresh": {
       "name": "Temperatursensor ble aktiv",
-      "description": "Utløses når plantens temperatursensor begynner å sende oppdateringer igjen.",
+      "description": "Trigges når plantens temperatursensor begynner å sende oppdateringer igjen.",
       "fields": {
         "for": {
-          "name": "I",
-          "description": "Sensoren må ha vært i denne tilstanden i minst så lang tid før utløseren aktiveres."
+          "name": "I minst",
+          "description": "Sensoren må ha vært i denne tilstanden i minst så lang tid før den trigges."
         }
       }
     },
     "soil_temperature_sensor_became_stale": {
       "name": "Jordtemperatursensor ble utdatert",
-      "description": "Utløses når plantens jordtemperatursensor slutter å sende oppdateringer.",
+      "description": "Trigges når plantens jordtemperatursensor slutter å sende oppdateringer.",
       "fields": {
         "for": {
-          "name": "I",
-          "description": "Sensoren må ha vært i denne tilstanden i minst så lang tid før utløseren aktiveres."
+          "name": "I minst",
+          "description": "Sensoren må ha vært i denne tilstanden i minst så lang tid før den trigges."
         }
       }
     },
     "soil_temperature_sensor_became_fresh": {
       "name": "Jordtemperatursensor ble aktiv",
-      "description": "Utløses når plantens jordtemperatursensor begynner å sende oppdateringer igjen.",
+      "description": "Trigges når plantens jordtemperatursensor begynner å sende oppdateringer igjen.",
       "fields": {
         "for": {
-          "name": "I",
-          "description": "Sensoren må ha vært i denne tilstanden i minst så lang tid før utløseren aktiveres."
+          "name": "I minst",
+          "description": "Sensoren må ha vært i denne tilstanden i minst så lang tid før den trigges."
         }
       }
     },
     "humidity_sensor_became_stale": {
-      "name": "Luftfuktighetsensor ble utdatert",
-      "description": "Utløses når plantens luftfuktighetsensor slutter å sende oppdateringer.",
+      "name": "Luftfuktighetssensor ble utdatert",
+      "description": "Trigges når plantens luftfuktighetssensor slutter å sende oppdateringer.",
       "fields": {
         "for": {
-          "name": "I",
-          "description": "Sensoren må ha vært i denne tilstanden i minst så lang tid før utløseren aktiveres."
+          "name": "I minst",
+          "description": "Sensoren må ha vært i denne tilstanden i minst så lang tid før den trigges."
         }
       }
     },
     "humidity_sensor_became_fresh": {
-      "name": "Luftfuktighetsensor ble aktiv",
-      "description": "Utløses når plantens luftfuktighetsensor begynner å sende oppdateringer igjen.",
+      "name": "Luftfuktighetssensor ble aktiv",
+      "description": "Trigges når plantens luftfuktighetssensor begynner å sende oppdateringer igjen.",
       "fields": {
         "for": {
-          "name": "I",
-          "description": "Sensoren må ha vært i denne tilstanden i minst så lang tid før utløseren aktiveres."
+          "name": "I minst",
+          "description": "Sensoren må ha vært i denne tilstanden i minst så lang tid før den trigges."
         }
       }
     },
     "illuminance_sensor_became_stale": {
       "name": "Lysstyrkesensor ble utdatert",
-      "description": "Utløses når plantens lysstyrkesensor slutter å sende oppdateringer.",
+      "description": "Trigges når plantens lysstyrkesensor slutter å sende oppdateringer.",
       "fields": {
         "for": {
-          "name": "I",
-          "description": "Sensoren må ha vært i denne tilstanden i minst så lang tid før utløseren aktiveres."
+          "name": "I minst",
+          "description": "Sensoren må ha vært i denne tilstanden i minst så lang tid før den trigges."
         }
       }
     },
     "illuminance_sensor_became_fresh": {
       "name": "Lysstyrkesensor ble aktiv",
-      "description": "Utløses når plantens lysstyrkesensor begynner å sende oppdateringer igjen.",
+      "description": "Trigges når plantens lysstyrkesensor begynner å sende oppdateringer igjen.",
       "fields": {
         "for": {
-          "name": "I",
-          "description": "Sensoren må ha vært i denne tilstanden i minst så lang tid før utløseren aktiveres."
+          "name": "I minst",
+          "description": "Sensoren må ha vært i denne tilstanden i minst så lang tid før den trigges."
         }
       }
     },
     "co2_sensor_became_stale": {
       "name": "CO2-sensor ble utdatert",
-      "description": "Utløses når plantens CO2-sensor slutter å sende oppdateringer.",
+      "description": "Trigges når plantens CO2-sensor slutter å sende oppdateringer.",
       "fields": {
         "for": {
-          "name": "I",
-          "description": "Sensoren må ha vært i denne tilstanden i minst så lang tid før utløseren aktiveres."
+          "name": "I minst",
+          "description": "Sensoren må ha vært i denne tilstanden i minst så lang tid før den trigges."
         }
       }
     },
     "co2_sensor_became_fresh": {
       "name": "CO2-sensor ble aktiv",
-      "description": "Utløses når plantens CO2-sensor begynner å sende oppdateringer igjen.",
+      "description": "Trigges når plantens CO2-sensor begynner å sende oppdateringer igjen.",
       "fields": {
         "for": {
-          "name": "I",
-          "description": "Sensoren må ha vært i denne tilstanden i minst så lang tid før utløseren aktiveres."
+          "name": "I minst",
+          "description": "Sensoren må ha vært i denne tilstanden i minst så lang tid før den trigges."
         }
       }
     }
@@ -834,11 +834,11 @@
       "description": "Er oppfylt så lenge plantens VPD er innenfor normalområdet."
     },
     "moisture_sensor_is_stale": {
-      "name": "Jordfuktighetsensor er utdatert",
-      "description": "Er oppfylt så lenge plantens jordfuktighetsensor ikke har sendt oppdateringer i den konfigurerte tiden.",
+      "name": "Jordfuktighetssensor er utdatert",
+      "description": "Er oppfylt så lenge plantens jordfuktighetssensor ikke har sendt oppdateringer i den konfigurerte tiden.",
       "fields": {
         "for": {
-          "name": "I",
+          "name": "I minst",
           "description": "Sensoren må ha vært utdatert i minst så lang tid for at betingelsen skal være oppfylt."
         }
       }
@@ -848,7 +848,7 @@
       "description": "Er oppfylt så lenge plantens ledningsevnesensor ikke har sendt oppdateringer i den konfigurerte tiden.",
       "fields": {
         "for": {
-          "name": "I",
+          "name": "I minst",
           "description": "Sensoren må ha vært utdatert i minst så lang tid for at betingelsen skal være oppfylt."
         }
       }
@@ -858,7 +858,7 @@
       "description": "Er oppfylt så lenge plantens temperatursensor ikke har sendt oppdateringer i den konfigurerte tiden.",
       "fields": {
         "for": {
-          "name": "I",
+          "name": "I minst",
           "description": "Sensoren må ha vært utdatert i minst så lang tid for at betingelsen skal være oppfylt."
         }
       }
@@ -868,17 +868,17 @@
       "description": "Er oppfylt så lenge plantens jordtemperatursensor ikke har sendt oppdateringer i den konfigurerte tiden.",
       "fields": {
         "for": {
-          "name": "I",
+          "name": "I minst",
           "description": "Sensoren må ha vært utdatert i minst så lang tid for at betingelsen skal være oppfylt."
         }
       }
     },
     "humidity_sensor_is_stale": {
-      "name": "Luftfuktighetsensor er utdatert",
-      "description": "Er oppfylt så lenge plantens luftfuktighetsensor ikke har sendt oppdateringer i den konfigurerte tiden.",
+      "name": "Luftfuktighetssensor er utdatert",
+      "description": "Er oppfylt så lenge plantens luftfuktighetssensor ikke har sendt oppdateringer i den konfigurerte tiden.",
       "fields": {
         "for": {
-          "name": "I",
+          "name": "I minst",
           "description": "Sensoren må ha vært utdatert i minst så lang tid for at betingelsen skal være oppfylt."
         }
       }
@@ -888,7 +888,7 @@
       "description": "Er oppfylt så lenge plantens lysstyrkesensor ikke har sendt oppdateringer i den konfigurerte tiden.",
       "fields": {
         "for": {
-          "name": "I",
+          "name": "I minst",
           "description": "Sensoren må ha vært utdatert i minst så lang tid for at betingelsen skal være oppfylt."
         }
       }
@@ -898,7 +898,7 @@
       "description": "Er oppfylt så lenge plantens CO2-sensor ikke har sendt oppdateringer i den konfigurerte tiden.",
       "fields": {
         "for": {
-          "name": "I",
+          "name": "I minst",
           "description": "Sensoren må ha vært utdatert i minst så lang tid for at betingelsen skal være oppfylt."
         }
       }
