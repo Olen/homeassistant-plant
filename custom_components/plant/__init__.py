@@ -900,7 +900,7 @@ class PlantDevice(RestoreEntity):
     @property
     def websocket_info(self) -> dict:
         """Websocket response"""
-        if not self.plant_complete:
+        if not self.plant_complete or self.care_events is None:
             # We are not fully set up, so we just return an empty dict for now
             return {}
 
@@ -987,9 +987,11 @@ class PlantDevice(RestoreEntity):
         for care, event in self.care_events.items():
             events[care] = event.entity_id
         todo_list = None if self.care_tasks is None else self.care_tasks.todo_entity_id
-        next_watering = er.async_get(self.hass).async_get_entity_id(
-            "sensor", DOMAIN, f"{self._config.entry_id}-next-watering"
-        )
+        next_watering = None
+        if self._config.data[FLOW_PLANT_INFO].get(FLOW_SENSOR_MOISTURE):
+            next_watering = er.async_get(self.hass).async_get_entity_id(
+                "sensor", DOMAIN, f"{self._config.entry_id}-next-watering"
+            )
         return {
             "todo_list": todo_list,
             "modes": self.care_modes,

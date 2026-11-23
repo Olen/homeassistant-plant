@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 from datetime import timedelta
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 from uuid import uuid4
 
 import pytest
@@ -331,6 +331,27 @@ class TestWatering:
         await hass.async_block_till_done()
 
         assert _current(todo_list, left_open).status == TodoItemStatus.COMPLETED
+
+    async def test_fertilize_item_left_open_while_away_is_ticked_off_at_start(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        """Fertilized while Home Assistant was down: conductivity is fine at start."""
+        todo_list = await _setup_todo_list(hass)
+        left_open = todo_list.add_existing(
+            summary=f"Fertilize {TEST_PLANT_NAME}",
+            status=TodoItemStatus.NEEDS_ACTION,
+            description=f"{PLANT_ENTITY_ID} · fertilize",
+        )
+        entry = await _setup_plant(hass, plant_config_data, {})
+        await _set_conductivity(hass, 900)
+
+        hass.config_entries.async_update_entry(
+            entry, options={FLOW_CARE_TODO: TODO_ENTITY_ID}
+        )
+        await hass.async_block_till_done()
+
+        assert _current(todo_list, left_open).status == TodoItemStatus.COMPLETED
+        assert _care_events(hass, "fertilized") == ["fertilized"]
 
     async def test_watering_without_an_open_item_is_still_reported(
         self, hass: HomeAssistant, plant_config_data: dict[str, Any]
@@ -1087,6 +1108,64 @@ class TestCareModes:
         assert len(_open(todo_list, CARE_WATER)) == 1
 
     @pytest.mark.usefixtures("mock_external_sensors")
+    async def test_removing_the_moisture_sensor_removes_next_watering(
+        self,
+        hass: HomeAssistant,
+        plant_config_data: dict[str, Any],
+        hass_ws_client,
+    ) -> None:
+        entry = await _setup_plant(hass, plant_config_data, {})
+        plant = hass.data[DOMAIN][entry.entry_id]["plant"]
+        registry = er.async_get(hass)
+        unique_id = f"{entry.entry_id}-next-watering"
+        assert registry.async_get_entity_id("sensor", DOMAIN, unique_id)
+
+        await _replace_sensor(hass, plant.sensor_moisture.entity_id, "")
+
+        # The card sees no next watering at once; the entity goes at the next load
+        client = await hass_ws_client(hass)
+        await client.send_json(
+            {"id": 1, "type": "plant/get_info", "entity_id": plant.entity_id}
+        )
+        response = await client.receive_json()
+        assert response["result"]["result"]["care"]["next_watering"] is None
+
+        await hass.config_entries.async_reload(entry.entry_id)
+        await hass.async_block_till_done()
+
+        assert registry.async_get_entity_id("sensor", DOMAIN, unique_id) is None
+
+    async def test_get_info_while_care_events_are_not_set_up_is_empty(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        entry = await _setup_plant(hass, plant_config_data, {})
+        plant = hass.data[DOMAIN][entry.entry_id]["plant"]
+        plant.plant_complete = True
+        plant.care_events = None
+
+        assert plant.websocket_info == {}
+
+    @pytest.mark.usefixtures("mock_external_sensors")
+    async def test_options_change_detaches_the_stopped_care_tasks(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        await _setup_todo_list(hass)
+        entry = await _setup_plant(
+            hass, plant_config_data, {FLOW_CARE_TODO: TODO_ENTITY_ID}
+        )
+        plant = hass.data[DOMAIN][entry.entry_id]["plant"]
+        assert plant.care_tasks is not None
+
+        with patch.object(hass.config_entries, "async_schedule_reload"):
+            hass.config_entries.async_update_entry(
+                entry,
+                options={FLOW_CARE_TODO: TODO_ENTITY_ID, FLOW_WATER_INTERVAL: 3},
+            )
+            await hass.async_block_till_done()
+
+        assert plant.care_tasks is None
+
+    @pytest.mark.usefixtures("mock_external_sensors")
     async def test_replace_sensor_step_adding_a_sensor_removes_interval_item(
         self,
         hass: HomeAssistant,
@@ -1300,6 +1379,26 @@ async def test_next_watering_entity_with_moisture_sensor(
     assert er.async_get(hass).async_get_entity_id(
         "sensor", DOMAIN, f"{TEST_ENTRY_ID}-next-watering"
     )
+
+
+@pytest.mark.usefixtures("mock_external_sensors")
+async def test_detected_watering_recomputes_inside_the_throttle_window(
+    hass: HomeAssistant, plant_config_data: dict[str, Any]
+) -> None:
+    with patch(
+        "custom_components.plant.sensor.PlantNextWatering._async_predict",
+        new=AsyncMock(return_value=None),
+    ) as predict:
+        await _setup_plant(hass, plant_config_data, {})
+        await _set_moisture(hass, 40)
+        started_with = predict.await_count
+        assert started_with >= 1
+
+        await _set_moisture(hass, 38)
+        assert predict.await_count == started_with
+
+        await _set_moisture(hass, 60)
+        assert predict.await_count == started_with + 1
 
 
 @pytest.mark.usefixtures("mock_external_sensors")

@@ -97,6 +97,7 @@ from .const import (
     ICON_SOIL_TEMPERATURE,
     ICON_TEMPERATURE,
     ICON_VPD,
+    MOISTURE_INCREASE_THRESHOLD,
     PREDICTION_WINDOW,
     READING_CO2,
     READING_CONDUCTIVITY,
@@ -242,8 +243,20 @@ async def async_setup_entry(
 
     if entry.data[FLOW_PLANT_INFO].get(FLOW_SENSOR_MOISTURE):
         async_add_entities([PlantNextWatering(hass, entry, plant)])
+    else:
+        _remove_next_watering(hass, entry)
 
     return True
+
+
+def _remove_next_watering(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Drop the next-watering entity left over from a removed moisture sensor."""
+    registry = er_async_get(hass)
+    entity_id = registry.async_get_entity_id(
+        SENSOR_DOMAIN, DOMAIN, f"{entry.entry_id}-next-watering"
+    )
+    if entity_id is not None:
+        registry.async_remove(entity_id)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -965,8 +978,21 @@ class PlantNextWatering(SensorEntity):
 
     @callback
     def _moisture_changed(self, event: Event) -> None:
-        if self._recompute_is_due():
+        if self._watering_detected(event) or self._recompute_is_due():
             self.hass.async_create_task(self._async_recompute())
+
+    @staticmethod
+    def _watering_detected(event: Event) -> bool:
+        old_state = event.data["old_state"]
+        new_state = event.data["new_state"]
+        if old_state is None or new_state is None:
+            return False
+        try:
+            rise = float(new_state.state) - float(old_state.state)
+        except ValueError:
+            # unknown/unavailable are not readings
+            return False
+        return rise >= MOISTURE_INCREASE_THRESHOLD
 
     def _recompute_is_due(self) -> bool:
         if self._last_computed is None:
@@ -992,6 +1018,8 @@ class PlantNextWatering(SensorEntity):
             _LOGGER.debug("No recorder, cannot predict watering for %s", self.entity_id)
             return None
         now = dt_util.utcnow()
+        # The reading that triggered this may still be queued
+        await get_instance(self.hass).async_block_till_done()
         readings = await get_instance(self.hass).async_add_executor_job(
             _moisture_history,
             self.hass,
