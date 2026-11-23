@@ -418,9 +418,9 @@ There are four care types: water, fertilize, repot and prune. Each one is tracke
 
 What happens:
 
-- **Watering (sensor mode):** when the soil gets too dry, "Water *plant*" is added. When the plant is watered (see `plant.watered` above), it ticks the item off itself. You can also tick it off by hand.
-- **Fertilizing (sensor mode):** when the conductivity is too low, "Fertilize *plant*" is added. It is closed when the conductivity has recovered, and that records `fertilized`.
-- **Interval mode:** an item is added with a due date. When you tick it off, the next one is added, counted from the day it was done.
+- **Watering (sensor mode):** when the soil gets too dry, "Water *plant*" is added to the to-do list, due today. When the plant is watered (see `plant.watered` above), it ticks the item off itself. You can also tick it off by hand.
+- **Fertilizing (sensor mode):** when the conductivity is too low, "Fertilize *plant*" is added to the to-do list, due today. It is closed when the conductivity has recovered, and that records `fertilized`.
+- **Interval mode:** an item is added to the to-do list, due the set number of days after the last time it was done (due today if it has never been recorded). When you tick it off, the next one is added, counted from the day it was done.
 - **Due dates** exist only with a to-do list. Without one, intervals plan nothing.
 - **Next watering:** a plant with a moisture sensor gets a *Next watering* sensor, a timestamp predicted from how fast the soil has been drying.
 - **Automations:** the `plant.watered`, `plant.fertilized`, `plant.repotted` and `plant.pruned` triggers fire when the care is done. Each plant has one care event entity per care type (watered, fertilized, repotted, pruned) that reports the same, for the **Event received** trigger and the logbook.
