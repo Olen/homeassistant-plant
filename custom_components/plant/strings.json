@@ -210,11 +210,13 @@
         "data": {
           "care_todo": "Use this to-do list",
           "care_todo_new": "Or create a new list named",
+          "water_interval": "Water every (days, 0 = off)",
           "fertilize_interval": "Fertilize every (days, 0 = off)",
-          "repot_interval": "Repot every (days, 0 = off)"
+          "repot_interval": "Repot every (days, 0 = off)",
+          "prune_interval": "Prune every (days, 0 = off)"
         },
         "data_description": {
-          "care_todo": "Watering is added when the soil gets dry and ticked off when watering is detected.",
+          "care_todo": "With a moisture sensor and its alarm switched on, watering is added when the soil gets dry and ticked off when watering is detected. The same goes for fertilizing and the conductivity sensor. Otherwise an interval is used.",
           "care_todo_new": "A new Local To-do list. If a list with this name already exists, it is used."
         }
       }

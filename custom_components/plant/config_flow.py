@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import re
 import urllib.parse
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import voluptuous as vol
 from homeassistant import config_entries
@@ -92,6 +92,7 @@ from .const import (
     FLOW_MOISTURE_TRIGGER,
     FLOW_PLANT_INFO,
     FLOW_PLANT_LIMITS,
+    FLOW_PRUNE_INTERVAL,
     FLOW_REPOT_INTERVAL,
     FLOW_RIGHT_PLANT,
     FLOW_SENSOR_CO2,
@@ -107,11 +108,15 @@ from .const import (
     FLOW_TEMP_UNIT,
     FLOW_TEMPERATURE_TRIGGER,
     FLOW_VPD_TRIGGER,
+    FLOW_WATER_INTERVAL,
     OPB_DISPLAY_PID,
     URL_SCHEME_HTTP,
     URL_SCHEME_MEDIA_SOURCE,
 )
 from .plant_helpers import PlantHelper
+
+if TYPE_CHECKING:
+    from . import PlantDevice
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -985,12 +990,13 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             if not errors:
                 options = dict(self.config_entry.options)
                 options[FLOW_CARE_TODO] = todo_entity_id
-                options[FLOW_FERTILIZE_INTERVAL] = int(
-                    user_input.get(FLOW_FERTILIZE_INTERVAL, 0)
-                )
-                options[FLOW_REPOT_INTERVAL] = int(
-                    user_input.get(FLOW_REPOT_INTERVAL, 0)
-                )
+                for interval_option in (
+                    FLOW_WATER_INTERVAL,
+                    FLOW_FERTILIZE_INTERVAL,
+                    FLOW_REPOT_INTERVAL,
+                    FLOW_PRUNE_INTERVAL,
+                ):
+                    options[interval_option] = int(user_input.get(interval_option, 0))
                 return self.async_create_entry(title="", data=options)
 
         options = self.config_entry.options
@@ -1011,12 +1017,20 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 },
             ): str,
             vol.Optional(
+                FLOW_WATER_INTERVAL,
+                default=options.get(FLOW_WATER_INTERVAL, 0),
+            ): selector(days),
+            vol.Optional(
                 FLOW_FERTILIZE_INTERVAL,
                 default=options.get(FLOW_FERTILIZE_INTERVAL, 0),
             ): selector(days),
             vol.Optional(
                 FLOW_REPOT_INTERVAL,
                 default=options.get(FLOW_REPOT_INTERVAL, 0),
+            ): selector(days),
+            vol.Optional(
+                FLOW_PRUNE_INTERVAL,
+                default=options.get(FLOW_PRUNE_INTERVAL, 0),
             ): selector(days),
         }
         return self.async_show_form(
@@ -1054,6 +1068,33 @@ async def _async_create_todo_list(hass: HomeAssistant, name: str) -> str | None:
     return None
 
 
+async def _async_remove_stale_care_items(
+    plant: PlantDevice, new_list: str | None
+) -> None:
+    """Take open care items out of the list they no longer belong in."""
+    care_tasks = plant.care_tasks
+    if care_tasks.todo_entity_id != new_list:
+        # Switched off or moved: all open items go
+        stale = None
+    else:
+        stale = {
+            care
+            for care, mode in plant.care_modes.items()
+            if mode != care_tasks.modes[care]
+        }
+        if not stale:
+            return
+    try:
+        await care_tasks.async_remove_open_items(stale)
+    except HomeAssistantError as err:
+        _LOGGER.warning(
+            "Could not remove care items of %s from %s: %s",
+            plant.entity_id,
+            care_tasks.todo_entity_id,
+            err,
+        )
+
+
 async def update_plant_options(
     hass: HomeAssistant, entry: config_entries.ConfigEntry
 ) -> None:
@@ -1070,19 +1111,12 @@ async def update_plant_options(
         return
 
     plant = hass.data[DOMAIN][entry.entry_id]["plant"]
-    if care_settings(entry.options) != plant.care_settings:
-        new_list = care_settings(entry.options)[0]
-        if plant.care_tasks is not None and plant.care_tasks.todo_entity_id != new_list:
-            # Switched off or moved: take the open items out of the old list
-            try:
-                await plant.care_tasks.async_remove_open_items()
-            except HomeAssistantError as err:
-                _LOGGER.warning(
-                    "Could not remove care items of %s from %s: %s",
-                    plant.entity_id,
-                    plant.care_tasks.todo_entity_id,
-                    err,
-                )
+    new_settings = care_settings(entry.options)
+    old_modes = None if plant.care_tasks is None else plant.care_tasks.modes
+    modes_changed = old_modes is not None and old_modes != plant.care_modes
+    if new_settings != plant.care_settings or modes_changed:
+        if plant.care_tasks is not None:
+            await _async_remove_stale_care_items(plant, new_settings.todo)
         # Care tasks are set up when the plant loads
         hass.config_entries.async_schedule_reload(entry.entry_id)
         return

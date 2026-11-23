@@ -343,6 +343,10 @@ CARE_WATER = "water"
 CARE_FERTILIZE = "fertilize"
 CARE_REPOT = "repot"
 CARE_PRUNE = "prune"
+
+CARE_MODE_SENSOR = "sensor"
+CARE_MODE_INTERVAL = "interval"
+CARE_MODE_NONE = "none"
 # Event type reported by the plant's event entity for each care type
 CARE_EVENT_TYPES = {
     CARE_WATER: "watered",

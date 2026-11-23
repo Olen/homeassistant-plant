@@ -24,13 +24,24 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.setup import async_setup_component
 from homeassistant.util import dt as dt_util
 
-from custom_components.plant.care import CareTasks
+from custom_components.plant.care import CareSettings, CareTasks, care_modes
 from custom_components.plant.care_trigger import is_new_care_event
 from custom_components.plant.const import (
+    CARE_FERTILIZE,
+    CARE_MODE_INTERVAL,
+    CARE_MODE_NONE,
+    CARE_MODE_SENSOR,
+    CARE_PRUNE,
+    CARE_REPOT,
+    CARE_WATER,
     DOMAIN,
     FLOW_CARE_TODO,
+    FLOW_CONDUCTIVITY_TRIGGER,
     FLOW_FERTILIZE_INTERVAL,
+    FLOW_MOISTURE_TRIGGER,
+    FLOW_PRUNE_INTERVAL,
     FLOW_REPOT_INTERVAL,
+    FLOW_WATER_INTERVAL,
     STATE_LOW,
 )
 from custom_components.plant.trigger import _has_purpose_trigger_api
@@ -247,6 +258,12 @@ class TestWatering:
             plant_name=lambda: plant.name,
             todo_entity_id=TODO_ENTITY_ID,
             intervals={},
+            modes={
+                CARE_WATER: CARE_MODE_SENSOR,
+                CARE_FERTILIZE: CARE_MODE_NONE,
+                CARE_REPOT: CARE_MODE_NONE,
+                CARE_PRUNE: CARE_MODE_NONE,
+            },
             care_events=plant.care_events,
             moisture_status=lambda: plant.moisture_status,
         )
@@ -423,7 +440,11 @@ class TestIntervals:
         await _setup_plant(
             hass,
             plant_config_data,
-            {FLOW_CARE_TODO: TODO_ENTITY_ID, FLOW_FERTILIZE_INTERVAL: 30},
+            {
+                FLOW_CARE_TODO: TODO_ENTITY_ID,
+                FLOW_CONDUCTIVITY_TRIGGER: False,
+                FLOW_FERTILIZE_INTERVAL: 30,
+            },
         )
 
         items = _own(todo_list)
@@ -446,7 +467,11 @@ class TestIntervals:
         await _setup_plant(
             hass,
             plant_config_data,
-            {FLOW_CARE_TODO: TODO_ENTITY_ID, FLOW_FERTILIZE_INTERVAL: 30},
+            {
+                FLOW_CARE_TODO: TODO_ENTITY_ID,
+                FLOW_CONDUCTIVITY_TRIGGER: False,
+                FLOW_FERTILIZE_INTERVAL: 30,
+            },
         )
 
         open_items = [
@@ -461,7 +486,11 @@ class TestIntervals:
         await _setup_plant(
             hass,
             plant_config_data,
-            {FLOW_CARE_TODO: TODO_ENTITY_ID, FLOW_FERTILIZE_INTERVAL: 30},
+            {
+                FLOW_CARE_TODO: TODO_ENTITY_ID,
+                FLOW_CONDUCTIVITY_TRIGGER: False,
+                FLOW_FERTILIZE_INTERVAL: 30,
+            },
         )
         first = _own(todo_list)[0]
 
@@ -488,7 +517,11 @@ class TestIntervals:
         await _setup_plant(
             hass,
             plant_config_data,
-            {FLOW_CARE_TODO: TODO_ENTITY_ID, FLOW_FERTILIZE_INTERVAL: 30},
+            {
+                FLOW_CARE_TODO: TODO_ENTITY_ID,
+                FLOW_CONDUCTIVITY_TRIGGER: False,
+                FLOW_FERTILIZE_INTERVAL: 30,
+            },
         )
         first = _own(todo_list)[0]
 
@@ -556,7 +589,9 @@ async def test_options_step_saves_the_chosen_list(
 ) -> None:
     """Choosing an existing list and intervals stores them and starts care tasks."""
     todo_list = await _setup_todo_list(hass)
-    entry = await _setup_plant(hass, plant_config_data, {})
+    entry = await _setup_plant(
+        hass, plant_config_data, {FLOW_CONDUCTIVITY_TRIGGER: False}
+    )
 
     result = await hass.config_entries.options.async_init(entry.entry_id)
     result = await hass.config_entries.options.async_configure(
@@ -623,7 +658,11 @@ class TestCareTriggers:
         await _setup_plant(
             hass,
             plant_config_data,
-            {FLOW_CARE_TODO: TODO_ENTITY_ID, FLOW_FERTILIZE_INTERVAL: 30},
+            {
+                FLOW_CARE_TODO: TODO_ENTITY_ID,
+                FLOW_CONDUCTIVITY_TRIGGER: False,
+                FLOW_FERTILIZE_INTERVAL: 30,
+            },
         )
         fertilized = await _automation_on(hass, "fertilized", "was_fertilized")
         watered = await _automation_on(hass, "watered", "was_watered")
@@ -806,7 +845,11 @@ class TestRenamingThePlant:
         await _setup_plant(
             hass,
             plant_config_data,
-            {FLOW_CARE_TODO: TODO_ENTITY_ID, FLOW_FERTILIZE_INTERVAL: 30},
+            {
+                FLOW_CARE_TODO: TODO_ENTITY_ID,
+                FLOW_CONDUCTIVITY_TRIGGER: False,
+                FLOW_FERTILIZE_INTERVAL: 30,
+            },
         )
         await _set_moisture(hass, 10)
         before = {(i.summary, i.status, i.due) for i in todo_list.todo_items}
@@ -824,3 +867,213 @@ class TestRenamingThePlant:
             "plant.monstera · fertilize",
             "plant.monstera · water",
         ]
+
+
+def _settings(**intervals: int) -> CareSettings:
+    all_intervals = {
+        CARE_WATER: 0,
+        CARE_FERTILIZE: 0,
+        CARE_REPOT: 0,
+        CARE_PRUNE: 0,
+    }
+    all_intervals.update(intervals)
+    return CareSettings(todo=TODO_ENTITY_ID, intervals=all_intervals)
+
+
+@pytest.mark.parametrize(
+    "care, interval, sensor, trigger, expected",
+    [
+        (CARE_WATER, 0, True, True, CARE_MODE_SENSOR),
+        (CARE_WATER, 3, True, False, CARE_MODE_INTERVAL),
+        (CARE_WATER, 3, False, True, CARE_MODE_INTERVAL),
+        (CARE_WATER, 0, False, True, CARE_MODE_NONE),
+        (CARE_WATER, 0, True, False, CARE_MODE_NONE),
+        (CARE_WATER, 3, True, True, CARE_MODE_SENSOR),
+        (CARE_FERTILIZE, 0, True, True, CARE_MODE_SENSOR),
+        (CARE_FERTILIZE, 3, True, False, CARE_MODE_INTERVAL),
+        (CARE_FERTILIZE, 3, False, True, CARE_MODE_INTERVAL),
+        (CARE_FERTILIZE, 0, False, True, CARE_MODE_NONE),
+        (CARE_FERTILIZE, 3, True, True, CARE_MODE_SENSOR),
+        (CARE_REPOT, 365, True, True, CARE_MODE_INTERVAL),
+        (CARE_REPOT, 0, True, True, CARE_MODE_NONE),
+        (CARE_PRUNE, 30, True, True, CARE_MODE_INTERVAL),
+        (CARE_PRUNE, 0, True, True, CARE_MODE_NONE),
+    ],
+)
+def test_care_modes(
+    care: str, interval: int, sensor: bool, trigger: bool, expected: str
+) -> None:
+    """A checked trigger with its sensor wins; otherwise the interval decides."""
+    modes = care_modes(
+        _settings(**{care: interval}),
+        moisture_sensor=sensor if care == CARE_WATER else False,
+        conductivity_sensor=sensor if care == CARE_FERTILIZE else False,
+        moisture_trigger=trigger if care == CARE_WATER else False,
+        conductivity_trigger=trigger if care == CARE_FERTILIZE else False,
+    )
+    assert modes[care] == expected
+
+
+def _open(todo_list: FakeTodoList, care: str) -> list[TodoItem]:
+    return [
+        i
+        for i in _own(todo_list)
+        if i.status == TodoItemStatus.NEEDS_ACTION
+        and i.description.endswith(f" · {care}")
+    ]
+
+
+@pytest.mark.usefixtures("record_care_events")
+class TestCareModes:
+    """The trigger checkboxes and intervals decide how each care is tracked."""
+
+    async def test_water_interval_mode_plans_items(
+        self,
+        hass: HomeAssistant,
+        plant_config_data_no_sensors: dict[str, Any],
+    ) -> None:
+        todo_list = await _setup_todo_list(hass)
+        await _setup_plant(
+            hass,
+            plant_config_data_no_sensors,
+            {FLOW_CARE_TODO: TODO_ENTITY_ID, FLOW_WATER_INTERVAL: 7},
+        )
+
+        first = _open(todo_list, CARE_WATER)
+        assert [(i.summary, i.due) for i in first] == [
+            (f"Water {TEST_PLANT_NAME}", dt_util.now().date())
+        ]
+
+        await _tick_off(hass, first[0])
+
+        assert [i.due for i in _open(todo_list, CARE_WATER)] == [
+            dt_util.now().date() + timedelta(days=7)
+        ]
+
+    @pytest.mark.usefixtures("mock_external_sensors")
+    async def test_water_interval_mode_ignores_dry_soil(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        todo_list = await _setup_todo_list(hass)
+        await _setup_plant(
+            hass,
+            plant_config_data,
+            {
+                FLOW_CARE_TODO: TODO_ENTITY_ID,
+                FLOW_MOISTURE_TRIGGER: False,
+                FLOW_WATER_INTERVAL: 7,
+            },
+        )
+
+        await _set_moisture(hass, 10)
+
+        assert len(_open(todo_list, CARE_WATER)) == 1
+
+    @pytest.mark.usefixtures("mock_external_sensors")
+    async def test_water_interval_mode_detected_watering_completes_item(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        todo_list = await _setup_todo_list(hass)
+        await _setup_plant(
+            hass,
+            plant_config_data,
+            {
+                FLOW_CARE_TODO: TODO_ENTITY_ID,
+                FLOW_MOISTURE_TRIGGER: False,
+                FLOW_WATER_INTERVAL: 7,
+            },
+        )
+        await _set_moisture(hass, 10)
+        interval_item = _open(todo_list, CARE_WATER)[0]
+
+        await _set_moisture(hass, 45)
+
+        assert _current(todo_list, interval_item).status == TodoItemStatus.COMPLETED
+        assert _care_events(hass, "watered") == ["watered"]
+
+    @pytest.mark.usefixtures("mock_external_sensors")
+    async def test_mode_change_removes_open_items_of_that_type(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        todo_list = await _setup_todo_list(hass)
+        entry = await _setup_plant(
+            hass,
+            plant_config_data,
+            {
+                FLOW_CARE_TODO: TODO_ENTITY_ID,
+                FLOW_CONDUCTIVITY_TRIGGER: False,
+                FLOW_FERTILIZE_INTERVAL: 15,
+                FLOW_REPOT_INTERVAL: 365,
+            },
+        )
+        fertilize_item = _open(todo_list, CARE_FERTILIZE)[0]
+        repot_item = _open(todo_list, CARE_REPOT)[0]
+
+        hass.config_entries.async_update_entry(
+            entry, options={**entry.options, FLOW_CONDUCTIVITY_TRIGGER: True}
+        )
+        await hass.async_block_till_done()
+
+        assert fertilize_item not in todo_list.todo_items
+        assert repot_item in todo_list.todo_items
+
+    @pytest.mark.usefixtures("mock_external_sensors")
+    async def test_ticking_off_prune_item_reports_pruned(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        todo_list = await _setup_todo_list(hass)
+        await _setup_plant(
+            hass,
+            plant_config_data,
+            {FLOW_CARE_TODO: TODO_ENTITY_ID, FLOW_PRUNE_INTERVAL: 30},
+        )
+        first = _open(todo_list, CARE_PRUNE)
+        assert [i.summary for i in first] == [f"Prune {TEST_PLANT_NAME}"]
+
+        await _tick_off(hass, first[0])
+
+        assert _care_events(hass, "pruned") == ["pruned"]
+        assert [i.due for i in _open(todo_list, CARE_PRUNE)] == [
+            dt_util.now().date() + timedelta(days=30)
+        ]
+
+    @pytest.mark.usefixtures("mock_external_sensors")
+    async def test_rename_moves_prune_items(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        todo_list = await _setup_todo_list(hass)
+        await _setup_plant(
+            hass,
+            plant_config_data,
+            {FLOW_CARE_TODO: TODO_ENTITY_ID, FLOW_PRUNE_INTERVAL: 30},
+        )
+
+        er.async_get(hass).async_update_entity(PLANT_ENTITY_ID, name="Monstéra")
+        await hass.async_block_till_done()
+
+        shown = hass.states.get(PLANT_ENTITY_ID).name
+        assert [i.summary for i in _open(todo_list, CARE_PRUNE)] == [f"Prune {shown}"]
+
+    @pytest.mark.usefixtures("mock_external_sensors")
+    async def test_options_step_saves_water_and_prune_intervals(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        await _setup_todo_list(hass)
+        entry = await _setup_plant(hass, plant_config_data, {})
+
+        result = await hass.config_entries.options.async_init(entry.entry_id)
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"], {"next_step_id": "care_tasks"}
+        )
+        await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            {
+                FLOW_CARE_TODO: TODO_ENTITY_ID,
+                FLOW_WATER_INTERVAL: 7,
+                FLOW_PRUNE_INTERVAL: 730,
+            },
+        )
+        await hass.async_block_till_done()
+
+        assert entry.options[FLOW_WATER_INTERVAL] == 7
+        assert entry.options[FLOW_PRUNE_INTERVAL] == 730

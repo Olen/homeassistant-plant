@@ -42,7 +42,7 @@ from homeassistant.helpers.start import async_at_started
 from homeassistant.util import dt as dt_util
 
 from . import group as group
-from .care import CareTasks, care_settings
+from .care import CareSettings, CareTasks, care_modes, care_settings
 from .config_flow import update_plant_options
 from .const import (
     ATTR_BRIGHTNESS,
@@ -70,8 +70,6 @@ from .const import (
     ATTR_SPECIES,
     ATTR_TEMPERATURE,
     ATTR_VPD,
-    CARE_FERTILIZE,
-    CARE_REPOT,
     CARE_WATER,
     CONF_MAX_BRIGHTNESS,
     CONF_MAX_CONDUCTIVITY,
@@ -444,13 +442,14 @@ async def _async_start_care_tasks(
     hass: HomeAssistant, entry: ConfigEntry, plant: PlantDevice
 ) -> None:
     """Keep this plant's care items in the to-do list chosen in its options."""
-    todo_entity_id, fertilize_days, repot_days = plant.care_settings
+    settings = plant.care_settings
     care_tasks = CareTasks(
         hass,
         plant_entity_id=plant.entity_id,
         plant_name=lambda: display_name(hass, plant),
-        todo_entity_id=todo_entity_id,
-        intervals={CARE_FERTILIZE: fertilize_days, CARE_REPOT: repot_days},
+        todo_entity_id=settings.todo,
+        intervals=settings.intervals,
+        modes=plant.care_modes,
         care_events=hass.data[DOMAIN][entry.entry_id][ATTR_CARE_EVENTS],
         moisture_status=lambda: plant.moisture_status,
     )
@@ -461,7 +460,7 @@ async def _async_start_care_tasks(
         _LOGGER.warning(
             "Care tasks for %s are off: cannot use to-do list %s: %s",
             plant.entity_id,
-            todo_entity_id,
+            settings.todo,
             err,
         )
         return
@@ -693,7 +692,7 @@ class PlantDevice(RestoreEntity):
         self.moisture_status = None
         self.care_tasks: CareTasks | None = None
         self.care_events: dict[str, PlantCareEvent] | None = None
-        self.care_settings: tuple[str | None, int, int] = (None, 0, 0)
+        self.care_settings: CareSettings = care_settings({})
         self.temperature_status = None
         self.humidity_status = None
         self.co2_status = None
@@ -789,6 +788,17 @@ class PlantDevice(RestoreEntity):
     def conductivity_trigger(self) -> bool:
         """Whether we will generate alarms based on conductivity"""
         return self._config.options.get(FLOW_CONDUCTIVITY_TRIGGER, True)
+
+    @property
+    def care_modes(self) -> dict[str, str]:
+        """How each care type is tracked, from the options and the plant's sensors."""
+        return care_modes(
+            care_settings(self._config.options),
+            moisture_sensor=self.sensor_moisture.external_sensor is not None,
+            conductivity_sensor=self.sensor_conductivity.external_sensor is not None,
+            moisture_trigger=self.moisture_trigger,
+            conductivity_trigger=self.conductivity_trigger,
+        )
 
     @property
     def moisture_grace_period(self) -> int:

@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Callable, Mapping
+from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
@@ -20,12 +21,17 @@ from homeassistant.util import dt as dt_util
 
 from .const import (
     CARE_FERTILIZE,
+    CARE_MODE_INTERVAL,
+    CARE_MODE_NONE,
+    CARE_MODE_SENSOR,
     CARE_PRUNE,
     CARE_REPOT,
     CARE_WATER,
     FLOW_CARE_TODO,
     FLOW_FERTILIZE_INTERVAL,
+    FLOW_PRUNE_INTERVAL,
     FLOW_REPOT_INTERVAL,
+    FLOW_WATER_INTERVAL,
     STATE_HIGH,
     STATE_LOW,
 )
@@ -53,13 +59,57 @@ def _marker(plant_entity_id: str, care: str) -> str:
     return f"{plant_entity_id}{MARKER_SEPARATOR}{care}"
 
 
-def care_settings(options: Mapping[str, Any]) -> tuple[str | None, int, int]:
+INTERVAL_OPTIONS = {
+    CARE_WATER: FLOW_WATER_INTERVAL,
+    CARE_FERTILIZE: FLOW_FERTILIZE_INTERVAL,
+    CARE_REPOT: FLOW_REPOT_INTERVAL,
+    CARE_PRUNE: FLOW_PRUNE_INTERVAL,
+}
+
+
+@dataclass(frozen=True)
+class CareSettings:
     """The options that care tasks are built from; a change needs a reload."""
-    return (
-        options.get(FLOW_CARE_TODO),
-        int(options.get(FLOW_FERTILIZE_INTERVAL, 0)),
-        int(options.get(FLOW_REPOT_INTERVAL, 0)),
-    )
+
+    todo: str | None
+    intervals: dict[str, int]
+
+
+def care_settings(options: Mapping[str, Any]) -> CareSettings:
+    """Read the care options; an interval that is not set counts as 0."""
+    intervals = {}
+    for care, option in INTERVAL_OPTIONS.items():
+        intervals[care] = int(options.get(option, 0))
+    return CareSettings(todo=options.get(FLOW_CARE_TODO), intervals=intervals)
+
+
+def _care_mode(interval: int, has_sensor: bool, trigger: bool) -> str:
+    if has_sensor and trigger:
+        return CARE_MODE_SENSOR
+    if interval > 0:
+        return CARE_MODE_INTERVAL
+    return CARE_MODE_NONE
+
+
+def care_modes(
+    settings: CareSettings,
+    moisture_sensor: bool,
+    conductivity_sensor: bool,
+    moisture_trigger: bool,
+    conductivity_trigger: bool,
+) -> dict[str, str]:
+    """How each care type is tracked: by its sensor, by interval, or not at all."""
+    intervals = settings.intervals
+    return {
+        CARE_WATER: _care_mode(
+            intervals[CARE_WATER], moisture_sensor, moisture_trigger
+        ),
+        CARE_FERTILIZE: _care_mode(
+            intervals[CARE_FERTILIZE], conductivity_sensor, conductivity_trigger
+        ),
+        CARE_REPOT: _care_mode(intervals[CARE_REPOT], False, False),
+        CARE_PRUNE: _care_mode(intervals[CARE_PRUNE], False, False),
+    }
 
 
 class CareTasks:
@@ -72,6 +122,7 @@ class CareTasks:
         plant_name: Callable[[], str],
         todo_entity_id: str,
         intervals: dict[str, int],
+        modes: dict[str, str],
         care_events: dict[str, PlantCareEvent],
         moisture_status: Callable[[], str | None],
     ) -> None:
@@ -81,6 +132,7 @@ class CareTasks:
         self._plant_name = plant_name
         self._todo_entity_id = todo_entity_id
         self._intervals = intervals
+        self._modes = modes
         self._care_events = care_events
         # uid -> care type of our items that were open at the last look
         self._open_items: dict[str, str] = {}
@@ -98,6 +150,8 @@ class CareTasks:
             ),
         ]
         await self._async_sync(report_completed=False)
+        if self._modes[CARE_WATER] != CARE_MODE_SENSOR:
+            return
         # The moisture may have changed before we listened: match the list to it
         moisture_status = self._moisture_status()
         if moisture_status == STATE_LOW:
@@ -111,11 +165,24 @@ class CareTasks:
         """The to-do list this plant's care items live in."""
         return self._todo_entity_id
 
-    async def async_remove_open_items(self) -> None:
-        """Remove this plant's open items; completed ones stay as history."""
+    @property
+    def modes(self) -> dict[str, str]:
+        """How each care type is tracked."""
+        return self._modes
+
+    async def async_remove_open_items(self, cares: set[str] | None = None) -> None:
+        """Remove this plant's open items, of all care types or just `cares`.
+
+        Completed items stay as history.
+        """
         async with self._lock:
             items = await self._async_own_items()
-            uids = [item["uid"] for item in items if item["status"] == STATUS_OPEN]
+            uids = [
+                item["uid"]
+                for item in items
+                if item["status"] == STATUS_OPEN
+                and (cares is None or item["care"] in cares)
+            ]
             if not uids:
                 return
             await self._hass.services.async_call(
@@ -154,7 +221,9 @@ class CareTasks:
             self._plant_entity_id = new_plant_entity_id
 
     async def async_moisture_low(self) -> None:
-        """Add a watering item unless one is already open."""
+        """Add a watering item unless one is already open; only in sensor mode."""
+        if self._modes[CARE_WATER] != CARE_MODE_SENSOR:
+            return
         async with self._lock:
             items = await self._async_own_items()
             if self._open_of(items, CARE_WATER):
@@ -243,10 +312,10 @@ class CareTasks:
     async def _async_plan_interval_items(
         self, items: list[dict[str, Any]], just_completed: set[str]
     ) -> None:
-        """Make sure every care type with an interval has an open item."""
+        """Make sure every care type tracked by interval has an open item."""
         today = dt_util.now().date()
         for care, days in self._intervals.items():
-            if days <= 0 or self._open_of(items, care):
+            if self._modes[care] != CARE_MODE_INTERVAL or self._open_of(items, care):
                 continue
             last_done = self._last_completed(items, care)
             if last_done is None and care in just_completed:
