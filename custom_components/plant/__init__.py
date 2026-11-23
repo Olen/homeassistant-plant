@@ -92,6 +92,8 @@ from .const import (
     FLOW_MOISTURE_GRACE_PERIOD,
     FLOW_MOISTURE_TRIGGER,
     FLOW_PLANT_INFO,
+    FLOW_SENSOR_CONDUCTIVITY,
+    FLOW_SENSOR_MOISTURE,
     FLOW_SOIL_TEMPERATURE_TRIGGER,
     FLOW_TEMPERATURE_TRIGGER,
     FLOW_VPD_TRIGGER,
@@ -792,10 +794,11 @@ class PlantDevice(RestoreEntity):
     @property
     def care_modes(self) -> dict[str, str]:
         """How each care type is tracked, from the options and the plant's sensors."""
+        plant_info = self._config.data[FLOW_PLANT_INFO]
         return care_modes(
             care_settings(self._config.options),
-            moisture_sensor=self.sensor_moisture.external_sensor is not None,
-            conductivity_sensor=self.sensor_conductivity.external_sensor is not None,
+            moisture_sensor=bool(plant_info.get(FLOW_SENSOR_MOISTURE)),
+            conductivity_sensor=bool(plant_info.get(FLOW_SENSOR_CONDUCTIVITY)),
             moisture_trigger=self.moisture_trigger,
             conductivity_trigger=self.conductivity_trigger,
         )

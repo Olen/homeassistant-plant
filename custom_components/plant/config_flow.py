@@ -1074,6 +1074,8 @@ async def _async_remove_stale_care_items(
 ) -> None:
     """Take open care items out of the list they no longer belong in."""
     care_tasks = plant.care_tasks
+    # Removing items would make it plan new ones under the old modes
+    care_tasks.async_stop()
     if care_tasks.todo_entity_id != new_list:
         # Switched off or moved: all open items go
         stale = None

@@ -24,6 +24,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.setup import async_setup_component
 from homeassistant.util import dt as dt_util
+from pytest_homeassistant_custom_component.common import async_fire_time_changed
 
 from custom_components.plant.care import CareSettings, CareTasks, care_modes
 from custom_components.plant.care_trigger import is_new_care_event
@@ -943,6 +944,16 @@ async def _submit_plant_properties(
     await hass.async_block_till_done()
 
 
+async def _replace_sensor(hass: HomeAssistant, meter_entity: str, sensor: str) -> None:
+    await hass.services.async_call(
+        DOMAIN,
+        "replace_sensor",
+        {"meter_entity": meter_entity, "new_sensor": sensor},
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+
+
 @pytest.mark.usefixtures("record_care_events")
 class TestCareModes:
     """The trigger checkboxes and intervals decide how each care is tracked."""
@@ -1033,6 +1044,87 @@ class TestCareModes:
 
         assert fertilize_item not in todo_list.todo_items
         assert repot_item in todo_list.todo_items
+
+    async def test_adding_a_moisture_sensor_switches_water_to_sensor_mode(
+        self,
+        hass: HomeAssistant,
+        plant_config_data_no_sensors: dict[str, Any],
+    ) -> None:
+        todo_list = await _setup_todo_list(hass)
+        entry = await _setup_plant(
+            hass,
+            plant_config_data_no_sensors,
+            {FLOW_CARE_TODO: TODO_ENTITY_ID, FLOW_WATER_INTERVAL: 7},
+        )
+        interval_item = _open(todo_list, CARE_WATER)[0]
+        plant = hass.data[DOMAIN][entry.entry_id]["plant"]
+
+        await set_sensor_state(hass, MOISTURE, 45)
+        await _replace_sensor(hass, plant.sensor_moisture.entity_id, MOISTURE)
+
+        assert interval_item not in todo_list.todo_items
+        assert _open(todo_list, CARE_WATER) == []
+
+        # The moisture entity starts disabled; enabling it reloads the plant later
+        er.async_get(hass).async_update_entity(
+            plant.sensor_moisture.entity_id, disabled_by=None
+        )
+        async_fire_time_changed(hass, dt_util.utcnow() + timedelta(minutes=2))
+        await hass.async_block_till_done()
+        await _set_moisture(hass, 10)
+
+        assert len(_open(todo_list, CARE_WATER)) == 1
+
+    @pytest.mark.usefixtures("mock_external_sensors")
+    async def test_replace_sensor_step_adding_a_sensor_removes_interval_item(
+        self,
+        hass: HomeAssistant,
+        plant_config_data_no_sensors: dict[str, Any],
+    ) -> None:
+        todo_list = await _setup_todo_list(hass)
+        entry = await _setup_plant(
+            hass,
+            plant_config_data_no_sensors,
+            {FLOW_CARE_TODO: TODO_ENTITY_ID, FLOW_WATER_INTERVAL: 7},
+        )
+        interval_item = _open(todo_list, CARE_WATER)[0]
+        await set_sensor_state(hass, MOISTURE, 45)
+
+        result = await hass.config_entries.options.async_init(entry.entry_id)
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"], {"next_step_id": "replace_sensor"}
+        )
+        defaults = {
+            str(key): key.default()
+            for key in result["data_schema"].schema
+            if key.default is not vol.UNDEFINED
+        }
+        await hass.config_entries.options.async_configure(
+            result["flow_id"], {**defaults, "moisture_sensor": MOISTURE}
+        )
+        await hass.async_block_till_done()
+
+        assert interval_item not in todo_list.todo_items
+        assert _open(todo_list, CARE_WATER) == []
+
+    @pytest.mark.usefixtures("mock_external_sensors")
+    async def test_removing_the_moisture_sensor_switches_water_to_interval_mode(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        todo_list = await _setup_todo_list(hass)
+        entry = await _setup_plant(
+            hass,
+            plant_config_data,
+            {FLOW_CARE_TODO: TODO_ENTITY_ID, FLOW_WATER_INTERVAL: 7},
+        )
+        await _set_moisture(hass, 10)
+        sensor_item = _open(todo_list, CARE_WATER)[0]
+        plant = hass.data[DOMAIN][entry.entry_id]["plant"]
+
+        await _replace_sensor(hass, plant.sensor_moisture.entity_id, "")
+
+        assert sensor_item not in todo_list.todo_items
+        assert [i.due for i in _open(todo_list, CARE_WATER)] == [dt_util.now().date()]
 
     @pytest.mark.usefixtures("mock_external_sensors")
     async def test_plant_properties_step_keeps_the_care_options(
