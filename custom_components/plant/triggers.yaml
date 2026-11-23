@@ -517,3 +517,8 @@ repotted:
   target:
     entity:
       domain: plant
+
+pruned:
+  target:
+    entity:
+      domain: plant

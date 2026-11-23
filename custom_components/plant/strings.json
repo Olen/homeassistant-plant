@@ -75,17 +75,17 @@
       }
     },
     "event": {
-      "care": {
-        "name": "Care",
-        "state_attributes": {
-          "event_type": {
-            "state": {
-              "watered": "Watered",
-              "fertilized": "Fertilized",
-              "repotted": "Repotted"
-            }
-          }
-        }
+      "watered": {
+        "name": "Watered"
+      },
+      "fertilized": {
+        "name": "Fertilized"
+      },
+      "repotted": {
+        "name": "Repotted"
+      },
+      "pruned": {
+        "name": "Pruned"
       }
     }
   },
@@ -681,6 +681,10 @@
     "repotted": {
       "name": "Plant repotted",
       "description": "Triggers when a repotting item for the plant is ticked off in its to-do list."
+    },
+    "pruned": {
+      "name": "Plant pruned",
+      "description": "Triggers when a pruning item for the plant is ticked off in its to-do list."
     }
   },
   "conditions": {

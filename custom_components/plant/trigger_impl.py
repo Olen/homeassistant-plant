@@ -37,7 +37,7 @@ def build_triggers() -> dict[str, type]:
     for m in EXTERNAL_MEASUREMENTS:
         triggers[f"{m.key}_sensor_became_stale"] = make_stale_trigger(m, fresh=False)
         triggers[f"{m.key}_sensor_became_fresh"] = make_stale_trigger(m, fresh=True)
-    # Care reported on the plant's care event entity (watered, fertilized, ...)
+    # Care reported on the plant's care event entities (watered, fertilized, ...)
     for event_type in CARE_EVENT_TYPES.values():
         triggers[event_type] = make_care_trigger(event_type)
     return triggers

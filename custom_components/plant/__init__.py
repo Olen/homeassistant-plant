@@ -47,6 +47,7 @@ from .config_flow import update_plant_options
 from .const import (
     ATTR_BRIGHTNESS,
     ATTR_CARE,
+    ATTR_CARE_EVENTS,
     ATTR_CARE_PREFIX,
     ATTR_CARE_TODO_LIST,
     ATTR_CO2,
@@ -69,7 +70,6 @@ from .const import (
     ATTR_SPECIES,
     ATTR_TEMPERATURE,
     ATTR_VPD,
-    CARE_EVENT_TYPES,
     CARE_FERTILIZE,
     CARE_REPOT,
     CARE_WATER,
@@ -106,7 +106,7 @@ from .const import (
     STATE_HIGH,
     STATE_LOW,
 )
-from .event import ATTR_CARE_EVENT, PlantCareEvent
+from .event import PlantCareEvent
 from .frontend import async_setup_card
 from .plant_helpers import PlantHelper, display_name
 
@@ -451,7 +451,7 @@ async def _async_start_care_tasks(
         plant_name=lambda: display_name(hass, plant),
         todo_entity_id=todo_entity_id,
         intervals={CARE_FERTILIZE: fertilize_days, CARE_REPOT: repot_days},
-        care_event=hass.data[DOMAIN][entry.entry_id][ATTR_CARE_EVENT],
+        care_events=hass.data[DOMAIN][entry.entry_id][ATTR_CARE_EVENTS],
         moisture_status=lambda: plant.moisture_status,
     )
     try:
@@ -692,7 +692,7 @@ class PlantDevice(RestoreEntity):
         self.illuminance_status = None
         self.moisture_status = None
         self.care_tasks: CareTasks | None = None
-        self.care_event: PlantCareEvent | None = None
+        self.care_events: dict[str, PlantCareEvent] | None = None
         self.care_settings: tuple[str | None, int, int] = (None, 0, 0)
         self.temperature_status = None
         self.humidity_status = None
@@ -1394,8 +1394,8 @@ class PlantDevice(RestoreEntity):
         """Report a watering; with care tasks it ticks off the watering item."""
         if self.care_tasks is not None:
             self.hass.add_job(self.care_tasks.async_watered)
-        elif self.care_event is not None:
-            self.hass.add_job(self.care_event.report, CARE_EVENT_TYPES[CARE_WATER])
+        elif self.care_events is not None:
+            self.hass.add_job(self.care_events[CARE_WATER].report)
 
     def _soil_became_dry(self) -> None:
         """With care tasks, add a watering item."""

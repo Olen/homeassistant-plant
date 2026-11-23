@@ -151,10 +151,10 @@ async def _setup_plant(
     return entry
 
 
-def _care_events(hass: HomeAssistant) -> list[str]:
-    """Event types recorded on the plant's care entity, oldest first."""
+def _care_events(hass: HomeAssistant, event_type: str) -> list[str]:
+    """Event types recorded on the plant's entity for `event_type`, oldest first."""
     entity_id = er.async_get(hass).async_get_entity_id(
-        "event", DOMAIN, f"{TEST_ENTRY_ID}-care"
+        "event", DOMAIN, f"{TEST_ENTRY_ID}-{event_type}"
     )
     return hass.data["care_events_seen"].get(entity_id, [])
 
@@ -247,7 +247,7 @@ class TestWatering:
             plant_name=lambda: plant.name,
             todo_entity_id=TODO_ENTITY_ID,
             intervals={},
-            care_event=plant.care_event,
+            care_events=plant.care_events,
             moisture_status=lambda: plant.moisture_status,
         )
         await care_tasks.async_start()
@@ -267,7 +267,7 @@ class TestWatering:
 
         items = _own(todo_list)
         assert [item.status for item in items] == [TodoItemStatus.COMPLETED]
-        assert _care_events(hass) == ["watered"]
+        assert _care_events(hass, "watered") == ["watered"]
 
     async def test_slow_rise_out_of_dry_ticks_the_item_off(
         self, hass: HomeAssistant, plant_config_data: dict[str, Any]
@@ -280,7 +280,7 @@ class TestWatering:
         await _set_moisture(hass, 23)
 
         assert [i.status for i in _own(todo_list)] == [TodoItemStatus.COMPLETED]
-        assert _care_events(hass) == ["watered"]
+        assert _care_events(hass, "watered") == ["watered"]
 
     async def test_item_left_open_while_away_is_ticked_off_at_start(
         self, hass: HomeAssistant, plant_config_data: dict[str, Any]
@@ -312,7 +312,7 @@ class TestWatering:
         await _set_moisture(hass, 45)
 
         assert _own(todo_list) == []
-        assert _care_events(hass) == ["watered"]
+        assert _care_events(hass, "watered") == ["watered"]
 
     async def test_ticking_off_by_hand_reports_watering(
         self, hass: HomeAssistant, plant_config_data: dict[str, Any]
@@ -330,7 +330,7 @@ class TestWatering:
         )
         await hass.async_block_till_done()
 
-        assert _care_events(hass) == ["watered"]
+        assert _care_events(hass, "watered") == ["watered"]
 
 
 @pytest.mark.usefixtures("mock_external_sensors", "record_care_events")
@@ -345,7 +345,7 @@ class TestWateredRule:
 
         await _set_moisture(hass, 23)
 
-        assert _care_events(hass) == ["watered"]
+        assert _care_events(hass, "watered") == ["watered"]
 
     async def test_rise_inside_the_hysteresis_band_is_not_watered(
         self, hass: HomeAssistant, plant_config_data: dict[str, Any]
@@ -355,10 +355,10 @@ class TestWateredRule:
         await _set_moisture(hass, 15)
 
         await _set_moisture(hass, 22)
-        assert _care_events(hass) == []
+        assert _care_events(hass, "watered") == []
 
         await _set_moisture(hass, 23)
-        assert _care_events(hass) == ["watered"]
+        assert _care_events(hass, "watered") == ["watered"]
 
     async def test_small_rise_in_moist_soil_is_not_watered(
         self, hass: HomeAssistant, plant_config_data: dict[str, Any]
@@ -368,7 +368,7 @@ class TestWateredRule:
 
         await _set_moisture(hass, 38)
 
-        assert _care_events(hass) == []
+        assert _care_events(hass, "watered") == []
 
     async def test_jump_out_of_dry_counts_once(
         self, hass: HomeAssistant, plant_config_data: dict[str, Any]
@@ -378,7 +378,38 @@ class TestWateredRule:
 
         await _set_moisture(hass, 45)
 
-        assert _care_events(hass) == ["watered"]
+        assert _care_events(hass, "watered") == ["watered"]
+
+
+@pytest.mark.usefixtures("mock_external_sensors", "record_care_events")
+class TestEventEntities:
+    """Every care type has its own event entity."""
+
+    async def test_one_event_entity_per_care_type(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        await _setup_plant(hass, plant_config_data, {})
+
+        registry = er.async_get(hass)
+        for event_type in ("watered", "fertilized", "repotted", "pruned"):
+            assert registry.async_get_entity_id(
+                "event", DOMAIN, f"{TEST_ENTRY_ID}-{event_type}"
+            )
+        assert (
+            registry.async_get_entity_id("event", DOMAIN, f"{TEST_ENTRY_ID}-care")
+            is None
+        )
+
+    async def test_watering_reports_only_the_watered_entity(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        await _setup_plant(hass, plant_config_data, {})
+        await _set_moisture(hass, 20)
+
+        await _set_moisture(hass, 35)
+
+        assert _care_events(hass, "watered") == ["watered"]
+        assert _care_events(hass, "fertilized") == []
 
 
 @pytest.mark.usefixtures("mock_external_sensors", "record_care_events")
@@ -448,7 +479,7 @@ class TestIntervals:
         assert [i.due for i in open_items] == [
             dt_util.now().date() + timedelta(days=30)
         ]
-        assert _care_events(hass) == ["fertilized"]
+        assert _care_events(hass, "fertilized") == ["fertilized"]
 
     async def test_list_without_completion_time_counts_from_today(
         self, hass: HomeAssistant, plant_config_data: dict[str, Any]

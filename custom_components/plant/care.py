@@ -19,8 +19,8 @@ from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.util import dt as dt_util
 
 from .const import (
-    CARE_EVENT_TYPES,
     CARE_FERTILIZE,
+    CARE_PRUNE,
     CARE_REPOT,
     CARE_WATER,
     FLOW_CARE_TODO,
@@ -44,6 +44,7 @@ SUMMARIES = {
     CARE_WATER: "Water {name}",
     CARE_FERTILIZE: "Fertilize {name}",
     CARE_REPOT: "Repot {name}",
+    CARE_PRUNE: "Prune {name}",
 }
 
 
@@ -71,7 +72,7 @@ class CareTasks:
         plant_name: Callable[[], str],
         todo_entity_id: str,
         intervals: dict[str, int],
-        care_event: PlantCareEvent,
+        care_events: dict[str, PlantCareEvent],
         moisture_status: Callable[[], str | None],
     ) -> None:
         self._hass = hass
@@ -80,7 +81,7 @@ class CareTasks:
         self._plant_name = plant_name
         self._todo_entity_id = todo_entity_id
         self._intervals = intervals
-        self._care_event = care_event
+        self._care_events = care_events
         # uid -> care type of our items that were open at the last look
         self._open_items: dict[str, str] = {}
         self._lock = asyncio.Lock()
@@ -164,7 +165,7 @@ class CareTasks:
         """Tick off the open watering item, or report the watering directly."""
         completed = await self._async_complete_open(CARE_WATER)
         if completed == 0:
-            self._care_event.report(CARE_EVENT_TYPES[CARE_WATER])
+            self._care_events[CARE_WATER].report()
 
     async def _async_complete_open(self, care: str) -> int:
         """Tick off this plant's open items of one care type; return how many."""
@@ -231,7 +232,7 @@ class CareTasks:
                     item = by_uid.get(uid)
                     if item is not None and item["status"] == STATUS_COMPLETED:
                         just_completed.add(care)
-                        self._care_event.report(CARE_EVENT_TYPES[care])
+                        self._care_events[care].report()
             self._open_items = {
                 item["uid"]: item["care"]
                 for item in items
