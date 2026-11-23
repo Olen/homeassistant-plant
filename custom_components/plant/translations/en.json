@@ -340,7 +340,7 @@
       "description": "Triggers when the plant develops a problem (any reading crosses its threshold).",
       "fields": {
         "behavior": {
-          "name": "Behavior",
+          "name": "Trigger when",
           "description": "Whether the trigger fires for each targeted plant or only once for the group."
         }
       }
@@ -350,7 +350,7 @@
       "description": "Triggers when the plant's last problem clears and all readings are back to normal.",
       "fields": {
         "behavior": {
-          "name": "Behavior",
+          "name": "Trigger when",
           "description": "Whether the trigger fires for each targeted plant or only once for the group."
         }
       }
@@ -360,7 +360,7 @@
       "description": "Triggers when the plant's moisture drops below its configured minimum.",
       "fields": {
         "behavior": {
-          "name": "Behavior",
+          "name": "Trigger when",
           "description": "Whether the trigger fires for each targeted plant or only once for the group."
         }
       }
@@ -370,7 +370,7 @@
       "description": "Triggers when the plant's moisture rises above its configured maximum.",
       "fields": {
         "behavior": {
-          "name": "Behavior",
+          "name": "Trigger when",
           "description": "Whether the trigger fires for each targeted plant or only once for the group."
         }
       }
@@ -380,7 +380,7 @@
       "description": "Triggers when the plant's moisture returns to its normal range.",
       "fields": {
         "behavior": {
-          "name": "Behavior",
+          "name": "Trigger when",
           "description": "Whether the trigger fires for each targeted plant or only once for the group."
         }
       }
@@ -390,7 +390,7 @@
       "description": "Triggers when the plant's conductivity drops below its configured minimum.",
       "fields": {
         "behavior": {
-          "name": "Behavior",
+          "name": "Trigger when",
           "description": "Whether the trigger fires for each targeted plant or only once for the group."
         }
       }
@@ -400,7 +400,7 @@
       "description": "Triggers when the plant's conductivity rises above its configured maximum.",
       "fields": {
         "behavior": {
-          "name": "Behavior",
+          "name": "Trigger when",
           "description": "Whether the trigger fires for each targeted plant or only once for the group."
         }
       }
@@ -410,7 +410,7 @@
       "description": "Triggers when the plant's conductivity returns to its normal range.",
       "fields": {
         "behavior": {
-          "name": "Behavior",
+          "name": "Trigger when",
           "description": "Whether the trigger fires for each targeted plant or only once for the group."
         }
       }
@@ -420,7 +420,7 @@
       "description": "Triggers when the plant's temperature drops below its configured minimum.",
       "fields": {
         "behavior": {
-          "name": "Behavior",
+          "name": "Trigger when",
           "description": "Whether the trigger fires for each targeted plant or only once for the group."
         }
       }
@@ -430,7 +430,7 @@
       "description": "Triggers when the plant's temperature rises above its configured maximum.",
       "fields": {
         "behavior": {
-          "name": "Behavior",
+          "name": "Trigger when",
           "description": "Whether the trigger fires for each targeted plant or only once for the group."
         }
       }
@@ -440,7 +440,7 @@
       "description": "Triggers when the plant's temperature returns to its normal range.",
       "fields": {
         "behavior": {
-          "name": "Behavior",
+          "name": "Trigger when",
           "description": "Whether the trigger fires for each targeted plant or only once for the group."
         }
       }
@@ -450,7 +450,7 @@
       "description": "Triggers when the plant's soil temperature drops below its configured minimum.",
       "fields": {
         "behavior": {
-          "name": "Behavior",
+          "name": "Trigger when",
           "description": "Whether the trigger fires for each targeted plant or only once for the group."
         }
       }
@@ -460,7 +460,7 @@
       "description": "Triggers when the plant's soil temperature rises above its configured maximum.",
       "fields": {
         "behavior": {
-          "name": "Behavior",
+          "name": "Trigger when",
           "description": "Whether the trigger fires for each targeted plant or only once for the group."
         }
       }
@@ -470,7 +470,7 @@
       "description": "Triggers when the plant's soil temperature returns to its normal range.",
       "fields": {
         "behavior": {
-          "name": "Behavior",
+          "name": "Trigger when",
           "description": "Whether the trigger fires for each targeted plant or only once for the group."
         }
       }
@@ -480,7 +480,7 @@
       "description": "Triggers when the plant's humidity drops below its configured minimum.",
       "fields": {
         "behavior": {
-          "name": "Behavior",
+          "name": "Trigger when",
           "description": "Whether the trigger fires for each targeted plant or only once for the group."
         }
       }
@@ -490,7 +490,7 @@
       "description": "Triggers when the plant's humidity rises above its configured maximum.",
       "fields": {
         "behavior": {
-          "name": "Behavior",
+          "name": "Trigger when",
           "description": "Whether the trigger fires for each targeted plant or only once for the group."
         }
       }
@@ -500,7 +500,7 @@
       "description": "Triggers when the plant's humidity returns to its normal range.",
       "fields": {
         "behavior": {
-          "name": "Behavior",
+          "name": "Trigger when",
           "description": "Whether the trigger fires for each targeted plant or only once for the group."
         }
       }
@@ -510,7 +510,7 @@
       "description": "Triggers when the plant's illuminance drops below its configured minimum.",
       "fields": {
         "behavior": {
-          "name": "Behavior",
+          "name": "Trigger when",
           "description": "Whether the trigger fires for each targeted plant or only once for the group."
         }
       }
@@ -520,7 +520,7 @@
       "description": "Triggers when the plant's illuminance rises above its configured maximum.",
       "fields": {
         "behavior": {
-          "name": "Behavior",
+          "name": "Trigger when",
           "description": "Whether the trigger fires for each targeted plant or only once for the group."
         }
       }
@@ -530,7 +530,7 @@
       "description": "Triggers when the plant's illuminance returns to its normal range.",
       "fields": {
         "behavior": {
-          "name": "Behavior",
+          "name": "Trigger when",
           "description": "Whether the trigger fires for each targeted plant or only once for the group."
         }
       }
@@ -540,7 +540,7 @@
       "description": "Triggers when the plant's CO2 drops below its configured minimum.",
       "fields": {
         "behavior": {
-          "name": "Behavior",
+          "name": "Trigger when",
           "description": "Whether the trigger fires for each targeted plant or only once for the group."
         }
       }
@@ -550,7 +550,7 @@
       "description": "Triggers when the plant's CO2 rises above its configured maximum.",
       "fields": {
         "behavior": {
-          "name": "Behavior",
+          "name": "Trigger when",
           "description": "Whether the trigger fires for each targeted plant or only once for the group."
         }
       }
@@ -560,7 +560,7 @@
       "description": "Triggers when the plant's CO2 returns to its normal range.",
       "fields": {
         "behavior": {
-          "name": "Behavior",
+          "name": "Trigger when",
           "description": "Whether the trigger fires for each targeted plant or only once for the group."
         }
       }
@@ -570,7 +570,7 @@
       "description": "Triggers when the plant's DLI drops below its configured minimum.",
       "fields": {
         "behavior": {
-          "name": "Behavior",
+          "name": "Trigger when",
           "description": "Whether the trigger fires for each targeted plant or only once for the group."
         }
       }
@@ -580,7 +580,7 @@
       "description": "Triggers when the plant's DLI rises above its configured maximum.",
       "fields": {
         "behavior": {
-          "name": "Behavior",
+          "name": "Trigger when",
           "description": "Whether the trigger fires for each targeted plant or only once for the group."
         }
       }
@@ -590,7 +590,7 @@
       "description": "Triggers when the plant's DLI returns to its normal range.",
       "fields": {
         "behavior": {
-          "name": "Behavior",
+          "name": "Trigger when",
           "description": "Whether the trigger fires for each targeted plant or only once for the group."
         }
       }
@@ -600,7 +600,7 @@
       "description": "Triggers when the plant's VPD drops below its configured minimum.",
       "fields": {
         "behavior": {
-          "name": "Behavior",
+          "name": "Trigger when",
           "description": "Whether the trigger fires for each targeted plant or only once for the group."
         }
       }
@@ -610,7 +610,7 @@
       "description": "Triggers when the plant's VPD rises above its configured maximum.",
       "fields": {
         "behavior": {
-          "name": "Behavior",
+          "name": "Trigger when",
           "description": "Whether the trigger fires for each targeted plant or only once for the group."
         }
       }
@@ -620,7 +620,7 @@
       "description": "Triggers when the plant's VPD returns to its normal range.",
       "fields": {
         "behavior": {
-          "name": "Behavior",
+          "name": "Trigger when",
           "description": "Whether the trigger fires for each targeted plant or only once for the group."
         }
       }
@@ -630,7 +630,7 @@
       "description": "Triggers when the plant's moisture sensor stops sending updates.",
       "fields": {
         "for": {
-          "name": "For",
+          "name": "For at least",
           "description": "The sensor must stay in this state for at least this long before the trigger fires."
         }
       }
@@ -640,7 +640,7 @@
       "description": "Triggers when the plant's moisture sensor starts sending updates again.",
       "fields": {
         "for": {
-          "name": "For",
+          "name": "For at least",
           "description": "The sensor must stay in this state for at least this long before the trigger fires."
         }
       }
@@ -650,7 +650,7 @@
       "description": "Triggers when the plant's conductivity sensor stops sending updates.",
       "fields": {
         "for": {
-          "name": "For",
+          "name": "For at least",
           "description": "The sensor must stay in this state for at least this long before the trigger fires."
         }
       }
@@ -660,7 +660,7 @@
       "description": "Triggers when the plant's conductivity sensor starts sending updates again.",
       "fields": {
         "for": {
-          "name": "For",
+          "name": "For at least",
           "description": "The sensor must stay in this state for at least this long before the trigger fires."
         }
       }
@@ -670,7 +670,7 @@
       "description": "Triggers when the plant's temperature sensor stops sending updates.",
       "fields": {
         "for": {
-          "name": "For",
+          "name": "For at least",
           "description": "The sensor must stay in this state for at least this long before the trigger fires."
         }
       }
@@ -680,7 +680,7 @@
       "description": "Triggers when the plant's temperature sensor starts sending updates again.",
       "fields": {
         "for": {
-          "name": "For",
+          "name": "For at least",
           "description": "The sensor must stay in this state for at least this long before the trigger fires."
         }
       }
@@ -690,7 +690,7 @@
       "description": "Triggers when the plant's soil temperature sensor stops sending updates.",
       "fields": {
         "for": {
-          "name": "For",
+          "name": "For at least",
           "description": "The sensor must stay in this state for at least this long before the trigger fires."
         }
       }
@@ -700,7 +700,7 @@
       "description": "Triggers when the plant's soil temperature sensor starts sending updates again.",
       "fields": {
         "for": {
-          "name": "For",
+          "name": "For at least",
           "description": "The sensor must stay in this state for at least this long before the trigger fires."
         }
       }
@@ -710,7 +710,7 @@
       "description": "Triggers when the plant's humidity sensor stops sending updates.",
       "fields": {
         "for": {
-          "name": "For",
+          "name": "For at least",
           "description": "The sensor must stay in this state for at least this long before the trigger fires."
         }
       }
@@ -720,7 +720,7 @@
       "description": "Triggers when the plant's humidity sensor starts sending updates again.",
       "fields": {
         "for": {
-          "name": "For",
+          "name": "For at least",
           "description": "The sensor must stay in this state for at least this long before the trigger fires."
         }
       }
@@ -730,7 +730,7 @@
       "description": "Triggers when the plant's illuminance sensor stops sending updates.",
       "fields": {
         "for": {
-          "name": "For",
+          "name": "For at least",
           "description": "The sensor must stay in this state for at least this long before the trigger fires."
         }
       }
@@ -740,7 +740,7 @@
       "description": "Triggers when the plant's illuminance sensor starts sending updates again.",
       "fields": {
         "for": {
-          "name": "For",
+          "name": "For at least",
           "description": "The sensor must stay in this state for at least this long before the trigger fires."
         }
       }
@@ -750,7 +750,7 @@
       "description": "Triggers when the plant's CO2 sensor stops sending updates.",
       "fields": {
         "for": {
-          "name": "For",
+          "name": "For at least",
           "description": "The sensor must stay in this state for at least this long before the trigger fires."
         }
       }
@@ -760,7 +760,7 @@
       "description": "Triggers when the plant's CO2 sensor starts sending updates again.",
       "fields": {
         "for": {
-          "name": "For",
+          "name": "For at least",
           "description": "The sensor must stay in this state for at least this long before the trigger fires."
         }
       }
@@ -900,7 +900,7 @@
       "description": "Passes while the plant's moisture sensor has not sent updates for the configured time.",
       "fields": {
         "for": {
-          "name": "For",
+          "name": "For at least",
           "description": "The sensor must have been stale for at least this long for the condition to pass."
         }
       }
@@ -910,7 +910,7 @@
       "description": "Passes while the plant's conductivity sensor has not sent updates for the configured time.",
       "fields": {
         "for": {
-          "name": "For",
+          "name": "For at least",
           "description": "The sensor must have been stale for at least this long for the condition to pass."
         }
       }
@@ -920,7 +920,7 @@
       "description": "Passes while the plant's temperature sensor has not sent updates for the configured time.",
       "fields": {
         "for": {
-          "name": "For",
+          "name": "For at least",
           "description": "The sensor must have been stale for at least this long for the condition to pass."
         }
       }
@@ -930,7 +930,7 @@
       "description": "Passes while the plant's soil temperature sensor has not sent updates for the configured time.",
       "fields": {
         "for": {
-          "name": "For",
+          "name": "For at least",
           "description": "The sensor must have been stale for at least this long for the condition to pass."
         }
       }
@@ -940,7 +940,7 @@
       "description": "Passes while the plant's humidity sensor has not sent updates for the configured time.",
       "fields": {
         "for": {
-          "name": "For",
+          "name": "For at least",
           "description": "The sensor must have been stale for at least this long for the condition to pass."
         }
       }
@@ -950,7 +950,7 @@
       "description": "Passes while the plant's illuminance sensor has not sent updates for the configured time.",
       "fields": {
         "for": {
-          "name": "For",
+          "name": "For at least",
           "description": "The sensor must have been stale for at least this long for the condition to pass."
         }
       }
@@ -960,7 +960,7 @@
       "description": "Passes while the plant's CO2 sensor has not sent updates for the configured time.",
       "fields": {
         "for": {
-          "name": "For",
+          "name": "For at least",
           "description": "The sensor must have been stale for at least this long for the condition to pass."
         }
       }
