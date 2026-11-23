@@ -841,7 +841,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 user_input,
                 dict(self.config_entry.options),
             )
-            return self.async_create_entry(title="", data=user_input)
+            options = {**self.config_entry.options, **user_input}
+            return self.async_create_entry(title="", data=options)
 
         plant_helper = PlantHelper(hass=self.hass)
         data_schema = {}

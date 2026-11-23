@@ -9,6 +9,7 @@ from unittest.mock import patch
 from uuid import uuid4
 
 import pytest
+import voluptuous as vol
 from awesomeversion import AwesomeVersion
 from homeassistant.components.todo import (
     TodoItem,
@@ -923,6 +924,25 @@ def _open(todo_list: FakeTodoList, care: str) -> list[TodoItem]:
     ]
 
 
+async def _submit_plant_properties(
+    hass: HomeAssistant, entry: MockConfigEntry, changes: dict[str, Any]
+) -> None:
+    """Submit the plant properties step with the form's defaults plus `changes`."""
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "plant_properties"}
+    )
+    defaults = {
+        str(key): key.default()
+        for key in result["data_schema"].schema
+        if key.default is not vol.UNDEFINED
+    }
+    await hass.config_entries.options.async_configure(
+        result["flow_id"], {**defaults, **changes}
+    )
+    await hass.async_block_till_done()
+
+
 @pytest.mark.usefixtures("record_care_events")
 class TestCareModes:
     """The trigger checkboxes and intervals decide how each care is tracked."""
@@ -1009,13 +1029,32 @@ class TestCareModes:
         fertilize_item = _open(todo_list, CARE_FERTILIZE)[0]
         repot_item = _open(todo_list, CARE_REPOT)[0]
 
-        hass.config_entries.async_update_entry(
-            entry, options={**entry.options, FLOW_CONDUCTIVITY_TRIGGER: True}
-        )
-        await hass.async_block_till_done()
+        await _submit_plant_properties(hass, entry, {FLOW_CONDUCTIVITY_TRIGGER: True})
 
         assert fertilize_item not in todo_list.todo_items
         assert repot_item in todo_list.todo_items
+
+    @pytest.mark.usefixtures("mock_external_sensors")
+    async def test_plant_properties_step_keeps_the_care_options(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        await _setup_todo_list(hass)
+        entry = await _setup_plant(
+            hass,
+            plant_config_data,
+            {
+                FLOW_CARE_TODO: TODO_ENTITY_ID,
+                FLOW_WATER_INTERVAL: 7,
+                FLOW_PRUNE_INTERVAL: 30,
+            },
+        )
+
+        await _submit_plant_properties(hass, entry, {FLOW_MOISTURE_TRIGGER: False})
+
+        assert entry.options[FLOW_MOISTURE_TRIGGER] is False
+        assert entry.options[FLOW_CARE_TODO] == TODO_ENTITY_ID
+        assert entry.options[FLOW_WATER_INTERVAL] == 7
+        assert entry.options[FLOW_PRUNE_INTERVAL] == 30
 
     @pytest.mark.usefixtures("mock_external_sensors")
     async def test_ticking_off_prune_item_reports_pruned(
