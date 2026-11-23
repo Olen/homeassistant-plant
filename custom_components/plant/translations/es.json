@@ -17,12 +17,6 @@
       "humidity": {
         "name": "Humedad del aire"
       },
-      "co2": {
-        "name": "CO2"
-      },
-      "soil_temperature": {
-        "name": "Temperatura del suelo"
-      },
       "ppfd": {
         "name": "PPFD"
       },
@@ -32,11 +26,17 @@
       "dli": {
         "name": "Integral de luz diaria"
       },
-      "dli_24h": {
-        "name": "DLI (24h móvil)"
-      },
       "vpd": {
         "name": "Déficit de presión de vapor"
+      },
+      "co2": {
+        "name": "CO2"
+      },
+      "soil_temperature": {
+        "name": "Temperatura del suelo"
+      },
+      "dli_24h": {
+        "name": "DLI (24h móvil)"
       }
     },
     "number": {
@@ -76,6 +76,12 @@
       "min_humidity": {
         "name": "Mín. humedad del aire"
       },
+      "max_vpd": {
+        "name": "Máx. VPD"
+      },
+      "min_vpd": {
+        "name": "Mín. VPD"
+      },
       "max_co2": {
         "name": "Máx. CO2"
       },
@@ -87,12 +93,6 @@
       },
       "min_soil_temperature": {
         "name": "Mín. temperatura del suelo"
-      },
-      "max_vpd": {
-        "name": "Máx. VPD"
-      },
-      "min_vpd": {
-        "name": "Mín. VPD"
       },
       "lux_to_ppfd": {
         "name": "Factor Lux a PPFD"
@@ -229,6 +229,640 @@
           "description": "ID de la entidad del nuevo sensor. Dejar en blanco para eliminar el sensor."
         }
       }
+    }
+  },
+  "triggers": {
+    "problem_detected": {
+      "name": "Problema detectado",
+      "description": "Se activa cuando la planta desarrolla un problema (cualquier lectura supera su umbral).",
+      "fields": {
+        "behavior": {
+          "name": "Comportamiento",
+          "description": "Si el disparador se activa para cada planta seleccionada o solo una vez para el grupo."
+        }
+      }
+    },
+    "problem_cleared": {
+      "name": "Problema resuelto",
+      "description": "Se activa cuando se resuelve el último problema de la planta y todas las lecturas vuelven a la normalidad.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamiento",
+          "description": "Si el disparador se activa para cada planta seleccionada o solo una vez para el grupo."
+        }
+      }
+    },
+    "moisture_became_low": {
+      "name": "Humedad del suelo se ha vuelto baja",
+      "description": "Se activa cuando la humedad del suelo de la planta cae por debajo de su mínimo configurado.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamiento",
+          "description": "Si el disparador se activa para cada planta seleccionada o solo una vez para el grupo."
+        }
+      }
+    },
+    "moisture_became_high": {
+      "name": "Humedad del suelo se ha vuelto alta",
+      "description": "Se activa cuando la humedad del suelo de la planta supera su máximo configurado.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamiento",
+          "description": "Si el disparador se activa para cada planta seleccionada o solo una vez para el grupo."
+        }
+      }
+    },
+    "moisture_became_ok": {
+      "name": "Humedad del suelo se ha vuelto normal",
+      "description": "Se activa cuando la humedad del suelo de la planta vuelve a su rango normal.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamiento",
+          "description": "Si el disparador se activa para cada planta seleccionada o solo una vez para el grupo."
+        }
+      }
+    },
+    "conductivity_became_low": {
+      "name": "Conductividad se ha vuelto baja",
+      "description": "Se activa cuando la conductividad de la planta cae por debajo de su mínimo configurado.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamiento",
+          "description": "Si el disparador se activa para cada planta seleccionada o solo una vez para el grupo."
+        }
+      }
+    },
+    "conductivity_became_high": {
+      "name": "Conductividad se ha vuelto alta",
+      "description": "Se activa cuando la conductividad de la planta supera su máximo configurado.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamiento",
+          "description": "Si el disparador se activa para cada planta seleccionada o solo una vez para el grupo."
+        }
+      }
+    },
+    "conductivity_became_ok": {
+      "name": "Conductividad se ha vuelto normal",
+      "description": "Se activa cuando la conductividad de la planta vuelve a su rango normal.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamiento",
+          "description": "Si el disparador se activa para cada planta seleccionada o solo una vez para el grupo."
+        }
+      }
+    },
+    "temperature_became_low": {
+      "name": "Temperatura se ha vuelto baja",
+      "description": "Se activa cuando la temperatura de la planta cae por debajo de su mínimo configurado.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamiento",
+          "description": "Si el disparador se activa para cada planta seleccionada o solo una vez para el grupo."
+        }
+      }
+    },
+    "temperature_became_high": {
+      "name": "Temperatura se ha vuelto alta",
+      "description": "Se activa cuando la temperatura de la planta supera su máximo configurado.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamiento",
+          "description": "Si el disparador se activa para cada planta seleccionada o solo una vez para el grupo."
+        }
+      }
+    },
+    "temperature_became_ok": {
+      "name": "Temperatura se ha vuelto normal",
+      "description": "Se activa cuando la temperatura de la planta vuelve a su rango normal.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamiento",
+          "description": "Si el disparador se activa para cada planta seleccionada o solo una vez para el grupo."
+        }
+      }
+    },
+    "soil_temperature_became_low": {
+      "name": "Temperatura del suelo se ha vuelto baja",
+      "description": "Se activa cuando la temperatura del suelo de la planta cae por debajo de su mínimo configurado.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamiento",
+          "description": "Si el disparador se activa para cada planta seleccionada o solo una vez para el grupo."
+        }
+      }
+    },
+    "soil_temperature_became_high": {
+      "name": "Temperatura del suelo se ha vuelto alta",
+      "description": "Se activa cuando la temperatura del suelo de la planta supera su máximo configurado.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamiento",
+          "description": "Si el disparador se activa para cada planta seleccionada o solo una vez para el grupo."
+        }
+      }
+    },
+    "soil_temperature_became_ok": {
+      "name": "Temperatura del suelo se ha vuelto normal",
+      "description": "Se activa cuando la temperatura del suelo de la planta vuelve a su rango normal.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamiento",
+          "description": "Si el disparador se activa para cada planta seleccionada o solo una vez para el grupo."
+        }
+      }
+    },
+    "humidity_became_low": {
+      "name": "Humedad del aire se ha vuelto baja",
+      "description": "Se activa cuando la humedad del aire de la planta cae por debajo de su mínimo configurado.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamiento",
+          "description": "Si el disparador se activa para cada planta seleccionada o solo una vez para el grupo."
+        }
+      }
+    },
+    "humidity_became_high": {
+      "name": "Humedad del aire se ha vuelto alta",
+      "description": "Se activa cuando la humedad del aire de la planta supera su máximo configurado.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamiento",
+          "description": "Si el disparador se activa para cada planta seleccionada o solo una vez para el grupo."
+        }
+      }
+    },
+    "humidity_became_ok": {
+      "name": "Humedad del aire se ha vuelto normal",
+      "description": "Se activa cuando la humedad del aire de la planta vuelve a su rango normal.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamiento",
+          "description": "Si el disparador se activa para cada planta seleccionada o solo una vez para el grupo."
+        }
+      }
+    },
+    "illuminance_became_low": {
+      "name": "Iluminancia se ha vuelto baja",
+      "description": "Se activa cuando la iluminancia de la planta cae por debajo de su mínimo configurado.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamiento",
+          "description": "Si el disparador se activa para cada planta seleccionada o solo una vez para el grupo."
+        }
+      }
+    },
+    "illuminance_became_high": {
+      "name": "Iluminancia se ha vuelto alta",
+      "description": "Se activa cuando la iluminancia de la planta supera su máximo configurado.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamiento",
+          "description": "Si el disparador se activa para cada planta seleccionada o solo una vez para el grupo."
+        }
+      }
+    },
+    "illuminance_became_ok": {
+      "name": "Iluminancia se ha vuelto normal",
+      "description": "Se activa cuando la iluminancia de la planta vuelve a su rango normal.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamiento",
+          "description": "Si el disparador se activa para cada planta seleccionada o solo una vez para el grupo."
+        }
+      }
+    },
+    "co2_became_low": {
+      "name": "CO2 se ha vuelto bajo",
+      "description": "Se activa cuando el CO2 de la planta cae por debajo de su mínimo configurado.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamiento",
+          "description": "Si el disparador se activa para cada planta seleccionada o solo una vez para el grupo."
+        }
+      }
+    },
+    "co2_became_high": {
+      "name": "CO2 se ha vuelto alto",
+      "description": "Se activa cuando el CO2 de la planta supera su máximo configurado.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamiento",
+          "description": "Si el disparador se activa para cada planta seleccionada o solo una vez para el grupo."
+        }
+      }
+    },
+    "co2_became_ok": {
+      "name": "CO2 se ha vuelto normal",
+      "description": "Se activa cuando el CO2 de la planta vuelve a su rango normal.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamiento",
+          "description": "Si el disparador se activa para cada planta seleccionada o solo una vez para el grupo."
+        }
+      }
+    },
+    "dli_became_low": {
+      "name": "DLI se ha vuelto bajo",
+      "description": "Se activa cuando el DLI de la planta cae por debajo de su mínimo configurado.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamiento",
+          "description": "Si el disparador se activa para cada planta seleccionada o solo una vez para el grupo."
+        }
+      }
+    },
+    "dli_became_high": {
+      "name": "DLI se ha vuelto alto",
+      "description": "Se activa cuando el DLI de la planta supera su máximo configurado.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamiento",
+          "description": "Si el disparador se activa para cada planta seleccionada o solo una vez para el grupo."
+        }
+      }
+    },
+    "dli_became_ok": {
+      "name": "DLI se ha vuelto normal",
+      "description": "Se activa cuando el DLI de la planta vuelve a su rango normal.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamiento",
+          "description": "Si el disparador se activa para cada planta seleccionada o solo una vez para el grupo."
+        }
+      }
+    },
+    "vpd_became_low": {
+      "name": "VPD se ha vuelto bajo",
+      "description": "Se activa cuando el VPD de la planta cae por debajo de su mínimo configurado.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamiento",
+          "description": "Si el disparador se activa para cada planta seleccionada o solo una vez para el grupo."
+        }
+      }
+    },
+    "vpd_became_high": {
+      "name": "VPD se ha vuelto alto",
+      "description": "Se activa cuando el VPD de la planta supera su máximo configurado.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamiento",
+          "description": "Si el disparador se activa para cada planta seleccionada o solo una vez para el grupo."
+        }
+      }
+    },
+    "vpd_became_ok": {
+      "name": "VPD se ha vuelto normal",
+      "description": "Se activa cuando el VPD de la planta vuelve a su rango normal.",
+      "fields": {
+        "behavior": {
+          "name": "Comportamiento",
+          "description": "Si el disparador se activa para cada planta seleccionada o solo una vez para el grupo."
+        }
+      }
+    },
+    "moisture_sensor_became_stale": {
+      "name": "Sensor de humedad del suelo sin actualizaciones",
+      "description": "Se activa cuando el sensor de humedad del suelo de la planta deja de enviar actualizaciones.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "El sensor debe permanecer en este estado al menos este tiempo antes de que se active el disparador."
+        }
+      }
+    },
+    "moisture_sensor_became_fresh": {
+      "name": "Sensor de humedad del suelo activo de nuevo",
+      "description": "Se activa cuando el sensor de humedad del suelo de la planta vuelve a enviar actualizaciones.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "El sensor debe permanecer en este estado al menos este tiempo antes de que se active el disparador."
+        }
+      }
+    },
+    "conductivity_sensor_became_stale": {
+      "name": "Sensor de conductividad sin actualizaciones",
+      "description": "Se activa cuando el sensor de conductividad de la planta deja de enviar actualizaciones.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "El sensor debe permanecer en este estado al menos este tiempo antes de que se active el disparador."
+        }
+      }
+    },
+    "conductivity_sensor_became_fresh": {
+      "name": "Sensor de conductividad activo de nuevo",
+      "description": "Se activa cuando el sensor de conductividad de la planta vuelve a enviar actualizaciones.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "El sensor debe permanecer en este estado al menos este tiempo antes de que se active el disparador."
+        }
+      }
+    },
+    "temperature_sensor_became_stale": {
+      "name": "Sensor de temperatura sin actualizaciones",
+      "description": "Se activa cuando el sensor de temperatura de la planta deja de enviar actualizaciones.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "El sensor debe permanecer en este estado al menos este tiempo antes de que se active el disparador."
+        }
+      }
+    },
+    "temperature_sensor_became_fresh": {
+      "name": "Sensor de temperatura activo de nuevo",
+      "description": "Se activa cuando el sensor de temperatura de la planta vuelve a enviar actualizaciones.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "El sensor debe permanecer en este estado al menos este tiempo antes de que se active el disparador."
+        }
+      }
+    },
+    "soil_temperature_sensor_became_stale": {
+      "name": "Sensor de temperatura del suelo sin actualizaciones",
+      "description": "Se activa cuando el sensor de temperatura del suelo de la planta deja de enviar actualizaciones.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "El sensor debe permanecer en este estado al menos este tiempo antes de que se active el disparador."
+        }
+      }
+    },
+    "soil_temperature_sensor_became_fresh": {
+      "name": "Sensor de temperatura del suelo activo de nuevo",
+      "description": "Se activa cuando el sensor de temperatura del suelo de la planta vuelve a enviar actualizaciones.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "El sensor debe permanecer en este estado al menos este tiempo antes de que se active el disparador."
+        }
+      }
+    },
+    "humidity_sensor_became_stale": {
+      "name": "Sensor de humedad del aire sin actualizaciones",
+      "description": "Se activa cuando el sensor de humedad del aire de la planta deja de enviar actualizaciones.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "El sensor debe permanecer en este estado al menos este tiempo antes de que se active el disparador."
+        }
+      }
+    },
+    "humidity_sensor_became_fresh": {
+      "name": "Sensor de humedad del aire activo de nuevo",
+      "description": "Se activa cuando el sensor de humedad del aire de la planta vuelve a enviar actualizaciones.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "El sensor debe permanecer en este estado al menos este tiempo antes de que se active el disparador."
+        }
+      }
+    },
+    "illuminance_sensor_became_stale": {
+      "name": "Sensor de iluminancia sin actualizaciones",
+      "description": "Se activa cuando el sensor de iluminancia de la planta deja de enviar actualizaciones.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "El sensor debe permanecer en este estado al menos este tiempo antes de que se active el disparador."
+        }
+      }
+    },
+    "illuminance_sensor_became_fresh": {
+      "name": "Sensor de iluminancia activo de nuevo",
+      "description": "Se activa cuando el sensor de iluminancia de la planta vuelve a enviar actualizaciones.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "El sensor debe permanecer en este estado al menos este tiempo antes de que se active el disparador."
+        }
+      }
+    },
+    "co2_sensor_became_stale": {
+      "name": "Sensor de CO2 sin actualizaciones",
+      "description": "Se activa cuando el sensor de CO2 de la planta deja de enviar actualizaciones.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "El sensor debe permanecer en este estado al menos este tiempo antes de que se active el disparador."
+        }
+      }
+    },
+    "co2_sensor_became_fresh": {
+      "name": "Sensor de CO2 activo de nuevo",
+      "description": "Se activa cuando el sensor de CO2 de la planta vuelve a enviar actualizaciones.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "El sensor debe permanecer en este estado al menos este tiempo antes de que se active el disparador."
+        }
+      }
+    }
+  },
+  "conditions": {
+    "has_problem": {
+      "name": "Tiene un problema",
+      "description": "Se cumple mientras la planta tenga algún problema activo."
+    },
+    "moisture_is_low": {
+      "name": "Humedad del suelo es baja",
+      "description": "Se cumple mientras la humedad del suelo de la planta esté por debajo de su mínimo configurado."
+    },
+    "moisture_is_high": {
+      "name": "Humedad del suelo es alta",
+      "description": "Se cumple mientras la humedad del suelo de la planta esté por encima de su máximo configurado."
+    },
+    "moisture_is_ok": {
+      "name": "Humedad del suelo es normal",
+      "description": "Se cumple mientras la humedad del suelo de la planta esté dentro de su rango normal."
+    },
+    "conductivity_is_low": {
+      "name": "Conductividad es baja",
+      "description": "Se cumple mientras la conductividad de la planta esté por debajo de su mínimo configurado."
+    },
+    "conductivity_is_high": {
+      "name": "Conductividad es alta",
+      "description": "Se cumple mientras la conductividad de la planta esté por encima de su máximo configurado."
+    },
+    "conductivity_is_ok": {
+      "name": "Conductividad es normal",
+      "description": "Se cumple mientras la conductividad de la planta esté dentro de su rango normal."
+    },
+    "temperature_is_low": {
+      "name": "Temperatura es baja",
+      "description": "Se cumple mientras la temperatura de la planta esté por debajo de su mínimo configurado."
+    },
+    "temperature_is_high": {
+      "name": "Temperatura es alta",
+      "description": "Se cumple mientras la temperatura de la planta esté por encima de su máximo configurado."
+    },
+    "temperature_is_ok": {
+      "name": "Temperatura es normal",
+      "description": "Se cumple mientras la temperatura de la planta esté dentro de su rango normal."
+    },
+    "soil_temperature_is_low": {
+      "name": "Temperatura del suelo es baja",
+      "description": "Se cumple mientras la temperatura del suelo de la planta esté por debajo de su mínimo configurado."
+    },
+    "soil_temperature_is_high": {
+      "name": "Temperatura del suelo es alta",
+      "description": "Se cumple mientras la temperatura del suelo de la planta esté por encima de su máximo configurado."
+    },
+    "soil_temperature_is_ok": {
+      "name": "Temperatura del suelo es normal",
+      "description": "Se cumple mientras la temperatura del suelo de la planta esté dentro de su rango normal."
+    },
+    "humidity_is_low": {
+      "name": "Humedad del aire es baja",
+      "description": "Se cumple mientras la humedad del aire de la planta esté por debajo de su mínimo configurado."
+    },
+    "humidity_is_high": {
+      "name": "Humedad del aire es alta",
+      "description": "Se cumple mientras la humedad del aire de la planta esté por encima de su máximo configurado."
+    },
+    "humidity_is_ok": {
+      "name": "Humedad del aire es normal",
+      "description": "Se cumple mientras la humedad del aire de la planta esté dentro de su rango normal."
+    },
+    "illuminance_is_low": {
+      "name": "Iluminancia es baja",
+      "description": "Se cumple mientras la iluminancia de la planta esté por debajo de su mínimo configurado."
+    },
+    "illuminance_is_high": {
+      "name": "Iluminancia es alta",
+      "description": "Se cumple mientras la iluminancia de la planta esté por encima de su máximo configurado."
+    },
+    "illuminance_is_ok": {
+      "name": "Iluminancia es normal",
+      "description": "Se cumple mientras la iluminancia de la planta esté dentro de su rango normal."
+    },
+    "co2_is_low": {
+      "name": "CO2 es bajo",
+      "description": "Se cumple mientras el CO2 de la planta esté por debajo de su mínimo configurado."
+    },
+    "co2_is_high": {
+      "name": "CO2 es alto",
+      "description": "Se cumple mientras el CO2 de la planta esté por encima de su máximo configurado."
+    },
+    "co2_is_ok": {
+      "name": "CO2 es normal",
+      "description": "Se cumple mientras el CO2 de la planta esté dentro de su rango normal."
+    },
+    "dli_is_low": {
+      "name": "DLI es bajo",
+      "description": "Se cumple mientras el DLI de la planta esté por debajo de su mínimo configurado."
+    },
+    "dli_is_high": {
+      "name": "DLI es alto",
+      "description": "Se cumple mientras el DLI de la planta esté por encima de su máximo configurado."
+    },
+    "dli_is_ok": {
+      "name": "DLI es normal",
+      "description": "Se cumple mientras el DLI de la planta esté dentro de su rango normal."
+    },
+    "vpd_is_low": {
+      "name": "VPD es bajo",
+      "description": "Se cumple mientras el VPD de la planta esté por debajo de su mínimo configurado."
+    },
+    "vpd_is_high": {
+      "name": "VPD es alto",
+      "description": "Se cumple mientras el VPD de la planta esté por encima de su máximo configurado."
+    },
+    "vpd_is_ok": {
+      "name": "VPD es normal",
+      "description": "Se cumple mientras el VPD de la planta esté dentro de su rango normal."
+    },
+    "moisture_sensor_is_stale": {
+      "name": "Sensor de humedad del suelo sin actualizaciones",
+      "description": "Se cumple mientras el sensor de humedad del suelo de la planta no haya enviado actualizaciones durante el tiempo configurado.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "El sensor debe llevar sin actualizarse al menos este tiempo para que se cumpla la condición."
+        }
+      }
+    },
+    "conductivity_sensor_is_stale": {
+      "name": "Sensor de conductividad sin actualizaciones",
+      "description": "Se cumple mientras el sensor de conductividad de la planta no haya enviado actualizaciones durante el tiempo configurado.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "El sensor debe llevar sin actualizarse al menos este tiempo para que se cumpla la condición."
+        }
+      }
+    },
+    "temperature_sensor_is_stale": {
+      "name": "Sensor de temperatura sin actualizaciones",
+      "description": "Se cumple mientras el sensor de temperatura de la planta no haya enviado actualizaciones durante el tiempo configurado.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "El sensor debe llevar sin actualizarse al menos este tiempo para que se cumpla la condición."
+        }
+      }
+    },
+    "soil_temperature_sensor_is_stale": {
+      "name": "Sensor de temperatura del suelo sin actualizaciones",
+      "description": "Se cumple mientras el sensor de temperatura del suelo de la planta no haya enviado actualizaciones durante el tiempo configurado.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "El sensor debe llevar sin actualizarse al menos este tiempo para que se cumpla la condición."
+        }
+      }
+    },
+    "humidity_sensor_is_stale": {
+      "name": "Sensor de humedad del aire sin actualizaciones",
+      "description": "Se cumple mientras el sensor de humedad del aire de la planta no haya enviado actualizaciones durante el tiempo configurado.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "El sensor debe llevar sin actualizarse al menos este tiempo para que se cumpla la condición."
+        }
+      }
+    },
+    "illuminance_sensor_is_stale": {
+      "name": "Sensor de iluminancia sin actualizaciones",
+      "description": "Se cumple mientras el sensor de iluminancia de la planta no haya enviado actualizaciones durante el tiempo configurado.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "El sensor debe llevar sin actualizarse al menos este tiempo para que se cumpla la condición."
+        }
+      }
+    },
+    "co2_sensor_is_stale": {
+      "name": "Sensor de CO2 sin actualizaciones",
+      "description": "Se cumple mientras el sensor de CO2 de la planta no haya enviado actualizaciones durante el tiempo configurado.",
+      "fields": {
+        "for": {
+          "name": "Durante",
+          "description": "El sensor debe llevar sin actualizarse al menos este tiempo para que se cumpla la condición."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "platform_setup_failed": {
+      "message": "No se pudo configurar la plataforma de entidades de planta."
+    },
+    "plant_entity_not_added": {
+      "message": "La entidad de planta {entity_id} no se añadió a Home Assistant, posiblemente porque su ID único ya está en uso."
+    }
+  },
+  "issues": {
+    "other_flower_card": {
+      "title": "La tarjeta de flor está instalada dos veces",
+      "description": "La tarjeta de flor ahora viene incluida con la integración Plant Monitor. Tus paneles también cargan otra copia: {urls}\n\nElimina esa copia: desinstala Flower Card en el Marketplace (HACS antes de Home Assistant 2026.11) o borra el recurso que añadiste tú mismo (en Ajustes → Paneles → Recursos, o en los recursos `lovelace` de tu configuración YAML). Mientras tanto, tus paneles siguen funcionando. Plant Monitor toma el relevo en cuanto desaparece la otra copia; si tus recursos están en YAML, reinicia antes Home Assistant. Después, actualiza el navegador."
+    },
+    "missing_flower_card": {
+      "title": "Un recurso del panel apunta a una tarjeta de flor eliminada",
+      "description": "Los recursos de tu panel aún incluyen una tarjeta de flor cuyo archivo ya no existe: {urls}\n\nEsa entrada ya no cuenta como tarjeta instalada, así que no impide que Plant Monitor cargue la suya. Elimina el recurso sobrante en Ajustes → Paneles → Recursos, o en los recursos `lovelace` de tu configuración YAML, para que el navegador deje de pedir el archivo que falta."
     }
   }
 }
