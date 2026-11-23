@@ -37,6 +37,9 @@
       },
       "vpd": {
         "name": "Damptryksdeficit"
+      },
+      "next_watering": {
+        "name": "Næste vanding"
       }
     },
     "number": {

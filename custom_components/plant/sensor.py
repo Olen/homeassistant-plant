@@ -10,6 +10,8 @@ from datetime import datetime, timedelta
 
 from homeassistant.components.integration.const import METHOD_TRAPEZOIDAL
 from homeassistant.components.integration.sensor import IntegrationSensor
+from homeassistant.components.recorder import get_instance
+from homeassistant.components.recorder.history import state_changes_during_period
 from homeassistant.components.sensor import (
     DOMAIN as SENSOR_DOMAIN,
     RestoreSensor,
@@ -62,6 +64,8 @@ from homeassistant.helpers.event import (
     async_call_later,
     async_track_state_change_event,
 )
+from homeassistant.helpers.start import async_at_started
+from homeassistant.util import dt as dt_util
 from homeassistant.util.unit_conversion import TemperatureConverter
 
 from . import SETUP_DUMMY_SENSORS
@@ -93,6 +97,7 @@ from .const import (
     ICON_SOIL_TEMPERATURE,
     ICON_TEMPERATURE,
     ICON_VPD,
+    PREDICTION_WINDOW,
     READING_CO2,
     READING_CONDUCTIVITY,
     READING_DLI,
@@ -112,6 +117,7 @@ from .const import (
     TRANSLATION_KEY_HUMIDITY,
     TRANSLATION_KEY_ILLUMINANCE,
     TRANSLATION_KEY_MOISTURE,
+    TRANSLATION_KEY_NEXT_WATERING,
     TRANSLATION_KEY_PPFD,
     TRANSLATION_KEY_SOIL_TEMPERATURE,
     TRANSLATION_KEY_TEMPERATURE,
@@ -122,6 +128,7 @@ from .const import (
     UNIT_TOTAL_LIGHT_INTEGRAL,
     UNIT_VPD,
 )
+from .prediction import predict_dry_time
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -232,6 +239,9 @@ async def async_setup_entry(
     pvpd._attr_entity_registry_enabled_default = has_temp_and_humidity
     async_add_entities([pvpd])
     plant.add_vpd(vpd=pvpd)
+
+    if entry.data[FLOW_PLANT_INFO].get(FLOW_SENSOR_MOISTURE):
+        async_add_entities([PlantNextWatering(hass, entry, plant)])
 
     return True
 
@@ -894,6 +904,110 @@ class PlantCurrentSoilTemperature(PlantCurrentStatus):
             FLOW_SENSOR_SOIL_TEMPERATURE
         )
         super().__init__(hass, config, plantdevice)
+
+
+def _moisture_history(
+    hass: HomeAssistant, entity_id: str, start: datetime, end: datetime
+) -> list[tuple[datetime, float]]:
+    """Numeric states of `entity_id` as (time, value); runs in the recorder's executor."""
+    states = state_changes_during_period(
+        hass, start, end, entity_id, no_attributes=True
+    )
+    readings = []
+    for state in states.get(entity_id, []):
+        if state.state in (STATE_UNKNOWN, STATE_UNAVAILABLE):
+            continue
+        readings.append((state.last_updated, float(state.state)))
+    return readings
+
+
+class PlantNextWatering(SensorEntity):
+    """When the soil is predicted to reach its minimum moisture."""
+
+    _attr_has_entity_name = True
+    _attr_should_poll = False
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_translation_key = TRANSLATION_KEY_NEXT_WATERING
+
+    def __init__(
+        self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
+    ) -> None:
+        """Initialize the sensor."""
+        self.hass = hass
+        self._plant = plantdevice
+        self._attr_unique_id = f"{config.entry_id}-next-watering"
+        self._last_computed: datetime | None = None
+        self._computing = False
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Device info for devices"""
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._plant.unique_id)},
+            name=self._plant.name,
+        )
+
+    async def async_added_to_hass(self) -> None:
+        """Compute once at startup, then at most hourly when the moisture changes."""
+        await super().async_added_to_hass()
+        self.async_on_remove(
+            async_track_state_change_event(
+                self.hass,
+                [self._plant.sensor_moisture.entity_id],
+                self._moisture_changed,
+            )
+        )
+        self.async_on_remove(async_at_started(self.hass, self._started))
+
+    @callback
+    def _started(self, hass: HomeAssistant) -> None:
+        self.hass.async_create_task(self._async_recompute())
+
+    @callback
+    def _moisture_changed(self, event: Event) -> None:
+        if self._recompute_is_due():
+            self.hass.async_create_task(self._async_recompute())
+
+    def _recompute_is_due(self) -> bool:
+        if self._last_computed is None:
+            return True
+        return dt_util.utcnow() - self._last_computed >= timedelta(hours=1)
+
+    async def _async_recompute(self) -> None:
+        if self._computing:
+            return
+        self._computing = True
+        try:
+            self._attr_native_value = await self._async_predict()
+            self._last_computed = dt_util.utcnow()
+            self.async_write_ha_state()
+        finally:
+            self._computing = False
+
+    async def _async_predict(self) -> datetime | None:
+        minimum = self._minimum_moisture()
+        if minimum is None:
+            return None
+        if "recorder" not in self.hass.config.components:
+            _LOGGER.debug("No recorder, cannot predict watering for %s", self.entity_id)
+            return None
+        now = dt_util.utcnow()
+        readings = await get_instance(self.hass).async_add_executor_job(
+            _moisture_history,
+            self.hass,
+            self._plant.sensor_moisture.entity_id,
+            now - PREDICTION_WINDOW,
+            now,
+        )
+        return predict_dry_time(readings, minimum, now)
+
+    def _minimum_moisture(self) -> float | None:
+        if self._plant.min_moisture is None:
+            return None
+        state = self.hass.states.get(self._plant.min_moisture.entity_id)
+        if state is None or state.state in (STATE_UNKNOWN, STATE_UNAVAILABLE):
+            return None
+        return float(state.state)
 
 
 class PlantCurrentVpd(RestoreSensor):

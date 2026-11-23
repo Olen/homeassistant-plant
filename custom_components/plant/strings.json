@@ -28,6 +28,9 @@
       },
       "vpd": {
         "name": "Vapour pressure deficit"
+      },
+      "next_watering": {
+        "name": "Next watering"
       }
     },
     "number": {

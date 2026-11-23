@@ -37,6 +37,9 @@
       },
       "vpd": {
         "name": "Dampfdruckdefizit"
+      },
+      "next_watering": {
+        "name": "Nächste Bewässerung"
       }
     },
     "number": {

@@ -1287,3 +1287,28 @@ class TestFertilizeSensor:
         assert [i.summary for i in _own(todo_list)] == [f"Fertilize {TEST_PLANT_NAME}"]
         await _set_conductivity(hass, 900)
         assert [i.status for i in _own(todo_list)] == [TodoItemStatus.NEEDS_ACTION]
+
+
+@pytest.mark.usefixtures("mock_external_sensors")
+async def test_next_watering_entity_with_moisture_sensor(
+    hass: HomeAssistant, plant_config_data: dict[str, Any]
+) -> None:
+    await _setup_plant(hass, plant_config_data, {})
+
+    assert er.async_get(hass).async_get_entity_id(
+        "sensor", DOMAIN, f"{TEST_ENTRY_ID}-next-watering"
+    )
+
+
+@pytest.mark.usefixtures("mock_external_sensors")
+async def test_no_next_watering_entity_without_moisture_sensor(
+    hass: HomeAssistant, plant_config_data_no_sensors: dict[str, Any]
+) -> None:
+    await _setup_plant(hass, plant_config_data_no_sensors, {})
+
+    assert (
+        er.async_get(hass).async_get_entity_id(
+            "sensor", DOMAIN, f"{TEST_ENTRY_ID}-next-watering"
+        )
+        is None
+    )

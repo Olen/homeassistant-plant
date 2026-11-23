@@ -115,6 +115,7 @@ TRANSLATION_KEY_SOIL_TEMPERATURE = "soil_temperature"
 TRANSLATION_KEY_MAX_SOIL_TEMPERATURE = "max_soil_temperature"
 TRANSLATION_KEY_MIN_SOIL_TEMPERATURE = "min_soil_temperature"
 TRANSLATION_KEY_VPD = "vpd"
+TRANSLATION_KEY_NEXT_WATERING = "next_watering"
 TRANSLATION_KEY_MAX_VPD = "max_vpd"
 TRANSLATION_KEY_MIN_VPD = "min_vpd"
 TRANSLATION_KEY_LUX_TO_PPFD = "lux_to_ppfd"
@@ -254,6 +255,11 @@ FLOW_MOISTURE_GRACE_PERIOD = "moisture_grace_period"
 # If moisture increases by this many percentage points (e.g. 40% → 50%),
 # trigger grace period. This is an absolute difference, not a relative percentage.
 MOISTURE_INCREASE_THRESHOLD = 10.0
+
+# Watering prediction: linear dry-down over the last 96 h, after the last watering
+PREDICTION_WINDOW = timedelta(hours=96)
+PREDICTION_MIN_SPAN = timedelta(hours=12)
+PREDICTION_MIN_READINGS = 6
 
 # PPFD to DLI: /1000000 * 3600 to get from microseconds to hours
 PPFD_DLI_FACTOR = 0.0036
