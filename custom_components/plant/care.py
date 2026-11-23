@@ -125,9 +125,11 @@ class CareTasks:
         modes: dict[str, str],
         care_events: dict[str, PlantCareEvent],
         moisture_status: Callable[[], str | None],
+        conductivity_status: Callable[[], str | None],
     ) -> None:
         self._hass = hass
         self._moisture_status = moisture_status
+        self._conductivity_status = conductivity_status
         self._plant_entity_id = plant_entity_id
         self._plant_name = plant_name
         self._todo_entity_id = todo_entity_id
@@ -150,15 +152,20 @@ class CareTasks:
             ),
         ]
         await self._async_sync(report_completed=False)
-        if self._modes[CARE_WATER] != CARE_MODE_SENSOR:
-            return
-        # The moisture may have changed before we listened: match the list to it
-        moisture_status = self._moisture_status()
-        if moisture_status == STATE_LOW:
-            await self.async_moisture_low()
-        elif moisture_status in (STATE_OK, STATE_HIGH):
-            # Watered while we were not listening: the item is done
-            await self._async_complete_open(CARE_WATER)
+        # The sensors may have changed before we listened: match the list to them
+        if self._modes[CARE_WATER] == CARE_MODE_SENSOR:
+            moisture_status = self._moisture_status()
+            if moisture_status == STATE_LOW:
+                await self.async_moisture_low()
+            elif moisture_status in (STATE_OK, STATE_HIGH):
+                # Watered while we were not listening: the item is done
+                await self._async_complete_open(CARE_WATER)
+        if self._modes[CARE_FERTILIZE] == CARE_MODE_SENSOR:
+            conductivity_status = self._conductivity_status()
+            if conductivity_status == STATE_LOW:
+                await self.async_conductivity_low()
+            elif conductivity_status in (STATE_OK, STATE_HIGH):
+                await self.async_conductivity_recovered()
 
     @property
     def todo_entity_id(self) -> str:
@@ -229,6 +236,22 @@ class CareTasks:
             if self._open_of(items, CARE_WATER):
                 return
             await self._async_add(CARE_WATER, dt_util.now().date())
+
+    async def async_conductivity_low(self) -> None:
+        """Add a fertilize item unless one is already open; only in sensor mode."""
+        if self._modes[CARE_FERTILIZE] != CARE_MODE_SENSOR:
+            return
+        async with self._lock:
+            items = await self._async_own_items()
+            if self._open_of(items, CARE_FERTILIZE):
+                return
+            await self._async_add(CARE_FERTILIZE, dt_util.now().date())
+
+    async def async_conductivity_recovered(self) -> None:
+        """Tick off the open fertilize item; only in sensor mode."""
+        if self._modes[CARE_FERTILIZE] != CARE_MODE_SENSOR:
+            return
+        await self._async_complete_open(CARE_FERTILIZE)
 
     async def async_watered(self) -> None:
         """Tick off the open watering item, or report the watering directly."""

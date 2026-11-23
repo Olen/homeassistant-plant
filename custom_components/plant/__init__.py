@@ -454,6 +454,7 @@ async def _async_start_care_tasks(
         modes=plant.care_modes,
         care_events=hass.data[DOMAIN][entry.entry_id][ATTR_CARE_EVENTS],
         moisture_status=lambda: plant.moisture_status,
+        conductivity_status=lambda: plant.conductivity_status,
     )
     try:
         await care_tasks.async_start()
@@ -1415,6 +1416,16 @@ class PlantDevice(RestoreEntity):
         if self.care_tasks is not None:
             self.hass.add_job(self.care_tasks.async_moisture_low)
 
+    def _conductivity_became_low(self) -> None:
+        """With care tasks, add a fertilize item."""
+        if self.care_tasks is not None:
+            self.hass.add_job(self.care_tasks.async_conductivity_low)
+
+    def _conductivity_recovered(self) -> None:
+        """With care tasks, tick off the open fertilize item."""
+        if self.care_tasks is not None:
+            self.hass.add_job(self.care_tasks.async_conductivity_recovered)
+
     def update(self) -> None:
         """Run on every update of the entities"""
 
@@ -1550,12 +1561,23 @@ class PlantDevice(RestoreEntity):
             )
             if conductivity_val is not None:
                 known_state = True
+                previous_conductivity_status = self.conductivity_status
                 self.conductivity_status = self._check_threshold(
                     conductivity_val,
                     self.min_conductivity,
                     self.max_conductivity,
                     self.conductivity_status,
                 )
+                if (
+                    self.conductivity_status == STATE_LOW
+                    and previous_conductivity_status != STATE_LOW
+                ):
+                    self._conductivity_became_low()
+                elif (
+                    previous_conductivity_status == STATE_LOW
+                    and self.conductivity_status in (STATE_OK, STATE_HIGH)
+                ):
+                    self._conductivity_recovered()
                 if (
                     self.conductivity_status in (STATE_LOW, STATE_HIGH)
                     and self.conductivity_trigger

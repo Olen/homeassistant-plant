@@ -66,6 +66,7 @@ SETUP_ENTRY_RETURNS_NONE = AwesomeVersion(HA_VERSION) >= AwesomeVersion("2026.11
 TODO_ENTITY_ID = "todo.plants"
 PLANT_ENTITY_ID = "plant.test_plant"
 MOISTURE = "sensor.test_moisture"
+CONDUCTIVITY = "sensor.test_conductivity"
 
 
 class FakeTodoList(TodoListEntity):
@@ -211,6 +212,13 @@ async def _set_moisture(hass: HomeAssistant, value: float) -> None:
     await hass.async_block_till_done()
 
 
+async def _set_conductivity(hass: HomeAssistant, value: float) -> None:
+    await set_sensor_state(hass, CONDUCTIVITY, value)
+    await update_plant_sensors(hass, TEST_ENTRY_ID)
+    await asyncio.sleep(0)
+    await hass.async_block_till_done()
+
+
 def _current(todo_list: FakeTodoList, item: TodoItem) -> TodoItem:
     """The item as it is in the list now (updates replace the object)."""
     return next(i for i in todo_list.todo_items if i.uid == item.uid)
@@ -268,6 +276,7 @@ class TestWatering:
             },
             care_events=plant.care_events,
             moisture_status=lambda: plant.moisture_status,
+            conductivity_status=lambda: plant.conductivity_status,
         )
         await care_tasks.async_start()
         await hass.async_block_till_done()
@@ -1208,3 +1217,73 @@ class TestCareModes:
 
         assert entry.options[FLOW_WATER_INTERVAL] == 7
         assert entry.options[FLOW_PRUNE_INTERVAL] == 730
+
+
+@pytest.mark.usefixtures("mock_external_sensors", "record_care_events")
+class TestFertilizeSensor:
+    """With a conductivity sensor and its trigger on, fertilize items follow it."""
+
+    async def test_conductivity_low_opens_fertilize_item(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        todo_list = await _setup_todo_list(hass)
+        await _setup_plant(hass, plant_config_data, {FLOW_CARE_TODO: TODO_ENTITY_ID})
+
+        await _set_conductivity(hass, 300)
+        await _set_conductivity(hass, 250)
+
+        items = _own(todo_list)
+        assert [(i.summary, i.status, i.due) for i in items] == [
+            (
+                f"Fertilize {TEST_PLANT_NAME}",
+                TodoItemStatus.NEEDS_ACTION,
+                dt_util.now().date(),
+            )
+        ]
+
+    async def test_conductivity_back_above_min_completes_item(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        todo_list = await _setup_todo_list(hass)
+        await _setup_plant(hass, plant_config_data, {FLOW_CARE_TODO: TODO_ENTITY_ID})
+        await _set_conductivity(hass, 300)
+
+        await _set_conductivity(hass, 900)
+
+        assert [i.status for i in _own(todo_list)] == [TodoItemStatus.COMPLETED]
+        assert _care_events(hass, "fertilized") == ["fertilized"]
+
+    async def test_conductivity_flapping_keeps_one_item(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        todo_list = await _setup_todo_list(hass)
+        await _setup_plant(hass, plant_config_data, {FLOW_CARE_TODO: TODO_ENTITY_ID})
+
+        for value in (300, 900, 300, 900):
+            await _set_conductivity(hass, value)
+            open_items = [
+                i for i in _own(todo_list) if i.status == TodoItemStatus.NEEDS_ACTION
+            ]
+            assert len(open_items) <= 1
+
+        assert _care_events(hass, "fertilized") == ["fertilized", "fertilized"]
+
+    async def test_conductivity_trigger_off_ignores_conductivity(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        todo_list = await _setup_todo_list(hass)
+        await _setup_plant(
+            hass,
+            plant_config_data,
+            {
+                FLOW_CARE_TODO: TODO_ENTITY_ID,
+                FLOW_CONDUCTIVITY_TRIGGER: False,
+                FLOW_FERTILIZE_INTERVAL: 15,
+            },
+        )
+
+        await _set_conductivity(hass, 300)
+
+        assert [i.summary for i in _own(todo_list)] == [f"Fertilize {TEST_PLANT_NAME}"]
+        await _set_conductivity(hass, 900)
+        assert [i.status for i in _own(todo_list)] == [TodoItemStatus.NEEDS_ACTION]
