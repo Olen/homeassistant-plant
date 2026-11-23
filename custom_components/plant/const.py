@@ -255,6 +255,9 @@ FLOW_MOISTURE_GRACE_PERIOD = "moisture_grace_period"
 # If moisture increases by this many percentage points (e.g. 40% → 50%),
 # trigger grace period. This is an absolute difference, not a relative percentage.
 MOISTURE_INCREASE_THRESHOLD = 10.0
+# A conductivity rise of at least this much (µS/cm) between two readings counts
+# as fertilized; well above normal reading-to-reading noise.
+CONDUCTIVITY_INCREASE_THRESHOLD = 200.0
 
 # Watering prediction: linear dry-down over the last 96 h, after the last watering
 PREDICTION_WINDOW = timedelta(hours=96)

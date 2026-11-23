@@ -247,7 +247,7 @@ class CareTasks:
                 return
             await self._async_add(CARE_FERTILIZE, dt_util.now().date())
 
-    async def async_conductivity_recovered(self) -> None:
+    async def async_fertilized(self) -> None:
         """Tick off the open fertilize item, or report the fertilizing directly."""
         completed = await self._async_complete_open(CARE_FERTILIZE)
         if completed == 0:

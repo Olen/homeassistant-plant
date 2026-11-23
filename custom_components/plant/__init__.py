@@ -72,6 +72,7 @@ from .const import (
     ATTR_VPD,
     CARE_FERTILIZE,
     CARE_WATER,
+    CONDUCTIVITY_INCREASE_THRESHOLD,
     CONF_MAX_BRIGHTNESS,
     CONF_MAX_CONDUCTIVITY,
     CONF_MAX_MOISTURE,
@@ -708,6 +709,7 @@ class PlantDevice(RestoreEntity):
         # Moisture grace period tracking
         self._moisture_grace_end_time: datetime | None = None
         self._last_moisture_value: float | None = None
+        self._last_conductivity_value: float | None = None
 
     def _is_ppfd_source(self) -> bool:
         """Check if illuminance source provides PPFD instead of lux.
@@ -1445,10 +1447,10 @@ class PlantDevice(RestoreEntity):
         if self.care_tasks is not None:
             self.hass.add_job(self.care_tasks.async_conductivity_low)
 
-    def _conductivity_recovered(self) -> None:
+    def _fertilized(self) -> None:
         """Report a fertilizing; with care tasks it ticks off the fertilize item."""
         if self.care_tasks is not None:
-            self.hass.add_job(self.care_tasks.async_conductivity_recovered)
+            self.hass.add_job(self.care_tasks.async_fertilized)
         elif self.care_events is not None:
             self.hass.add_job(self.care_events[CARE_FERTILIZE].report)
 
@@ -1587,6 +1589,12 @@ class PlantDevice(RestoreEntity):
             )
             if conductivity_val is not None:
                 known_state = True
+                conductivity_jumped = (
+                    self._last_conductivity_value is not None
+                    and conductivity_val - self._last_conductivity_value
+                    >= CONDUCTIVITY_INCREASE_THRESHOLD
+                )
+                self._last_conductivity_value = conductivity_val
                 previous_conductivity_status = self.conductivity_status
                 self.conductivity_status = self._check_threshold(
                     conductivity_val,
@@ -1599,11 +1607,13 @@ class PlantDevice(RestoreEntity):
                     and previous_conductivity_status != STATE_LOW
                 ):
                     self._conductivity_became_low()
-                elif (
-                    previous_conductivity_status == STATE_LOW
-                    and self.conductivity_status in (STATE_OK, STATE_HIGH)
-                ):
-                    self._conductivity_recovered()
+                # Fertilized: a quick rise, or the conductivity is no longer low
+                # (the status already applies the hysteresis band)
+                left_low = previous_conductivity_status == STATE_LOW and (
+                    self.conductivity_status in (STATE_OK, STATE_HIGH)
+                )
+                if conductivity_jumped or left_low:
+                    self._fertilized()
                 if (
                     self.conductivity_status in (STATE_LOW, STATE_HIGH)
                     and self.conductivity_trigger
@@ -1616,11 +1626,13 @@ class PlantDevice(RestoreEntity):
                         self.max_conductivity,
                     )
             else:
-                # Reset status when sensor is unavailable or non-numeric
+                # Reset status and tracking when sensor is unavailable or non-numeric
                 self.conductivity_status = None
+                self._last_conductivity_value = None
         else:
-            # Reset status when sensor is removed
+            # Reset status and tracking when sensor is removed
             self.conductivity_status = None
+            self._last_conductivity_value = None
 
         if self.sensor_temperature is not None:
             temperature = getattr(

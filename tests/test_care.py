@@ -1393,6 +1393,57 @@ class TestFertilizeSensor:
         next_item = _open(todo_list, CARE_FERTILIZE)[0]
         assert next_item.due == dt_util.now().date() + timedelta(days=15)
 
+    async def test_conductivity_jump_completes_interval_item(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        todo_list = await _setup_todo_list(hass)
+        await _setup_plant(
+            hass,
+            plant_config_data,
+            {
+                FLOW_CARE_TODO: TODO_ENTITY_ID,
+                FLOW_CONDUCTIVITY_TRIGGER: False,
+                FLOW_FERTILIZE_INTERVAL: 15,
+            },
+        )
+        await _set_conductivity(hass, 900)
+        interval_item = _open(todo_list, CARE_FERTILIZE)[0]
+
+        await _set_conductivity(hass, 1100)
+
+        assert _current(todo_list, interval_item).status == TodoItemStatus.COMPLETED
+        assert _care_events(hass, "fertilized") == ["fertilized"]
+
+    async def test_small_conductivity_rise_is_not_fertilized(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        todo_list = await _setup_todo_list(hass)
+        await _setup_plant(
+            hass,
+            plant_config_data,
+            {
+                FLOW_CARE_TODO: TODO_ENTITY_ID,
+                FLOW_CONDUCTIVITY_TRIGGER: False,
+                FLOW_FERTILIZE_INTERVAL: 15,
+            },
+        )
+        await _set_conductivity(hass, 900)
+
+        await _set_conductivity(hass, 1099)
+
+        assert [i.status for i in _own(todo_list)] == [TodoItemStatus.NEEDS_ACTION]
+        assert _care_events(hass, "fertilized") == []
+
+    async def test_conductivity_jump_records_fertilized_without_a_list(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        await _setup_plant(hass, plant_config_data, {})
+        await _set_conductivity(hass, 900)
+
+        await _set_conductivity(hass, 1200)
+
+        assert _care_events(hass, "fertilized") == ["fertilized"]
+
     async def test_recovered_conductivity_records_fertilized_without_a_list(
         self, hass: HomeAssistant, plant_config_data: dict[str, Any]
     ) -> None:
