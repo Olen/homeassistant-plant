@@ -29,6 +29,8 @@ from pytest_homeassistant_custom_component.common import async_fire_time_changed
 from custom_components.plant.care import CareSettings, CareTasks, care_modes
 from custom_components.plant.care_trigger import is_new_care_event
 from custom_components.plant.const import (
+    ATTR_PLANT,
+    CARE_EVENT_TYPES,
     CARE_FERTILIZE,
     CARE_MODE_INTERVAL,
     CARE_MODE_NONE,
@@ -1312,3 +1314,77 @@ async def test_no_next_watering_entity_without_moisture_sensor(
         )
         is None
     )
+
+
+class TestWebsocketCareBlock:
+    """The care block is what the plant-care card reads."""
+
+    async def _get_care(self, hass: HomeAssistant, hass_ws_client, plant) -> dict:
+        plant.plant_complete = True
+        client = await hass_ws_client(hass)
+        await client.send_json(
+            {"id": 1, "type": "plant/get_info", "entity_id": plant.entity_id}
+        )
+        response = await client.receive_json()
+        assert response["success"] is True
+        return response["result"]["result"]["care"]
+
+    async def test_get_info_care_block(
+        self,
+        hass: HomeAssistant,
+        plant_config_data: dict,
+        hass_ws_client,
+    ) -> None:
+        """Modes, intervals, entity ids and separator come from the plant."""
+        await _setup_todo_list(hass)
+        entry = await _setup_plant(
+            hass,
+            plant_config_data,
+            {
+                FLOW_CARE_TODO: TODO_ENTITY_ID,
+                FLOW_FERTILIZE_INTERVAL: 15,
+                FLOW_CONDUCTIVITY_TRIGGER: False,
+            },
+        )
+        plant = hass.data[DOMAIN][entry.entry_id][ATTR_PLANT]
+        registry = er.async_get(hass)
+
+        care = await self._get_care(hass, hass_ws_client, plant)
+
+        events = {}
+        for care_type, event_type in CARE_EVENT_TYPES.items():
+            events[care_type] = registry.async_get_entity_id(
+                "event", DOMAIN, f"{entry.entry_id}-{event_type}"
+            )
+        assert all(events.values())
+        assert care == {
+            "todo_list": TODO_ENTITY_ID,
+            "modes": {
+                "water": "sensor",
+                "fertilize": "interval",
+                "repot": "none",
+                "prune": "none",
+            },
+            "intervals": {"water": 0, "fertilize": 15, "repot": 0, "prune": 0},
+            "events": events,
+            "next_watering": registry.async_get_entity_id(
+                "sensor", DOMAIN, f"{entry.entry_id}-next-watering"
+            ),
+            "marker_separator": " · ",
+        }
+        assert care["next_watering"] is not None
+
+    async def test_get_info_care_block_without_list(
+        self,
+        hass: HomeAssistant,
+        plant_config_data: dict,
+        hass_ws_client,
+    ) -> None:
+        """Without a to-do list the block still carries modes and entities."""
+        entry = await _setup_plant(hass, plant_config_data, {})
+        plant = hass.data[DOMAIN][entry.entry_id][ATTR_PLANT]
+
+        care = await self._get_care(hass, hass_ws_client, plant)
+
+        assert care["todo_list"] is None
+        assert care["modes"]["water"] == "sensor"

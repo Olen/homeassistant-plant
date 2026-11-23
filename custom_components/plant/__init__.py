@@ -42,7 +42,7 @@ from homeassistant.helpers.start import async_at_started
 from homeassistant.util import dt as dt_util
 
 from . import group as group
-from .care import CareSettings, CareTasks, care_modes, care_settings
+from .care import MARKER_SEPARATOR, CareSettings, CareTasks, care_modes, care_settings
 from .config_flow import update_plant_options
 from .const import (
     ATTR_BRIGHTNESS,
@@ -977,7 +977,27 @@ class PlantDevice(RestoreEntity):
             if info is not None:
                 response[ATTR_VPD] = info
 
+        response["care"] = self._care_info()
+
         return response
+
+    def _care_info(self) -> dict:
+        """The care data the plant-care card reads."""
+        events = {}
+        for care, event in self.care_events.items():
+            events[care] = event.entity_id
+        todo_list = None if self.care_tasks is None else self.care_tasks.todo_entity_id
+        next_watering = er.async_get(self.hass).async_get_entity_id(
+            "sensor", DOMAIN, f"{self._config.entry_id}-next-watering"
+        )
+        return {
+            "todo_list": todo_list,
+            "modes": self.care_modes,
+            "intervals": self.care_settings.intervals,
+            "events": events,
+            "next_watering": next_watering,
+            "marker_separator": MARKER_SEPARATOR,
+        }
 
     @property
     def threshold_entities(self) -> list[Entity]:

@@ -221,6 +221,19 @@ By default, any sensor reading outside its configured threshold triggers a **"pr
 
 Configure via **Settings** → **Devices & Services** → **Plant Monitor** → *Your Plant* → **Configure** → **Plant properties**.
 
+Four of the checkboxes also steer [care tasks](#-care-tasks-preview) and the plant-care card:
+
+| Checkbox | Checked | Unchecked |
+|----------|---------|-----------|
+| Use soil moisture as problem trigger | Moisture problems, and water items opened and closed by the moisture sensor (no Done button) | No moisture problem; watering follows the watering interval (if set). Detected waterings still count |
+| Use conductivity as problem trigger | Conductivity problems, and fertilize items opened and closed by the conductivity sensor (the sensor closing an item records `fertilized`) | No conductivity problem; fertilizing follows the fertilize interval (if set) |
+| Use illuminance as problem trigger | Light problems, which turn the card's Light & soil row red; no care items | No light problem from illuminance |
+| Use daily light integral (DLI) as problem trigger | Light problems, which turn the card's Light & soil row red; no care items | No light problem from DLI |
+
+- A checked trigger wins over an interval for the same care type.
+- Changing a checkbox removes that care type's open items; the new mode plans its own.
+- Uncheck a trigger when you don't trust that sensor.
+
 > [!NOTE]
 > Disabling a trigger only removes that sensor from the plant's ok/problem calculation — it does **not** stop the sensor being evaluated. Each `*_status` attribute (e.g. `illuminance_status: Low`) always reflects the latest reading against the plant's thresholds regardless of its trigger, and is `null` only when no value is available (sensor missing or unavailable). Use the **`problems`** attribute — which lists only sensors that are out of range *and* have their trigger enabled — as the source of truth for active problems.
 
@@ -257,7 +270,7 @@ Core Home Assistant ships generic purpose triggers too, like `temperature.crosse
 
   "Stale" means the source sensor is `unavailable`/`unknown`, or simply hasn't reported within a window (`for`, default **24 hours**). A sensor that keeps reporting the same value counts as reporting. A grace period means it does **not** false-alarm at restart, when a sensor briefly reads `unknown` before its own integration populates it — staleness only fires once the source is genuinely still dead after the full window elapses.
 
-- **Care:** `plant.watered` / `plant.fertilized` / `plant.repotted`. `watered` fires when soil moisture rises at least 10 points between two updates, or when it is no longer low (above the minimum by the same margin that clears a "low" problem), with or without a to-do list. With [care tasks](#-care-tasks-preview), all three also fire when the matching item is ticked off. `trigger.entity_id` is the plant.
+- **Care:** `plant.watered` / `plant.fertilized` / `plant.repotted` / `plant.pruned`. `watered` fires when soil moisture rises at least 10 points between two updates, or when it is no longer low (above the minimum by the same margin that clears a "low" problem), with or without a to-do list. With [care tasks](#-care-tasks-preview), all four also fire when the matching item is ticked off, and `fertilized` also fires when the conductivity sensor closes a fertilize item. `trigger.entity_id` is the plant.
 
 ### Targeting
 
@@ -395,13 +408,22 @@ A plant can keep its care tasks in a Home Assistant to-do list. The plant stores
 
 1. Go to **Settings** → **Devices & Services** → **Plant Monitor** → *Your Plant* → **Configure** → **Care tasks**
 2. Pick an existing to-do list, or type a name to create a new Local To-do list ("Plants" is suggested). Plants that use the same list share it.
-3. Optionally set how often to fertilize and repot, in days.
+3. Optionally set how often to water, fertilize, repot and prune, in days (0 = off).
+
+There are four care types: water, fertilize, repot and prune. Each one is tracked in one of three modes:
+
+- **Sensor:** watering and fertilizing, when the plant has that sensor and its "problem trigger" checkbox is checked (see [Problem Reports](#️-problem-reports)). The sensor opens and closes the items.
+- **Interval:** the care type has an interval in days, and is not in sensor mode. Repotting and pruning are always interval-based.
+- **None:** no sensor mode and no interval; nothing is planned.
 
 What happens:
 
-- **Watering:** when the soil gets too dry, "Water *plant*" is added. When the plant is watered (see `plant.watered` above), it ticks the item off itself. You can also tick it off by hand.
-- **Fertilizing and repotting:** an item is added with a due date. When you tick it off, the next one is added, counted from the day it was done.
-- **Automations:** the `plant.watered`, `plant.fertilized` and `plant.repotted` triggers fire when the care is done. Each plant also has a care event entity that reports the same, for the **Event received** trigger and the logbook.
+- **Watering (sensor mode):** when the soil gets too dry, "Water *plant*" is added. When the plant is watered (see `plant.watered` above), it ticks the item off itself. You can also tick it off by hand.
+- **Fertilizing (sensor mode):** when the conductivity is too low, "Fertilize *plant*" is added. It is closed when the conductivity has recovered, and that records `fertilized`.
+- **Interval mode:** an item is added with a due date. When you tick it off, the next one is added, counted from the day it was done.
+- **Due dates** exist only with a to-do list. Without one, intervals plan nothing.
+- **Next watering:** a plant with a moisture sensor gets a *Next watering* sensor, a timestamp predicted from how fast the soil has been drying.
+- **Automations:** the `plant.watered`, `plant.fertilized`, `plant.repotted` and `plant.pruned` triggers fire when the care is done. Each plant has one care event entity per care type (watered, fertilized, repotted, pruned) that reports the same, for the **Event received** trigger and the logbook.
 
 Each item has a line such as `plant.aloe_vera · fertilize` in its description. The plant uses it to find its own items, so leave that line in place when you edit an item.
 

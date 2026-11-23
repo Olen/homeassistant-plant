@@ -197,6 +197,12 @@
           "co2_trigger": "Brug CO2 som problemudløser",
           "soil_temperature_trigger": "Brug jordtemperatur som problemudløser",
           "vpd_trigger": "Brug VPD som problemudløser"
+        },
+        "data_description": {
+          "moisture_trigger": "Bestemmer også vandingsopgaver: afkrydset åbner og lukker fugtsensoren dem; ikke afkrydset følger vanding vandingsintervallet.",
+          "conductivity_trigger": "Bestemmer også gødningsopgaver: afkrydset åbner og lukker ledningsevnesensoren dem; ikke afkrydset følger gødning gødningsintervallet.",
+          "illuminance_trigger": "Lysproblemer markerer også rækken Lys & jord på plantepleje-kortet.",
+          "dli_trigger": "Lysproblemer markerer også rækken Lys & jord på plantepleje-kortet."
         }
       },
       "replace_sensor": {

@@ -197,6 +197,12 @@
           "co2_trigger": "CO2 als Problemauslöser verwenden",
           "soil_temperature_trigger": "Bodentemperatur als Problemauslöser verwenden",
           "vpd_trigger": "VPD als Problemauslöser verwenden"
+        },
+        "data_description": {
+          "moisture_trigger": "Bestimmt auch die Gießaufgaben: aktiviert, öffnet und schließt der Feuchtesensor sie; deaktiviert, richten sie sich nach dem Gießintervall.",
+          "conductivity_trigger": "Bestimmt auch die Düngeaufgaben: aktiviert, öffnet und schließt der Leitfähigkeitssensor sie; deaktiviert, richten sie sich nach dem Düngeintervall.",
+          "illuminance_trigger": "Lichtprobleme markieren auch die Zeile Licht & Boden auf der Pflanzenpflege-Karte.",
+          "dli_trigger": "Lichtprobleme markieren auch die Zeile Licht & Boden auf der Pflanzenpflege-Karte."
         }
       },
       "replace_sensor": {

@@ -188,6 +188,12 @@
           "co2_trigger": "Use CO2 as problem trigger",
           "soil_temperature_trigger": "Use soil temperature as problem trigger",
           "vpd_trigger": "Use vapour pressure deficit (VPD) as problem trigger"
+        },
+        "data_description": {
+          "moisture_trigger": "Also decides watering tasks: checked, the moisture sensor opens and closes them; unchecked, watering follows the watering interval.",
+          "conductivity_trigger": "Also decides fertilizing tasks: checked, the conductivity sensor opens and closes them; unchecked, fertilizing follows the fertilize interval.",
+          "illuminance_trigger": "Light problems also mark the Light & soil row on the plant-care card.",
+          "dli_trigger": "Light problems also mark the Light & soil row on the plant-care card."
         }
       },
       "replace_sensor": {
