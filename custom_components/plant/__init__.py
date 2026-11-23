@@ -695,6 +695,7 @@ class PlantDevice(RestoreEntity):
         self.moisture_status = None
         self.care_tasks: CareTasks | None = None
         self.care_events: dict[str, PlantCareEvent] | None = None
+        self.next_watering: Entity | None = None
         self.care_settings: CareSettings = care_settings({})
         self.temperature_status = None
         self.humidity_status = None

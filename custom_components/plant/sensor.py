@@ -242,7 +242,9 @@ async def async_setup_entry(
     plant.add_vpd(vpd=pvpd)
 
     if entry.data[FLOW_PLANT_INFO].get(FLOW_SENSOR_MOISTURE):
-        async_add_entities([PlantNextWatering(hass, entry, plant)])
+        next_watering = PlantNextWatering(hass, entry, plant)
+        async_add_entities([next_watering])
+        plant.next_watering = next_watering
     else:
         _remove_next_watering(hass, entry)
 
@@ -1049,6 +1051,16 @@ class PlantNextWatering(SensorEntity):
         if state is None or state.state in (STATE_UNKNOWN, STATE_UNAVAILABLE):
             return None
         return float(state.state)
+
+    @callback
+    def async_entity_id_changed(self, old_entity_id: str) -> None:
+        """Take entity_id changes in place (HA 2026.11+).
+
+        A rename of a plant entity reloads the plant, which resubscribes
+        this sensor under the new entity_ids (see async_setup_entry).
+        """
+        if (parent := getattr(super(), "async_entity_id_changed", None)) is not None:
+            parent(old_entity_id)
 
 
 class PlantCurrentVpd(RestoreSensor):
