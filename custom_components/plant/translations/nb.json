@@ -141,6 +141,9 @@
         "vpd_status": {
           "name": "Status for VPD"
         },
+        "care_todo_list": {
+          "name": "Gjøremålsliste for stell"
+        },
         "care_watering": {
           "name": "Vanning"
         },

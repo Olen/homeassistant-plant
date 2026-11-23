@@ -100,6 +100,20 @@
       "lux_to_ppfd": {
         "name": "Lux to PPFD factor"
       }
+    },
+    "event": {
+      "watered": {
+        "name": "Watered"
+      },
+      "fertilized": {
+        "name": "Fertilized"
+      },
+      "repotted": {
+        "name": "Repotted"
+      },
+      "pruned": {
+        "name": "Pruned"
+      }
     }
   },
   "entity_component": {
@@ -141,6 +155,9 @@
         "vpd_status": {
           "name": "VPD status"
         },
+        "care_todo_list": {
+          "name": "Care to-do list"
+        },
         "care_watering": {
           "name": "Watering"
         },
@@ -156,20 +173,6 @@
         "care_fertilization": {
           "name": "Fertilization"
         }
-      }
-    },
-    "event": {
-      "watered": {
-        "name": "Watered"
-      },
-      "fertilized": {
-        "name": "Fertilized"
-      },
-      "repotted": {
-        "name": "Repotted"
-      },
-      "pruned": {
-        "name": "Pruned"
       }
     }
   },

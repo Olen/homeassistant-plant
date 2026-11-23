@@ -141,6 +141,9 @@
         "vpd_status": {
           "name": "VPD 状态"
         },
+        "care_todo_list": {
+          "name": "养护待办清单"
+        },
         "care_watering": {
           "name": "浇水"
         },

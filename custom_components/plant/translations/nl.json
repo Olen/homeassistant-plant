@@ -141,6 +141,9 @@
         "vpd_status": {
           "name": "Status VPD"
         },
+        "care_todo_list": {
+          "name": "Takenlijst voor verzorging"
+        },
         "care_watering": {
           "name": "Water geven"
         },
