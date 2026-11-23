@@ -951,6 +951,7 @@ class PlantNextWatering(SensorEntity):
         self._attr_unique_id = f"{config.entry_id}-next-watering"
         self._last_computed: datetime | None = None
         self._computing = False
+        self._generation = 0
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -978,8 +979,17 @@ class PlantNextWatering(SensorEntity):
 
     @callback
     def _moisture_changed(self, event: Event) -> None:
-        if self._watering_detected(event) or self._recompute_is_due():
+        if self._watering_detected(event):
+            self._dried_out_state_cleared()
+        elif self._recompute_is_due():
             self.hass.async_create_task(self._async_recompute())
+
+    def _dried_out_state_cleared(self) -> None:
+        # Right after a watering there is no dry-down to predict from yet
+        self._generation += 1
+        self._attr_native_value = None
+        self._last_computed = dt_util.utcnow()
+        self.async_write_ha_state()
 
     @staticmethod
     def _watering_detected(event: Event) -> bool:
@@ -1003,8 +1013,13 @@ class PlantNextWatering(SensorEntity):
         if self._computing:
             return
         self._computing = True
+        generation = self._generation
         try:
-            self._attr_native_value = await self._async_predict()
+            predicted = await self._async_predict()
+            if generation != self._generation:
+                # A watering arrived while computing; the result is from before it
+                return
+            self._attr_native_value = predicted
             self._last_computed = dt_util.utcnow()
             self.async_write_ha_state()
         finally:
@@ -1018,8 +1033,6 @@ class PlantNextWatering(SensorEntity):
             _LOGGER.debug("No recorder, cannot predict watering for %s", self.entity_id)
             return None
         now = dt_util.utcnow()
-        # The reading that triggered this may still be queued
-        await get_instance(self.hass).async_block_till_done()
         readings = await get_instance(self.hass).async_add_executor_job(
             _moisture_history,
             self.hass,

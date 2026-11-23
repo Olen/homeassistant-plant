@@ -18,10 +18,13 @@ from homeassistant.components.todo import (
     TodoListEntityFeature,
 )
 from homeassistant.config_entries import ConfigEntry, ConfigFlow
-from homeassistant.const import Platform, __version__ as HA_VERSION
+from homeassistant.const import STATE_UNKNOWN, Platform, __version__ as HA_VERSION
 from homeassistant.core import HomeAssistant, State
 from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_platform import (
+    AddEntitiesCallback,
+    async_get_platforms,
+)
 from homeassistant.setup import async_setup_component
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import async_fire_time_changed
@@ -1381,24 +1384,61 @@ async def test_next_watering_entity_with_moisture_sensor(
     )
 
 
+NEXT_WATERING_ID = "sensor.test_plant_next_watering"
+
+
+def _next_watering_entity(hass: HomeAssistant):
+    for platform in async_get_platforms(hass, DOMAIN):
+        if NEXT_WATERING_ID in platform.entities:
+            return platform.entities[NEXT_WATERING_ID]
+    raise AssertionError("next watering entity not found")
+
+
+PREDICTED = dt_util.utcnow() + timedelta(days=2)
+
+
 @pytest.mark.usefixtures("mock_external_sensors")
-async def test_detected_watering_recomputes_inside_the_throttle_window(
+async def test_detected_watering_clears_next_watering_without_a_history_fetch(
     hass: HomeAssistant, plant_config_data: dict[str, Any]
 ) -> None:
     with patch(
         "custom_components.plant.sensor.PlantNextWatering._async_predict",
-        new=AsyncMock(return_value=None),
+        new=AsyncMock(return_value=PREDICTED),
     ) as predict:
         await _setup_plant(hass, plant_config_data, {})
         await _set_moisture(hass, 40)
-        started_with = predict.await_count
-        assert started_with >= 1
-
-        await _set_moisture(hass, 38)
-        assert predict.await_count == started_with
+        assert hass.states.get(NEXT_WATERING_ID).state != STATE_UNKNOWN
+        calls = predict.await_count
 
         await _set_moisture(hass, 60)
-        assert predict.await_count == started_with + 1
+
+        assert hass.states.get(NEXT_WATERING_ID).state == STATE_UNKNOWN
+        assert predict.await_count == calls
+
+
+@pytest.mark.usefixtures("mock_external_sensors")
+async def test_compute_in_flight_during_a_watering_does_not_overwrite_it(
+    hass: HomeAssistant, plant_config_data: dict[str, Any]
+) -> None:
+    watering_during_compute = False
+
+    async def predict_while_watered(self):
+        if watering_during_compute:
+            await _set_moisture(hass, 30)
+            await _set_moisture(hass, 60)
+        return PREDICTED
+
+    with patch(
+        "custom_components.plant.sensor.PlantNextWatering._async_predict",
+        new=predict_while_watered,
+    ):
+        await _setup_plant(hass, plant_config_data, {})
+        sensor = _next_watering_entity(hass)
+        watering_during_compute = True
+
+        await sensor._async_recompute()
+
+        assert hass.states.get(NEXT_WATERING_ID).state == STATE_UNKNOWN
 
 
 @pytest.mark.usefixtures("mock_external_sensors")
