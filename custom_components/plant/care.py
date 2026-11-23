@@ -165,7 +165,7 @@ class CareTasks:
             if conductivity_status == STATE_LOW:
                 await self.async_conductivity_low()
             elif conductivity_status in (STATE_OK, STATE_HIGH):
-                await self.async_conductivity_recovered()
+                await self._async_complete_open(CARE_FERTILIZE)
 
     @property
     def todo_entity_id(self) -> str:
@@ -248,10 +248,10 @@ class CareTasks:
             await self._async_add(CARE_FERTILIZE, dt_util.now().date())
 
     async def async_conductivity_recovered(self) -> None:
-        """Tick off the open fertilize item; only in sensor mode."""
-        if self._modes[CARE_FERTILIZE] != CARE_MODE_SENSOR:
-            return
-        await self._async_complete_open(CARE_FERTILIZE)
+        """Tick off the open fertilize item, or report the fertilizing directly."""
+        completed = await self._async_complete_open(CARE_FERTILIZE)
+        if completed == 0:
+            self._care_events[CARE_FERTILIZE].report()
 
     async def async_watered(self) -> None:
         """Tick off the open watering item, or report the watering directly."""

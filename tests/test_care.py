@@ -1352,7 +1352,7 @@ class TestFertilizeSensor:
 
         assert _care_events(hass, "fertilized") == ["fertilized", "fertilized"]
 
-    async def test_conductivity_trigger_off_ignores_conductivity(
+    async def test_trigger_off_low_conductivity_adds_no_item(
         self, hass: HomeAssistant, plant_config_data: dict[str, Any]
     ) -> None:
         todo_list = await _setup_todo_list(hass)
@@ -1369,8 +1369,39 @@ class TestFertilizeSensor:
         await _set_conductivity(hass, 300)
 
         assert [i.summary for i in _own(todo_list)] == [f"Fertilize {TEST_PLANT_NAME}"]
+
+    async def test_trigger_off_recovered_conductivity_completes_interval_item(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        todo_list = await _setup_todo_list(hass)
+        await _setup_plant(
+            hass,
+            plant_config_data,
+            {
+                FLOW_CARE_TODO: TODO_ENTITY_ID,
+                FLOW_CONDUCTIVITY_TRIGGER: False,
+                FLOW_FERTILIZE_INTERVAL: 15,
+            },
+        )
+        await _set_conductivity(hass, 300)
+        interval_item = _open(todo_list, CARE_FERTILIZE)[0]
+
         await _set_conductivity(hass, 900)
-        assert [i.status for i in _own(todo_list)] == [TodoItemStatus.NEEDS_ACTION]
+
+        assert _current(todo_list, interval_item).status == TodoItemStatus.COMPLETED
+        assert _care_events(hass, "fertilized") == ["fertilized"]
+        next_item = _open(todo_list, CARE_FERTILIZE)[0]
+        assert next_item.due == dt_util.now().date() + timedelta(days=15)
+
+    async def test_recovered_conductivity_records_fertilized_without_a_list(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        await _setup_plant(hass, plant_config_data, {})
+        await _set_conductivity(hass, 300)
+
+        await _set_conductivity(hass, 900)
+
+        assert _care_events(hass, "fertilized") == ["fertilized"]
 
 
 @pytest.mark.usefixtures("mock_external_sensors")

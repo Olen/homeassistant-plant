@@ -70,6 +70,7 @@ from .const import (
     ATTR_SPECIES,
     ATTR_TEMPERATURE,
     ATTR_VPD,
+    CARE_FERTILIZE,
     CARE_WATER,
     CONF_MAX_BRIGHTNESS,
     CONF_MAX_CONDUCTIVITY,
@@ -1445,9 +1446,11 @@ class PlantDevice(RestoreEntity):
             self.hass.add_job(self.care_tasks.async_conductivity_low)
 
     def _conductivity_recovered(self) -> None:
-        """With care tasks, tick off the open fertilize item."""
+        """Report a fertilizing; with care tasks it ticks off the fertilize item."""
         if self.care_tasks is not None:
             self.hass.add_job(self.care_tasks.async_conductivity_recovered)
+        elif self.care_events is not None:
+            self.hass.add_job(self.care_events[CARE_FERTILIZE].report)
 
     def update(self) -> None:
         """Run on every update of the entities"""
