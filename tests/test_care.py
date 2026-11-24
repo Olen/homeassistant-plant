@@ -28,8 +28,12 @@ from homeassistant.helpers.entity_platform import (
 from homeassistant.setup import async_setup_component
 from homeassistant.util import dt as dt_util
 
-from custom_components.plant.care import CareSettings, CareTasks, care_modes
-from custom_components.plant.care_trigger import is_new_care_event
+from custom_components.plant.care import (
+    CareSettings,
+    CareTasks,
+    care_modes,
+    is_new_care_event,
+)
 from custom_components.plant.const import (
     ATTR_PLANT,
     CARE_EVENT_TYPES,
@@ -315,10 +319,28 @@ class TestWatering:
         assert [i.status for i in _own(todo_list)] == [TodoItemStatus.COMPLETED]
         assert _care_events(hass, "watered") == ["watered"]
 
-    async def test_item_left_open_while_away_is_ticked_off_at_start(
+    async def test_lowering_the_minimum_is_not_a_watering(
         self, hass: HomeAssistant, plant_config_data: dict[str, Any]
     ) -> None:
-        """Watered while Home Assistant was down: the soil is fine at start."""
+        """The same reading re-checked against a lower minimum is not care."""
+        todo_list = await _setup_todo_list(hass)
+        entry = await _setup_plant(
+            hass, plant_config_data, {FLOW_CARE_TODO: TODO_ENTITY_ID}
+        )
+        await _set_moisture(hass, 15)
+        plant = hass.data[DOMAIN][entry.entry_id][ATTR_PLANT]
+
+        await plant.min_moisture.async_set_native_value(10)
+        await _set_moisture(hass, 15)
+
+        assert plant.moisture_status != STATE_LOW
+        assert [i.status for i in _own(todo_list)] == [TodoItemStatus.NEEDS_ACTION]
+        assert _care_events(hass, "watered") == []
+
+    async def test_restored_status_does_not_tick_the_item_off_at_start(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        """Until the plant has a live reading, its restored status is not evidence."""
         todo_list = await _setup_todo_list(hass)
         left_open = todo_list.add_existing(
             summary=f"Water {TEST_PLANT_NAME}",
@@ -327,18 +349,43 @@ class TestWatering:
         )
         entry = await _setup_plant(hass, plant_config_data, {})
         await _set_moisture(hass, 45)
+        plant = hass.data[DOMAIN][entry.entry_id][ATTR_PLANT]
+        plant._restored_state_active = True  # as right after a restart
 
         hass.config_entries.async_update_entry(
             entry, options={FLOW_CARE_TODO: TODO_ENTITY_ID}
         )
         await hass.async_block_till_done()
 
-        assert _current(todo_list, left_open).status == TodoItemStatus.COMPLETED
+        assert _current(todo_list, left_open).status == TodoItemStatus.NEEDS_ACTION
+        assert _care_events(hass, "watered") == []
 
-    async def test_fertilize_item_left_open_while_away_is_ticked_off_at_start(
+    async def test_item_left_open_over_a_reload_is_ticked_off_by_a_live_reading(
         self, hass: HomeAssistant, plant_config_data: dict[str, Any]
     ) -> None:
-        """Fertilized while Home Assistant was down: conductivity is fine at start."""
+        """Dry before a reload, watered meanwhile: the first live reading ticks it off."""
+        todo_list = await _setup_todo_list(hass)
+        left_open = todo_list.add_existing(
+            summary=f"Water {TEST_PLANT_NAME}",
+            status=TodoItemStatus.NEEDS_ACTION,
+            description=f"{PLANT_ENTITY_ID} · water",
+        )
+        entry = await _setup_plant(hass, plant_config_data, {})
+        await _set_moisture(hass, 10)
+
+        hass.config_entries.async_update_entry(
+            entry, options={FLOW_CARE_TODO: TODO_ENTITY_ID}
+        )
+        await hass.async_block_till_done()
+        await _set_moisture(hass, 45)
+
+        assert _current(todo_list, left_open).status == TodoItemStatus.COMPLETED
+        assert _care_events(hass, "watered") == ["watered"]
+
+    async def test_fertilize_item_left_open_over_a_reload_is_ticked_off_by_a_live_reading(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        """Low before a reload, fertilized meanwhile: the first live reading ticks it off."""
         todo_list = await _setup_todo_list(hass)
         left_open = todo_list.add_existing(
             summary=f"Fertilize {TEST_PLANT_NAME}",
@@ -346,14 +393,16 @@ class TestWatering:
             description=f"{PLANT_ENTITY_ID} · fertilize",
         )
         entry = await _setup_plant(hass, plant_config_data, {})
-        await _set_conductivity(hass, 900)
+        await _set_conductivity(hass, 300)
 
         hass.config_entries.async_update_entry(
             entry, options={FLOW_CARE_TODO: TODO_ENTITY_ID}
         )
         await hass.async_block_till_done()
+        await _set_conductivity(hass, 900)
 
         assert _current(todo_list, left_open).status == TodoItemStatus.COMPLETED
+        assert _care_events(hass, "fertilized") == ["fertilized"]
         assert _care_events(hass, "fertilized") == ["fertilized"]
 
     async def test_watering_without_an_open_item_is_still_reported(
@@ -718,6 +767,47 @@ class TestCareTriggers:
 
         assert len(fertilized) == 1
         assert watered == []
+
+
+@pytest.mark.usefixtures("mock_external_sensors")
+async def test_stopped_care_tasks_drop_queued_work_but_still_clean_up(
+    hass: HomeAssistant, plant_config_data: dict[str, Any]
+) -> None:
+    """Work queued before a stop must not write to the list it left."""
+    todo_list = await _setup_todo_list(hass)
+    left_open = todo_list.add_existing(
+        summary=f"Fertilize {TEST_PLANT_NAME}",
+        status=TodoItemStatus.NEEDS_ACTION,
+        description=f"{PLANT_ENTITY_ID} · fertilize",
+    )
+    entry = await _setup_plant(hass, plant_config_data, {})
+    plant = hass.data[DOMAIN][entry.entry_id][ATTR_PLANT]
+    care_tasks = CareTasks(
+        hass,
+        plant_entity_id=PLANT_ENTITY_ID,
+        plant_name=lambda: plant.name,
+        todo_entity_id=TODO_ENTITY_ID,
+        intervals={},
+        modes={
+            CARE_WATER: CARE_MODE_SENSOR,
+            CARE_FERTILIZE: CARE_MODE_SENSOR,
+            CARE_REPOT: CARE_MODE_NONE,
+            CARE_PRUNE: CARE_MODE_NONE,
+        },
+        care_events=plant.care_events,
+        moisture_status=lambda: None,
+        conductivity_status=lambda: None,
+    )
+    await care_tasks.async_start()
+    care_tasks.async_stop()
+
+    await care_tasks.async_moisture_low()
+    await care_tasks.async_fertilized()
+    assert [i.summary for i in _own(todo_list)] == [f"Fertilize {TEST_PLANT_NAME}"]
+    assert _current(todo_list, left_open).status == TodoItemStatus.NEEDS_ACTION
+
+    await care_tasks.async_remove_open_items()
+    assert _own(todo_list) == []
 
 
 def test_restored_care_event_is_not_a_new_one() -> None:
@@ -1336,6 +1426,23 @@ class TestFertilizeSensor:
 
         assert [i.status for i in _own(todo_list)] == [TodoItemStatus.COMPLETED]
         assert _care_events(hass, "fertilized") == ["fertilized"]
+
+    async def test_lowering_the_minimum_is_not_a_fertilizing(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        todo_list = await _setup_todo_list(hass)
+        entry = await _setup_plant(
+            hass, plant_config_data, {FLOW_CARE_TODO: TODO_ENTITY_ID}
+        )
+        await _set_conductivity(hass, 300)
+        plant = hass.data[DOMAIN][entry.entry_id][ATTR_PLANT]
+
+        await plant.min_conductivity.async_set_native_value(100)
+        await _set_conductivity(hass, 300)
+
+        assert plant.conductivity_status != STATE_LOW
+        assert [i.status for i in _own(todo_list)] == [TodoItemStatus.NEEDS_ACTION]
+        assert _care_events(hass, "fertilized") == []
 
     async def test_conductivity_flapping_keeps_one_item(
         self, hass: HomeAssistant, plant_config_data: dict[str, Any]

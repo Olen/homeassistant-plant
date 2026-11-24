@@ -9,8 +9,8 @@ from __future__ import annotations
 from typing import Any
 
 import voluptuous as vol
-from homeassistant.const import ATTR_ENTITY_ID, STATE_UNAVAILABLE
-from homeassistant.core import CALLBACK_TYPE, HomeAssistant, State, callback
+from homeassistant.const import ATTR_ENTITY_ID
+from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.target import (
     TargetStateChangedData,
@@ -19,6 +19,7 @@ from homeassistant.helpers.target import (
 from homeassistant.helpers.trigger import Trigger, TriggerActionRunner, TriggerConfig
 from homeassistant.helpers.typing import ConfigType
 
+from .care import is_new_care_event
 from .const import ATTR_CARE_EVENTS, ATTR_PLANT, CARE_EVENT_TYPES, DOMAIN
 
 _CARE_SCHEMA = vol.Schema(
@@ -48,19 +49,6 @@ def resolve_care_event(
                 return care_event.entity_id
         raise ValueError(f"No care event entity for {event_type}")
     return None
-
-
-def is_new_care_event(old: State | None, new: State | None, event_type: str) -> bool:
-    """True when the care entity just reported `event_type`.
-
-    A restore at startup (no old state) or coming back from unavailable is not
-    a new event.
-    """
-    if old is None or new is None:
-        return False
-    if old.state == STATE_UNAVAILABLE or new.state == old.state:
-        return False
-    return new.attributes.get("event_type") == event_type
 
 
 def make_care_trigger(event_type: str) -> type[Trigger]:

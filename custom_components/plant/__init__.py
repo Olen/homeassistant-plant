@@ -455,8 +455,8 @@ async def _async_start_care_tasks(
         intervals=settings.intervals,
         modes=plant.care_modes,
         care_events=hass.data[DOMAIN][entry.entry_id][ATTR_CARE_EVENTS],
-        moisture_status=lambda: plant.moisture_status,
-        conductivity_status=lambda: plant.conductivity_status,
+        moisture_status=lambda: plant.live_moisture_status,
+        conductivity_status=lambda: plant.live_conductivity_status,
     )
     try:
         await care_tasks.async_start()
@@ -597,6 +597,14 @@ def ws_get_info(
         msg["id"], "entity_not_found", f"Entity {msg['entity_id']} not found"
     )
     return
+
+
+def _reading_rose(previous: float | None, current: float) -> bool:
+    """True for a reading above the last one, or the first reading since start.
+
+    A threshold change re-evaluates the same reading; that is not care.
+    """
+    return previous is None or current > previous
 
 
 class PlantDevice(RestoreEntity):
@@ -795,6 +803,20 @@ class PlantDevice(RestoreEntity):
     def conductivity_trigger(self) -> bool:
         """Whether we will generate alarms based on conductivity"""
         return self._config.options.get(FLOW_CONDUCTIVITY_TRIGGER, True)
+
+    @property
+    def live_moisture_status(self) -> str | None:
+        """The moisture status, or None while it is still the one restored at startup."""
+        if self._restored_state_active:
+            return None
+        return self.moisture_status
+
+    @property
+    def live_conductivity_status(self) -> str | None:
+        """The conductivity status, or None while it is still the one restored at startup."""
+        if self._restored_state_active:
+            return None
+        return self.conductivity_status
 
     @property
     def care_modes(self) -> dict[str, str]:
@@ -1461,10 +1483,12 @@ class PlantDevice(RestoreEntity):
         # restored in async_added_to_hass instead of recomputing them to UNKNOWN/None.
         # Must sit ABOVE the per-sensor logic below -- that loop overwrites each
         # *_status to None as it runs, so a guard at the bottom would be too late.
+        restore_ended = False
         if self._restored_state_active:
             if not self._has_live_source_data():
                 return
             self._restored_state_active = False  # first live reading -> resume normal
+            restore_ended = True
 
         new_state = STATE_OK
         known_state = False
@@ -1503,6 +1527,7 @@ class PlantDevice(RestoreEntity):
                                 self._moisture_grace_end_time,
                             )
 
+                previous_moisture_value = self._last_moisture_value
                 self._last_moisture_value = moisture_val
 
                 previous_moisture_status = self.moisture_status
@@ -1513,16 +1538,18 @@ class PlantDevice(RestoreEntity):
                     self.moisture_status,
                     min_band=MOISTURE_HYSTERESIS_MIN_BAND,
                 )
-                # Watered: a quick rise, or the soil is no longer dry (the
-                # status already applies the hysteresis band)
-                left_dry = previous_moisture_status == STATE_LOW and (
-                    self.moisture_status in (STATE_OK, STATE_HIGH)
+                # Watered: a quick rise, or a new reading that is no longer dry
+                # (the status already applies the hysteresis band)
+                left_dry = (
+                    previous_moisture_status == STATE_LOW
+                    and self.moisture_status in (STATE_OK, STATE_HIGH)
+                    and _reading_rose(previous_moisture_value, moisture_val)
                 )
                 if moisture_jumped or left_dry:
                     self._watered()
-                if (
-                    self.moisture_status == STATE_LOW
-                    and previous_moisture_status != STATE_LOW
+                # The restored status may already be Low: the first live reading counts
+                if self.moisture_status == STATE_LOW and (
+                    previous_moisture_status != STATE_LOW or restore_ended
                 ):
                     self._soil_became_dry()
 
@@ -1594,6 +1621,7 @@ class PlantDevice(RestoreEntity):
                     and conductivity_val - self._last_conductivity_value
                     >= CONDUCTIVITY_INCREASE_THRESHOLD
                 )
+                previous_conductivity_value = self._last_conductivity_value
                 self._last_conductivity_value = conductivity_val
                 previous_conductivity_status = self.conductivity_status
                 self.conductivity_status = self._check_threshold(
@@ -1602,15 +1630,16 @@ class PlantDevice(RestoreEntity):
                     self.max_conductivity,
                     self.conductivity_status,
                 )
-                if (
-                    self.conductivity_status == STATE_LOW
-                    and previous_conductivity_status != STATE_LOW
+                if self.conductivity_status == STATE_LOW and (
+                    previous_conductivity_status != STATE_LOW or restore_ended
                 ):
                     self._conductivity_became_low()
-                # Fertilized: a quick rise, or the conductivity is no longer low
+                # Fertilized: a quick rise, or a new reading that is no longer low
                 # (the status already applies the hysteresis band)
-                left_low = previous_conductivity_status == STATE_LOW and (
-                    self.conductivity_status in (STATE_OK, STATE_HIGH)
+                left_low = (
+                    previous_conductivity_status == STATE_LOW
+                    and self.conductivity_status in (STATE_OK, STATE_HIGH)
+                    and _reading_rose(previous_conductivity_value, conductivity_val)
                 )
                 if conductivity_jumped or left_low:
                     self._fertilized()

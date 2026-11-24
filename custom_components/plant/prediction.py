@@ -61,7 +61,9 @@ def predict_dry_time(
     if slope >= 0:
         return None
 
-    latest = since_watering[-1][1]
+    latest_time, latest = since_watering[-1]
     if latest <= minimum:
         return now
-    return now + timedelta(hours=(latest - minimum) / -slope)
+    # The drying continues from the last reading, which may be hours old
+    dry_time = latest_time + timedelta(hours=(latest - minimum) / -slope)
+    return max(dry_time, now)

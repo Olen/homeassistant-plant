@@ -14,8 +14,14 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
-from homeassistant.const import ATTR_ENTITY_ID, STATE_OK
-from homeassistant.core import Event, EventStateChangedData, HomeAssistant, callback
+from homeassistant.const import ATTR_ENTITY_ID, STATE_OK, STATE_UNAVAILABLE
+from homeassistant.core import (
+    Event,
+    EventStateChangedData,
+    HomeAssistant,
+    State,
+    callback,
+)
 from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.util import dt as dt_util
 
@@ -112,6 +118,19 @@ def care_modes(
     }
 
 
+def is_new_care_event(old: State | None, new: State | None, event_type: str) -> bool:
+    """True when the care entity just reported `event_type`.
+
+    A restore at startup (no old state) or coming back from unavailable is not
+    a new event.
+    """
+    if old is None or new is None:
+        return False
+    if old.state == STATE_UNAVAILABLE or new.state == old.state:
+        return False
+    return new.attributes.get("event_type") == event_type
+
+
 class CareTasks:
     """Keep one plant's care items in a to-do list and report completed care."""
 
@@ -140,6 +159,8 @@ class CareTasks:
         self._open_items: dict[str, str] = {}
         self._lock = asyncio.Lock()
         self._unsubscribe: list[Callable[[], None]] = []
+        # Set by async_stop; queued work checks it under the lock and does nothing
+        self._stopped = False
 
     async def async_start(self) -> None:
         """Read the list once and follow its changes and the plant's name."""
@@ -152,7 +173,9 @@ class CareTasks:
             ),
         ]
         await self._async_sync(report_completed=False)
-        # The sensors may have changed before we listened: match the list to them
+        # The sensors may have changed before we listened: match the list to them.
+        # A status still restored from before a restart reads as None; the plant
+        # then catches up on its first live reading.
         if self._modes[CARE_WATER] == CARE_MODE_SENSOR:
             moisture_status = self._moisture_status()
             if moisture_status == STATE_LOW:
@@ -201,7 +224,11 @@ class CareTasks:
 
     @callback
     def async_stop(self) -> None:
-        """Stop following the list and the plant."""
+        """Stop following the list and the plant, and drop work still queued.
+
+        async_remove_open_items still works afterwards, for cleaning up.
+        """
+        self._stopped = True
         for unsubscribe in self._unsubscribe:
             unsubscribe()
         self._unsubscribe = []
@@ -232,6 +259,8 @@ class CareTasks:
         if self._modes[CARE_WATER] != CARE_MODE_SENSOR:
             return
         async with self._lock:
+            if self._stopped:
+                return
             items = await self._async_own_items()
             if self._open_of(items, CARE_WATER):
                 return
@@ -242,6 +271,8 @@ class CareTasks:
         if self._modes[CARE_FERTILIZE] != CARE_MODE_SENSOR:
             return
         async with self._lock:
+            if self._stopped:
+                return
             items = await self._async_own_items()
             if self._open_of(items, CARE_FERTILIZE):
                 return
@@ -250,18 +281,20 @@ class CareTasks:
     async def async_fertilized(self) -> None:
         """Tick off the open fertilize item, or report the fertilizing directly."""
         completed = await self._async_complete_open(CARE_FERTILIZE)
-        if completed == 0:
+        if completed == 0 and not self._stopped:
             self._care_events[CARE_FERTILIZE].report()
 
     async def async_watered(self) -> None:
         """Tick off the open watering item, or report the watering directly."""
         completed = await self._async_complete_open(CARE_WATER)
-        if completed == 0:
+        if completed == 0 and not self._stopped:
             self._care_events[CARE_WATER].report()
 
     async def _async_complete_open(self, care: str) -> int:
         """Tick off this plant's open items of one care type; return how many."""
         async with self._lock:
+            if self._stopped:
+                return 0
             items = await self._async_own_items()
             open_items = self._open_of(items, care)
             for item in open_items:
@@ -295,6 +328,8 @@ class CareTasks:
     async def _async_rename_open_items(self) -> None:
         """Give open items the plant's current name; completed ones keep theirs."""
         async with self._lock:
+            if self._stopped:
+                return
             items = await self._async_own_items()
             for item in items:
                 if item["status"] != STATUS_OPEN:
@@ -316,6 +351,8 @@ class CareTasks:
     async def _async_sync(self, report_completed: bool) -> None:
         """Report items completed since the last look, then plan interval items."""
         async with self._lock:
+            if self._stopped:
+                return
             items = await self._async_own_items()
             by_uid = {item["uid"]: item for item in items}
             just_completed = set()

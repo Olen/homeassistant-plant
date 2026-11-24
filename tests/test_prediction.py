@@ -71,3 +71,17 @@ def test_already_below_minimum_returns_now() -> None:
     readings = _hourly(20.0, -0.5, 30, NOW)
 
     assert predict_dry_time(readings, 15.0, NOW) == NOW
+
+
+def test_drying_continues_from_an_old_last_reading() -> None:
+    """Two hours left at a reading taken one hour ago: dry in one hour."""
+    readings = _hourly(40.0, -0.5, 49, NOW - timedelta(hours=1))
+
+    assert predict_dry_time(readings, 15.0, NOW) == NOW + timedelta(hours=1)
+
+
+def test_dry_time_already_past_is_now() -> None:
+    """Two hours left at a reading taken six hours ago: dry already."""
+    readings = _hourly(40.0, -0.5, 49, NOW - timedelta(hours=6))
+
+    assert predict_dry_time(readings, 15.0, NOW) == NOW
