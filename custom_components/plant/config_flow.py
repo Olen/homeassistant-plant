@@ -28,7 +28,7 @@ from homeassistant.helpers.network import NoURLAvailableError, get_url
 from homeassistant.helpers.selector import selector
 from homeassistant.util.unit_conversion import TemperatureConverter
 
-from .care import care_settings
+from .care import CareSettings, care_settings
 from .const import (
     ATTR_CARE,
     ATTR_DEVICE,
@@ -39,6 +39,7 @@ from .const import (
     ATTR_SELECT,
     ATTR_SENSORS,
     ATTR_SPECIES,
+    CARE_MODE_INTERVAL,
     CONF_MAX_CONDUCTIVITY,
     CONF_MAX_DLI,
     CONF_MAX_HUMIDITY,
@@ -1069,30 +1070,40 @@ async def _async_create_todo_list(hass: HomeAssistant, name: str) -> str | None:
     return None
 
 
-async def _async_remove_stale_care_items(
-    plant: PlantDevice, new_list: str | None
+async def _async_update_care_items(
+    plant: PlantDevice, new_settings: CareSettings
 ) -> None:
-    """Take open care items out of the list they no longer belong in."""
+    """Fit the open care items to new care settings before the plant reloads.
+
+    Items whose list or mode changed are removed; items on a changed interval
+    move by the difference, so they keep the date they were planned from.
+    """
     care_tasks = plant.care_tasks
     # Removing items would make it plan new ones under the old modes
     care_tasks.async_stop()
     plant.care_tasks = None
-    if care_tasks.todo_entity_id != new_list:
+    shift_days = {}
+    if care_tasks.todo_entity_id != new_settings.todo:
         # Switched off or moved: all open items go
         stale = None
     else:
-        stale = {
-            care
-            for care, mode in plant.care_modes.items()
-            if mode != care_tasks.modes[care]
-        }
-        if not stale:
-            return
+        stale = set()
+        for care, mode in plant.care_modes.items():
+            old_mode = care_tasks.modes[care]
+            if mode != old_mode:
+                stale.add(care)
+            elif mode == CARE_MODE_INTERVAL:
+                shift = new_settings.intervals[care] - care_tasks.intervals[care]
+                if shift != 0:
+                    shift_days[care] = shift
     try:
-        await care_tasks.async_remove_open_items(stale)
+        if stale is None or stale:
+            await care_tasks.async_remove_open_items(stale)
+        if shift_days:
+            await care_tasks.async_shift_open_items(shift_days)
     except HomeAssistantError as err:
         _LOGGER.warning(
-            "Could not remove care items of %s from %s: %s",
+            "Could not update care items of %s in %s: %s",
             plant.entity_id,
             care_tasks.todo_entity_id,
             err,
@@ -1120,7 +1131,7 @@ async def update_plant_options(
     modes_changed = old_modes is not None and old_modes != plant.care_modes
     if new_settings != plant.care_settings or modes_changed:
         if plant.care_tasks is not None:
-            await _async_remove_stale_care_items(plant, new_settings.todo)
+            await _async_update_care_items(plant, new_settings)
         # Care tasks are set up when the plant loads
         hass.config_entries.async_schedule_reload(entry.entry_id)
         return

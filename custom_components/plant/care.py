@@ -118,6 +118,13 @@ def care_modes(
     }
 
 
+def _due_date(due: str) -> date:
+    """The local date of a to-do item's due date or due time."""
+    if len(due) == len("YYYY-MM-DD"):
+        return date.fromisoformat(due)
+    return dt_util.as_local(datetime.fromisoformat(due)).date()
+
+
 def is_new_care_event(old: State | None, new: State | None, event_type: str) -> bool:
     """True when the care entity just reported `event_type`.
 
@@ -200,6 +207,11 @@ class CareTasks:
         """How each care type is tracked."""
         return self._modes
 
+    @property
+    def intervals(self) -> dict[str, int]:
+        """Days between care of each type, for the types tracked by interval."""
+        return self._intervals
+
     async def async_remove_open_items(self, cares: set[str] | None = None) -> None:
         """Remove this plant's open items, of all care types or just `cares`.
 
@@ -222,11 +234,32 @@ class CareTasks:
                 blocking=True,
             )
 
+    async def async_shift_open_items(self, shift_days: dict[str, int]) -> None:
+        """Move the due date of open items by a number of days per care type."""
+        async with self._lock:
+            items = await self._async_own_items()
+            for item in items:
+                days = shift_days.get(item["care"])
+                if not days or item["status"] != STATUS_OPEN or not item.get("due"):
+                    continue
+                due = _due_date(item["due"]) + timedelta(days=days)
+                await self._hass.services.async_call(
+                    TODO_DOMAIN,
+                    "update_item",
+                    {
+                        ATTR_ENTITY_ID: self._todo_entity_id,
+                        "item": item["uid"],
+                        "due_date": due,
+                    },
+                    blocking=True,
+                )
+
     @callback
     def async_stop(self) -> None:
         """Stop following the list and the plant, and drop work still queued.
 
-        async_remove_open_items still works afterwards, for cleaning up.
+        async_remove_open_items and async_shift_open_items still work afterwards,
+        for cleaning up.
         """
         self._stopped = True
         for unsubscribe in self._unsubscribe:
@@ -443,5 +476,6 @@ class CareTasks:
                 continue
             if "completed" not in item:
                 continue
-            dates.append(datetime.fromisoformat(item["completed"]).date())
+            completed = dt_util.as_local(datetime.fromisoformat(item["completed"]))
+            dates.append(completed.date())
         return max(dates) if dates else None

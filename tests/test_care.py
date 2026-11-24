@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import timedelta
+from datetime import UTC, datetime, time, timedelta
 from typing import Any
 from unittest.mock import AsyncMock, patch
 from uuid import uuid4
@@ -564,6 +564,64 @@ class TestIntervals:
             i for i in _own(todo_list) if i.status == TodoItemStatus.NEEDS_ACTION
         ]
         assert [i.due for i in open_items] == [done.date() + timedelta(days=30)]
+
+    async def test_completion_time_counts_in_local_time(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        """Done at 02:00 UTC is the evening before in New York."""
+        await hass.config.async_set_time_zone("America/New_York")
+        todo_list = await _setup_todo_list(hass)
+        done = datetime.combine(
+            dt_util.now().date() - timedelta(days=10), time(2, 0), tzinfo=UTC
+        )
+        todo_list.add_existing(
+            summary="Fertilize",
+            status=TodoItemStatus.COMPLETED,
+            description=f"{PLANT_ENTITY_ID} · fertilize",
+            completed=done,
+        )
+
+        await _setup_plant(
+            hass,
+            plant_config_data,
+            {
+                FLOW_CARE_TODO: TODO_ENTITY_ID,
+                FLOW_CONDUCTIVITY_TRIGGER: False,
+                FLOW_FERTILIZE_INTERVAL: 30,
+            },
+        )
+
+        evening_before = done.date() - timedelta(days=1)
+        assert [i.due for i in _open(todo_list, CARE_FERTILIZE)] == [
+            evening_before + timedelta(days=30)
+        ]
+
+    async def test_changed_interval_moves_the_open_item(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        """30 to 7 days: the open item moves 23 days earlier."""
+        todo_list = await _setup_todo_list(hass)
+        done = dt_util.now() - timedelta(days=10)
+        todo_list.add_existing(
+            summary="Repot",
+            status=TodoItemStatus.COMPLETED,
+            description=f"{PLANT_ENTITY_ID} · repot",
+            completed=done,
+        )
+        options = {FLOW_CARE_TODO: TODO_ENTITY_ID, FLOW_REPOT_INTERVAL: 30}
+        entry = await _setup_plant(hass, plant_config_data, options)
+        assert [i.due for i in _open(todo_list, CARE_REPOT)] == [
+            done.date() + timedelta(days=30)
+        ]
+
+        hass.config_entries.async_update_entry(
+            entry, options={**options, FLOW_REPOT_INTERVAL: 7}
+        )
+        await hass.async_block_till_done()
+
+        assert [i.due for i in _open(todo_list, CARE_REPOT)] == [
+            done.date() + timedelta(days=7)
+        ]
 
     async def test_completing_plans_the_next_one(
         self, hass: HomeAssistant, plant_config_data: dict[str, Any]
