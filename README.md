@@ -8,6 +8,9 @@ A comprehensive plant monitoring integration for Home Assistant that treats each
 > [!WARNING]
 > This integration is **not** compatible with the original built-in plant integration in Home Assistant.
 
+> [!CAUTION]
+> **From version 2026.12, Plant Monitor requires Home Assistant 2026.8 or newer.** Version 2026.11.2 is the last release for older Home Assistant versions.
+
 ---
 
 ## 📑 Table of Contents
