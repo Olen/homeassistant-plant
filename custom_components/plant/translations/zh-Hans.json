@@ -37,6 +37,9 @@
       },
       "vpd": {
         "name": "饱和水汽压差"
+      },
+      "next_watering": {
+        "name": "下次浇水"
       }
     },
     "number": {
@@ -137,6 +140,9 @@
         },
         "vpd_status": {
           "name": "VPD 状态"
+        },
+        "care_todo_list": {
+          "name": "养护待办清单"
         },
         "care_watering": {
           "name": "浇水"

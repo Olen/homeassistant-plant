@@ -37,6 +37,9 @@
       },
       "vpd": {
         "name": "飽和水氣壓差"
+      },
+      "next_watering": {
+        "name": "下次澆水"
       }
     },
     "number": {
@@ -137,6 +140,9 @@
         },
         "vpd_status": {
           "name": "VPD 狀態"
+        },
+        "care_todo_list": {
+          "name": "養護待辦清單"
         },
         "care_watering": {
           "name": "澆水"

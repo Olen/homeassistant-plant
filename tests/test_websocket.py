@@ -200,6 +200,8 @@ class TestWebsocketGetInfo:
 
         # Each included sensor should have the expected structure
         for attr_name in result:
+            if attr_name == "care":
+                continue
             assert ATTR_MAX in result[attr_name]
             assert ATTR_MIN in result[attr_name]
             assert ATTR_CURRENT in result[attr_name]

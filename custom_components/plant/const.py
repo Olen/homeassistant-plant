@@ -51,6 +51,8 @@ ATTR_TEMPERATURE = "temperature"
 ATTR_PROBLEM = "problem"
 ATTR_SENSORS = "sensors"
 ATTR_SENSOR = "sensor"
+# Which source entity a plant meter currently reads
+ATTR_EXTERNAL_SENSOR = "external_sensor"
 ATTR_METERS = "meters"
 ATTR_THRESHOLDS = "thresholds"
 ATTR_ENTITY = "entity"
@@ -115,6 +117,7 @@ TRANSLATION_KEY_SOIL_TEMPERATURE = "soil_temperature"
 TRANSLATION_KEY_MAX_SOIL_TEMPERATURE = "max_soil_temperature"
 TRANSLATION_KEY_MIN_SOIL_TEMPERATURE = "min_soil_temperature"
 TRANSLATION_KEY_VPD = "vpd"
+TRANSLATION_KEY_NEXT_WATERING = "next_watering"
 TRANSLATION_KEY_MAX_VPD = "max_vpd"
 TRANSLATION_KEY_MIN_VPD = "min_vpd"
 TRANSLATION_KEY_LUX_TO_PPFD = "lux_to_ppfd"
@@ -254,6 +257,14 @@ FLOW_MOISTURE_GRACE_PERIOD = "moisture_grace_period"
 # If moisture increases by this many percentage points (e.g. 40% → 50%),
 # trigger grace period. This is an absolute difference, not a relative percentage.
 MOISTURE_INCREASE_THRESHOLD = 10.0
+# A conductivity rise of at least this much (µS/cm) between two readings counts
+# as fertilized; well above normal reading-to-reading noise.
+CONDUCTIVITY_INCREASE_THRESHOLD = 200.0
+
+# Watering prediction: linear dry-down over the last 96 h, after the last watering
+PREDICTION_WINDOW = timedelta(hours=96)
+PREDICTION_MIN_SPAN = timedelta(hours=12)
+PREDICTION_MIN_READINGS = 6
 
 # PPFD to DLI: /1000000 * 3600 to get from microseconds to hours
 PPFD_DLI_FACTOR = 0.0036
@@ -327,3 +338,32 @@ CONF_PLANTBOOK_MAPPING = {
 # OpenPlantbook `include: care` returns these free-text fields per species.
 # Order is the canonical attribute order used when exposing them.
 CARE_FIELDS = ["watering", "sunlight", "soil", "pruning", "fertilization"]
+
+# Care tasks kept in a to-do list (see care.py)
+FLOW_CARE_TODO = "care_todo"
+# Plant attribute: the to-do list care tasks use, or None when they are off
+ATTR_CARE_TODO_LIST = "care_todo_list"
+FLOW_CARE_TODO_NEW = "care_todo_new"
+FLOW_FERTILIZE_INTERVAL = "fertilize_interval"
+FLOW_REPOT_INTERVAL = "repot_interval"
+FLOW_WATER_INTERVAL = "water_interval"
+FLOW_PRUNE_INTERVAL = "prune_interval"
+DEFAULT_CARE_TODO_NAME = "Plants"
+
+CARE_WATER = "water"
+CARE_FERTILIZE = "fertilize"
+CARE_REPOT = "repot"
+CARE_PRUNE = "prune"
+
+CARE_MODE_SENSOR = "sensor"
+CARE_MODE_INTERVAL = "interval"
+CARE_MODE_NONE = "none"
+# Event type reported by the plant's event entity for each care type
+CARE_EVENT_TYPES = {
+    CARE_WATER: "watered",
+    CARE_FERTILIZE: "fertilized",
+    CARE_REPOT: "repotted",
+    CARE_PRUNE: "pruned",
+}
+# Plant attribute and hass.data key: the care event entities by care type
+ATTR_CARE_EVENTS = "care_events"

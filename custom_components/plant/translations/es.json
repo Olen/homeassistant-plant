@@ -37,6 +37,9 @@
       },
       "vpd": {
         "name": "Déficit de presión de vapor"
+      },
+      "next_watering": {
+        "name": "Próximo riego"
       }
     },
     "number": {
@@ -137,6 +140,9 @@
         },
         "vpd_status": {
           "name": "Estado del VPD"
+        },
+        "care_todo_list": {
+          "name": "Lista de tareas de cuidado"
         },
         "care_watering": {
           "name": "Riego"

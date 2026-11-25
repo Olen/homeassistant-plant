@@ -503,3 +503,22 @@ co2_sensor_became_fresh:
       selector:
         duration:
 
+watered:
+  target:
+    entity:
+      domain: plant
+
+fertilized:
+  target:
+    entity:
+      domain: plant
+
+repotted:
+  target:
+    entity:
+      domain: plant
+
+pruned:
+  target:
+    entity:
+      domain: plant

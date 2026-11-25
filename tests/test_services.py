@@ -57,6 +57,34 @@ class TestReplaceSensorService:
         # Verify the sensor was replaced
         assert plant.sensor_temperature.external_sensor == new_sensor_id
 
+    async def test_replace_sensor_shows_the_new_reading_in_its_own_unit(
+        self,
+        hass: HomeAssistant,
+        init_integration: MockConfigEntry,
+    ) -> None:
+        """77 °F must not show as 77 °C until the new sensor reports again."""
+        plant = hass.data[DOMAIN][init_integration.entry_id][ATTR_PLANT]
+        meter_entity = plant.sensor_temperature.entity_id
+        hass.states.async_set(
+            "sensor.fahrenheit_temperature",
+            "77",
+            {"unit_of_measurement": "°F", "device_class": "temperature"},
+        )
+
+        await hass.services.async_call(
+            DOMAIN,
+            SERVICE_REPLACE_SENSOR,
+            {
+                "meter_entity": meter_entity,
+                "new_sensor": "sensor.fahrenheit_temperature",
+            },
+            blocking=True,
+        )
+
+        meter = hass.states.get(meter_entity)
+        assert float(meter.state) == 25.0
+        assert meter.attributes["unit_of_measurement"] == "°C"
+
     async def test_replace_sensor_with_empty_clears_sensor(
         self,
         hass: HomeAssistant,

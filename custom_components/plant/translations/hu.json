@@ -37,6 +37,9 @@
       },
       "vpd": {
         "name": "Gőznyomáshiány"
+      },
+      "next_watering": {
+        "name": "Következő öntözés"
       }
     },
     "number": {
@@ -137,6 +140,9 @@
         },
         "vpd_status": {
           "name": "VPD állapota"
+        },
+        "care_todo_list": {
+          "name": "Gondozási teendőlista"
         },
         "care_watering": {
           "name": "Öntözés"

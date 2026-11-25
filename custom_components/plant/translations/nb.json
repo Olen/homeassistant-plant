@@ -17,6 +17,12 @@
       "humidity": {
         "name": "Luftfuktighet"
       },
+      "co2": {
+        "name": "CO2"
+      },
+      "soil_temperature": {
+        "name": "Jordtemperatur"
+      },
       "ppfd": {
         "name": "PPFD"
       },
@@ -26,17 +32,14 @@
       "dli": {
         "name": "Daglig lysintegral"
       },
+      "dli_24h": {
+        "name": "DLI (24t rullerende)"
+      },
       "vpd": {
         "name": "Damptrykkdefisitt"
       },
-      "co2": {
-        "name": "CO2"
-      },
-      "soil_temperature": {
-        "name": "Jordtemperatur"
-      },
-      "dli_24h": {
-        "name": "DLI (24t rullerende)"
+      "next_watering": {
+        "name": "Neste vanning"
       }
     },
     "number": {
@@ -76,12 +79,6 @@
       "min_humidity": {
         "name": "Min. luftfuktighet"
       },
-      "max_vpd": {
-        "name": "Maks. VPD"
-      },
-      "min_vpd": {
-        "name": "Min. VPD"
-      },
       "max_co2": {
         "name": "Maks. CO2"
       },
@@ -94,9 +91,21 @@
       "min_soil_temperature": {
         "name": "Min. jordtemperatur"
       },
+      "max_vpd": {
+        "name": "Maks. VPD"
+      },
+      "min_vpd": {
+        "name": "Min. VPD"
+      },
       "lux_to_ppfd": {
         "name": "Lux til PPFD faktor"
       }
+    },
+    "event": {
+      "watered": {},
+      "fertilized": {},
+      "repotted": {},
+      "pruned": {}
     }
   },
   "entity_component": {
@@ -137,6 +146,9 @@
         },
         "vpd_status": {
           "name": "Status for VPD"
+        },
+        "care_todo_list": {
+          "name": "Gjøremålsliste for stell"
         },
         "care_watering": {
           "name": "Vanning"
@@ -251,7 +263,8 @@
           "co2_trigger": "Bruk CO2 som trigger for «problem»-status",
           "soil_temperature_trigger": "Bruk jordtemperatur som trigger for «problem»-status",
           "vpd_trigger": "Bruk VPD som trigger for «problem»-status"
-        }
+        },
+        "data_description": {}
       },
       "replace_sensor": {
         "title": "Erstatt sensorer",
@@ -269,8 +282,13 @@
         "data_description": {
           "source_device": "Velg en enhet, for eksempel en jordsensor, og send inn skjemaet for å fylle ut feltene nedenfor fra entitetene dens. Skjemaet åpnes igjen slik at du kan se over dem før du fortsetter; felt du allerede har fylt ut, beholdes."
         }
+      },
+      "care_tasks": {
+        "data": {},
+        "data_description": {}
       }
-    }
+    },
+    "error": {}
   },
   "services": {
     "replace_sensor": {
@@ -718,7 +736,11 @@
           "description": "Sensoren må ha vært i denne tilstanden i minst så lang tid før den trigges."
         }
       }
-    }
+    },
+    "watered": {},
+    "fertilized": {},
+    "repotted": {},
+    "pruned": {}
   },
   "conditions": {
     "has_problem": {

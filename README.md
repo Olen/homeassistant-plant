@@ -26,6 +26,7 @@ A comprehensive plant monitoring integration for Home Assistant that treats each
   - [⚠️ Problem Reports](#️-problem-reports)
   - [🔔 Automations: Triggers \& Conditions](#-automations-triggers--conditions)
   - [🔄 Replacing Sensors](#-replacing-sensors)
+  - [✅ Care Tasks (preview)](#-care-tasks-preview)
   - [🌻 OpenPlantbook Integration](#-openplantbook-integration)
   - [🃏 Lovelace Card](#-lovelace-card)
   - [💡 Tips & Tricks](TIPS.md)
@@ -223,6 +224,19 @@ By default, any sensor reading outside its configured threshold triggers a **"pr
 
 Configure via **Settings** → **Devices & Services** → **Plant Monitor** → *Your Plant* → **Configure** → **Plant properties**.
 
+Four of the checkboxes also steer [care tasks](#-care-tasks-preview) and the plant-care card:
+
+| Checkbox | Checked | Unchecked |
+|----------|---------|-----------|
+| Use soil moisture as problem trigger | Moisture problems are raised. Water items are opened and closed by the moisture sensor (the sensor closing an item records `watered`). No «Done» button on the plant-care card. | No moisture problems are raised. Watering follows the watering interval (if set). A watering is either detected by the moisture sensor (if there is one) or recorded when you press «Done» on the plant-care card. |
+| Use conductivity as problem trigger | Conductivity problems are raised. Fertilize items are opened and closed by the conductivity sensor (the sensor closing an item records `fertilized`). No «Done» button on the plant-care card. | No conductivity problems are raised. Fertilizing follows the fertilize interval (if set). A fertilizing is either detected by the conductivity sensor (if there is one) or recorded when you press «Done» on the plant-care card. |
+| Use illuminance as problem trigger | Light problems, which turn the card's Light & soil row red. No care items. | No light problem from illuminance, so the card shows no warning. |
+| Use daily light integral (DLI) as problem trigger | Light problems, which turn the card's Light & soil row red. No care items. | No light problem from DLI, so the card shows no warning. |
+
+- A checked trigger wins over an interval for the same care type.
+- Changing a checkbox removes that care type's open items; the new mode plans its own.
+- Uncheck a trigger when you don't trust that sensor.
+
 > [!NOTE]
 > Disabling a trigger only removes that sensor from the plant's ok/problem calculation — it does **not** stop the sensor being evaluated. Each `*_status` attribute (e.g. `illuminance_status: Low`) always reflects the latest reading against the plant's thresholds regardless of its trigger, and is `null` only when no value is available (sensor missing or unavailable). Use the **`problems`** attribute — which lists only sensors that are out of range *and* have their trigger enabled — as the source of truth for active problems.
 
@@ -258,6 +272,8 @@ Core Home Assistant ships generic purpose triggers too, like `temperature.crosse
 - **Stale source sensor:** `plant.<measurement>_sensor_became_stale` / `_became_fresh`, for the externally-sourced measurements only — `moisture`, `conductivity`, `temperature`, `soil_temperature`, `humidity`, `illuminance`, `co2` (not `dli`/`vpd`, which are derived rather than sensor-backed). Condition: `plant.<measurement>_sensor_is_stale`. The trigger tells your actions which sensor it is (`trigger.entity_id`), the measurement (`trigger.measurement`), the plants it feeds (`trigger.plant_entity_ids`) and why (`trigger.reason`: `unavailable` or `no_update`).
 
   "Stale" means the source sensor is `unavailable`/`unknown`, or simply hasn't reported within a window (`for`, default **24 hours**). A sensor that keeps reporting the same value counts as reporting. A grace period means it does **not** false-alarm at restart, when a sensor briefly reads `unknown` before its own integration populates it — staleness only fires once the source is genuinely still dead after the full window elapses.
+
+- **Care:** `plant.watered` / `plant.fertilized` / `plant.repotted` / `plant.pruned`. `watered` fires when soil moisture rises at least 10 points between two updates, or when it is no longer low (above the minimum by the same margin that clears a "low" problem), with or without a to-do list. `fertilized` works the same way for conductivity: it fires when conductivity rises at least 200 µS/cm between two updates, or when it is no longer low. Conductivity often rises together with moisture when you water, so a watering can also fire `fertilized`. With [care tasks](#-care-tasks-preview), all four also fire when the matching item is ticked off. `trigger.entity_id` is the plant.
 
 ### Targeting
 
@@ -383,6 +399,41 @@ If you set up a plant without a particular sensor (e.g. you didn't have a CO2 or
 
 > [!IMPORTANT]
 > You must enable the plant sensor entity **before** replacing it — Home Assistant hides disabled entities from the entity picker in the UI.
+
+---
+
+## ✅ Care Tasks (preview)
+
+> [!NOTE]
+> This is an early version. Feedback is welcome in [#581](https://github.com/Olen/homeassistant-plant/issues/581).
+
+A plant can keep its care tasks in a Home Assistant to-do list. The plant stores nothing itself: open items are your reminders, and completed items are the history.
+
+1. Go to **Settings** → **Devices & Services** → **Plant Monitor** → *Your Plant* → **Configure** → **Care tasks**
+2. Pick an existing to-do list, or type a name to create a new Local To-do list ("Plants" is suggested). Plants that use the same list share it.
+3. Optionally set how often to water, fertilize, repot and prune, in days (0 = off).
+
+There are four care tasks: watering, fertilizing, repotting and pruning. Each one works in one of three ways. You choose by checking or unchecking "Use … as problem trigger" for the sensor (see [Problem Reports](#️-problem-reports)), and by setting an interval under **Care tasks**. You need a to-do list for any tasks to appear.
+
+**The sensor decides** (checkbox checked, and the plant has that sensor). When the soil gets too dry, or the conductivity too low, the plant shows a problem and adds a task to your to-do list, due today. You don't tick it off on the card: it goes away by itself when the sensor sees that the plant was watered or fertilized. If you tick it off in the to-do list instead, a new task appears the next time the reading drops too low, or when Home Assistant restarts.
+
+**A fixed schedule** (checkbox unchecked, interval set). The sensor never raises a problem or adds a task. Instead there is always one task waiting, due the set number of days after the last time it was done (due today if it has never been recorded). Tick it off on the card or in the to-do list, and the next one is planned straight away. Repotting and pruning always work this way, because no sensor can tell.
+
+**Nothing** (checkbox unchecked, interval 0). No problems and no tasks. The card still shows the care advice from OpenPlantbook.
+
+**How the plant notices on its own.** Whatever you choose, the plant watches for signs that you have done the job. A watering is a quick rise in soil moisture (at least 10 points), or the soil being wet enough again after it was too dry. A fertilizing is the same for conductivity: a quick rise (at least 200 µS/cm), or the conductivity being high enough again after it was too low. Conductivity often rises together with moisture when you water, so a watering can also be recorded as a fertilizing. When the plant sees either, it records it ("watered", "fertilized"), ticks off the open task, and on a schedule plans the next one.
+
+**On the card.** A task that is due today or overdue turns its row red, and so does an active problem. The **Done** button only appears on a schedule, since in sensor mode the sensor does the ticking.
+
+Also:
+
+- **Due dates** exist only with a to-do list. Without one, intervals plan nothing.
+- **Next watering:** a plant with a moisture sensor gets a *Next watering* sensor, a timestamp predicted from how fast the soil has been drying.
+- **Automations:** the `plant.watered`, `plant.fertilized`, `plant.repotted` and `plant.pruned` triggers fire when the care is done. Each plant has one care event entity per care type (watered, fertilized, repotted, pruned) that reports the same, for the **Event received** trigger and the logbook.
+
+Each item has a line such as `plant.aloe_vera · fertilize` in its description. The plant uses it to find its own items, so leave that line in place when you edit an item.
+
+To know *when* an item was completed, the list has to report it. Local To-do, CalDAV, Google Tasks and iCloud do. With other lists, the next item is counted from when the plant saw the item ticked off.
 
 ---
 

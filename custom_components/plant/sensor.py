@@ -10,6 +10,8 @@ from datetime import datetime, timedelta
 
 from homeassistant.components.integration.const import METHOD_TRAPEZOIDAL
 from homeassistant.components.integration.sensor import IntegrationSensor
+from homeassistant.components.recorder import get_instance
+from homeassistant.components.recorder.history import state_changes_during_period
 from homeassistant.components.sensor import (
     DOMAIN as SENSOR_DOMAIN,
     RestoreSensor,
@@ -62,12 +64,15 @@ from homeassistant.helpers.event import (
     async_call_later,
     async_track_state_change_event,
 )
+from homeassistant.helpers.start import async_at_started
+from homeassistant.util import dt as dt_util
 from homeassistant.util.unit_conversion import TemperatureConverter
 
 from . import SETUP_DUMMY_SENSORS
 from .const import (
     ATTR_CONDUCTIVITY,
     ATTR_DLI,
+    ATTR_EXTERNAL_SENSOR,
     ATTR_MOISTURE,
     ATTR_PLANT,
     ATTR_SENSORS,
@@ -93,6 +98,8 @@ from .const import (
     ICON_SOIL_TEMPERATURE,
     ICON_TEMPERATURE,
     ICON_VPD,
+    MOISTURE_INCREASE_THRESHOLD,
+    PREDICTION_WINDOW,
     READING_CO2,
     READING_CONDUCTIVITY,
     READING_DLI,
@@ -112,6 +119,7 @@ from .const import (
     TRANSLATION_KEY_HUMIDITY,
     TRANSLATION_KEY_ILLUMINANCE,
     TRANSLATION_KEY_MOISTURE,
+    TRANSLATION_KEY_NEXT_WATERING,
     TRANSLATION_KEY_PPFD,
     TRANSLATION_KEY_SOIL_TEMPERATURE,
     TRANSLATION_KEY_TEMPERATURE,
@@ -122,6 +130,7 @@ from .const import (
     UNIT_TOTAL_LIGHT_INTEGRAL,
     UNIT_VPD,
 )
+from .prediction import predict_dry_time
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -233,7 +242,24 @@ async def async_setup_entry(
     async_add_entities([pvpd])
     plant.add_vpd(vpd=pvpd)
 
+    if entry.data[FLOW_PLANT_INFO].get(FLOW_SENSOR_MOISTURE):
+        next_watering = PlantNextWatering(hass, entry, plant)
+        async_add_entities([next_watering])
+        plant.next_watering = next_watering
+    else:
+        _remove_next_watering(hass, entry)
+
     return True
+
+
+def _remove_next_watering(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Drop the next-watering entity left over from a removed moisture sensor."""
+    registry = er_async_get(hass)
+    entity_id = registry.async_get_entity_id(
+        SENSOR_DOMAIN, DOMAIN, f"{entry.entry_id}-next-watering"
+    )
+    if entity_id is not None:
+        registry.async_remove(entity_id)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -318,7 +344,7 @@ class PlantCurrentStatus(RestoreSensor):
     def extra_state_attributes(self) -> dict:
         if self._external_sensor:
             return {
-                "external_sensor": self.external_sensor,
+                ATTR_EXTERNAL_SENSOR: self.external_sensor,
             }
         return {}
 
@@ -339,6 +365,10 @@ class PlantCurrentStatus(RestoreSensor):
 
         if new_sensor is None:
             self._attr_native_value = self._default_state
+            self._restored_value_active = False
+        elif new_sensor != old_sensor and self.hass is not None:
+            # Never write the old source's reading under the new source's name
+            self._take_source_reading()
             self._restored_value_active = False
 
         # Disabled entities have self.hass = None; use the plant's hass reference
@@ -366,6 +396,26 @@ class PlantCurrentStatus(RestoreSensor):
             and not hass.is_stopping
         ):
             self._plant.update_entity_disabled_state(self)
+
+    def _take_source_reading(self) -> None:
+        """Take the external sensor's reading and unit now, or the default without one."""
+        source_state = self.hass.states.get(self.external_sensor)
+        if source_state is None or source_state.state in (
+            STATE_UNKNOWN,
+            STATE_UNAVAILABLE,
+        ):
+            self._attr_native_value = self._default_state
+            return
+        try:
+            value = float(source_state.state)
+        except ValueError:
+            self._attr_native_value = self._default_state
+            return
+        self._attr_native_value = value
+        if ATTR_UNIT_OF_MEASUREMENT in source_state.attributes:
+            self._attr_native_unit_of_measurement = source_state.attributes[
+                ATTR_UNIT_OF_MEASUREMENT
+            ]
 
     def _update_config_entry(
         self, new_sensor: str | None, hass: HomeAssistant | None = None
@@ -448,13 +498,13 @@ class PlantCurrentStatus(RestoreSensor):
                     ATTR_UNIT_OF_MEASUREMENT
                 ]
 
-            if "external_sensor" in state.attributes:
+            if ATTR_EXTERNAL_SENSOR in state.attributes:
                 _LOGGER.debug(
                     "Restoring %s external sensor from state: %s",
                     self.entity_id,
-                    state.attributes["external_sensor"],
+                    state.attributes[ATTR_EXTERNAL_SENSOR],
                 )
-                self.replace_external_sensor(state.attributes["external_sensor"])
+                self.replace_external_sensor(state.attributes[ATTR_EXTERNAL_SENSOR])
             else:
                 _LOGGER.debug(
                     "No external_sensor in restored state for %s",
@@ -679,8 +729,8 @@ class PlantCurrentStatus(RestoreSensor):
 
         if entity_id == self.entity_id:
             current_attrs = self.hass.states.get(self.entity_id).attributes
-            if current_attrs.get("external_sensor") != self.external_sensor:
-                self.replace_external_sensor(current_attrs.get("external_sensor"))
+            if current_attrs.get(ATTR_EXTERNAL_SENSOR) != self.external_sensor:
+                self.replace_external_sensor(current_attrs.get(ATTR_EXTERNAL_SENSOR))
 
             if (
                 new_state is not None
@@ -894,6 +944,155 @@ class PlantCurrentSoilTemperature(PlantCurrentStatus):
             FLOW_SENSOR_SOIL_TEMPERATURE
         )
         super().__init__(hass, config, plantdevice)
+
+
+def _moisture_history(
+    hass: HomeAssistant, entity_id: str, start: datetime, end: datetime
+) -> list[tuple[datetime, float]]:
+    """Numeric states of `entity_id` as (time, value); runs in the recorder's executor."""
+    states = state_changes_during_period(
+        hass, start, end, entity_id, no_attributes=True
+    )
+    readings = []
+    for state in states.get(entity_id, []):
+        try:
+            value = float(state.state)
+        except ValueError:
+            continue
+        if math.isfinite(value):
+            readings.append((state.last_updated, value))
+    return readings
+
+
+class PlantNextWatering(SensorEntity):
+    """When the soil is predicted to reach its minimum moisture."""
+
+    _attr_has_entity_name = True
+    _attr_should_poll = False
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_translation_key = TRANSLATION_KEY_NEXT_WATERING
+
+    def __init__(
+        self, hass: HomeAssistant, config: ConfigEntry, plantdevice: Entity
+    ) -> None:
+        """Initialize the sensor."""
+        self.hass = hass
+        self._plant = plantdevice
+        self._attr_unique_id = f"{config.entry_id}-next-watering"
+        self._last_computed: datetime | None = None
+        self._computing = False
+        self._generation = 0
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Device info for devices"""
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._plant.unique_id)},
+            name=self._plant.name,
+        )
+
+    async def async_added_to_hass(self) -> None:
+        """Compute once at startup, then at most hourly when the moisture changes."""
+        await super().async_added_to_hass()
+        self.async_on_remove(
+            async_track_state_change_event(
+                self.hass,
+                [self._plant.sensor_moisture.entity_id],
+                self._moisture_changed,
+            )
+        )
+        self.async_on_remove(async_at_started(self.hass, self._started))
+
+    @callback
+    def _started(self, hass: HomeAssistant) -> None:
+        self.hass.async_create_task(self._async_recompute())
+
+    @callback
+    def _moisture_changed(self, event: Event) -> None:
+        if self._watering_detected(event):
+            self._dried_out_state_cleared()
+        elif self._recompute_is_due():
+            self.hass.async_create_task(self._async_recompute())
+
+    def _dried_out_state_cleared(self) -> None:
+        # Right after a watering there is no dry-down to predict from yet
+        self._generation += 1
+        self._attr_native_value = None
+        self._last_computed = dt_util.utcnow()
+        self.async_write_ha_state()
+
+    @staticmethod
+    def _watering_detected(event: Event) -> bool:
+        old_state = event.data["old_state"]
+        new_state = event.data["new_state"]
+        if old_state is None or new_state is None:
+            return False
+        try:
+            rise = float(new_state.state) - float(old_state.state)
+        except ValueError:
+            # unknown/unavailable are not readings
+            return False
+        return rise >= MOISTURE_INCREASE_THRESHOLD
+
+    def _recompute_is_due(self) -> bool:
+        if self._last_computed is None:
+            return True
+        return dt_util.utcnow() - self._last_computed >= timedelta(hours=1)
+
+    async def _async_recompute(self) -> None:
+        if self._computing:
+            return
+        self._computing = True
+        generation = self._generation
+        try:
+            predicted = await self._async_predict()
+            if generation != self._generation:
+                # A watering arrived while computing; the result is from before it
+                return
+            self._attr_native_value = predicted
+            self._last_computed = dt_util.utcnow()
+            self.async_write_ha_state()
+        finally:
+            self._computing = False
+
+    async def _async_predict(self) -> datetime | None:
+        minimum = self._minimum_moisture()
+        if minimum is None:
+            return None
+        if "recorder" not in self.hass.config.components:
+            _LOGGER.debug("No recorder, cannot predict watering for %s", self.entity_id)
+            return None
+        # The source's own history: the plant meter's mixes in a replaced sensor
+        source = self._plant.sensor_moisture.external_sensor
+        if source is None:
+            return None
+        now = dt_util.utcnow()
+        readings = await get_instance(self.hass).async_add_executor_job(
+            _moisture_history,
+            self.hass,
+            source,
+            now - PREDICTION_WINDOW,
+            now,
+        )
+        return predict_dry_time(readings, minimum, now)
+
+    def _minimum_moisture(self) -> float | None:
+        if self._plant.min_moisture is None:
+            return None
+        state = self.hass.states.get(self._plant.min_moisture.entity_id)
+        if state is None or state.state in (STATE_UNKNOWN, STATE_UNAVAILABLE):
+            return None
+        return float(state.state)
+
+    @callback
+    def async_entity_id_changed(self, old_entity_id: str) -> None:
+        """Take entity_id changes in place (HA 2026.11+).
+
+        A rename of a plant entity reloads the plant, which resubscribes
+        this sensor under the new entity_ids (see async_setup_entry).
+        """
+        if (parent := getattr(super(), "async_entity_id_changed", None)) is not None:
+            parent(old_entity_id)
 
 
 class PlantCurrentVpd(RestoreSensor):

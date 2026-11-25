@@ -27,7 +27,7 @@ from homeassistant.const import (
     Platform,
 )
 from homeassistant.core import Event, HomeAssistant, ServiceCall, callback
-from homeassistant.exceptions import ConfigEntryError
+from homeassistant.exceptions import ConfigEntryError, HomeAssistantError
 from homeassistant.helpers import (
     config_validation as cv,
     device_registry as dr,
@@ -42,16 +42,20 @@ from homeassistant.helpers.start import async_at_started
 from homeassistant.util import dt as dt_util
 
 from . import group as group
+from .care import MARKER_SEPARATOR, CareSettings, CareTasks, care_modes, care_settings
 from .config_flow import update_plant_options
 from .const import (
     ATTR_BRIGHTNESS,
     ATTR_CARE,
+    ATTR_CARE_EVENTS,
     ATTR_CARE_PREFIX,
+    ATTR_CARE_TODO_LIST,
     ATTR_CO2,
     ATTR_CONDUCTIVITY,
     ATTR_CURRENT,
     ATTR_DLI,
     ATTR_DLI_24H,
+    ATTR_EXTERNAL_SENSOR,
     ATTR_HUMIDITY,
     ATTR_ILLUMINANCE,
     ATTR_MAX,
@@ -67,6 +71,9 @@ from .const import (
     ATTR_SPECIES,
     ATTR_TEMPERATURE,
     ATTR_VPD,
+    CARE_FERTILIZE,
+    CARE_WATER,
+    CONDUCTIVITY_INCREASE_THRESHOLD,
     CONF_MAX_BRIGHTNESS,
     CONF_MAX_CONDUCTIVITY,
     CONF_MAX_MOISTURE,
@@ -79,6 +86,7 @@ from .const import (
     DEFAULT_MOISTURE_GRACE_PERIOD,
     DOMAIN,
     DOMAIN_PLANTBOOK,
+    FLOW_CARE_TODO,
     FLOW_CO2_TRIGGER,
     FLOW_CONDUCTIVITY_TRIGGER,
     FLOW_DLI_TRIGGER,
@@ -87,6 +95,8 @@ from .const import (
     FLOW_MOISTURE_GRACE_PERIOD,
     FLOW_MOISTURE_TRIGGER,
     FLOW_PLANT_INFO,
+    FLOW_SENSOR_CONDUCTIVITY,
+    FLOW_SENSOR_MOISTURE,
     FLOW_SOIL_TEMPERATURE_TRIGGER,
     FLOW_TEMPERATURE_TRIGGER,
     FLOW_VPD_TRIGGER,
@@ -99,11 +109,12 @@ from .const import (
     STATE_HIGH,
     STATE_LOW,
 )
+from .event import PlantCareEvent
 from .frontend import async_setup_card
-from .plant_helpers import PlantHelper
+from .plant_helpers import PlantHelper, display_name
 
 _LOGGER = logging.getLogger(__name__)
-PLATFORMS = [Platform.NUMBER, Platform.SENSOR]
+PLATFORMS = [Platform.EVENT, Platform.NUMBER, Platform.SENSOR]
 
 # Key under hass.data[DOMAIN] holding the single shared EntityComponent that
 # owns the plant.<name> entities. The leading underscore keeps it out of the
@@ -247,6 +258,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _LOGGER.debug("Setting up config entry %s: %s", entry.entry_id, entry)
 
     plant = PlantDevice(hass, entry)
+    plant.care_settings = care_settings(entry.options)
     hass.data[DOMAIN][entry.entry_id][ATTR_PLANT] = plant
 
     # Register update listener for options flow
@@ -286,6 +298,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         )
 
     entry.async_on_unload(async_at_started(hass, _restore_missing_image))
+
+    if entry.options.get(FLOW_CARE_TODO):
+        # Wait for startup so the to-do list is loaded before we read it.
+        async def _start_care_tasks(hass: HomeAssistant) -> None:
+            await _async_start_care_tasks(hass, entry, plant)
+
+        entry.async_on_unload(async_at_started(hass, _start_care_tasks))
 
     #
     # Service call to replace sensors
@@ -365,8 +384,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if event.data["action"] != "update" or "old_entity_id" not in event.data:
             return
         reg_entry = er.async_get(hass).async_get(event.data["entity_id"])
-        if reg_entry is not None and reg_entry.config_entry_id == entry.entry_id:
-            hass.config_entries.async_schedule_reload(entry.entry_id)
+        if reg_entry is None or reg_entry.config_entry_id != entry.entry_id:
+            return
+        if reg_entry.domain == DOMAIN and plant.care_tasks is not None:
+            # Move the care items first, or the reloaded plant will not know them
+            entry.async_create_task(
+                hass,
+                _async_move_care_items_then_reload(
+                    hass, entry, plant.care_tasks, event.data["entity_id"]
+                ),
+                f"plant move care items {entry.entry_id}",
+            )
+            return
+        hass.config_entries.async_schedule_reload(entry.entry_id)
 
     entry.async_on_unload(
         hass.bus.async_listen(er.EVENT_ENTITY_REGISTRY_UPDATED, _reload_on_rename)
@@ -392,6 +422,57 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 )
 
     return True
+
+
+async def _async_move_care_items_then_reload(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    care_tasks: CareTasks,
+    new_plant_entity_id: str,
+) -> None:
+    """Point the care items at the plant's new entity_id, then reload it."""
+    try:
+        await care_tasks.async_move_items(new_plant_entity_id)
+    except HomeAssistantError as err:
+        _LOGGER.warning(
+            "Could not move care items to %s in %s: %s",
+            new_plant_entity_id,
+            care_tasks.todo_entity_id,
+            err,
+        )
+    hass.config_entries.async_schedule_reload(entry.entry_id)
+
+
+async def _async_start_care_tasks(
+    hass: HomeAssistant, entry: ConfigEntry, plant: PlantDevice
+) -> None:
+    """Keep this plant's care items in the to-do list chosen in its options."""
+    settings = plant.care_settings
+    care_tasks = CareTasks(
+        hass,
+        plant_entity_id=plant.entity_id,
+        plant_name=lambda: display_name(hass, plant),
+        todo_entity_id=settings.todo,
+        intervals=settings.intervals,
+        modes=plant.care_modes,
+        care_events=hass.data[DOMAIN][entry.entry_id][ATTR_CARE_EVENTS],
+        moisture_status=lambda: plant.live_moisture_status,
+        conductivity_status=lambda: plant.live_conductivity_status,
+    )
+    try:
+        await care_tasks.async_start()
+    except HomeAssistantError as err:
+        care_tasks.async_stop()
+        _LOGGER.warning(
+            "Care tasks for %s are off: cannot use to-do list %s: %s",
+            plant.entity_id,
+            settings.todo,
+            err,
+        )
+        return
+    plant.care_tasks = care_tasks
+    plant.async_write_ha_state()
+    entry.async_on_unload(care_tasks.async_stop)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -519,6 +600,14 @@ def ws_get_info(
     return
 
 
+def _reading_rose(previous: float | None, current: float) -> bool:
+    """True for a reading above the last one, or the first reading since start.
+
+    A threshold change re-evaluates the same reading; that is not care.
+    """
+    return previous is None or current > previous
+
+
 class PlantDevice(RestoreEntity):
     """Base device for plants"""
 
@@ -615,6 +704,10 @@ class PlantDevice(RestoreEntity):
         self.conductivity_status = None
         self.illuminance_status = None
         self.moisture_status = None
+        self.care_tasks: CareTasks | None = None
+        self.care_events: dict[str, PlantCareEvent] | None = None
+        self.next_watering: Entity | None = None
+        self.care_settings: CareSettings = care_settings({})
         self.temperature_status = None
         self.humidity_status = None
         self.co2_status = None
@@ -625,6 +718,10 @@ class PlantDevice(RestoreEntity):
         # Moisture grace period tracking
         self._moisture_grace_end_time: datetime | None = None
         self._last_moisture_value: float | None = None
+        self._last_conductivity_value: float | None = None
+        # The source each last value came from; None until the first reading
+        self._moisture_source: str | None = None
+        self._conductivity_source: str | None = None
 
     def _is_ppfd_source(self) -> bool:
         """Check if illuminance source provides PPFD instead of lux.
@@ -712,6 +809,32 @@ class PlantDevice(RestoreEntity):
         return self._config.options.get(FLOW_CONDUCTIVITY_TRIGGER, True)
 
     @property
+    def live_moisture_status(self) -> str | None:
+        """The moisture status, or None while it is still the one restored at startup."""
+        if self._restored_state_active:
+            return None
+        return self.moisture_status
+
+    @property
+    def live_conductivity_status(self) -> str | None:
+        """The conductivity status, or None while it is still the one restored at startup."""
+        if self._restored_state_active:
+            return None
+        return self.conductivity_status
+
+    @property
+    def care_modes(self) -> dict[str, str]:
+        """How each care type is tracked, from the options and the plant's sensors."""
+        plant_info = self._config.data[FLOW_PLANT_INFO]
+        return care_modes(
+            care_settings(self._config.options),
+            moisture_sensor=bool(plant_info.get(FLOW_SENSOR_MOISTURE)),
+            conductivity_sensor=bool(plant_info.get(FLOW_SENSOR_CONDUCTIVITY)),
+            moisture_trigger=self.moisture_trigger,
+            conductivity_trigger=self.conductivity_trigger,
+        )
+
+    @property
     def moisture_grace_period(self) -> int:
         """Grace period in seconds after watering before reporting high moisture"""
         return self._config.options.get(
@@ -737,6 +860,9 @@ class PlantDevice(RestoreEntity):
             f"{ATTR_VPD}_status": self.vpd_status,
             f"{ATTR_SPECIES}_original": self.species,
             ATTR_PROBLEMS: self._problems,
+            ATTR_CARE_TODO_LIST: (
+                self.care_tasks.todo_entity_id if self.care_tasks is not None else None
+            ),
         }
         for field, value in self.care.items():
             attributes[f"{ATTR_CARE_PREFIX}{field}"] = value
@@ -804,7 +930,7 @@ class PlantDevice(RestoreEntity):
     @property
     def websocket_info(self) -> dict:
         """Websocket response"""
-        if not self.plant_complete:
+        if not self.plant_complete or self.care_events is None:
             # We are not fully set up, so we just return an empty dict for now
             return {}
 
@@ -881,7 +1007,29 @@ class PlantDevice(RestoreEntity):
             if info is not None:
                 response[ATTR_VPD] = info
 
+        response["care"] = self._care_info()
+
         return response
+
+    def _care_info(self) -> dict:
+        """The care data the plant-care card reads."""
+        events = {}
+        for care, event in self.care_events.items():
+            events[care] = event.entity_id
+        todo_list = None if self.care_tasks is None else self.care_tasks.todo_entity_id
+        next_watering = None
+        if self._config.data[FLOW_PLANT_INFO].get(FLOW_SENSOR_MOISTURE):
+            next_watering = er.async_get(self.hass).async_get_entity_id(
+                "sensor", DOMAIN, f"{self._config.entry_id}-next-watering"
+            )
+        return {
+            "todo_list": todo_list,
+            "modes": self.care_modes,
+            "intervals": self.care_settings.intervals,
+            "events": events,
+            "next_watering": next_watering,
+            "marker_separator": MARKER_SEPARATOR,
+        }
 
     @property
     def threshold_entities(self) -> list[Entity]:
@@ -1259,7 +1407,7 @@ class PlantDevice(RestoreEntity):
                 threshold_value = p["min"] if p["status"] == STATE_LOW else p["max"]
                 log_entry(
                     self.hass,
-                    self.name,
+                    display_name(self.hass, self),
                     f"{p['sensor_type'].replace('_', ' ')} {p['status'].lower()}"
                     f" — current: {p['current']}, {threshold_label}: {threshold_value}",
                     domain=DOMAIN,
@@ -1271,7 +1419,7 @@ class PlantDevice(RestoreEntity):
         for sensor_type in resolved:
             log_entry(
                 self.hass,
-                self.name,
+                display_name(self.hass, self),
                 f"{sensor_type.replace('_', ' ')} back in range",
                 domain=DOMAIN,
                 entity_id=self.entity_id,
@@ -1306,6 +1454,32 @@ class PlantDevice(RestoreEntity):
 
         return False
 
+    # update() runs in a worker thread; add_job hands the work to the event loop
+
+    def _watered(self) -> None:
+        """Report a watering; with care tasks it ticks off the watering item."""
+        if self.care_tasks is not None:
+            self.hass.add_job(self.care_tasks.async_watered)
+        elif self.care_events is not None:
+            self.hass.add_job(self.care_events[CARE_WATER].report)
+
+    def _soil_became_dry(self) -> None:
+        """With care tasks, add a watering item."""
+        if self.care_tasks is not None:
+            self.hass.add_job(self.care_tasks.async_moisture_low)
+
+    def _conductivity_became_low(self) -> None:
+        """With care tasks, add a fertilize item."""
+        if self.care_tasks is not None:
+            self.hass.add_job(self.care_tasks.async_conductivity_low)
+
+    def _fertilized(self) -> None:
+        """Report a fertilizing; with care tasks it ticks off the fertilize item."""
+        if self.care_tasks is not None:
+            self.hass.add_job(self.care_tasks.async_fertilized)
+        elif self.care_events is not None:
+            self.hass.add_job(self.care_events[CARE_FERTILIZE].report)
+
     def update(self) -> None:
         """Run on every update of the entities"""
 
@@ -1313,10 +1487,12 @@ class PlantDevice(RestoreEntity):
         # restored in async_added_to_hass instead of recomputing them to UNKNOWN/None.
         # Must sit ABOVE the per-sensor logic below -- that loop overwrites each
         # *_status to None as it runs, so a guard at the bottom would be too late.
+        restore_ended = False
         if self._restored_state_active:
             if not self._has_live_source_data():
                 return
             self._restored_state_active = False  # first live reading -> resume normal
+            restore_ended = True
 
         new_state = STATE_OK
         known_state = False
@@ -1327,17 +1503,27 @@ class PlantDevice(RestoreEntity):
         _problem_sensors: dict[str, tuple] = {}
 
         if self.sensor_moisture is not None:
-            moisture = getattr(
-                self.hass.states.get(self.sensor_moisture.entity_id), "state", None
-            )
+            moisture_state = self.hass.states.get(self.sensor_moisture.entity_id)
+            moisture = getattr(moisture_state, "state", None)
             moisture_val = self._safe_float(moisture, self.sensor_moisture.entity_id)
             if moisture_val is not None:
                 known_state = True
+                # A replaced sensor's first reading is a new baseline, not care
+                moisture_source = moisture_state.attributes.get(ATTR_EXTERNAL_SENSOR)
+                moisture_source_changed = self._moisture_source not in (
+                    None,
+                    moisture_source,
+                )
+                self._moisture_source = moisture_source
+                if moisture_source_changed:
+                    self._last_moisture_value = None
 
                 # Detect watering event (rapid moisture increase)
+                moisture_jumped = False
                 if self._last_moisture_value is not None:
                     moisture_increase = moisture_val - self._last_moisture_value
                     if moisture_increase >= MOISTURE_INCREASE_THRESHOLD:
+                        moisture_jumped = True
                         grace_period_seconds = self.moisture_grace_period
                         if grace_period_seconds > 0:
                             self._moisture_grace_end_time = dt_util.now() + timedelta(
@@ -1353,8 +1539,10 @@ class PlantDevice(RestoreEntity):
                                 self._moisture_grace_end_time,
                             )
 
+                previous_moisture_value = self._last_moisture_value
                 self._last_moisture_value = moisture_val
 
+                previous_moisture_status = self.moisture_status
                 self.moisture_status = self._check_threshold(
                     moisture_val,
                     self.min_moisture,
@@ -1362,6 +1550,21 @@ class PlantDevice(RestoreEntity):
                     self.moisture_status,
                     min_band=MOISTURE_HYSTERESIS_MIN_BAND,
                 )
+                # Watered: a quick rise, or a new reading that is no longer dry
+                # (the status already applies the hysteresis band)
+                left_dry = (
+                    not moisture_source_changed
+                    and previous_moisture_status == STATE_LOW
+                    and self.moisture_status in (STATE_OK, STATE_HIGH)
+                    and _reading_rose(previous_moisture_value, moisture_val)
+                )
+                if moisture_jumped or left_dry:
+                    self._watered()
+                # The restored status may already be Low: the first live reading counts
+                if self.moisture_status == STATE_LOW and (
+                    previous_moisture_status != STATE_LOW or restore_ended
+                ):
+                    self._soil_became_dry()
 
                 # Apply grace period logic: only suppress "high" problems during grace period
                 # Allow "low" problems (needs water) to trigger immediately
@@ -1418,20 +1621,53 @@ class PlantDevice(RestoreEntity):
             self._moisture_grace_end_time = None
 
         if self.sensor_conductivity is not None:
-            conductivity = getattr(
-                self.hass.states.get(self.sensor_conductivity.entity_id), "state", None
+            conductivity_state = self.hass.states.get(
+                self.sensor_conductivity.entity_id
             )
+            conductivity = getattr(conductivity_state, "state", None)
             conductivity_val = self._safe_float(
                 conductivity, self.sensor_conductivity.entity_id
             )
             if conductivity_val is not None:
                 known_state = True
+                conductivity_source = conductivity_state.attributes.get(
+                    ATTR_EXTERNAL_SENSOR
+                )
+                conductivity_source_changed = self._conductivity_source not in (
+                    None,
+                    conductivity_source,
+                )
+                self._conductivity_source = conductivity_source
+                if conductivity_source_changed:
+                    self._last_conductivity_value = None
+                conductivity_jumped = (
+                    self._last_conductivity_value is not None
+                    and conductivity_val - self._last_conductivity_value
+                    >= CONDUCTIVITY_INCREASE_THRESHOLD
+                )
+                previous_conductivity_value = self._last_conductivity_value
+                self._last_conductivity_value = conductivity_val
+                previous_conductivity_status = self.conductivity_status
                 self.conductivity_status = self._check_threshold(
                     conductivity_val,
                     self.min_conductivity,
                     self.max_conductivity,
                     self.conductivity_status,
                 )
+                if self.conductivity_status == STATE_LOW and (
+                    previous_conductivity_status != STATE_LOW or restore_ended
+                ):
+                    self._conductivity_became_low()
+                # Fertilized: a quick rise, or a new reading that is no longer low
+                # (the status already applies the hysteresis band)
+                left_low = (
+                    not conductivity_source_changed
+                    and previous_conductivity_status == STATE_LOW
+                    and self.conductivity_status in (STATE_OK, STATE_HIGH)
+                    and _reading_rose(previous_conductivity_value, conductivity_val)
+                )
+                if conductivity_jumped or left_low:
+                    self._fertilized()
                 if (
                     self.conductivity_status in (STATE_LOW, STATE_HIGH)
                     and self.conductivity_trigger
@@ -1444,11 +1680,13 @@ class PlantDevice(RestoreEntity):
                         self.max_conductivity,
                     )
             else:
-                # Reset status when sensor is unavailable or non-numeric
+                # Reset status and tracking when sensor is unavailable or non-numeric
                 self.conductivity_status = None
+                self._last_conductivity_value = None
         else:
-            # Reset status when sensor is removed
+            # Reset status and tracking when sensor is removed
             self.conductivity_status = None
+            self._last_conductivity_value = None
 
         if self.sensor_temperature is not None:
             temperature = getattr(

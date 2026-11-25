@@ -37,6 +37,9 @@
       },
       "vpd": {
         "name": "Dampdrukdeficit"
+      },
+      "next_watering": {
+        "name": "Volgende watergift"
       }
     },
     "number": {
@@ -137,6 +140,9 @@
         },
         "vpd_status": {
           "name": "Status VPD"
+        },
+        "care_todo_list": {
+          "name": "Takenlijst voor verzorging"
         },
         "care_watering": {
           "name": "Water geven"

@@ -37,6 +37,9 @@
       },
       "vpd": {
         "name": "Défice de pressão de vapor"
+      },
+      "next_watering": {
+        "name": "Próxima rega"
       }
     },
     "number": {
@@ -137,6 +140,9 @@
         },
         "vpd_status": {
           "name": "Estado do VPD"
+        },
+        "care_todo_list": {
+          "name": "Lista de tarefas de cuidados"
         },
         "care_watering": {
           "name": "Rega"
