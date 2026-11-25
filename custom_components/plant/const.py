@@ -51,6 +51,8 @@ ATTR_TEMPERATURE = "temperature"
 ATTR_PROBLEM = "problem"
 ATTR_SENSORS = "sensors"
 ATTR_SENSOR = "sensor"
+# Which source entity a plant meter currently reads
+ATTR_EXTERNAL_SENSOR = "external_sensor"
 ATTR_METERS = "meters"
 ATTR_THRESHOLDS = "thresholds"
 ATTR_ENTITY = "entity"

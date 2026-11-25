@@ -72,6 +72,7 @@ from . import SETUP_DUMMY_SENSORS
 from .const import (
     ATTR_CONDUCTIVITY,
     ATTR_DLI,
+    ATTR_EXTERNAL_SENSOR,
     ATTR_MOISTURE,
     ATTR_PLANT,
     ATTR_SENSORS,
@@ -343,7 +344,7 @@ class PlantCurrentStatus(RestoreSensor):
     def extra_state_attributes(self) -> dict:
         if self._external_sensor:
             return {
-                "external_sensor": self.external_sensor,
+                ATTR_EXTERNAL_SENSOR: self.external_sensor,
             }
         return {}
 
@@ -364,6 +365,10 @@ class PlantCurrentStatus(RestoreSensor):
 
         if new_sensor is None:
             self._attr_native_value = self._default_state
+            self._restored_value_active = False
+        elif new_sensor != old_sensor and self.hass is not None:
+            # Never write the old source's reading under the new source's name
+            self._attr_native_value = self._current_source_value()
             self._restored_value_active = False
 
         # Disabled entities have self.hass = None; use the plant's hass reference
@@ -391,6 +396,19 @@ class PlantCurrentStatus(RestoreSensor):
             and not hass.is_stopping
         ):
             self._plant.update_entity_disabled_state(self)
+
+    def _current_source_value(self) -> float | None:
+        """The external sensor's reading now, or the default when it has none."""
+        source_state = self.hass.states.get(self.external_sensor)
+        if source_state is None or source_state.state in (
+            STATE_UNKNOWN,
+            STATE_UNAVAILABLE,
+        ):
+            return self._default_state
+        try:
+            return float(source_state.state)
+        except ValueError:
+            return self._default_state
 
     def _update_config_entry(
         self, new_sensor: str | None, hass: HomeAssistant | None = None
@@ -473,13 +491,13 @@ class PlantCurrentStatus(RestoreSensor):
                     ATTR_UNIT_OF_MEASUREMENT
                 ]
 
-            if "external_sensor" in state.attributes:
+            if ATTR_EXTERNAL_SENSOR in state.attributes:
                 _LOGGER.debug(
                     "Restoring %s external sensor from state: %s",
                     self.entity_id,
-                    state.attributes["external_sensor"],
+                    state.attributes[ATTR_EXTERNAL_SENSOR],
                 )
-                self.replace_external_sensor(state.attributes["external_sensor"])
+                self.replace_external_sensor(state.attributes[ATTR_EXTERNAL_SENSOR])
             else:
                 _LOGGER.debug(
                     "No external_sensor in restored state for %s",
@@ -704,8 +722,8 @@ class PlantCurrentStatus(RestoreSensor):
 
         if entity_id == self.entity_id:
             current_attrs = self.hass.states.get(self.entity_id).attributes
-            if current_attrs.get("external_sensor") != self.external_sensor:
-                self.replace_external_sensor(current_attrs.get("external_sensor"))
+            if current_attrs.get(ATTR_EXTERNAL_SENSOR) != self.external_sensor:
+                self.replace_external_sensor(current_attrs.get(ATTR_EXTERNAL_SENSOR))
 
             if (
                 new_state is not None
@@ -930,9 +948,12 @@ def _moisture_history(
     )
     readings = []
     for state in states.get(entity_id, []):
-        if state.state in (STATE_UNKNOWN, STATE_UNAVAILABLE):
+        try:
+            value = float(state.state)
+        except ValueError:
             continue
-        readings.append((state.last_updated, float(state.state)))
+        if math.isfinite(value):
+            readings.append((state.last_updated, value))
     return readings
 
 
@@ -1034,11 +1055,15 @@ class PlantNextWatering(SensorEntity):
         if "recorder" not in self.hass.config.components:
             _LOGGER.debug("No recorder, cannot predict watering for %s", self.entity_id)
             return None
+        # The source's own history: the plant meter's mixes in a replaced sensor
+        source = self._plant.sensor_moisture.external_sensor
+        if source is None:
+            return None
         now = dt_util.utcnow()
         readings = await get_instance(self.hass).async_add_executor_job(
             _moisture_history,
             self.hass,
-            self._plant.sensor_moisture.entity_id,
+            source,
             now - PREDICTION_WINDOW,
             now,
         )

@@ -22,6 +22,7 @@ from homeassistant.core import (
     State,
     callback,
 )
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.util import dt as dt_util
 
@@ -325,24 +326,34 @@ class CareTasks:
 
     async def _async_complete_open(self, care: str) -> int:
         """Tick off this plant's open items of one care type; return how many."""
+        completed = 0
         async with self._lock:
             if self._stopped:
                 return 0
-            items = await self._async_own_items()
-            open_items = self._open_of(items, care)
-            for item in open_items:
-                # The list change that follows reports the care event
-                await self._hass.services.async_call(
-                    TODO_DOMAIN,
-                    "update_item",
-                    {
-                        ATTR_ENTITY_ID: self._todo_entity_id,
-                        "item": item["uid"],
-                        "status": STATUS_COMPLETED,
-                    },
-                    blocking=True,
+            try:
+                items = await self._async_own_items()
+                for item in self._open_of(items, care):
+                    # The list change that follows reports the care event
+                    await self._hass.services.async_call(
+                        TODO_DOMAIN,
+                        "update_item",
+                        {
+                            ATTR_ENTITY_ID: self._todo_entity_id,
+                            "item": item["uid"],
+                            "status": STATUS_COMPLETED,
+                        },
+                        blocking=True,
+                    )
+                    completed += 1
+            except HomeAssistantError as err:
+                _LOGGER.warning(
+                    "Could not tick off %s for %s in %s: %s",
+                    care,
+                    self._plant_entity_id,
+                    self._todo_entity_id,
+                    err,
                 )
-        return len(open_items)
+        return completed
 
     @callback
     def _todo_changed(self, event: Event[EventStateChangedData]) -> None:

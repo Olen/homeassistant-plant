@@ -55,6 +55,7 @@ from .const import (
     ATTR_CURRENT,
     ATTR_DLI,
     ATTR_DLI_24H,
+    ATTR_EXTERNAL_SENSOR,
     ATTR_HUMIDITY,
     ATTR_ILLUMINANCE,
     ATTR_MAX,
@@ -718,6 +719,9 @@ class PlantDevice(RestoreEntity):
         self._moisture_grace_end_time: datetime | None = None
         self._last_moisture_value: float | None = None
         self._last_conductivity_value: float | None = None
+        # The source each last value came from; None until the first reading
+        self._moisture_source: str | None = None
+        self._conductivity_source: str | None = None
 
     def _is_ppfd_source(self) -> bool:
         """Check if illuminance source provides PPFD instead of lux.
@@ -1499,12 +1503,20 @@ class PlantDevice(RestoreEntity):
         _problem_sensors: dict[str, tuple] = {}
 
         if self.sensor_moisture is not None:
-            moisture = getattr(
-                self.hass.states.get(self.sensor_moisture.entity_id), "state", None
-            )
+            moisture_state = self.hass.states.get(self.sensor_moisture.entity_id)
+            moisture = getattr(moisture_state, "state", None)
             moisture_val = self._safe_float(moisture, self.sensor_moisture.entity_id)
             if moisture_val is not None:
                 known_state = True
+                # A replaced sensor's first reading is a new baseline, not care
+                moisture_source = moisture_state.attributes.get(ATTR_EXTERNAL_SENSOR)
+                moisture_source_changed = self._moisture_source not in (
+                    None,
+                    moisture_source,
+                )
+                self._moisture_source = moisture_source
+                if moisture_source_changed:
+                    self._last_moisture_value = None
 
                 # Detect watering event (rapid moisture increase)
                 moisture_jumped = False
@@ -1541,7 +1553,8 @@ class PlantDevice(RestoreEntity):
                 # Watered: a quick rise, or a new reading that is no longer dry
                 # (the status already applies the hysteresis band)
                 left_dry = (
-                    previous_moisture_status == STATE_LOW
+                    not moisture_source_changed
+                    and previous_moisture_status == STATE_LOW
                     and self.moisture_status in (STATE_OK, STATE_HIGH)
                     and _reading_rose(previous_moisture_value, moisture_val)
                 )
@@ -1608,14 +1621,25 @@ class PlantDevice(RestoreEntity):
             self._moisture_grace_end_time = None
 
         if self.sensor_conductivity is not None:
-            conductivity = getattr(
-                self.hass.states.get(self.sensor_conductivity.entity_id), "state", None
+            conductivity_state = self.hass.states.get(
+                self.sensor_conductivity.entity_id
             )
+            conductivity = getattr(conductivity_state, "state", None)
             conductivity_val = self._safe_float(
                 conductivity, self.sensor_conductivity.entity_id
             )
             if conductivity_val is not None:
                 known_state = True
+                conductivity_source = conductivity_state.attributes.get(
+                    ATTR_EXTERNAL_SENSOR
+                )
+                conductivity_source_changed = self._conductivity_source not in (
+                    None,
+                    conductivity_source,
+                )
+                self._conductivity_source = conductivity_source
+                if conductivity_source_changed:
+                    self._last_conductivity_value = None
                 conductivity_jumped = (
                     self._last_conductivity_value is not None
                     and conductivity_val - self._last_conductivity_value
@@ -1637,7 +1661,8 @@ class PlantDevice(RestoreEntity):
                 # Fertilized: a quick rise, or a new reading that is no longer low
                 # (the status already applies the hysteresis band)
                 left_low = (
-                    previous_conductivity_status == STATE_LOW
+                    not conductivity_source_changed
+                    and previous_conductivity_status == STATE_LOW
                     and self.conductivity_status in (STATE_OK, STATE_HIGH)
                     and _reading_rose(previous_conductivity_value, conductivity_val)
                 )

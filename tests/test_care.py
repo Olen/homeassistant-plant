@@ -20,6 +20,7 @@ from homeassistant.components.todo import (
 from homeassistant.config_entries import ConfigEntry, ConfigFlow
 from homeassistant.const import STATE_UNKNOWN, Platform, __version__ as HA_VERSION
 from homeassistant.core import HomeAssistant, State
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import (
     AddEntitiesCallback,
@@ -52,8 +53,10 @@ from custom_components.plant.const import (
     FLOW_PRUNE_INTERVAL,
     FLOW_REPOT_INTERVAL,
     FLOW_WATER_INTERVAL,
+    SERVICE_REPLACE_SENSOR,
     STATE_LOW,
 )
+from custom_components.plant.sensor import _moisture_history
 from custom_components.plant.trigger import _has_purpose_trigger_api
 
 from .common import set_sensor_state, update_plant_sensors
@@ -223,6 +226,22 @@ async def _set_moisture(hass: HomeAssistant, value: float) -> None:
 
 async def _set_conductivity(hass: HomeAssistant, value: float) -> None:
     await set_sensor_state(hass, CONDUCTIVITY, value)
+    await update_plant_sensors(hass, TEST_ENTRY_ID)
+    await asyncio.sleep(0)
+    await hass.async_block_till_done()
+
+
+async def _replace_source(
+    hass: HomeAssistant, meter_entity_id: str, new_source: str, value: float
+) -> None:
+    """Point a plant meter at another sensor, as the replace_sensor service does."""
+    hass.states.async_set(new_source, value)
+    await hass.services.async_call(
+        DOMAIN,
+        SERVICE_REPLACE_SENSOR,
+        {"meter_entity": meter_entity_id, "new_sensor": new_source},
+        blocking=True,
+    )
     await update_plant_sensors(hass, TEST_ENTRY_ID)
     await asyncio.sleep(0)
     await hass.async_block_till_done()
@@ -415,6 +434,41 @@ class TestWatering:
         await _set_moisture(hass, 45)
 
         assert _own(todo_list) == []
+        assert _care_events(hass, "watered") == ["watered"]
+
+    async def test_a_wetter_replacement_sensor_is_not_a_watering(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        todo_list = await _setup_todo_list(hass)
+        entry = await _setup_plant(
+            hass, plant_config_data, {FLOW_CARE_TODO: TODO_ENTITY_ID}
+        )
+        plant = hass.data[DOMAIN][entry.entry_id][ATTR_PLANT]
+        await _set_moisture(hass, 15)
+
+        await _replace_source(
+            hass, plant.sensor_moisture.entity_id, "sensor.new_moisture", 45
+        )
+
+        assert hass.states.get(plant.sensor_moisture.entity_id).state == "45.0"
+        assert [i.status for i in _own(todo_list)] == [TodoItemStatus.NEEDS_ACTION]
+        assert _care_events(hass, "watered") == []
+
+    async def test_watering_is_reported_when_the_list_fails(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        todo_list = await _setup_todo_list(hass)
+        await _setup_plant(hass, plant_config_data, {FLOW_CARE_TODO: TODO_ENTITY_ID})
+        await _set_moisture(hass, 10)
+
+        with patch.object(
+            FakeTodoList,
+            "async_update_todo_item",
+            side_effect=HomeAssistantError("Nextcloud is down"),
+        ):
+            await _set_moisture(hass, 45)
+
+        assert [i.status for i in _own(todo_list)] == [TodoItemStatus.NEEDS_ACTION]
         assert _care_events(hass, "watered") == ["watered"]
 
     async def test_ticking_off_by_hand_reports_watering(
@@ -1485,6 +1539,26 @@ class TestFertilizeSensor:
         assert [i.status for i in _own(todo_list)] == [TodoItemStatus.COMPLETED]
         assert _care_events(hass, "fertilized") == ["fertilized"]
 
+    async def test_a_higher_replacement_sensor_is_not_a_fertilizing(
+        self, hass: HomeAssistant, plant_config_data: dict[str, Any]
+    ) -> None:
+        todo_list = await _setup_todo_list(hass)
+        entry = await _setup_plant(
+            hass, plant_config_data, {FLOW_CARE_TODO: TODO_ENTITY_ID}
+        )
+        plant = hass.data[DOMAIN][entry.entry_id][ATTR_PLANT]
+        await _set_conductivity(hass, 300)
+
+        await _replace_source(
+            hass,
+            plant.sensor_conductivity.entity_id,
+            "sensor.new_conductivity",
+            900,
+        )
+
+        assert [i.status for i in _own(todo_list)] == [TodoItemStatus.NEEDS_ACTION]
+        assert _care_events(hass, "fertilized") == []
+
     async def test_lowering_the_minimum_is_not_a_fertilizing(
         self, hass: HomeAssistant, plant_config_data: dict[str, Any]
     ) -> None:
@@ -1686,6 +1760,47 @@ async def test_compute_in_flight_during_a_watering_does_not_overwrite_it(
         await sensor._async_recompute()
 
         assert hass.states.get(NEXT_WATERING_ID).state == STATE_UNKNOWN
+
+
+@pytest.mark.usefixtures("mock_external_sensors")
+async def test_next_watering_reads_the_source_history(
+    hass: HomeAssistant, plant_config_data: dict[str, Any]
+) -> None:
+    """The plant meter's history would mix in a sensor it no longer reads."""
+    await _setup_plant(hass, plant_config_data, {})
+    await _set_moisture(hass, 40)
+    hass.config.components.add("recorder")
+    recorder = AsyncMock()
+    recorder.async_add_executor_job.return_value = []
+
+    with patch("custom_components.plant.sensor.get_instance", return_value=recorder):
+        await _next_watering_entity(hass)._async_predict()
+
+    history_entity_id = recorder.async_add_executor_job.await_args.args[2]
+    assert history_entity_id == MOISTURE
+
+
+def test_moisture_history_skips_readings_that_are_not_numbers(
+    hass: HomeAssistant,
+) -> None:
+    start = dt_util.utcnow()
+    first = start + timedelta(hours=1)
+    last = start + timedelta(hours=5)
+    states = [
+        State(MOISTURE, "40", last_updated=first),
+        State(MOISTURE, "unknown", last_updated=start + timedelta(hours=2)),
+        State(MOISTURE, "", last_updated=start + timedelta(hours=3)),
+        State(MOISTURE, "nan", last_updated=start + timedelta(hours=4)),
+        State(MOISTURE, "38.5", last_updated=last),
+        State(MOISTURE, "unavailable", last_updated=start + timedelta(hours=6)),
+    ]
+    with patch(
+        "custom_components.plant.sensor.state_changes_during_period",
+        return_value={MOISTURE: states},
+    ):
+        readings = _moisture_history(hass, MOISTURE, start, last)
+
+    assert readings == [(first, 40.0), (last, 38.5)]
 
 
 @pytest.mark.usefixtures("mock_external_sensors")
