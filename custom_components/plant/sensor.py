@@ -368,7 +368,7 @@ class PlantCurrentStatus(RestoreSensor):
             self._restored_value_active = False
         elif new_sensor != old_sensor and self.hass is not None:
             # Never write the old source's reading under the new source's name
-            self._attr_native_value = self._current_source_value()
+            self._take_source_reading()
             self._restored_value_active = False
 
         # Disabled entities have self.hass = None; use the plant's hass reference
@@ -397,18 +397,25 @@ class PlantCurrentStatus(RestoreSensor):
         ):
             self._plant.update_entity_disabled_state(self)
 
-    def _current_source_value(self) -> float | None:
-        """The external sensor's reading now, or the default when it has none."""
+    def _take_source_reading(self) -> None:
+        """Take the external sensor's reading and unit now, or the default without one."""
         source_state = self.hass.states.get(self.external_sensor)
         if source_state is None or source_state.state in (
             STATE_UNKNOWN,
             STATE_UNAVAILABLE,
         ):
-            return self._default_state
+            self._attr_native_value = self._default_state
+            return
         try:
-            return float(source_state.state)
+            value = float(source_state.state)
         except ValueError:
-            return self._default_state
+            self._attr_native_value = self._default_state
+            return
+        self._attr_native_value = value
+        if ATTR_UNIT_OF_MEASUREMENT in source_state.attributes:
+            self._attr_native_unit_of_measurement = source_state.attributes[
+                ATTR_UNIT_OF_MEASUREMENT
+            ]
 
     def _update_config_entry(
         self, new_sensor: str | None, hass: HomeAssistant | None = None
