@@ -17,12 +17,6 @@
       "humidity": {
         "name": "Humidité de l'air"
       },
-      "co2": {
-        "name": "CO2"
-      },
-      "soil_temperature": {
-        "name": "Température du sol"
-      },
       "ppfd": {
         "name": "PPFD"
       },
@@ -32,11 +26,17 @@
       "dli": {
         "name": "Intégrale de lumière quotidienne"
       },
-      "dli_24h": {
-        "name": "DLI (24h glissant)"
-      },
       "vpd": {
         "name": "Déficit de pression de vapeur"
+      },
+      "co2": {
+        "name": "CO2"
+      },
+      "soil_temperature": {
+        "name": "Température du sol"
+      },
+      "dli_24h": {
+        "name": "DLI (24h glissant)"
       }
     },
     "number": {
@@ -76,6 +76,12 @@
       "min_humidity": {
         "name": "Humidité de l'air min."
       },
+      "max_vpd": {
+        "name": "VPD max."
+      },
+      "min_vpd": {
+        "name": "VPD min."
+      },
       "max_co2": {
         "name": "CO2 max."
       },
@@ -87,12 +93,6 @@
       },
       "min_soil_temperature": {
         "name": "Température du sol min."
-      },
-      "max_vpd": {
-        "name": "VPD max."
-      },
-      "min_vpd": {
-        "name": "VPD min."
       },
       "lux_to_ppfd": {
         "name": "Facteur Lux vers PPFD"
@@ -286,6 +286,640 @@
           "description": "ID de l'entité du nouveau capteur. Laisser vide pour supprimer le capteur."
         }
       }
+    }
+  },
+  "triggers": {
+    "problem_detected": {
+      "name": "Problème détecté",
+      "description": "Se déclenche lorsque la plante développe un problème (une mesure franchit son seuil).",
+      "fields": {
+        "behavior": {
+          "name": "Déclencher pour",
+          "description": "Indique si le déclencheur se déclenche pour chaque plante ciblée ou une seule fois pour le groupe."
+        }
+      }
+    },
+    "problem_cleared": {
+      "name": "Problème résolu",
+      "description": "Se déclenche lorsque le dernier problème de la plante est résolu et que toutes les mesures sont revenues à la normale.",
+      "fields": {
+        "behavior": {
+          "name": "Déclencher pour",
+          "description": "Indique si le déclencheur se déclenche pour chaque plante ciblée ou une seule fois pour le groupe."
+        }
+      }
+    },
+    "moisture_became_low": {
+      "name": "Humidité du sol devenue basse",
+      "description": "Se déclenche lorsque l'humidité du sol de la plante passe sous son minimum configuré.",
+      "fields": {
+        "behavior": {
+          "name": "Déclencher pour",
+          "description": "Indique si le déclencheur se déclenche pour chaque plante ciblée ou une seule fois pour le groupe."
+        }
+      }
+    },
+    "moisture_became_high": {
+      "name": "Humidité du sol devenue haute",
+      "description": "Se déclenche lorsque l'humidité du sol de la plante dépasse son maximum configuré.",
+      "fields": {
+        "behavior": {
+          "name": "Déclencher pour",
+          "description": "Indique si le déclencheur se déclenche pour chaque plante ciblée ou une seule fois pour le groupe."
+        }
+      }
+    },
+    "moisture_became_ok": {
+      "name": "Humidité du sol devenue normale",
+      "description": "Se déclenche lorsque l'humidité du sol de la plante revient dans sa plage normale.",
+      "fields": {
+        "behavior": {
+          "name": "Déclencher pour",
+          "description": "Indique si le déclencheur se déclenche pour chaque plante ciblée ou une seule fois pour le groupe."
+        }
+      }
+    },
+    "conductivity_became_low": {
+      "name": "Conductivité devenue basse",
+      "description": "Se déclenche lorsque la conductivité de la plante passe sous son minimum configuré.",
+      "fields": {
+        "behavior": {
+          "name": "Déclencher pour",
+          "description": "Indique si le déclencheur se déclenche pour chaque plante ciblée ou une seule fois pour le groupe."
+        }
+      }
+    },
+    "conductivity_became_high": {
+      "name": "Conductivité devenue haute",
+      "description": "Se déclenche lorsque la conductivité de la plante dépasse son maximum configuré.",
+      "fields": {
+        "behavior": {
+          "name": "Déclencher pour",
+          "description": "Indique si le déclencheur se déclenche pour chaque plante ciblée ou une seule fois pour le groupe."
+        }
+      }
+    },
+    "conductivity_became_ok": {
+      "name": "Conductivité devenue normale",
+      "description": "Se déclenche lorsque la conductivité de la plante revient dans sa plage normale.",
+      "fields": {
+        "behavior": {
+          "name": "Déclencher pour",
+          "description": "Indique si le déclencheur se déclenche pour chaque plante ciblée ou une seule fois pour le groupe."
+        }
+      }
+    },
+    "temperature_became_low": {
+      "name": "Température devenue basse",
+      "description": "Se déclenche lorsque la température de la plante passe sous son minimum configuré.",
+      "fields": {
+        "behavior": {
+          "name": "Déclencher pour",
+          "description": "Indique si le déclencheur se déclenche pour chaque plante ciblée ou une seule fois pour le groupe."
+        }
+      }
+    },
+    "temperature_became_high": {
+      "name": "Température devenue haute",
+      "description": "Se déclenche lorsque la température de la plante dépasse son maximum configuré.",
+      "fields": {
+        "behavior": {
+          "name": "Déclencher pour",
+          "description": "Indique si le déclencheur se déclenche pour chaque plante ciblée ou une seule fois pour le groupe."
+        }
+      }
+    },
+    "temperature_became_ok": {
+      "name": "Température devenue normale",
+      "description": "Se déclenche lorsque la température de la plante revient dans sa plage normale.",
+      "fields": {
+        "behavior": {
+          "name": "Déclencher pour",
+          "description": "Indique si le déclencheur se déclenche pour chaque plante ciblée ou une seule fois pour le groupe."
+        }
+      }
+    },
+    "soil_temperature_became_low": {
+      "name": "Température du sol devenue basse",
+      "description": "Se déclenche lorsque la température du sol de la plante passe sous son minimum configuré.",
+      "fields": {
+        "behavior": {
+          "name": "Déclencher pour",
+          "description": "Indique si le déclencheur se déclenche pour chaque plante ciblée ou une seule fois pour le groupe."
+        }
+      }
+    },
+    "soil_temperature_became_high": {
+      "name": "Température du sol devenue haute",
+      "description": "Se déclenche lorsque la température du sol de la plante dépasse son maximum configuré.",
+      "fields": {
+        "behavior": {
+          "name": "Déclencher pour",
+          "description": "Indique si le déclencheur se déclenche pour chaque plante ciblée ou une seule fois pour le groupe."
+        }
+      }
+    },
+    "soil_temperature_became_ok": {
+      "name": "Température du sol devenue normale",
+      "description": "Se déclenche lorsque la température du sol de la plante revient dans sa plage normale.",
+      "fields": {
+        "behavior": {
+          "name": "Déclencher pour",
+          "description": "Indique si le déclencheur se déclenche pour chaque plante ciblée ou une seule fois pour le groupe."
+        }
+      }
+    },
+    "humidity_became_low": {
+      "name": "Humidité de l'air devenue basse",
+      "description": "Se déclenche lorsque l'humidité de l'air de la plante passe sous son minimum configuré.",
+      "fields": {
+        "behavior": {
+          "name": "Déclencher pour",
+          "description": "Indique si le déclencheur se déclenche pour chaque plante ciblée ou une seule fois pour le groupe."
+        }
+      }
+    },
+    "humidity_became_high": {
+      "name": "Humidité de l'air devenue haute",
+      "description": "Se déclenche lorsque l'humidité de l'air de la plante dépasse son maximum configuré.",
+      "fields": {
+        "behavior": {
+          "name": "Déclencher pour",
+          "description": "Indique si le déclencheur se déclenche pour chaque plante ciblée ou une seule fois pour le groupe."
+        }
+      }
+    },
+    "humidity_became_ok": {
+      "name": "Humidité de l'air devenue normale",
+      "description": "Se déclenche lorsque l'humidité de l'air de la plante revient dans sa plage normale.",
+      "fields": {
+        "behavior": {
+          "name": "Déclencher pour",
+          "description": "Indique si le déclencheur se déclenche pour chaque plante ciblée ou une seule fois pour le groupe."
+        }
+      }
+    },
+    "illuminance_became_low": {
+      "name": "Éclairement devenu bas",
+      "description": "Se déclenche lorsque l'éclairement de la plante passe sous son minimum configuré.",
+      "fields": {
+        "behavior": {
+          "name": "Déclencher pour",
+          "description": "Indique si le déclencheur se déclenche pour chaque plante ciblée ou une seule fois pour le groupe."
+        }
+      }
+    },
+    "illuminance_became_high": {
+      "name": "Éclairement devenu haut",
+      "description": "Se déclenche lorsque l'éclairement de la plante dépasse son maximum configuré.",
+      "fields": {
+        "behavior": {
+          "name": "Déclencher pour",
+          "description": "Indique si le déclencheur se déclenche pour chaque plante ciblée ou une seule fois pour le groupe."
+        }
+      }
+    },
+    "illuminance_became_ok": {
+      "name": "Éclairement devenu normal",
+      "description": "Se déclenche lorsque l'éclairement de la plante revient dans sa plage normale.",
+      "fields": {
+        "behavior": {
+          "name": "Déclencher pour",
+          "description": "Indique si le déclencheur se déclenche pour chaque plante ciblée ou une seule fois pour le groupe."
+        }
+      }
+    },
+    "co2_became_low": {
+      "name": "CO2 devenu bas",
+      "description": "Se déclenche lorsque le CO2 de la plante passe sous son minimum configuré.",
+      "fields": {
+        "behavior": {
+          "name": "Déclencher pour",
+          "description": "Indique si le déclencheur se déclenche pour chaque plante ciblée ou une seule fois pour le groupe."
+        }
+      }
+    },
+    "co2_became_high": {
+      "name": "CO2 devenu haut",
+      "description": "Se déclenche lorsque le CO2 de la plante dépasse son maximum configuré.",
+      "fields": {
+        "behavior": {
+          "name": "Déclencher pour",
+          "description": "Indique si le déclencheur se déclenche pour chaque plante ciblée ou une seule fois pour le groupe."
+        }
+      }
+    },
+    "co2_became_ok": {
+      "name": "CO2 devenu normal",
+      "description": "Se déclenche lorsque le CO2 de la plante revient dans sa plage normale.",
+      "fields": {
+        "behavior": {
+          "name": "Déclencher pour",
+          "description": "Indique si le déclencheur se déclenche pour chaque plante ciblée ou une seule fois pour le groupe."
+        }
+      }
+    },
+    "dli_became_low": {
+      "name": "DLI devenu bas",
+      "description": "Se déclenche lorsque le DLI de la plante passe sous son minimum configuré.",
+      "fields": {
+        "behavior": {
+          "name": "Déclencher pour",
+          "description": "Indique si le déclencheur se déclenche pour chaque plante ciblée ou une seule fois pour le groupe."
+        }
+      }
+    },
+    "dli_became_high": {
+      "name": "DLI devenu haut",
+      "description": "Se déclenche lorsque le DLI de la plante dépasse son maximum configuré.",
+      "fields": {
+        "behavior": {
+          "name": "Déclencher pour",
+          "description": "Indique si le déclencheur se déclenche pour chaque plante ciblée ou une seule fois pour le groupe."
+        }
+      }
+    },
+    "dli_became_ok": {
+      "name": "DLI devenu normal",
+      "description": "Se déclenche lorsque le DLI de la plante revient dans sa plage normale.",
+      "fields": {
+        "behavior": {
+          "name": "Déclencher pour",
+          "description": "Indique si le déclencheur se déclenche pour chaque plante ciblée ou une seule fois pour le groupe."
+        }
+      }
+    },
+    "vpd_became_low": {
+      "name": "VPD devenu bas",
+      "description": "Se déclenche lorsque le VPD de la plante passe sous son minimum configuré.",
+      "fields": {
+        "behavior": {
+          "name": "Déclencher pour",
+          "description": "Indique si le déclencheur se déclenche pour chaque plante ciblée ou une seule fois pour le groupe."
+        }
+      }
+    },
+    "vpd_became_high": {
+      "name": "VPD devenu haut",
+      "description": "Se déclenche lorsque le VPD de la plante dépasse son maximum configuré.",
+      "fields": {
+        "behavior": {
+          "name": "Déclencher pour",
+          "description": "Indique si le déclencheur se déclenche pour chaque plante ciblée ou une seule fois pour le groupe."
+        }
+      }
+    },
+    "vpd_became_ok": {
+      "name": "VPD devenu normal",
+      "description": "Se déclenche lorsque le VPD de la plante revient dans sa plage normale.",
+      "fields": {
+        "behavior": {
+          "name": "Déclencher pour",
+          "description": "Indique si le déclencheur se déclenche pour chaque plante ciblée ou une seule fois pour le groupe."
+        }
+      }
+    },
+    "moisture_sensor_became_stale": {
+      "name": "Capteur d'humidité du sol sans mise à jour",
+      "description": "Se déclenche lorsque le capteur d'humidité du sol de la plante n'envoie plus de mises à jour.",
+      "fields": {
+        "for": {
+          "name": "Pendant au moins",
+          "description": "Le capteur doit rester dans cet état au moins cette durée avant le déclenchement."
+        }
+      }
+    },
+    "moisture_sensor_became_fresh": {
+      "name": "Capteur d'humidité du sol de nouveau actif",
+      "description": "Se déclenche lorsque le capteur d'humidité du sol de la plante recommence à envoyer des mises à jour.",
+      "fields": {
+        "for": {
+          "name": "Pendant au moins",
+          "description": "Le capteur doit rester dans cet état au moins cette durée avant le déclenchement."
+        }
+      }
+    },
+    "conductivity_sensor_became_stale": {
+      "name": "Capteur de conductivité sans mise à jour",
+      "description": "Se déclenche lorsque le capteur de conductivité de la plante n'envoie plus de mises à jour.",
+      "fields": {
+        "for": {
+          "name": "Pendant au moins",
+          "description": "Le capteur doit rester dans cet état au moins cette durée avant le déclenchement."
+        }
+      }
+    },
+    "conductivity_sensor_became_fresh": {
+      "name": "Capteur de conductivité de nouveau actif",
+      "description": "Se déclenche lorsque le capteur de conductivité de la plante recommence à envoyer des mises à jour.",
+      "fields": {
+        "for": {
+          "name": "Pendant au moins",
+          "description": "Le capteur doit rester dans cet état au moins cette durée avant le déclenchement."
+        }
+      }
+    },
+    "temperature_sensor_became_stale": {
+      "name": "Capteur de température sans mise à jour",
+      "description": "Se déclenche lorsque le capteur de température de la plante n'envoie plus de mises à jour.",
+      "fields": {
+        "for": {
+          "name": "Pendant au moins",
+          "description": "Le capteur doit rester dans cet état au moins cette durée avant le déclenchement."
+        }
+      }
+    },
+    "temperature_sensor_became_fresh": {
+      "name": "Capteur de température de nouveau actif",
+      "description": "Se déclenche lorsque le capteur de température de la plante recommence à envoyer des mises à jour.",
+      "fields": {
+        "for": {
+          "name": "Pendant au moins",
+          "description": "Le capteur doit rester dans cet état au moins cette durée avant le déclenchement."
+        }
+      }
+    },
+    "soil_temperature_sensor_became_stale": {
+      "name": "Capteur de température du sol sans mise à jour",
+      "description": "Se déclenche lorsque le capteur de température du sol de la plante n'envoie plus de mises à jour.",
+      "fields": {
+        "for": {
+          "name": "Pendant au moins",
+          "description": "Le capteur doit rester dans cet état au moins cette durée avant le déclenchement."
+        }
+      }
+    },
+    "soil_temperature_sensor_became_fresh": {
+      "name": "Capteur de température du sol de nouveau actif",
+      "description": "Se déclenche lorsque le capteur de température du sol de la plante recommence à envoyer des mises à jour.",
+      "fields": {
+        "for": {
+          "name": "Pendant au moins",
+          "description": "Le capteur doit rester dans cet état au moins cette durée avant le déclenchement."
+        }
+      }
+    },
+    "humidity_sensor_became_stale": {
+      "name": "Capteur d'humidité de l'air sans mise à jour",
+      "description": "Se déclenche lorsque le capteur d'humidité de l'air de la plante n'envoie plus de mises à jour.",
+      "fields": {
+        "for": {
+          "name": "Pendant au moins",
+          "description": "Le capteur doit rester dans cet état au moins cette durée avant le déclenchement."
+        }
+      }
+    },
+    "humidity_sensor_became_fresh": {
+      "name": "Capteur d'humidité de l'air de nouveau actif",
+      "description": "Se déclenche lorsque le capteur d'humidité de l'air de la plante recommence à envoyer des mises à jour.",
+      "fields": {
+        "for": {
+          "name": "Pendant au moins",
+          "description": "Le capteur doit rester dans cet état au moins cette durée avant le déclenchement."
+        }
+      }
+    },
+    "illuminance_sensor_became_stale": {
+      "name": "Capteur d'éclairement sans mise à jour",
+      "description": "Se déclenche lorsque le capteur d'éclairement de la plante n'envoie plus de mises à jour.",
+      "fields": {
+        "for": {
+          "name": "Pendant au moins",
+          "description": "Le capteur doit rester dans cet état au moins cette durée avant le déclenchement."
+        }
+      }
+    },
+    "illuminance_sensor_became_fresh": {
+      "name": "Capteur d'éclairement de nouveau actif",
+      "description": "Se déclenche lorsque le capteur d'éclairement de la plante recommence à envoyer des mises à jour.",
+      "fields": {
+        "for": {
+          "name": "Pendant au moins",
+          "description": "Le capteur doit rester dans cet état au moins cette durée avant le déclenchement."
+        }
+      }
+    },
+    "co2_sensor_became_stale": {
+      "name": "Capteur de CO2 sans mise à jour",
+      "description": "Se déclenche lorsque le capteur de CO2 de la plante n'envoie plus de mises à jour.",
+      "fields": {
+        "for": {
+          "name": "Pendant au moins",
+          "description": "Le capteur doit rester dans cet état au moins cette durée avant le déclenchement."
+        }
+      }
+    },
+    "co2_sensor_became_fresh": {
+      "name": "Capteur de CO2 de nouveau actif",
+      "description": "Se déclenche lorsque le capteur de CO2 de la plante recommence à envoyer des mises à jour.",
+      "fields": {
+        "for": {
+          "name": "Pendant au moins",
+          "description": "Le capteur doit rester dans cet état au moins cette durée avant le déclenchement."
+        }
+      }
+    }
+  },
+  "conditions": {
+    "has_problem": {
+      "name": "A un problème",
+      "description": "Vérifiée tant que la plante a un problème actif."
+    },
+    "moisture_is_low": {
+      "name": "Humidité du sol est basse",
+      "description": "Vérifiée tant que l'humidité du sol de la plante est en dessous de son minimum configuré."
+    },
+    "moisture_is_high": {
+      "name": "Humidité du sol est haute",
+      "description": "Vérifiée tant que l'humidité du sol de la plante est au-dessus de son maximum configuré."
+    },
+    "moisture_is_ok": {
+      "name": "Humidité du sol est normale",
+      "description": "Vérifiée tant que l'humidité du sol de la plante est dans sa plage normale."
+    },
+    "conductivity_is_low": {
+      "name": "Conductivité est basse",
+      "description": "Vérifiée tant que la conductivité de la plante est en dessous de son minimum configuré."
+    },
+    "conductivity_is_high": {
+      "name": "Conductivité est haute",
+      "description": "Vérifiée tant que la conductivité de la plante est au-dessus de son maximum configuré."
+    },
+    "conductivity_is_ok": {
+      "name": "Conductivité est normale",
+      "description": "Vérifiée tant que la conductivité de la plante est dans sa plage normale."
+    },
+    "temperature_is_low": {
+      "name": "Température est basse",
+      "description": "Vérifiée tant que la température de la plante est en dessous de son minimum configuré."
+    },
+    "temperature_is_high": {
+      "name": "Température est haute",
+      "description": "Vérifiée tant que la température de la plante est au-dessus de son maximum configuré."
+    },
+    "temperature_is_ok": {
+      "name": "Température est normale",
+      "description": "Vérifiée tant que la température de la plante est dans sa plage normale."
+    },
+    "soil_temperature_is_low": {
+      "name": "Température du sol est basse",
+      "description": "Vérifiée tant que la température du sol de la plante est en dessous de son minimum configuré."
+    },
+    "soil_temperature_is_high": {
+      "name": "Température du sol est haute",
+      "description": "Vérifiée tant que la température du sol de la plante est au-dessus de son maximum configuré."
+    },
+    "soil_temperature_is_ok": {
+      "name": "Température du sol est normale",
+      "description": "Vérifiée tant que la température du sol de la plante est dans sa plage normale."
+    },
+    "humidity_is_low": {
+      "name": "Humidité de l'air est basse",
+      "description": "Vérifiée tant que l'humidité de l'air de la plante est en dessous de son minimum configuré."
+    },
+    "humidity_is_high": {
+      "name": "Humidité de l'air est haute",
+      "description": "Vérifiée tant que l'humidité de l'air de la plante est au-dessus de son maximum configuré."
+    },
+    "humidity_is_ok": {
+      "name": "Humidité de l'air est normale",
+      "description": "Vérifiée tant que l'humidité de l'air de la plante est dans sa plage normale."
+    },
+    "illuminance_is_low": {
+      "name": "Éclairement est bas",
+      "description": "Vérifiée tant que l'éclairement de la plante est en dessous de son minimum configuré."
+    },
+    "illuminance_is_high": {
+      "name": "Éclairement est haut",
+      "description": "Vérifiée tant que l'éclairement de la plante est au-dessus de son maximum configuré."
+    },
+    "illuminance_is_ok": {
+      "name": "Éclairement est normal",
+      "description": "Vérifiée tant que l'éclairement de la plante est dans sa plage normale."
+    },
+    "co2_is_low": {
+      "name": "CO2 est bas",
+      "description": "Vérifiée tant que le CO2 de la plante est en dessous de son minimum configuré."
+    },
+    "co2_is_high": {
+      "name": "CO2 est haut",
+      "description": "Vérifiée tant que le CO2 de la plante est au-dessus de son maximum configuré."
+    },
+    "co2_is_ok": {
+      "name": "CO2 est normal",
+      "description": "Vérifiée tant que le CO2 de la plante est dans sa plage normale."
+    },
+    "dli_is_low": {
+      "name": "DLI est bas",
+      "description": "Vérifiée tant que le DLI de la plante est en dessous de son minimum configuré."
+    },
+    "dli_is_high": {
+      "name": "DLI est haut",
+      "description": "Vérifiée tant que le DLI de la plante est au-dessus de son maximum configuré."
+    },
+    "dli_is_ok": {
+      "name": "DLI est normal",
+      "description": "Vérifiée tant que le DLI de la plante est dans sa plage normale."
+    },
+    "vpd_is_low": {
+      "name": "VPD est bas",
+      "description": "Vérifiée tant que le VPD de la plante est en dessous de son minimum configuré."
+    },
+    "vpd_is_high": {
+      "name": "VPD est haut",
+      "description": "Vérifiée tant que le VPD de la plante est au-dessus de son maximum configuré."
+    },
+    "vpd_is_ok": {
+      "name": "VPD est normal",
+      "description": "Vérifiée tant que le VPD de la plante est dans sa plage normale."
+    },
+    "moisture_sensor_is_stale": {
+      "name": "Capteur d'humidité du sol sans mise à jour",
+      "description": "Vérifiée tant que le capteur d'humidité du sol de la plante n'a pas envoyé de mises à jour pendant la durée configurée.",
+      "fields": {
+        "for": {
+          "name": "Pendant au moins",
+          "description": "Le capteur doit être resté sans mise à jour au moins cette durée pour que la condition soit remplie."
+        }
+      }
+    },
+    "conductivity_sensor_is_stale": {
+      "name": "Capteur de conductivité sans mise à jour",
+      "description": "Vérifiée tant que le capteur de conductivité de la plante n'a pas envoyé de mises à jour pendant la durée configurée.",
+      "fields": {
+        "for": {
+          "name": "Pendant au moins",
+          "description": "Le capteur doit être resté sans mise à jour au moins cette durée pour que la condition soit remplie."
+        }
+      }
+    },
+    "temperature_sensor_is_stale": {
+      "name": "Capteur de température sans mise à jour",
+      "description": "Vérifiée tant que le capteur de température de la plante n'a pas envoyé de mises à jour pendant la durée configurée.",
+      "fields": {
+        "for": {
+          "name": "Pendant au moins",
+          "description": "Le capteur doit être resté sans mise à jour au moins cette durée pour que la condition soit remplie."
+        }
+      }
+    },
+    "soil_temperature_sensor_is_stale": {
+      "name": "Capteur de température du sol sans mise à jour",
+      "description": "Vérifiée tant que le capteur de température du sol de la plante n'a pas envoyé de mises à jour pendant la durée configurée.",
+      "fields": {
+        "for": {
+          "name": "Pendant au moins",
+          "description": "Le capteur doit être resté sans mise à jour au moins cette durée pour que la condition soit remplie."
+        }
+      }
+    },
+    "humidity_sensor_is_stale": {
+      "name": "Capteur d'humidité de l'air sans mise à jour",
+      "description": "Vérifiée tant que le capteur d'humidité de l'air de la plante n'a pas envoyé de mises à jour pendant la durée configurée.",
+      "fields": {
+        "for": {
+          "name": "Pendant au moins",
+          "description": "Le capteur doit être resté sans mise à jour au moins cette durée pour que la condition soit remplie."
+        }
+      }
+    },
+    "illuminance_sensor_is_stale": {
+      "name": "Capteur d'éclairement sans mise à jour",
+      "description": "Vérifiée tant que le capteur d'éclairement de la plante n'a pas envoyé de mises à jour pendant la durée configurée.",
+      "fields": {
+        "for": {
+          "name": "Pendant au moins",
+          "description": "Le capteur doit être resté sans mise à jour au moins cette durée pour que la condition soit remplie."
+        }
+      }
+    },
+    "co2_sensor_is_stale": {
+      "name": "Capteur de CO2 sans mise à jour",
+      "description": "Vérifiée tant que le capteur de CO2 de la plante n'a pas envoyé de mises à jour pendant la durée configurée.",
+      "fields": {
+        "for": {
+          "name": "Pendant au moins",
+          "description": "Le capteur doit être resté sans mise à jour au moins cette durée pour que la condition soit remplie."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "platform_setup_failed": {
+      "message": "La plateforme d'entités de plante n'a pas pu être configurée."
+    },
+    "plant_entity_not_added": {
+      "message": "L'entité de plante {entity_id} n'a pas été ajoutée à Home Assistant, peut-être parce que son ID unique est déjà utilisé."
+    }
+  },
+  "issues": {
+    "other_flower_card": {
+      "title": "La carte de fleur est installée en double",
+      "description": "La carte de fleur est désormais fournie avec l'intégration Plant Monitor. Vos tableaux de bord chargent aussi une autre copie : {urls}\n\nSupprimez cette copie : désinstallez Flower Card dans le Marketplace (HACS avant Home Assistant 2026.11) ou supprimez la ressource que vous avez ajoutée vous-même (dans Paramètres → Tableaux de bord → Ressources, ou dans les ressources `lovelace` de votre configuration YAML). Vos tableaux de bord continuent de fonctionner en attendant. Plant Monitor prend le relais dès que l'autre copie a disparu ; si vos ressources sont en YAML, redémarrez d'abord Home Assistant. Actualisez ensuite le navigateur."
+    },
+    "missing_flower_card": {
+      "title": "Une ressource du tableau de bord pointe vers une carte de fleur supprimée",
+      "description": "Les ressources de votre tableau de bord mentionnent encore une carte de fleur dont le fichier a disparu : {urls}\n\nCette entrée ne compte plus comme une carte installée, elle n'empêche donc pas Plant Monitor de charger la sienne. Supprimez la ressource restante dans Paramètres → Tableaux de bord → Ressources, ou dans les ressources `lovelace` de votre configuration YAML, pour que le navigateur cesse de demander le fichier manquant."
     }
   }
 }
