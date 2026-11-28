@@ -17,12 +17,6 @@
       "humidity": {
         "name": "Luftfeuchtigkeit"
       },
-      "co2": {
-        "name": "CO2"
-      },
-      "soil_temperature": {
-        "name": "Bodentemperatur"
-      },
       "ppfd": {
         "name": "PPFD"
       },
@@ -32,11 +26,17 @@
       "dli": {
         "name": "Tägliches Lichtintegral"
       },
-      "dli_24h": {
-        "name": "DLI (24h rollierend)"
-      },
       "vpd": {
         "name": "Dampfdruckdefizit"
+      },
+      "co2": {
+        "name": "CO2"
+      },
+      "soil_temperature": {
+        "name": "Bodentemperatur"
+      },
+      "dli_24h": {
+        "name": "DLI (24h rollierend)"
       }
     },
     "number": {
@@ -76,6 +76,12 @@
       "min_humidity": {
         "name": "Min. Luftfeuchtigkeit"
       },
+      "max_vpd": {
+        "name": "Max. VPD"
+      },
+      "min_vpd": {
+        "name": "Min. VPD"
+      },
       "max_co2": {
         "name": "Max. CO2"
       },
@@ -87,12 +93,6 @@
       },
       "min_soil_temperature": {
         "name": "Min. Bodentemperatur"
-      },
-      "max_vpd": {
-        "name": "Max. VPD"
-      },
-      "min_vpd": {
-        "name": "Min. VPD"
       },
       "lux_to_ppfd": {
         "name": "Lux-zu-PPFD-Faktor"
@@ -286,6 +286,640 @@
           "description": "Entitäts-ID des neuen Sensors. Leer lassen, um den Sensor zu entfernen."
         }
       }
+    }
+  },
+  "triggers": {
+    "problem_detected": {
+      "name": "Problem erkannt",
+      "description": "Löst aus, wenn bei der Pflanze ein Problem auftritt (ein Messwert überschreitet seinen Grenzwert).",
+      "fields": {
+        "behavior": {
+          "name": "Auslösen, sobald",
+          "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
+        }
+      }
+    },
+    "problem_cleared": {
+      "name": "Problem behoben",
+      "description": "Löst aus, wenn das letzte Problem der Pflanze behoben ist und alle Messwerte wieder normal sind.",
+      "fields": {
+        "behavior": {
+          "name": "Auslösen, sobald",
+          "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
+        }
+      }
+    },
+    "moisture_became_low": {
+      "name": "Bodenfeuchtigkeit zu niedrig",
+      "description": "Löst aus, wenn der Bodenfeuchtigkeit der Pflanze unter den konfigurierten Minimalwert fällt.",
+      "fields": {
+        "behavior": {
+          "name": "Auslösen, sobald",
+          "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
+        }
+      }
+    },
+    "moisture_became_high": {
+      "name": "Bodenfeuchtigkeit zu hoch",
+      "description": "Löst aus, wenn der Bodenfeuchtigkeit der Pflanze über den konfigurierten Maximalwert steigt.",
+      "fields": {
+        "behavior": {
+          "name": "Auslösen, sobald",
+          "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
+        }
+      }
+    },
+    "moisture_became_ok": {
+      "name": "Bodenfeuchtigkeit normal",
+      "description": "Löst aus, wenn der Bodenfeuchtigkeit der Pflanze wieder im normalen Bereich liegt.",
+      "fields": {
+        "behavior": {
+          "name": "Auslösen, sobald",
+          "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
+        }
+      }
+    },
+    "conductivity_became_low": {
+      "name": "Leitfähigkeit zu niedrig",
+      "description": "Löst aus, wenn der Leitfähigkeit der Pflanze unter den konfigurierten Minimalwert fällt.",
+      "fields": {
+        "behavior": {
+          "name": "Auslösen, sobald",
+          "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
+        }
+      }
+    },
+    "conductivity_became_high": {
+      "name": "Leitfähigkeit zu hoch",
+      "description": "Löst aus, wenn der Leitfähigkeit der Pflanze über den konfigurierten Maximalwert steigt.",
+      "fields": {
+        "behavior": {
+          "name": "Auslösen, sobald",
+          "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
+        }
+      }
+    },
+    "conductivity_became_ok": {
+      "name": "Leitfähigkeit normal",
+      "description": "Löst aus, wenn der Leitfähigkeit der Pflanze wieder im normalen Bereich liegt.",
+      "fields": {
+        "behavior": {
+          "name": "Auslösen, sobald",
+          "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
+        }
+      }
+    },
+    "temperature_became_low": {
+      "name": "Temperatur zu niedrig",
+      "description": "Löst aus, wenn der Temperatur der Pflanze unter den konfigurierten Minimalwert fällt.",
+      "fields": {
+        "behavior": {
+          "name": "Auslösen, sobald",
+          "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
+        }
+      }
+    },
+    "temperature_became_high": {
+      "name": "Temperatur zu hoch",
+      "description": "Löst aus, wenn der Temperatur der Pflanze über den konfigurierten Maximalwert steigt.",
+      "fields": {
+        "behavior": {
+          "name": "Auslösen, sobald",
+          "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
+        }
+      }
+    },
+    "temperature_became_ok": {
+      "name": "Temperatur normal",
+      "description": "Löst aus, wenn der Temperatur der Pflanze wieder im normalen Bereich liegt.",
+      "fields": {
+        "behavior": {
+          "name": "Auslösen, sobald",
+          "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
+        }
+      }
+    },
+    "soil_temperature_became_low": {
+      "name": "Bodentemperatur zu niedrig",
+      "description": "Löst aus, wenn der Bodentemperatur der Pflanze unter den konfigurierten Minimalwert fällt.",
+      "fields": {
+        "behavior": {
+          "name": "Auslösen, sobald",
+          "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
+        }
+      }
+    },
+    "soil_temperature_became_high": {
+      "name": "Bodentemperatur zu hoch",
+      "description": "Löst aus, wenn der Bodentemperatur der Pflanze über den konfigurierten Maximalwert steigt.",
+      "fields": {
+        "behavior": {
+          "name": "Auslösen, sobald",
+          "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
+        }
+      }
+    },
+    "soil_temperature_became_ok": {
+      "name": "Bodentemperatur normal",
+      "description": "Löst aus, wenn der Bodentemperatur der Pflanze wieder im normalen Bereich liegt.",
+      "fields": {
+        "behavior": {
+          "name": "Auslösen, sobald",
+          "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
+        }
+      }
+    },
+    "humidity_became_low": {
+      "name": "Luftfeuchtigkeit zu niedrig",
+      "description": "Löst aus, wenn der Luftfeuchtigkeit der Pflanze unter den konfigurierten Minimalwert fällt.",
+      "fields": {
+        "behavior": {
+          "name": "Auslösen, sobald",
+          "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
+        }
+      }
+    },
+    "humidity_became_high": {
+      "name": "Luftfeuchtigkeit zu hoch",
+      "description": "Löst aus, wenn der Luftfeuchtigkeit der Pflanze über den konfigurierten Maximalwert steigt.",
+      "fields": {
+        "behavior": {
+          "name": "Auslösen, sobald",
+          "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
+        }
+      }
+    },
+    "humidity_became_ok": {
+      "name": "Luftfeuchtigkeit normal",
+      "description": "Löst aus, wenn der Luftfeuchtigkeit der Pflanze wieder im normalen Bereich liegt.",
+      "fields": {
+        "behavior": {
+          "name": "Auslösen, sobald",
+          "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
+        }
+      }
+    },
+    "illuminance_became_low": {
+      "name": "Beleuchtungsstärke zu niedrig",
+      "description": "Löst aus, wenn der Beleuchtungsstärke der Pflanze unter den konfigurierten Minimalwert fällt.",
+      "fields": {
+        "behavior": {
+          "name": "Auslösen, sobald",
+          "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
+        }
+      }
+    },
+    "illuminance_became_high": {
+      "name": "Beleuchtungsstärke zu hoch",
+      "description": "Löst aus, wenn der Beleuchtungsstärke der Pflanze über den konfigurierten Maximalwert steigt.",
+      "fields": {
+        "behavior": {
+          "name": "Auslösen, sobald",
+          "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
+        }
+      }
+    },
+    "illuminance_became_ok": {
+      "name": "Beleuchtungsstärke normal",
+      "description": "Löst aus, wenn der Beleuchtungsstärke der Pflanze wieder im normalen Bereich liegt.",
+      "fields": {
+        "behavior": {
+          "name": "Auslösen, sobald",
+          "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
+        }
+      }
+    },
+    "co2_became_low": {
+      "name": "CO2-Wert zu niedrig",
+      "description": "Löst aus, wenn der CO2-Wert der Pflanze unter den konfigurierten Minimalwert fällt.",
+      "fields": {
+        "behavior": {
+          "name": "Auslösen, sobald",
+          "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
+        }
+      }
+    },
+    "co2_became_high": {
+      "name": "CO2-Wert zu hoch",
+      "description": "Löst aus, wenn der CO2-Wert der Pflanze über den konfigurierten Maximalwert steigt.",
+      "fields": {
+        "behavior": {
+          "name": "Auslösen, sobald",
+          "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
+        }
+      }
+    },
+    "co2_became_ok": {
+      "name": "CO2-Wert normal",
+      "description": "Löst aus, wenn der CO2-Wert der Pflanze wieder im normalen Bereich liegt.",
+      "fields": {
+        "behavior": {
+          "name": "Auslösen, sobald",
+          "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
+        }
+      }
+    },
+    "dli_became_low": {
+      "name": "DLI-Wert zu niedrig",
+      "description": "Löst aus, wenn der DLI-Wert der Pflanze unter den konfigurierten Minimalwert fällt.",
+      "fields": {
+        "behavior": {
+          "name": "Auslösen, sobald",
+          "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
+        }
+      }
+    },
+    "dli_became_high": {
+      "name": "DLI-Wert zu hoch",
+      "description": "Löst aus, wenn der DLI-Wert der Pflanze über den konfigurierten Maximalwert steigt.",
+      "fields": {
+        "behavior": {
+          "name": "Auslösen, sobald",
+          "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
+        }
+      }
+    },
+    "dli_became_ok": {
+      "name": "DLI-Wert normal",
+      "description": "Löst aus, wenn der DLI-Wert der Pflanze wieder im normalen Bereich liegt.",
+      "fields": {
+        "behavior": {
+          "name": "Auslösen, sobald",
+          "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
+        }
+      }
+    },
+    "vpd_became_low": {
+      "name": "VPD-Wert zu niedrig",
+      "description": "Löst aus, wenn der VPD-Wert der Pflanze unter den konfigurierten Minimalwert fällt.",
+      "fields": {
+        "behavior": {
+          "name": "Auslösen, sobald",
+          "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
+        }
+      }
+    },
+    "vpd_became_high": {
+      "name": "VPD-Wert zu hoch",
+      "description": "Löst aus, wenn der VPD-Wert der Pflanze über den konfigurierten Maximalwert steigt.",
+      "fields": {
+        "behavior": {
+          "name": "Auslösen, sobald",
+          "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
+        }
+      }
+    },
+    "vpd_became_ok": {
+      "name": "VPD-Wert normal",
+      "description": "Löst aus, wenn der VPD-Wert der Pflanze wieder im normalen Bereich liegt.",
+      "fields": {
+        "behavior": {
+          "name": "Auslösen, sobald",
+          "description": "Legt fest, ob der Auslöser für jede ausgewählte Pflanze einzeln oder nur einmal für die Gruppe ausgelöst wird."
+        }
+      }
+    },
+    "moisture_sensor_became_stale": {
+      "name": "Bodenfeuchtigkeitssensor liefert keine Daten mehr",
+      "description": "Löst aus, wenn der Bodenfeuchtigkeitssensor der Pflanze keine Updates mehr sendet.",
+      "fields": {
+        "for": {
+          "name": "Für mindestens",
+          "description": "Der Sensor muss mindestens so lange in diesem Zustand bleiben, bevor der Auslöser ausgelöst wird."
+        }
+      }
+    },
+    "moisture_sensor_became_fresh": {
+      "name": "Bodenfeuchtigkeitssensor liefert wieder Daten",
+      "description": "Löst aus, wenn der Bodenfeuchtigkeitssensor der Pflanze wieder Updates sendet.",
+      "fields": {
+        "for": {
+          "name": "Für mindestens",
+          "description": "Der Sensor muss mindestens so lange in diesem Zustand bleiben, bevor der Auslöser ausgelöst wird."
+        }
+      }
+    },
+    "conductivity_sensor_became_stale": {
+      "name": "Leitfähigkeitssensor liefert keine Daten mehr",
+      "description": "Löst aus, wenn der Leitfähigkeitssensor der Pflanze keine Updates mehr sendet.",
+      "fields": {
+        "for": {
+          "name": "Für mindestens",
+          "description": "Der Sensor muss mindestens so lange in diesem Zustand bleiben, bevor der Auslöser ausgelöst wird."
+        }
+      }
+    },
+    "conductivity_sensor_became_fresh": {
+      "name": "Leitfähigkeitssensor liefert wieder Daten",
+      "description": "Löst aus, wenn der Leitfähigkeitssensor der Pflanze wieder Updates sendet.",
+      "fields": {
+        "for": {
+          "name": "Für mindestens",
+          "description": "Der Sensor muss mindestens so lange in diesem Zustand bleiben, bevor der Auslöser ausgelöst wird."
+        }
+      }
+    },
+    "temperature_sensor_became_stale": {
+      "name": "Temperatursensor liefert keine Daten mehr",
+      "description": "Löst aus, wenn der Temperatursensor der Pflanze keine Updates mehr sendet.",
+      "fields": {
+        "for": {
+          "name": "Für mindestens",
+          "description": "Der Sensor muss mindestens so lange in diesem Zustand bleiben, bevor der Auslöser ausgelöst wird."
+        }
+      }
+    },
+    "temperature_sensor_became_fresh": {
+      "name": "Temperatursensor liefert wieder Daten",
+      "description": "Löst aus, wenn der Temperatursensor der Pflanze wieder Updates sendet.",
+      "fields": {
+        "for": {
+          "name": "Für mindestens",
+          "description": "Der Sensor muss mindestens so lange in diesem Zustand bleiben, bevor der Auslöser ausgelöst wird."
+        }
+      }
+    },
+    "soil_temperature_sensor_became_stale": {
+      "name": "Bodentemperatursensor liefert keine Daten mehr",
+      "description": "Löst aus, wenn der Bodentemperatursensor der Pflanze keine Updates mehr sendet.",
+      "fields": {
+        "for": {
+          "name": "Für mindestens",
+          "description": "Der Sensor muss mindestens so lange in diesem Zustand bleiben, bevor der Auslöser ausgelöst wird."
+        }
+      }
+    },
+    "soil_temperature_sensor_became_fresh": {
+      "name": "Bodentemperatursensor liefert wieder Daten",
+      "description": "Löst aus, wenn der Bodentemperatursensor der Pflanze wieder Updates sendet.",
+      "fields": {
+        "for": {
+          "name": "Für mindestens",
+          "description": "Der Sensor muss mindestens so lange in diesem Zustand bleiben, bevor der Auslöser ausgelöst wird."
+        }
+      }
+    },
+    "humidity_sensor_became_stale": {
+      "name": "Luftfeuchtigkeitssensor liefert keine Daten mehr",
+      "description": "Löst aus, wenn der Luftfeuchtigkeitssensor der Pflanze keine Updates mehr sendet.",
+      "fields": {
+        "for": {
+          "name": "Für mindestens",
+          "description": "Der Sensor muss mindestens so lange in diesem Zustand bleiben, bevor der Auslöser ausgelöst wird."
+        }
+      }
+    },
+    "humidity_sensor_became_fresh": {
+      "name": "Luftfeuchtigkeitssensor liefert wieder Daten",
+      "description": "Löst aus, wenn der Luftfeuchtigkeitssensor der Pflanze wieder Updates sendet.",
+      "fields": {
+        "for": {
+          "name": "Für mindestens",
+          "description": "Der Sensor muss mindestens so lange in diesem Zustand bleiben, bevor der Auslöser ausgelöst wird."
+        }
+      }
+    },
+    "illuminance_sensor_became_stale": {
+      "name": "Beleuchtungsstärkesensor liefert keine Daten mehr",
+      "description": "Löst aus, wenn der Beleuchtungsstärkesensor der Pflanze keine Updates mehr sendet.",
+      "fields": {
+        "for": {
+          "name": "Für mindestens",
+          "description": "Der Sensor muss mindestens so lange in diesem Zustand bleiben, bevor der Auslöser ausgelöst wird."
+        }
+      }
+    },
+    "illuminance_sensor_became_fresh": {
+      "name": "Beleuchtungsstärkesensor liefert wieder Daten",
+      "description": "Löst aus, wenn der Beleuchtungsstärkesensor der Pflanze wieder Updates sendet.",
+      "fields": {
+        "for": {
+          "name": "Für mindestens",
+          "description": "Der Sensor muss mindestens so lange in diesem Zustand bleiben, bevor der Auslöser ausgelöst wird."
+        }
+      }
+    },
+    "co2_sensor_became_stale": {
+      "name": "CO2-Sensor liefert keine Daten mehr",
+      "description": "Löst aus, wenn der CO2-Sensor der Pflanze keine Updates mehr sendet.",
+      "fields": {
+        "for": {
+          "name": "Für mindestens",
+          "description": "Der Sensor muss mindestens so lange in diesem Zustand bleiben, bevor der Auslöser ausgelöst wird."
+        }
+      }
+    },
+    "co2_sensor_became_fresh": {
+      "name": "CO2-Sensor liefert wieder Daten",
+      "description": "Löst aus, wenn der CO2-Sensor der Pflanze wieder Updates sendet.",
+      "fields": {
+        "for": {
+          "name": "Für mindestens",
+          "description": "Der Sensor muss mindestens so lange in diesem Zustand bleiben, bevor der Auslöser ausgelöst wird."
+        }
+      }
+    }
+  },
+  "conditions": {
+    "has_problem": {
+      "name": "Hat ein Problem",
+      "description": "Ist erfüllt, solange die Pflanze ein aktives Problem hat."
+    },
+    "moisture_is_low": {
+      "name": "Bodenfeuchtigkeit ist zu niedrig",
+      "description": "Ist erfüllt, solange der Bodenfeuchtigkeit der Pflanze unter dem konfigurierten Minimalwert liegt."
+    },
+    "moisture_is_high": {
+      "name": "Bodenfeuchtigkeit ist zu hoch",
+      "description": "Ist erfüllt, solange der Bodenfeuchtigkeit der Pflanze über dem konfigurierten Maximalwert liegt."
+    },
+    "moisture_is_ok": {
+      "name": "Bodenfeuchtigkeit ist normal",
+      "description": "Ist erfüllt, solange der Bodenfeuchtigkeit der Pflanze im normalen Bereich liegt."
+    },
+    "conductivity_is_low": {
+      "name": "Leitfähigkeit ist zu niedrig",
+      "description": "Ist erfüllt, solange der Leitfähigkeit der Pflanze unter dem konfigurierten Minimalwert liegt."
+    },
+    "conductivity_is_high": {
+      "name": "Leitfähigkeit ist zu hoch",
+      "description": "Ist erfüllt, solange der Leitfähigkeit der Pflanze über dem konfigurierten Maximalwert liegt."
+    },
+    "conductivity_is_ok": {
+      "name": "Leitfähigkeit ist normal",
+      "description": "Ist erfüllt, solange der Leitfähigkeit der Pflanze im normalen Bereich liegt."
+    },
+    "temperature_is_low": {
+      "name": "Temperatur ist zu niedrig",
+      "description": "Ist erfüllt, solange der Temperatur der Pflanze unter dem konfigurierten Minimalwert liegt."
+    },
+    "temperature_is_high": {
+      "name": "Temperatur ist zu hoch",
+      "description": "Ist erfüllt, solange der Temperatur der Pflanze über dem konfigurierten Maximalwert liegt."
+    },
+    "temperature_is_ok": {
+      "name": "Temperatur ist normal",
+      "description": "Ist erfüllt, solange der Temperatur der Pflanze im normalen Bereich liegt."
+    },
+    "soil_temperature_is_low": {
+      "name": "Bodentemperatur ist zu niedrig",
+      "description": "Ist erfüllt, solange der Bodentemperatur der Pflanze unter dem konfigurierten Minimalwert liegt."
+    },
+    "soil_temperature_is_high": {
+      "name": "Bodentemperatur ist zu hoch",
+      "description": "Ist erfüllt, solange der Bodentemperatur der Pflanze über dem konfigurierten Maximalwert liegt."
+    },
+    "soil_temperature_is_ok": {
+      "name": "Bodentemperatur ist normal",
+      "description": "Ist erfüllt, solange der Bodentemperatur der Pflanze im normalen Bereich liegt."
+    },
+    "humidity_is_low": {
+      "name": "Luftfeuchtigkeit ist zu niedrig",
+      "description": "Ist erfüllt, solange der Luftfeuchtigkeit der Pflanze unter dem konfigurierten Minimalwert liegt."
+    },
+    "humidity_is_high": {
+      "name": "Luftfeuchtigkeit ist zu hoch",
+      "description": "Ist erfüllt, solange der Luftfeuchtigkeit der Pflanze über dem konfigurierten Maximalwert liegt."
+    },
+    "humidity_is_ok": {
+      "name": "Luftfeuchtigkeit ist normal",
+      "description": "Ist erfüllt, solange der Luftfeuchtigkeit der Pflanze im normalen Bereich liegt."
+    },
+    "illuminance_is_low": {
+      "name": "Beleuchtungsstärke ist zu niedrig",
+      "description": "Ist erfüllt, solange der Beleuchtungsstärke der Pflanze unter dem konfigurierten Minimalwert liegt."
+    },
+    "illuminance_is_high": {
+      "name": "Beleuchtungsstärke ist zu hoch",
+      "description": "Ist erfüllt, solange der Beleuchtungsstärke der Pflanze über dem konfigurierten Maximalwert liegt."
+    },
+    "illuminance_is_ok": {
+      "name": "Beleuchtungsstärke ist normal",
+      "description": "Ist erfüllt, solange der Beleuchtungsstärke der Pflanze im normalen Bereich liegt."
+    },
+    "co2_is_low": {
+      "name": "CO2-Wert ist zu niedrig",
+      "description": "Ist erfüllt, solange der CO2-Wert der Pflanze unter dem konfigurierten Minimalwert liegt."
+    },
+    "co2_is_high": {
+      "name": "CO2-Wert ist zu hoch",
+      "description": "Ist erfüllt, solange der CO2-Wert der Pflanze über dem konfigurierten Maximalwert liegt."
+    },
+    "co2_is_ok": {
+      "name": "CO2-Wert ist normal",
+      "description": "Ist erfüllt, solange der CO2-Wert der Pflanze im normalen Bereich liegt."
+    },
+    "dli_is_low": {
+      "name": "DLI-Wert ist zu niedrig",
+      "description": "Ist erfüllt, solange der DLI-Wert der Pflanze unter dem konfigurierten Minimalwert liegt."
+    },
+    "dli_is_high": {
+      "name": "DLI-Wert ist zu hoch",
+      "description": "Ist erfüllt, solange der DLI-Wert der Pflanze über dem konfigurierten Maximalwert liegt."
+    },
+    "dli_is_ok": {
+      "name": "DLI-Wert ist normal",
+      "description": "Ist erfüllt, solange der DLI-Wert der Pflanze im normalen Bereich liegt."
+    },
+    "vpd_is_low": {
+      "name": "VPD-Wert ist zu niedrig",
+      "description": "Ist erfüllt, solange der VPD-Wert der Pflanze unter dem konfigurierten Minimalwert liegt."
+    },
+    "vpd_is_high": {
+      "name": "VPD-Wert ist zu hoch",
+      "description": "Ist erfüllt, solange der VPD-Wert der Pflanze über dem konfigurierten Maximalwert liegt."
+    },
+    "vpd_is_ok": {
+      "name": "VPD-Wert ist normal",
+      "description": "Ist erfüllt, solange der VPD-Wert der Pflanze im normalen Bereich liegt."
+    },
+    "moisture_sensor_is_stale": {
+      "name": "Bodenfeuchtigkeitssensor liefert keine Daten",
+      "description": "Ist erfüllt, solange der Bodenfeuchtigkeitssensor der Pflanze für die konfigurierte Zeit keine Updates gesendet hat.",
+      "fields": {
+        "for": {
+          "name": "Für mindestens",
+          "description": "Der Sensor muss mindestens so lange keine Daten geliefert haben, damit die Bedingung erfüllt ist."
+        }
+      }
+    },
+    "conductivity_sensor_is_stale": {
+      "name": "Leitfähigkeitssensor liefert keine Daten",
+      "description": "Ist erfüllt, solange der Leitfähigkeitssensor der Pflanze für die konfigurierte Zeit keine Updates gesendet hat.",
+      "fields": {
+        "for": {
+          "name": "Für mindestens",
+          "description": "Der Sensor muss mindestens so lange keine Daten geliefert haben, damit die Bedingung erfüllt ist."
+        }
+      }
+    },
+    "temperature_sensor_is_stale": {
+      "name": "Temperatursensor liefert keine Daten",
+      "description": "Ist erfüllt, solange der Temperatursensor der Pflanze für die konfigurierte Zeit keine Updates gesendet hat.",
+      "fields": {
+        "for": {
+          "name": "Für mindestens",
+          "description": "Der Sensor muss mindestens so lange keine Daten geliefert haben, damit die Bedingung erfüllt ist."
+        }
+      }
+    },
+    "soil_temperature_sensor_is_stale": {
+      "name": "Bodentemperatursensor liefert keine Daten",
+      "description": "Ist erfüllt, solange der Bodentemperatursensor der Pflanze für die konfigurierte Zeit keine Updates gesendet hat.",
+      "fields": {
+        "for": {
+          "name": "Für mindestens",
+          "description": "Der Sensor muss mindestens so lange keine Daten geliefert haben, damit die Bedingung erfüllt ist."
+        }
+      }
+    },
+    "humidity_sensor_is_stale": {
+      "name": "Luftfeuchtigkeitssensor liefert keine Daten",
+      "description": "Ist erfüllt, solange der Luftfeuchtigkeitssensor der Pflanze für die konfigurierte Zeit keine Updates gesendet hat.",
+      "fields": {
+        "for": {
+          "name": "Für mindestens",
+          "description": "Der Sensor muss mindestens so lange keine Daten geliefert haben, damit die Bedingung erfüllt ist."
+        }
+      }
+    },
+    "illuminance_sensor_is_stale": {
+      "name": "Beleuchtungsstärkesensor liefert keine Daten",
+      "description": "Ist erfüllt, solange der Beleuchtungsstärkesensor der Pflanze für die konfigurierte Zeit keine Updates gesendet hat.",
+      "fields": {
+        "for": {
+          "name": "Für mindestens",
+          "description": "Der Sensor muss mindestens so lange keine Daten geliefert haben, damit die Bedingung erfüllt ist."
+        }
+      }
+    },
+    "co2_sensor_is_stale": {
+      "name": "CO2-Sensor liefert keine Daten",
+      "description": "Ist erfüllt, solange der CO2-Sensor der Pflanze für die konfigurierte Zeit keine Updates gesendet hat.",
+      "fields": {
+        "for": {
+          "name": "Für mindestens",
+          "description": "Der Sensor muss mindestens so lange keine Daten geliefert haben, damit die Bedingung erfüllt ist."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "platform_setup_failed": {
+      "message": "Die Pflanzen-Entitätsplattform konnte nicht eingerichtet werden."
+    },
+    "plant_entity_not_added": {
+      "message": "Die Pflanzenentität {entity_id} wurde nicht zu Home Assistant hinzugefügt, möglicherweise weil ihre eindeutige ID bereits verwendet wird."
+    }
+  },
+  "issues": {
+    "other_flower_card": {
+      "title": "Flower Card ist doppelt installiert",
+      "description": "Die Flower Card wird jetzt mit der Integration Plant Monitor mitgeliefert. Deine Dashboards laden außerdem eine weitere Kopie: {urls}\n\nEntferne diese Kopie: Deinstalliere Flower Card im Marketplace (vor Home Assistant 2026.11 in HACS) oder lösche die Ressource, die du selbst hinzugefügt hast (unter Einstellungen → Dashboards → Ressourcen oder in den `lovelace`-Ressourcen deiner YAML-Konfiguration). Deine Dashboards funktionieren in der Zwischenzeit weiter. Plant Monitor übernimmt, sobald die andere Kopie entfernt ist; wenn deine Ressourcen in YAML stehen, starte Home Assistant zuerst neu. Lade den Browser anschließend neu."
+    },
+    "missing_flower_card": {
+      "title": "Eine Dashboard-Ressource verweist auf eine entfernte Flower Card",
+      "description": "Deine Dashboard-Ressourcen führen noch eine Flower Card auf, deren Datei nicht mehr existiert: {urls}\n\nDieser Eintrag zählt nicht mehr als installierte Karte und hindert Plant Monitor daher nicht daran, die eigene zu laden. Lösche die übrig gebliebene Ressource unter Einstellungen → Dashboards → Ressourcen oder in den `lovelace`-Ressourcen deiner YAML-Konfiguration, damit der Browser nicht mehr nach der fehlenden Datei fragt."
     }
   }
 }
