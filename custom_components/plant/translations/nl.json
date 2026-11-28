@@ -17,12 +17,6 @@
       "humidity": {
         "name": "Luchtvochtigheid"
       },
-      "co2": {
-        "name": "CO2"
-      },
-      "soil_temperature": {
-        "name": "Bodemtemperatuur"
-      },
       "ppfd": {
         "name": "PPFD"
       },
@@ -32,11 +26,17 @@
       "dli": {
         "name": "Dagelijkse lichtintegraal"
       },
-      "dli_24h": {
-        "name": "DLI (24u voortschrijdend)"
-      },
       "vpd": {
         "name": "Dampdrukdeficit"
+      },
+      "co2": {
+        "name": "CO2"
+      },
+      "soil_temperature": {
+        "name": "Bodemtemperatuur"
+      },
+      "dli_24h": {
+        "name": "DLI (24u voortschrijdend)"
       }
     },
     "number": {
@@ -76,6 +76,12 @@
       "min_humidity": {
         "name": "Min. luchtvochtigheid"
       },
+      "max_vpd": {
+        "name": "Max. VPD"
+      },
+      "min_vpd": {
+        "name": "Min. VPD"
+      },
       "max_co2": {
         "name": "Max. CO2"
       },
@@ -87,12 +93,6 @@
       },
       "min_soil_temperature": {
         "name": "Min. bodemtemperatuur"
-      },
-      "max_vpd": {
-        "name": "Max. VPD"
-      },
-      "min_vpd": {
-        "name": "Min. VPD"
       },
       "lux_to_ppfd": {
         "name": "Lux naar PPFD factor"
@@ -286,6 +286,640 @@
           "description": "Entiteits-ID van de nieuwe sensor. Laat leeg om de sensor te verwijderen."
         }
       }
+    }
+  },
+  "triggers": {
+    "problem_detected": {
+      "name": "Probleem gedetecteerd",
+      "description": "Gaat af wanneer de plant een probleem krijgt (een meetwaarde overschrijdt de drempel).",
+      "fields": {
+        "behavior": {
+          "name": "Activeer wanneer",
+          "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
+        }
+      }
+    },
+    "problem_cleared": {
+      "name": "Probleem opgelost",
+      "description": "Gaat af wanneer het laatste probleem van de plant is opgelost en alle meetwaarden weer normaal zijn.",
+      "fields": {
+        "behavior": {
+          "name": "Activeer wanneer",
+          "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
+        }
+      }
+    },
+    "moisture_became_low": {
+      "name": "Bodemvochtigheid te laag",
+      "description": "Gaat af wanneer de bodemvochtigheid van de plant onder het ingestelde minimum komt.",
+      "fields": {
+        "behavior": {
+          "name": "Activeer wanneer",
+          "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
+        }
+      }
+    },
+    "moisture_became_high": {
+      "name": "Bodemvochtigheid te hoog",
+      "description": "Gaat af wanneer de bodemvochtigheid van de plant boven het ingestelde maximum komt.",
+      "fields": {
+        "behavior": {
+          "name": "Activeer wanneer",
+          "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
+        }
+      }
+    },
+    "moisture_became_ok": {
+      "name": "Bodemvochtigheid weer normaal",
+      "description": "Gaat af wanneer de bodemvochtigheid van de plant weer binnen het normale bereik komt.",
+      "fields": {
+        "behavior": {
+          "name": "Activeer wanneer",
+          "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
+        }
+      }
+    },
+    "conductivity_became_low": {
+      "name": "Geleidbaarheid te laag",
+      "description": "Gaat af wanneer de geleidbaarheid van de plant onder het ingestelde minimum komt.",
+      "fields": {
+        "behavior": {
+          "name": "Activeer wanneer",
+          "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
+        }
+      }
+    },
+    "conductivity_became_high": {
+      "name": "Geleidbaarheid te hoog",
+      "description": "Gaat af wanneer de geleidbaarheid van de plant boven het ingestelde maximum komt.",
+      "fields": {
+        "behavior": {
+          "name": "Activeer wanneer",
+          "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
+        }
+      }
+    },
+    "conductivity_became_ok": {
+      "name": "Geleidbaarheid weer normaal",
+      "description": "Gaat af wanneer de geleidbaarheid van de plant weer binnen het normale bereik komt.",
+      "fields": {
+        "behavior": {
+          "name": "Activeer wanneer",
+          "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
+        }
+      }
+    },
+    "temperature_became_low": {
+      "name": "Temperatuur te laag",
+      "description": "Gaat af wanneer de temperatuur van de plant onder het ingestelde minimum komt.",
+      "fields": {
+        "behavior": {
+          "name": "Activeer wanneer",
+          "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
+        }
+      }
+    },
+    "temperature_became_high": {
+      "name": "Temperatuur te hoog",
+      "description": "Gaat af wanneer de temperatuur van de plant boven het ingestelde maximum komt.",
+      "fields": {
+        "behavior": {
+          "name": "Activeer wanneer",
+          "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
+        }
+      }
+    },
+    "temperature_became_ok": {
+      "name": "Temperatuur weer normaal",
+      "description": "Gaat af wanneer de temperatuur van de plant weer binnen het normale bereik komt.",
+      "fields": {
+        "behavior": {
+          "name": "Activeer wanneer",
+          "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
+        }
+      }
+    },
+    "soil_temperature_became_low": {
+      "name": "Bodemtemperatuur te laag",
+      "description": "Gaat af wanneer de bodemtemperatuur van de plant onder het ingestelde minimum komt.",
+      "fields": {
+        "behavior": {
+          "name": "Activeer wanneer",
+          "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
+        }
+      }
+    },
+    "soil_temperature_became_high": {
+      "name": "Bodemtemperatuur te hoog",
+      "description": "Gaat af wanneer de bodemtemperatuur van de plant boven het ingestelde maximum komt.",
+      "fields": {
+        "behavior": {
+          "name": "Activeer wanneer",
+          "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
+        }
+      }
+    },
+    "soil_temperature_became_ok": {
+      "name": "Bodemtemperatuur weer normaal",
+      "description": "Gaat af wanneer de bodemtemperatuur van de plant weer binnen het normale bereik komt.",
+      "fields": {
+        "behavior": {
+          "name": "Activeer wanneer",
+          "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
+        }
+      }
+    },
+    "humidity_became_low": {
+      "name": "Luchtvochtigheid te laag",
+      "description": "Gaat af wanneer de luchtvochtigheid van de plant onder het ingestelde minimum komt.",
+      "fields": {
+        "behavior": {
+          "name": "Activeer wanneer",
+          "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
+        }
+      }
+    },
+    "humidity_became_high": {
+      "name": "Luchtvochtigheid te hoog",
+      "description": "Gaat af wanneer de luchtvochtigheid van de plant boven het ingestelde maximum komt.",
+      "fields": {
+        "behavior": {
+          "name": "Activeer wanneer",
+          "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
+        }
+      }
+    },
+    "humidity_became_ok": {
+      "name": "Luchtvochtigheid weer normaal",
+      "description": "Gaat af wanneer de luchtvochtigheid van de plant weer binnen het normale bereik komt.",
+      "fields": {
+        "behavior": {
+          "name": "Activeer wanneer",
+          "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
+        }
+      }
+    },
+    "illuminance_became_low": {
+      "name": "Lichtsterkte te laag",
+      "description": "Gaat af wanneer de lichtsterkte van de plant onder het ingestelde minimum komt.",
+      "fields": {
+        "behavior": {
+          "name": "Activeer wanneer",
+          "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
+        }
+      }
+    },
+    "illuminance_became_high": {
+      "name": "Lichtsterkte te hoog",
+      "description": "Gaat af wanneer de lichtsterkte van de plant boven het ingestelde maximum komt.",
+      "fields": {
+        "behavior": {
+          "name": "Activeer wanneer",
+          "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
+        }
+      }
+    },
+    "illuminance_became_ok": {
+      "name": "Lichtsterkte weer normaal",
+      "description": "Gaat af wanneer de lichtsterkte van de plant weer binnen het normale bereik komt.",
+      "fields": {
+        "behavior": {
+          "name": "Activeer wanneer",
+          "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
+        }
+      }
+    },
+    "co2_became_low": {
+      "name": "CO2 te laag",
+      "description": "Gaat af wanneer de CO2 van de plant onder het ingestelde minimum komt.",
+      "fields": {
+        "behavior": {
+          "name": "Activeer wanneer",
+          "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
+        }
+      }
+    },
+    "co2_became_high": {
+      "name": "CO2 te hoog",
+      "description": "Gaat af wanneer de CO2 van de plant boven het ingestelde maximum komt.",
+      "fields": {
+        "behavior": {
+          "name": "Activeer wanneer",
+          "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
+        }
+      }
+    },
+    "co2_became_ok": {
+      "name": "CO2 weer normaal",
+      "description": "Gaat af wanneer de CO2 van de plant weer binnen het normale bereik komt.",
+      "fields": {
+        "behavior": {
+          "name": "Activeer wanneer",
+          "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
+        }
+      }
+    },
+    "dli_became_low": {
+      "name": "DLI te laag",
+      "description": "Gaat af wanneer de DLI van de plant onder het ingestelde minimum komt.",
+      "fields": {
+        "behavior": {
+          "name": "Activeer wanneer",
+          "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
+        }
+      }
+    },
+    "dli_became_high": {
+      "name": "DLI te hoog",
+      "description": "Gaat af wanneer de DLI van de plant boven het ingestelde maximum komt.",
+      "fields": {
+        "behavior": {
+          "name": "Activeer wanneer",
+          "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
+        }
+      }
+    },
+    "dli_became_ok": {
+      "name": "DLI weer normaal",
+      "description": "Gaat af wanneer de DLI van de plant weer binnen het normale bereik komt.",
+      "fields": {
+        "behavior": {
+          "name": "Activeer wanneer",
+          "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
+        }
+      }
+    },
+    "vpd_became_low": {
+      "name": "VPD te laag",
+      "description": "Gaat af wanneer de VPD van de plant onder het ingestelde minimum komt.",
+      "fields": {
+        "behavior": {
+          "name": "Activeer wanneer",
+          "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
+        }
+      }
+    },
+    "vpd_became_high": {
+      "name": "VPD te hoog",
+      "description": "Gaat af wanneer de VPD van de plant boven het ingestelde maximum komt.",
+      "fields": {
+        "behavior": {
+          "name": "Activeer wanneer",
+          "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
+        }
+      }
+    },
+    "vpd_became_ok": {
+      "name": "VPD weer normaal",
+      "description": "Gaat af wanneer de VPD van de plant weer binnen het normale bereik komt.",
+      "fields": {
+        "behavior": {
+          "name": "Activeer wanneer",
+          "description": "Of de trigger afgaat voor elke geselecteerde plant afzonderlijk of slechts één keer voor de hele groep."
+        }
+      }
+    },
+    "moisture_sensor_became_stale": {
+      "name": "Bodemvochtigheidssensor geeft geen updates meer",
+      "description": "Gaat af wanneer de bodemvochtigheidssensor van de plant geen updates meer stuurt.",
+      "fields": {
+        "for": {
+          "name": "Voor minstens",
+          "description": "De sensor moet minstens zo lang in deze status blijven voordat de trigger afgaat."
+        }
+      }
+    },
+    "moisture_sensor_became_fresh": {
+      "name": "Bodemvochtigheidssensor geeft weer updates",
+      "description": "Gaat af wanneer de bodemvochtigheidssensor van de plant weer updates stuurt.",
+      "fields": {
+        "for": {
+          "name": "Voor minstens",
+          "description": "De sensor moet minstens zo lang in deze status blijven voordat de trigger afgaat."
+        }
+      }
+    },
+    "conductivity_sensor_became_stale": {
+      "name": "Geleidbaarheidssensor geeft geen updates meer",
+      "description": "Gaat af wanneer de geleidbaarheidssensor van de plant geen updates meer stuurt.",
+      "fields": {
+        "for": {
+          "name": "Voor minstens",
+          "description": "De sensor moet minstens zo lang in deze status blijven voordat de trigger afgaat."
+        }
+      }
+    },
+    "conductivity_sensor_became_fresh": {
+      "name": "Geleidbaarheidssensor geeft weer updates",
+      "description": "Gaat af wanneer de geleidbaarheidssensor van de plant weer updates stuurt.",
+      "fields": {
+        "for": {
+          "name": "Voor minstens",
+          "description": "De sensor moet minstens zo lang in deze status blijven voordat de trigger afgaat."
+        }
+      }
+    },
+    "temperature_sensor_became_stale": {
+      "name": "Temperatuursensor geeft geen updates meer",
+      "description": "Gaat af wanneer de temperatuursensor van de plant geen updates meer stuurt.",
+      "fields": {
+        "for": {
+          "name": "Voor minstens",
+          "description": "De sensor moet minstens zo lang in deze status blijven voordat de trigger afgaat."
+        }
+      }
+    },
+    "temperature_sensor_became_fresh": {
+      "name": "Temperatuursensor geeft weer updates",
+      "description": "Gaat af wanneer de temperatuursensor van de plant weer updates stuurt.",
+      "fields": {
+        "for": {
+          "name": "Voor minstens",
+          "description": "De sensor moet minstens zo lang in deze status blijven voordat de trigger afgaat."
+        }
+      }
+    },
+    "soil_temperature_sensor_became_stale": {
+      "name": "Bodemtemperatuursensor geeft geen updates meer",
+      "description": "Gaat af wanneer de bodemtemperatuursensor van de plant geen updates meer stuurt.",
+      "fields": {
+        "for": {
+          "name": "Voor minstens",
+          "description": "De sensor moet minstens zo lang in deze status blijven voordat de trigger afgaat."
+        }
+      }
+    },
+    "soil_temperature_sensor_became_fresh": {
+      "name": "Bodemtemperatuursensor geeft weer updates",
+      "description": "Gaat af wanneer de bodemtemperatuursensor van de plant weer updates stuurt.",
+      "fields": {
+        "for": {
+          "name": "Voor minstens",
+          "description": "De sensor moet minstens zo lang in deze status blijven voordat de trigger afgaat."
+        }
+      }
+    },
+    "humidity_sensor_became_stale": {
+      "name": "Luchtvochtigheidssensor geeft geen updates meer",
+      "description": "Gaat af wanneer de luchtvochtigheidssensor van de plant geen updates meer stuurt.",
+      "fields": {
+        "for": {
+          "name": "Voor minstens",
+          "description": "De sensor moet minstens zo lang in deze status blijven voordat de trigger afgaat."
+        }
+      }
+    },
+    "humidity_sensor_became_fresh": {
+      "name": "Luchtvochtigheidssensor geeft weer updates",
+      "description": "Gaat af wanneer de luchtvochtigheidssensor van de plant weer updates stuurt.",
+      "fields": {
+        "for": {
+          "name": "Voor minstens",
+          "description": "De sensor moet minstens zo lang in deze status blijven voordat de trigger afgaat."
+        }
+      }
+    },
+    "illuminance_sensor_became_stale": {
+      "name": "Lichtsterktesensor geeft geen updates meer",
+      "description": "Gaat af wanneer de lichtsterktesensor van de plant geen updates meer stuurt.",
+      "fields": {
+        "for": {
+          "name": "Voor minstens",
+          "description": "De sensor moet minstens zo lang in deze status blijven voordat de trigger afgaat."
+        }
+      }
+    },
+    "illuminance_sensor_became_fresh": {
+      "name": "Lichtsterktesensor geeft weer updates",
+      "description": "Gaat af wanneer de lichtsterktesensor van de plant weer updates stuurt.",
+      "fields": {
+        "for": {
+          "name": "Voor minstens",
+          "description": "De sensor moet minstens zo lang in deze status blijven voordat de trigger afgaat."
+        }
+      }
+    },
+    "co2_sensor_became_stale": {
+      "name": "CO2-sensor geeft geen updates meer",
+      "description": "Gaat af wanneer de CO2-sensor van de plant geen updates meer stuurt.",
+      "fields": {
+        "for": {
+          "name": "Voor minstens",
+          "description": "De sensor moet minstens zo lang in deze status blijven voordat de trigger afgaat."
+        }
+      }
+    },
+    "co2_sensor_became_fresh": {
+      "name": "CO2-sensor geeft weer updates",
+      "description": "Gaat af wanneer de CO2-sensor van de plant weer updates stuurt.",
+      "fields": {
+        "for": {
+          "name": "Voor minstens",
+          "description": "De sensor moet minstens zo lang in deze status blijven voordat de trigger afgaat."
+        }
+      }
+    }
+  },
+  "conditions": {
+    "has_problem": {
+      "name": "Heeft een probleem",
+      "description": "Slaagt zolang de plant een actief probleem heeft."
+    },
+    "moisture_is_low": {
+      "name": "Bodemvochtigheid is te laag",
+      "description": "Slaagt zolang de bodemvochtigheid van de plant onder het ingestelde minimum ligt."
+    },
+    "moisture_is_high": {
+      "name": "Bodemvochtigheid is te hoog",
+      "description": "Slaagt zolang de bodemvochtigheid van de plant boven het ingestelde maximum ligt."
+    },
+    "moisture_is_ok": {
+      "name": "Bodemvochtigheid is normaal",
+      "description": "Slaagt zolang de bodemvochtigheid van de plant binnen het normale bereik ligt."
+    },
+    "conductivity_is_low": {
+      "name": "Geleidbaarheid is te laag",
+      "description": "Slaagt zolang de geleidbaarheid van de plant onder het ingestelde minimum ligt."
+    },
+    "conductivity_is_high": {
+      "name": "Geleidbaarheid is te hoog",
+      "description": "Slaagt zolang de geleidbaarheid van de plant boven het ingestelde maximum ligt."
+    },
+    "conductivity_is_ok": {
+      "name": "Geleidbaarheid is normaal",
+      "description": "Slaagt zolang de geleidbaarheid van de plant binnen het normale bereik ligt."
+    },
+    "temperature_is_low": {
+      "name": "Temperatuur is te laag",
+      "description": "Slaagt zolang de temperatuur van de plant onder het ingestelde minimum ligt."
+    },
+    "temperature_is_high": {
+      "name": "Temperatuur is te hoog",
+      "description": "Slaagt zolang de temperatuur van de plant boven het ingestelde maximum ligt."
+    },
+    "temperature_is_ok": {
+      "name": "Temperatuur is normaal",
+      "description": "Slaagt zolang de temperatuur van de plant binnen het normale bereik ligt."
+    },
+    "soil_temperature_is_low": {
+      "name": "Bodemtemperatuur is te laag",
+      "description": "Slaagt zolang de bodemtemperatuur van de plant onder het ingestelde minimum ligt."
+    },
+    "soil_temperature_is_high": {
+      "name": "Bodemtemperatuur is te hoog",
+      "description": "Slaagt zolang de bodemtemperatuur van de plant boven het ingestelde maximum ligt."
+    },
+    "soil_temperature_is_ok": {
+      "name": "Bodemtemperatuur is normaal",
+      "description": "Slaagt zolang de bodemtemperatuur van de plant binnen het normale bereik ligt."
+    },
+    "humidity_is_low": {
+      "name": "Luchtvochtigheid is te laag",
+      "description": "Slaagt zolang de luchtvochtigheid van de plant onder het ingestelde minimum ligt."
+    },
+    "humidity_is_high": {
+      "name": "Luchtvochtigheid is te hoog",
+      "description": "Slaagt zolang de luchtvochtigheid van de plant boven het ingestelde maximum ligt."
+    },
+    "humidity_is_ok": {
+      "name": "Luchtvochtigheid is normaal",
+      "description": "Slaagt zolang de luchtvochtigheid van de plant binnen het normale bereik ligt."
+    },
+    "illuminance_is_low": {
+      "name": "Lichtsterkte is te laag",
+      "description": "Slaagt zolang de lichtsterkte van de plant onder het ingestelde minimum ligt."
+    },
+    "illuminance_is_high": {
+      "name": "Lichtsterkte is te hoog",
+      "description": "Slaagt zolang de lichtsterkte van de plant boven het ingestelde maximum ligt."
+    },
+    "illuminance_is_ok": {
+      "name": "Lichtsterkte is normaal",
+      "description": "Slaagt zolang de lichtsterkte van de plant binnen het normale bereik ligt."
+    },
+    "co2_is_low": {
+      "name": "CO2 is te laag",
+      "description": "Slaagt zolang de CO2 van de plant onder het ingestelde minimum ligt."
+    },
+    "co2_is_high": {
+      "name": "CO2 is te hoog",
+      "description": "Slaagt zolang de CO2 van de plant boven het ingestelde maximum ligt."
+    },
+    "co2_is_ok": {
+      "name": "CO2 is normaal",
+      "description": "Slaagt zolang de CO2 van de plant binnen het normale bereik ligt."
+    },
+    "dli_is_low": {
+      "name": "DLI is te laag",
+      "description": "Slaagt zolang de DLI van de plant onder het ingestelde minimum ligt."
+    },
+    "dli_is_high": {
+      "name": "DLI is te hoog",
+      "description": "Slaagt zolang de DLI van de plant boven het ingestelde maximum ligt."
+    },
+    "dli_is_ok": {
+      "name": "DLI is normaal",
+      "description": "Slaagt zolang de DLI van de plant binnen het normale bereik ligt."
+    },
+    "vpd_is_low": {
+      "name": "VPD is te laag",
+      "description": "Slaagt zolang de VPD van de plant onder het ingestelde minimum ligt."
+    },
+    "vpd_is_high": {
+      "name": "VPD is te hoog",
+      "description": "Slaagt zolang de VPD van de plant boven het ingestelde maximum ligt."
+    },
+    "vpd_is_ok": {
+      "name": "VPD is normaal",
+      "description": "Slaagt zolang de VPD van de plant binnen het normale bereik ligt."
+    },
+    "moisture_sensor_is_stale": {
+      "name": "Bodemvochtigheidssensor geeft geen updates",
+      "description": "Slaagt zolang de bodemvochtigheidssensor van de plant gedurende de ingestelde tijd geen updates heeft gestuurd.",
+      "fields": {
+        "for": {
+          "name": "Voor minstens",
+          "description": "De sensor moet minstens zo lang verouderd zijn om aan de voorwaarde te voldoen."
+        }
+      }
+    },
+    "conductivity_sensor_is_stale": {
+      "name": "Geleidbaarheidssensor geeft geen updates",
+      "description": "Slaagt zolang de geleidbaarheidssensor van de plant gedurende de ingestelde tijd geen updates heeft gestuurd.",
+      "fields": {
+        "for": {
+          "name": "Voor minstens",
+          "description": "De sensor moet minstens zo lang verouderd zijn om aan de voorwaarde te voldoen."
+        }
+      }
+    },
+    "temperature_sensor_is_stale": {
+      "name": "Temperatuursensor geeft geen updates",
+      "description": "Slaagt zolang de temperatuursensor van de plant gedurende de ingestelde tijd geen updates heeft gestuurd.",
+      "fields": {
+        "for": {
+          "name": "Voor minstens",
+          "description": "De sensor moet minstens zo lang verouderd zijn om aan de voorwaarde te voldoen."
+        }
+      }
+    },
+    "soil_temperature_sensor_is_stale": {
+      "name": "Bodemtemperatuursensor geeft geen updates",
+      "description": "Slaagt zolang de bodemtemperatuursensor van de plant gedurende de ingestelde tijd geen updates heeft gestuurd.",
+      "fields": {
+        "for": {
+          "name": "Voor minstens",
+          "description": "De sensor moet minstens zo lang verouderd zijn om aan de voorwaarde te voldoen."
+        }
+      }
+    },
+    "humidity_sensor_is_stale": {
+      "name": "Luchtvochtigheidssensor geeft geen updates",
+      "description": "Slaagt zolang de luchtvochtigheidssensor van de plant gedurende de ingestelde tijd geen updates heeft gestuurd.",
+      "fields": {
+        "for": {
+          "name": "Voor minstens",
+          "description": "De sensor moet minstens zo lang verouderd zijn om aan de voorwaarde te voldoen."
+        }
+      }
+    },
+    "illuminance_sensor_is_stale": {
+      "name": "Lichtsterktesensor geeft geen updates",
+      "description": "Slaagt zolang de lichtsterktesensor van de plant gedurende de ingestelde tijd geen updates heeft gestuurd.",
+      "fields": {
+        "for": {
+          "name": "Voor minstens",
+          "description": "De sensor moet minstens zo lang verouderd zijn om aan de voorwaarde te voldoen."
+        }
+      }
+    },
+    "co2_sensor_is_stale": {
+      "name": "CO2-sensor geeft geen updates",
+      "description": "Slaagt zolang de CO2-sensor van de plant gedurende de ingestelde tijd geen updates heeft gestuurd.",
+      "fields": {
+        "for": {
+          "name": "Voor minstens",
+          "description": "De sensor moet minstens zo lang verouderd zijn om aan de voorwaarde te voldoen."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "platform_setup_failed": {
+      "message": "Het platform voor plantentiteiten kon niet worden ingesteld."
+    },
+    "plant_entity_not_added": {
+      "message": "De plantentiteit {entity_id} is niet aan Home Assistant toegevoegd, mogelijk omdat de unieke ID al in gebruik is."
+    }
+  },
+  "issues": {
+    "other_flower_card": {
+      "title": "Flower card is twee keer geïnstalleerd",
+      "description": "De flower card wordt nu meegeleverd met de Plant Monitor-integratie. Je dashboards laden ook nog een andere kopie: {urls}\n\nVerwijder die kopie: verwijder Flower Card via de Marketplace (vóór Home Assistant 2026.11 via HACS), of verwijder de resource die je zelf hebt toegevoegd (onder Instellingen → Dashboards → Resources, of uit de `lovelace`-resources in je YAML-configuratie). Je dashboards blijven intussen gewoon werken. Plant Monitor neemt het over zodra de andere kopie weg is; staan je resources in YAML, herstart Home Assistant dan eerst. Ververs daarna de browser."
+    },
+    "missing_flower_card": {
+      "title": "Een dashboardresource verwijst naar een verwijderde flower card",
+      "description": "In je dashboardresources staat nog een flower card waarvan het bestand verdwenen is: {urls}\n\nDeze vermelding telt niet meer als geïnstalleerde kaart, dus Plant Monitor kan gewoon zijn eigen kaart laden. Verwijder de achtergebleven resource onder Instellingen → Dashboards → Resources, of uit de `lovelace`-resources in je YAML-configuratie, zodat de browser niet meer naar het ontbrekende bestand blijft vragen."
     }
   }
 }
